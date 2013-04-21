@@ -2,68 +2,83 @@ require 'test_helper'
 
 module Eventum
 
-
   describe Dispatcher do
-    class Promotion < Event
-      format do
-        param :repositories, Array do
-          param :name, String
+    class Promotion < Action
+
+      def plan(repo_names, package_names)
+        repo_names.each do |repo_name|
+          plan_action(CloneRepo, {'name' => repo_name})
         end
-        param :packages, Array do
-          param :name, String
+
+        package_names.each do |package_name|
+          plan_action(ClonePackage, {'name' => package_name})
         end
       end
+
     end
 
     class CloneRepo < Action
 
-      def self.subscribe
-        { Promotion => :repositories }
+      input_format do
+        param :name, String
       end
 
       output_format do
         param :id, String
-      end
-
-      def run
-        output['id'] = input['name']
       end
 
     end
 
     class ClonePackage < Action
 
-      def self.subscribe
-        { Promotion => :packages }
-      end
-
-      def self.require
-        CloneRepo
+      input_format do
+        param :name, String
       end
 
       output_format do
         param :id, String
       end
 
-      def run
-        output['id'] = input['name']
+    end
+
+    class UpdateIndex < Action
+
+      def self.subscribe
+        ClonePackage
+      end
+
+      def plan(input)
+        plan_action(YetAnotherAction, {'hello' => 'world'})
+        super
+      end
+
+      output_format do
+        param :indexed_name, String
       end
 
     end
 
-    def event
-      Promotion.new('repositories' =>
-                    [{'name' => 'zoo'},
-                     {'name' => 'foo'}])
+    class YetAnotherAction < Action
+
+      input_format do
+        param :hello, String
+      end
+
+      output_format do
+        param :hello, String
+      end
 
     end
 
     it "builds the execution plan" do
-      execution_plan = Dispatcher.execution_plan_for(event)
+      execution_plan = Promotion.plan(['zoo', 'foo'], ['elephant'])
       expected_plan =
         [
          [CloneRepo, {'name' => 'zoo'}],
-         [CloneRepo, {'name' => 'foo'}]
+         [CloneRepo, {'name' => 'foo'}],
+         [ClonePackage, {'name' => 'elephant'}],
+         [YetAnotherAction, {'hello' => 'world'}],
+         [UpdateIndex, {'name' => 'elephant'}],
         ]
       execution_plan.must_equal expected_plan
     end

@@ -32,14 +32,6 @@ class TestScenarioFinalizer < Eventum::Action
 
   class << self
 
-    def subscribe
-      @subscribe
-    end
-
-    def subscribe=(event_class)
-      @subscribe = event_class
-    end
-
     def recorded_outputs
       @recorded_outputs
     end
@@ -75,16 +67,14 @@ class BusTestCase < Test::Unit::TestCase
   end
 
   def assert_scenario
-    event = self.event
     Eventum::Bus.impl = TestBus.new(@expected_scenario)
     event_outputs = nil
     TestScenarioFinalizer.init_recorded_outputs
-    TestScenarioFinalizer.subscribe = event.class
-    wfid = Eventum::Bus.trigger(event)
+    execution_plan = self.execution_plan
+    execution_plan << [TestScenarioFinalizer, {}]
+    wfid = Eventum::Bus.trigger(execution_plan)
     Eventum::Bus.wait_for(wfid) if BUS_IMPL == Eventum::Bus::RuoteBus
     return TestScenarioFinalizer.recorded_outputs
-  ensure
-    TestScenarioFinalizer.subscribe = nil
   end
 end
 

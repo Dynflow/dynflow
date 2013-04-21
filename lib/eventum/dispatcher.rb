@@ -5,50 +5,25 @@ module Eventum
         @finalizers ||= Hash.new { |h, k| h[k] = [] }
       end
 
-      def actions_for_event(event)
-        Action.actions.find_all do |action|
-          case action.subscribe
+      def subscribed_actions(action)
+        Action.actions.find_all do |sub_action|
+          case sub_action.subscribe
           when Hash
-            action.subscribe.keys.include?(event.class)
+            sub_action.subscribe.keys.include?(action.class)
           when Array
-            action.subscribe.include?(event.class)
+            sub_action.subscribe.include?(action.class)
           else
-            action.subscribe == event.class
+            sub_action.subscribe == action.class
           end
         end
       end
 
-      def execution_plan_for(event)
-        dep_tree = actions_for_event(event).reduce({}) do |h, action_class|
-          h.update(action_class => action_class.require)
-        end
-
-        ordered_actions = []
-        while (no_dep_actions = dep_tree.find_all { |part, require| require.nil? }).any? do
-          no_dep_actions = no_dep_actions.map(&:first)
-          ordered_actions.concat(no_dep_actions.sort_by(&:name))
-          no_dep_actions.each { |part| dep_tree.delete(part) }
-          dep_tree.keys.each do |part|
-            dep_tree[part] = nil if ordered_actions.include?(dep_tree[part])
-          end
-        end
-
-        if (unresolved = dep_tree.find_all { |_, require| require }).any?
-          raise 'The following deps were unresolved #{unresolved.inspect}'
-        end
+      def execution_plan_for(action, *plan_args)
+        ordered_actions = subscribed_actions(action).sort_by(&:name)
 
         execution_plan = []
         ordered_actions.each do |action_class|
-          if action_class.subscribe.is_a?(Hash)
-            mapping = action_class.subscribe[event.class].to_s
-            if event[mapping]
-              event[mapping].each do |subinput|
-                execution_plan << [action_class, subinput]
-              end
-            end
-          else
-            execution_plan << [action_class, event.data]
-          end
+          execution_plan.concat(action_class.plan(*plan_args))
         end
         return execution_plan
       end

@@ -14,7 +14,7 @@ module Eventum
       attr_writer :impl
     end
 
-    def finalize(event, outputs)
+    def finalize(outputs)
       outputs.each do |action|
         if action.respond_to?(:finalize)
           action.finalize(outputs)
@@ -43,12 +43,12 @@ module Eventum
         super
       end
 
-      def trigger(event)
+      def trigger(execution_plan)
         outputs = []
-        Dispatcher.execution_plan_for(event).each do |(action_class, input)|
+        execution_plan.each do |(action_class, input)|
           outputs << self.process(action_class, input)
         end
-        self.finalize(event, outputs)
+        self.finalize(outputs)
       end
 
     end
@@ -68,7 +68,7 @@ module Eventum
                      []]
         end
 
-        def finalize(event_class)
+        def finalize
           @steps << ['participant', {'ref' => 'finalize'}, []]
         end
 
@@ -86,9 +86,8 @@ module Eventum
         super
         @board = Ruote::Dashboard.new(Ruote::Worker.new(Ruote::HashStorage.new))
         @board.register 'finalize' do |workitem|
-          event = Eventum::Message.decode(workitem['event'])
           outputs = workitem['outputs'].map { |m| Eventum::Message.decode(m) }
-          Eventum::Bus.finalize(event, outputs)
+          Eventum::Bus.finalize(outputs)
           reply
         end
 
@@ -103,20 +102,19 @@ module Eventum
 
       end
 
-      def trigger(event)
-        definition = construct_definition(event)
+      def trigger(execution_plan)
+        definition = construct_definition(execution_plan)
         @board.launch(definition,
-                      'event' => event.encode,
                       'outputs' => [])
       end
 
-      def construct_definition(event)
+      def construct_definition(execution_plan)
         dsl = ProcessDsl.new do
-          Dispatcher.execution_plan_for(event).each do |action_class, subinput|
+          execution_plan.each do |action_class, subinput|
             run_action(action_class, subinput)
           end
         end
-        dsl.finalize(event.class)
+        dsl.finalize
         definition = dsl._definition
         return definition
       end
