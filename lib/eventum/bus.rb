@@ -74,11 +74,11 @@ module Eventum
 
       return ordered_actions.reduce({}) do |ret, action_class|
         if action_class.subscribe.is_a?(Hash)
-          mapping = action_class.subscribe[event.class]
+          mapping = action_class.subscribe[event.class].to_s
         else
           mapping = nil
         end
-        ret.update(action_class => mapping.to_s)
+        ret.update(action_class => mapping)
       end
     end
 
