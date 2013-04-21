@@ -7,7 +7,7 @@ module Eventum
       param :id, String
     end
 
-    def handle
+    def run
       output['id'] = input['name']
     end
 
@@ -16,7 +16,7 @@ module Eventum
   class CloneRepoTest < ParticipantTestCase
 
     def test_action
-      action = handle_action(CloneRepo, {:name => "zoo"})
+      action = run_action(CloneRepo, {:name => "zoo"})
       assert_equal(action.output['id'], "zoo")
     end
 

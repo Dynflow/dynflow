@@ -32,7 +32,7 @@ module Eventum
     def process(action_class, input, output = nil)
       # TODO: here goes the message validation
       action = action_class.new(input, output)
-      action.handle
+      action.run
       return action
     end
 

@@ -40,7 +40,7 @@ module Eventum
       end
     end
 
-    def handle
+    def run
       # here is where we prepare the result
     end
 

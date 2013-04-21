@@ -57,7 +57,7 @@ end
 
 class ParticipantTestCase < Test::Unit::TestCase
 
-  def handle_action(action_class, input)
+  def run_action(action_class, input)
     Eventum::Bus.impl = Eventum::Bus.new
     output = Eventum::Bus.process(action_class, input)
     return output

@@ -24,7 +24,7 @@ module Eventum
       param :id, String
     end
 
-    def handle
+    def run
       output['id'] = input['name']
     end
 
@@ -44,7 +44,7 @@ module Eventum
       param :id, String
     end
 
-    def handle
+    def run
       output['id'] = input['name']
     end
 
