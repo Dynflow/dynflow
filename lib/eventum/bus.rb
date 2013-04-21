@@ -6,7 +6,7 @@ module Eventum
     class << self
       extend Forwardable
 
-      def_delegators :impl, :wait_for, :process, :trigger, :register_finalizer, :finalize
+      def_delegators :impl, :wait_for, :process, :trigger, :finalize
 
       def impl
         @impl ||= Bus::MemoryBus.new
@@ -14,72 +14,23 @@ module Eventum
       attr_writer :impl
     end
 
-    def initialize
-      @finalizers = Hash.new { |h, k| h[k] = [] }
-      @actions = Action.actions
-    end
-
-    def register_finalizer(workflow, finalizer = nil, &block)
-      workflow = workflow.name if workflow.is_a? Class
-      finalizer ||= block
-      @finalizers[workflow] << finalizer
-    end
-
     def finalize(event, outputs)
-      @finalizers[event.class.name].map { |finalizer| finalizer.call(event, outputs) }
+      outputs.each do |action|
+        if action.respond_to?(:finalize)
+          action.finalize(outputs)
+        end
+      end
     end
 
     def process(action_class, input, output = nil)
       # TODO: here goes the message validation
       action = action_class.new(input, output)
-      action.run
+      action.run if action.respond_to?(:run)
       return action
     end
 
     def wait_for(*args)
       raise NotImplementedError, 'Abstract method'
-    end
-
-    def actions_for_event(event)
-      @actions.find_all do |action|
-        case action.subscribe
-        when Hash
-          action.subscribe.keys.include?(event.class)
-        when Array
-          action.subscribe.include?(event.class)
-        else
-          action.subscribe == event.class
-        end
-      end
-    end
-
-    def ordered_actions_with_mapping(event)
-      dep_tree = actions_for_event(event).reduce({}) do |h, action_class|
-        h.update(action_class => action_class.require)
-      end
-
-      ordered_actions = []
-      while (no_dep_actions = dep_tree.find_all { |part, require| require.nil? }).any? do
-        no_dep_actions = no_dep_actions.map(&:first)
-        ordered_actions.concat(no_dep_actions.sort_by(&:name))
-        no_dep_actions.each { |part| dep_tree.delete(part) }
-        dep_tree.keys.each do |part|
-          dep_tree[part] = nil if ordered_actions.include?(dep_tree[part])
-        end
-      end
-
-      if (unresolved = dep_tree.find_all { |_, require| require }).any?
-        raise 'The following deps were unresolved #{unresolved.inspect}'
-      end
-
-      return ordered_actions.reduce({}) do |ret, action_class|
-        if action_class.subscribe.is_a?(Hash)
-          mapping = action_class.subscribe[event.class].to_s
-        else
-          mapping = nil
-        end
-        ret.update(action_class => mapping)
-      end
     end
 
     def logger
@@ -94,15 +45,8 @@ module Eventum
 
       def trigger(event)
         outputs = []
-        self.ordered_actions_with_mapping(event).each do |action_class, mapping|
-          if mapping
-            next if event[mapping].nil?
-            event[mapping].each do |subinput|
-              outputs << self.process(action_class, subinput)
-            end
-          else
-            outputs << self.process(action_class, event)
-          end
+        Dispatcher.execution_plan_for(event).each do |(action_class, input)|
+          outputs << self.process(action_class, input)
         end
         self.finalize(event, outputs)
       end
@@ -118,14 +62,10 @@ module Eventum
           instance_eval(&block)
         end
 
-        def run_action(action, mapping)
-          iterator = ['concurrence',
-             {'merge_type' => 'union'},
-             [['iterator',
-               {'on_field' => "event.data.#{mapping}", 'to_v' => 'subinput'},
-               [['participant', {'ref' => action.name, 'input' => '$v:subinput'}, []]]]
-            ]]
-          @steps << iterator
+        def run_action(action, input)
+          @steps << ['participant',
+                     {'ref' => action.name, 'input' => input},
+                     []]
         end
 
         def finalize(event_class)
@@ -152,7 +92,7 @@ module Eventum
           reply
         end
 
-        @actions.each do |action_class|
+        Action.actions.each do |action_class|
           @board.register action_class.name do |workitem|
             action_class = workitem['params']['ref'].constantize
             action = Eventum::Bus.process(action_class, workitem.fields['params']['input'])
@@ -171,10 +111,9 @@ module Eventum
       end
 
       def construct_definition(event)
-        ordered_actions_with_mapping = self.ordered_actions_with_mapping(event)
         dsl = ProcessDsl.new do
-          ordered_actions_with_mapping.each do |action_class, mapping|
-            run_action(action_class, mapping)
+          Dispatcher.execution_plan_for(event).each do |action_class, subinput|
+            run_action(action_class, subinput)
           end
         end
         dsl.finalize(event.class)

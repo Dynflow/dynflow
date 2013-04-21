@@ -40,10 +40,6 @@ module Eventum
       end
     end
 
-    def run
-      # here is where we prepare the result
-    end
-
     def validate!
       self.clss.output_format.validate!(@data['output'])
     end

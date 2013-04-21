@@ -17,13 +17,45 @@ class TestBus < BUS_IMPL
 
   def process(action_class, input, output = nil, stub = true)
     expected = @expected_scenario.shift
-    if !stub || output
+    if action_class == TestScenarioFinalizer || !stub || output
       return super(action_class, input, output)
     elsif action_class.name == expected[:action_class].name && input == expected[:input]
       return action_class.new(expected[:input], expected[:output])
     else
       raise "Unexpected input. Expected #{expected[:action_class]} #{expected[:input].inspect}, got #{action_class} #{input.inspect}"
     end
+  end
+
+end
+
+class TestScenarioFinalizer < Eventum::Action
+
+  class << self
+
+    def subscribe
+      @subscribe
+    end
+
+    def subscribe=(event_class)
+      @subscribe = event_class
+    end
+
+    def recorded_outputs
+      @recorded_outputs
+    end
+
+    def init_recorded_outputs
+      @recorded_outputs = []
+    end
+
+    def save_recorded_outputs(recorded_outputs)
+      @recorded_outputs = recorded_outputs
+    end
+
+  end
+
+  def finalize(outputs)
+    self.class.save_recorded_outputs(outputs)
   end
 
 end
@@ -46,12 +78,13 @@ class BusTestCase < Test::Unit::TestCase
     event = self.event
     Eventum::Bus.impl = TestBus.new(@expected_scenario)
     event_outputs = nil
-    Eventum::Bus.register_finalizer(event.class) do |event, outputs|
-      event_outputs = outputs
-    end
+    TestScenarioFinalizer.init_recorded_outputs
+    TestScenarioFinalizer.subscribe = event.class
     wfid = Eventum::Bus.trigger(event)
     Eventum::Bus.wait_for(wfid) if BUS_IMPL == Eventum::Bus::RuoteBus
-    return event_outputs
+    return TestScenarioFinalizer.recorded_outputs
+  ensure
+    TestScenarioFinalizer.subscribe = nil
   end
 end
 
