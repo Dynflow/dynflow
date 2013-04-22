@@ -23,7 +23,10 @@ module Eventum
 
         execution_plan = []
         ordered_actions.each do |action_class|
-          execution_plan.concat(action_class.plan(*plan_args))
+          sub_action_plan = action_class.plan(*plan_args) do |sub_action|
+            sub_action.input = action.input
+          end
+          execution_plan.concat(sub_action_plan)
         end
         return execution_plan
       end

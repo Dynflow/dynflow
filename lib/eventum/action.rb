@@ -29,6 +29,10 @@ module Eventum
       @data['input']
     end
 
+    def input=(input)
+      @data['input'] = input
+    end
+
     def output
       @data['output']
     end
@@ -63,17 +67,28 @@ module Eventum
 
     def self.plan(*args)
       action = self.new({})
+      yield action if block_given?
       action.plan(*args)
       action.add_subscriptions(*args)
       action.execution_plan
     end
 
-    def plan(input)
+    # for subscribed actions: by default take the input of the
+    # subscribed action
+    def plan(*args)
+      plan_self(self.input)
+    end
+
+    def plan_self(input)
+      self.input = input
       @execution_plan << [self.class, input]
     end
 
     def plan_action(action_class, *args)
-      @execution_plan.concat(action_class.plan(*args))
+      sub_action_plan = action_class.plan(*args) do |action|
+        action.input = args.first
+      end
+      @execution_plan.concat(sub_action_plan)
     end
 
     def add_subscriptions(*plan_args)

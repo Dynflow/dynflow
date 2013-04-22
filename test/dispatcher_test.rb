@@ -13,6 +13,20 @@ module Eventum
         package_names.each do |package_name|
           plan_action(ClonePackage, {'name' => package_name})
         end
+
+        plan_self('actions' => repo_names.size + package_names.size)
+      end
+
+      input_format do
+        param :actions, Integer
+      end
+
+    end
+
+    class PromotionObserver < Action
+
+      def self.subscribe
+        Promotion
       end
 
     end
@@ -79,6 +93,8 @@ module Eventum
          [ClonePackage, {'name' => 'elephant'}],
          [YetAnotherAction, {'hello' => 'world'}],
          [UpdateIndex, {'name' => 'elephant'}],
+         [Promotion, {'actions' => 3 }],
+         [PromotionObserver, {'actions' => 3 }]
         ]
       execution_plan.must_equal expected_plan
     end
