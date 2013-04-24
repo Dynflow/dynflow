@@ -70,7 +70,7 @@ class Action < Dynflow::Action
   end
 
   # OPTIONAL: every action can produce an output in the execution
-  phase. This allows to describe the output.
+  # phase. This allows to describe the output.
   output_format do
     param :uuid, String
   end
@@ -127,7 +127,7 @@ pp Publish.plan(short_article)
 Therefore it's suitable for the plan methods to not have any side
 effects (except of database writes that can be roll-backed)
 
-In the finalization phase, +finalize+ method is called on every action
+In the finalization phase, `finalize` method is called on every action
 if defined. The order is the same as in the execution plan.
 
 Every action should be as atomic as possible, providing better
@@ -137,6 +137,8 @@ workflow is really simple.
 
 The input and output format can be used for defining the interface
 that other developers can use when extending the workflows.
+
+See the examples directory for more complete examples.
 
 License
 -------
