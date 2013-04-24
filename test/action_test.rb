@@ -1,6 +1,6 @@
 require 'test_helper'
 
-module Eventum
+module Dynflow
   class CloneRepo < Action
 
     output_format do

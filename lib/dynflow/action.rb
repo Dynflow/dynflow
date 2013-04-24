@@ -1,4 +1,4 @@
-module Eventum
+module Dynflow
   class Action < Message
 
     def self.inherited(child)
@@ -62,7 +62,7 @@ module Eventum
     end
 
     def self.trigger(*args)
-      Eventum::Bus.trigger(self.plan(*args))
+      Dynflow::Bus.trigger(self.plan(*args))
     end
 
     def self.plan(*args)

@@ -1,6 +1,6 @@
 require 'active_support/inflector'
 require 'forwardable'
-module Eventum
+module Dynflow
   class Bus
 
     class << self
@@ -34,7 +34,7 @@ module Eventum
     end
 
     def logger
-      @logger ||= Eventum::Logger.new(self.class)
+      @logger ||= Dynflow::Logger.new(self.class)
     end
 
     class MemoryBus < Bus

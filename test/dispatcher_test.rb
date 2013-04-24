@@ -1,6 +1,6 @@
 require 'test_helper'
 
-module Eventum
+module Dynflow
 
   describe Dispatcher do
     class Promotion < Action

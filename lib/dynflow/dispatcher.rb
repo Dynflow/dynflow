@@ -1,4 +1,4 @@
-module Eventum
+module Dynflow
   class Dispatcher
     class << self
       def finalizers

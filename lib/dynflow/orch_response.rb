@@ -1,4 +1,4 @@
-module Eventum
+module Dynflow
   class OrchResponse < Message
 
   end

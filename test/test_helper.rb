@@ -1,8 +1,8 @@
 require 'test/unit'
 require 'minitest/spec'
-require 'eventum'
+require 'dynflow'
 
-BUS_IMPL = Eventum::Bus::MemoryBus
+BUS_IMPL = Dynflow::Bus::MemoryBus
 
 class TestBus < BUS_IMPL
 
@@ -24,7 +24,7 @@ class TestBus < BUS_IMPL
 
 end
 
-class TestScenarioFinalizer < Eventum::Action
+class TestScenarioFinalizer < Dynflow::Action
 
   class << self
 
@@ -63,12 +63,12 @@ class BusTestCase < Test::Unit::TestCase
   end
 
   def assert_scenario
-    Eventum::Bus.impl = TestBus.new(@expected_scenario)
+    Dynflow::Bus.impl = TestBus.new(@expected_scenario)
     event_outputs = nil
     TestScenarioFinalizer.init_recorded_outputs
     execution_plan = self.execution_plan
     execution_plan << [TestScenarioFinalizer, {}]
-    Eventum::Bus.trigger(execution_plan)
+    Dynflow::Bus.trigger(execution_plan)
     return TestScenarioFinalizer.recorded_outputs
   end
 end
@@ -76,8 +76,8 @@ end
 class ParticipantTestCase < Test::Unit::TestCase
 
   def run_action(action_class, input)
-    Eventum::Bus.impl = Eventum::Bus.new
-    output = Eventum::Bus.process(action_class, input)
+    Dynflow::Bus.impl = Dynflow::Bus.new
+    output = Dynflow::Bus.process(action_class, input)
     return output
   end
 end

@@ -1,7 +1,7 @@
 require 'test_helper'
 require 'set'
 
-module Eventum
+module Dynflow
   class BusTest < BusTestCase
     class Promotion < Action
 

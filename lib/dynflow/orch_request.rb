@@ -1,4 +1,4 @@
-module Eventum
+module Dynflow
   class OrchRequest < Message
     def self.response_class
       unless self.name =~ /::Request\Z/

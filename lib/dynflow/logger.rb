@@ -1,7 +1,7 @@
 require 'forwardable'
 require 'logger'
 
-module Eventum
+module Dynflow
   class Logger
     extend Forwardable
 
