@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Dynflow::VERSION
   s.authors     = ["Ivan Necas"]
   s.email       = ["inecas@redhat.com"]
-  s.homepage    = "http://github.com/iNecas/eventum"
+  s.homepage    = "http://github.com/iNecas/dynflow"
   s.summary     = "DYNamic workFLOW engine"
   s.description = "Generate and executed workflows dynamically based "+
                   "on input data and leave it open for others to jump into it as well"
