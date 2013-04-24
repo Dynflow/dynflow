@@ -2,11 +2,7 @@ require 'test/unit'
 require 'minitest/spec'
 require 'eventum'
 
-if ENV['RUOTE'] == 'true'
-  BUS_IMPL = Eventum::Bus::RuoteBus
-else
-  BUS_IMPL = Eventum::Bus::MemoryBus
-end
+BUS_IMPL = Eventum::Bus::MemoryBus
 
 class TestBus < BUS_IMPL
 
@@ -72,8 +68,7 @@ class BusTestCase < Test::Unit::TestCase
     TestScenarioFinalizer.init_recorded_outputs
     execution_plan = self.execution_plan
     execution_plan << [TestScenarioFinalizer, {}]
-    wfid = Eventum::Bus.trigger(execution_plan)
-    Eventum::Bus.wait_for(wfid) if BUS_IMPL == Eventum::Bus::RuoteBus
+    Eventum::Bus.trigger(execution_plan)
     return TestScenarioFinalizer.recorded_outputs
   end
 end
