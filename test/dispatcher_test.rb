@@ -75,11 +75,16 @@ module Dynflow
     class YetAnotherAction < Action
 
       input_format do
+        param :name, String
         param :hello, String
       end
 
       output_format do
         param :hello, String
+      end
+
+      def plan(arg)
+        plan_self(input.merge(arg))
       end
 
     end
@@ -91,7 +96,7 @@ module Dynflow
          [CloneRepo, {'name' => 'zoo'}],
          [CloneRepo, {'name' => 'foo'}],
          [ClonePackage, {'name' => 'elephant'}],
-         [YetAnotherAction, {'hello' => 'world'}],
+         [YetAnotherAction, {'name' => 'elephant', 'hello' => 'world'}],
          [UpdateIndex, {'name' => 'elephant'}],
          [Promotion, {'actions' => 3 }],
          [PromotionObserver, {'actions' => 3 }]

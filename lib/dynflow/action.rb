@@ -1,6 +1,12 @@
 module Dynflow
   class Action < Message
 
+    # only for the planning phase: flag indicating that the action
+    # was triggered from subscription. If so, the implicit plan
+    # method uses the input of the parent action. Otherwise, the
+    # argument the plan_action is used as default.
+    attr_accessor :from_subscription
+
     def self.inherited(child)
       self.actions << child
     end
@@ -76,7 +82,15 @@ module Dynflow
     # for subscribed actions: by default take the input of the
     # subscribed action
     def plan(*args)
-      plan_self(self.input)
+      if from_subscription
+        # if the action is triggered by subscription, by default use the
+        # input of parent action
+        plan_self(self.input)
+      else
+        # in this case, the action was triggered by plan_action. Use
+        # the argument specified there.
+        plan_self(args.first)
+      end
     end
 
     def plan_self(input)
@@ -86,7 +100,7 @@ module Dynflow
 
     def plan_action(action_class, *args)
       sub_action_plan = action_class.plan(*args) do |action|
-        action.input = args.first
+        action.input = self.input
       end
       @execution_plan.concat(sub_action_plan)
     end

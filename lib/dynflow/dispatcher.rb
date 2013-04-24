@@ -25,6 +25,7 @@ module Dynflow
         ordered_actions.each do |action_class|
           sub_action_plan = action_class.plan(*plan_args) do |sub_action|
             sub_action.input = action.input
+            sub_action.from_subscription = true
           end
           execution_plan.concat(sub_action_plan)
         end
