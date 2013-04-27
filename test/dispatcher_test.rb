@@ -93,13 +93,13 @@ module Dynflow
       execution_plan = Promotion.plan(['zoo', 'foo'], ['elephant'])
       expected_plan =
         [
-         [CloneRepo, {'name' => 'zoo'}],
-         [CloneRepo, {'name' => 'foo'}],
-         [ClonePackage, {'name' => 'elephant'}],
-         [YetAnotherAction, {'name' => 'elephant', 'hello' => 'world'}],
-         [UpdateIndex, {'name' => 'elephant'}],
-         [Promotion, {'actions' => 3 }],
-         [PromotionObserver, {'actions' => 3 }]
+         CloneRepo.new('name' => 'zoo'),
+         CloneRepo.new('name' => 'foo'),
+         ClonePackage.new('name' => 'elephant'),
+         YetAnotherAction.new('name' => 'elephant', 'hello' => 'world'),
+         UpdateIndex.new('name' => 'elephant'),
+         Promotion.new('actions' => 3) ,
+         PromotionObserver.new('actions' => 3)
         ]
       execution_plan.must_equal expected_plan
     end

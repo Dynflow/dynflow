@@ -16,7 +16,7 @@ module Dynflow
   class CloneRepoTest < ParticipantTestCase
 
     def test_action
-      action = run_action(CloneRepo, {:name => "zoo"})
+      action = run_action(CloneRepo.new('name' => 'zoo'))
       assert_equal(action.output['id'], "zoo")
     end
 

@@ -35,14 +35,14 @@ module Dynflow
 
     def execution_plan
       [
-       [CloneRepo, {'name' => 'zoo'}],
-       [CloneRepo, {'name' => 'foo'}],
+       CloneRepo.new('name' => 'zoo'),
+       CloneRepo.new('name' => 'foo'),
       ]
     end
 
     def test_optimistic_case
-      expect_input(CloneRepo, {'name' => 'zoo'}, {'id' => '123'})
-      expect_input(CloneRepo, {'name' => 'foo'}, {'id' => '456'})
+      expect_action(CloneRepo.new({'name' => 'zoo'}, {'id' => '123'}))
+      expect_action(CloneRepo.new({'name' => 'foo'}, {'id' => '456'}))
       first_action, second_action = assert_scenario
 
       assert_equal({'name' => 'zoo'}, first_action.input)

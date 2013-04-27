@@ -22,9 +22,8 @@ module Dynflow
       end
     end
 
-    def process(action_class, input, output = nil)
+    def process(action)
       # TODO: here goes the message validation
-      action = action_class.new(input, output)
       action.run if action.respond_to?(:run)
       return action
     end
@@ -45,8 +44,8 @@ module Dynflow
 
       def trigger(execution_plan)
         outputs = []
-        execution_plan.each do |(action_class, input)|
-          outputs << self.process(action_class, input)
+        execution_plan.each do |action|
+          outputs << self.process(action)
         end
         self.finalize(outputs)
       end

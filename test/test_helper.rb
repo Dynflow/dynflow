@@ -11,14 +11,14 @@ class TestBus < BUS_IMPL
     @expected_scenario = expected_scenario
   end
 
-  def process(action_class, input, output = nil, stub = true)
+  def process(action)
     expected = @expected_scenario.shift
-    if action_class == TestScenarioFinalizer || !stub || output
-      return super(action_class, input, output)
-    elsif action_class.name == expected[:action_class].name && input == expected[:input]
-      return action_class.new(expected[:input], expected[:output])
+    if action.class == TestScenarioFinalizer
+      return super
+    elsif action.class == expected.class && action.input == expected.input
+      return expected
     else
-      raise "Unexpected input. Expected #{expected[:action_class]} #{expected[:input].inspect}, got #{action_class} #{input.inspect}"
+      raise "Unexpected input. Expected #{expected.class} #{expected.input.inspect}, got #{action.class} #{action.input.inspect}"
     end
   end
 
@@ -54,12 +54,8 @@ class BusTestCase < Test::Unit::TestCase
     @expected_scenario = []
   end
 
-  def expect_input(action_class, input, output)
-    @expected_scenario << {
-      :action_class => action_class,
-      :input => input,
-      :output => output
-    }
+  def expect_action(action)
+    @expected_scenario << action
   end
 
   def assert_scenario
@@ -67,7 +63,7 @@ class BusTestCase < Test::Unit::TestCase
     event_outputs = nil
     TestScenarioFinalizer.init_recorded_outputs
     execution_plan = self.execution_plan
-    execution_plan << [TestScenarioFinalizer, {}]
+    execution_plan << TestScenarioFinalizer.new({})
     Dynflow::Bus.trigger(execution_plan)
     return TestScenarioFinalizer.recorded_outputs
   end
@@ -75,9 +71,9 @@ end
 
 class ParticipantTestCase < Test::Unit::TestCase
 
-  def run_action(action_class, input)
+  def run_action(action)
     Dynflow::Bus.impl = Dynflow::Bus.new
-    output = Dynflow::Bus.process(action_class, input)
+    output = Dynflow::Bus.process(action)
     return output
   end
 end

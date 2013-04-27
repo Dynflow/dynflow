@@ -95,7 +95,7 @@ module Dynflow
 
     def plan_self(input)
       self.input = input
-      @execution_plan << [self.class, input]
+      @execution_plan << self
     end
 
     def plan_action(action_class, *args)
