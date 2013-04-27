@@ -1,0 +1,4 @@
+config/database.yml
+db/development.sqlite3
+log/development.log
+tmp/pids/server.pid

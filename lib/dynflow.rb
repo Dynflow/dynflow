@@ -7,6 +7,10 @@ require 'dynflow/orch_request'
 require 'dynflow/orch_response'
 require 'dynflow/action'
 
+if defined? ::Rails::Engine
+  require 'dynflow/engine'
+end
+
 module Dynflow
 
 end
