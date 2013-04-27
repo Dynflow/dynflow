@@ -60,7 +60,7 @@ Click.trigger('x' => 5, 'y' => 4)
 # your position is [5 - 4]
 # Good Bye
 
-pp Click.plan('x' => 5, 'y' => 4)
+pp Click.plan('x' => 5, 'y' => 4).actions
 # returns the execution plan for the event (nothing is triggered):
 # [
 # since the event is action as well, it could have a run method

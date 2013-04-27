@@ -34,10 +34,10 @@ module Dynflow
     end
 
     def execution_plan
-      [
-       CloneRepo.new('name' => 'zoo'),
-       CloneRepo.new('name' => 'foo'),
-      ]
+      ExecutionPlan.new.tap do |ep|
+        ep << CloneRepo.new('name' => 'zoo')
+        ep << CloneRepo.new('name' => 'foo')
+      end
     end
 
     def test_optimistic_case

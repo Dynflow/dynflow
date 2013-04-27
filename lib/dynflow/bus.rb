@@ -44,7 +44,7 @@ module Dynflow
 
       def trigger(execution_plan)
         outputs = []
-        execution_plan.each do |action|
+        execution_plan.actions.each do |action|
           outputs << self.process(action)
         end
         self.finalize(outputs)

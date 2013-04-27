@@ -104,7 +104,7 @@ short_article = Article.new('Short', 'Short', false)
 long_article = Article.new('Long', 'This is long', false)
 colorful_article = Article.new('Long Color', 'This is long in color', true)
 
-pp Publish.plan(short_article)
+pp Publish.plan(short_article).actions
 # the expanded workflow is:
 # [
 #  Publish: {"title"=>"Short", "body"=>"Short"} ~> {},

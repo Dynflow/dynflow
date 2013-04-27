@@ -2,7 +2,7 @@ require 'test_helper'
 
 module Dynflow
 
-  describe Dispatcher do
+  describe ExecutionPlan do
     class Promotion < Action
 
       def plan(repo_names, package_names)
@@ -91,7 +91,7 @@ module Dynflow
 
     it "builds the execution plan" do
       execution_plan = Promotion.plan(['zoo', 'foo'], ['elephant'])
-      expected_plan =
+      expected_plan_actions =
         [
          CloneRepo.new('name' => 'zoo'),
          CloneRepo.new('name' => 'foo'),
@@ -101,7 +101,7 @@ module Dynflow
          Promotion.new('actions' => 3) ,
          PromotionObserver.new('actions' => 3)
         ]
-      execution_plan.must_equal expected_plan
+      execution_plan.actions.must_equal expected_plan_actions
     end
 
   end

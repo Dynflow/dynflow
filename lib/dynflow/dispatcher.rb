@@ -21,7 +21,7 @@ module Dynflow
       def execution_plan_for(action, *plan_args)
         ordered_actions = subscribed_actions(action).sort_by(&:name)
 
-        execution_plan = []
+        execution_plan = ExecutionPlan.new
         ordered_actions.each do |action_class|
           sub_action_plan = action_class.plan(*plan_args) do |sub_action|
             sub_action.input = action.input

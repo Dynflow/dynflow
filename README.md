@@ -115,7 +115,7 @@ One can generate the execution plan for an action without actually
 running it:
 
 ```ruby
-pp Publish.plan(short_article)
+pp Publish.plan(short_article).actions
 # the expanded workflow is:
 # [
 #  Publish: {"title"=>"Short", "body"=>"Short"} ~> {},

@@ -25,7 +25,7 @@ module Dynflow
 
     def initialize(input, output = {})
       # for preparation phase
-      @execution_plan = []
+      @execution_plan = ExecutionPlan.new
 
       output ||= {}
       super('input' => input, 'output' => output)
