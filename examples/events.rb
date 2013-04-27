@@ -64,8 +64,8 @@ pp Click.plan('x' => 5, 'y' => 4)
 # returns the execution plan for the event (nothing is triggered):
 # [
 # since the event is action as well, it could have a run method
-#  [Click,        {"x"=>5, "y"=>4}],
-#  [SayHello,     {"x"=>5, "y"=>4}],
-#  [SayPosition,  {"x"=>5, "y"=>4}],
-#  [SayGoodbye,   {"x"=>5, "y"=>4}]
+# [Click:       {"x"=>5, "y"=>4} ~> {},
+#  SayHello:    {"x"=>5, "y"=>4} ~> {},
+#  SayPosition: {"x"=>5, "y"=>4} ~> {},
+#  SayGoodbye:  {"x"=>5, "y"=>4} ~> {}]
 # ]

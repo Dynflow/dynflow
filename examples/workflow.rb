@@ -107,9 +107,9 @@ colorful_article = Article.new('Long Color', 'This is long in color', true)
 pp Publish.plan(short_article)
 # the expanded workflow is:
 # [
-#  [Publish, {"title"=>"Short", "body"=>"Short"}],
-#  [Review, {"title"=>"Short", "body"=>"Short"}],
-#  [Print, {"title"=>"Short", "body"=>"Short", "color"=>false}]
+#  Publish: {"title"=>"Short", "body"=>"Short"} ~> {},
+#  Review:  {"title"=>"Short", "body"=>"Short"} ~> {},
+#  Print:   {"title"=>"Short", "body"=>"Short", "color"=>false} ~> {}
 # ]
 
 begin

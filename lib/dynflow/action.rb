@@ -31,6 +31,10 @@ module Dynflow
       super('input' => input, 'output' => output)
     end
 
+    def inspect
+      "#{self.class.name}: #{input.inspect} ~> #{output.inspect}"
+    end
+
     def input
       @data['input']
     end
