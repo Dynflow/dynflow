@@ -11,7 +11,29 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130428073625) do
+ActiveRecord::Schema.define(:version => 20130428132103) do
+
+  create_table "dynflow_journal_items", :force => true do |t|
+    t.integer  "journal_id"
+    t.text     "action"
+    t.string   "status"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "dynflow_journal_items", ["journal_id"], :name => "index_dynflow_journal_items_on_journal_id"
+  add_index "dynflow_journal_items", ["status"], :name => "index_dynflow_journal_items_on_status"
+
+  create_table "dynflow_journals", :force => true do |t|
+    t.string   "originator"
+    t.integer  "user_id"
+    t.string   "status"
+    t.datetime "created_at", :null => false
+    t.datetime "updated_at", :null => false
+  end
+
+  add_index "dynflow_journals", ["status"], :name => "index_dynflow_journals_on_status"
+  add_index "dynflow_journals", ["user_id"], :name => "index_dynflow_journals_on_user_id"
 
   create_table "events", :force => true do |t|
     t.string   "name"

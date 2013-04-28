@@ -1,3 +1,4 @@
+# This migration comes from dynflow (originally 20130427204819)
 class CreateDynflowJournals < ActiveRecord::Migration
   def change
     create_table :dynflow_journals do |t|

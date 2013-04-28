@@ -8,6 +8,7 @@ require 'dynflow/orch_response'
 require 'dynflow/action'
 
 if defined? ::Rails::Engine
+  require 'jquery-rails'
   require 'dynflow/engine'
 end
 

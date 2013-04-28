@@ -7,6 +7,10 @@ module Dynflow
     # argument the plan_action is used as default.
     attr_accessor :from_subscription
 
+    # with journaled bus, here is a reference to a journal item
+    # representing this action. Used for updating the state in journal
+    attr_accessor :journal_item_id
+
     def self.inherited(child)
       self.actions << child
     end
