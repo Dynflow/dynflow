@@ -57,3 +57,4 @@ module Dummy
   end
 end
 
+Dir[File.join(Rails.root, 'lib/actions/*.rb')].each { |f| require f }

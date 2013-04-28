@@ -1,0 +1,18 @@
+<h1>Invite users</h1>
+
+<%= form_tag(process_invitation_event_path(@event)) do %>
+  <div class="field">
+    <%= label_tag :invitation_text %><br />
+    <%= text_field_tag :invitation_text %>
+  </div>
+  <div class="field">
+    <%= label_tag :invitees %><br />
+    <%= text_field_tag :invitees %>
+  </div>
+  <div class="actions">
+    <%= submit_tag 'Invite' %>
+  </div>
+<% end %>
+
+<%= link_to 'Show', @event %> |
+<%= link_to 'Back', events_path %>
