@@ -11,6 +11,8 @@ module Dynflow
     # representing this action. Used for updating the state in journal
     attr_accessor :journal_item_id
 
+    attr_accessor :status
+
     def self.inherited(child)
       self.actions << child
     end
@@ -30,6 +32,7 @@ module Dynflow
     def initialize(input, output = {})
       # for preparation phase
       @execution_plan = ExecutionPlan.new
+      self.status = 'pending' # default status
 
       output ||= {}
       super('input' => input, 'output' => output)

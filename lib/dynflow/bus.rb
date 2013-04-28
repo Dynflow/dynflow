@@ -20,15 +20,27 @@ module Dynflow
 
     # provided block yields every action before and after processing
     def run_execution_plan(execution_plan)
+      failure = false
       execution_plan.actions.map do |action|
+        next action if failure
         yield(:before, action) if block_given?
-        action = self.process(action)
+        begin
+          action = self.process(action)
+          action.status = 'success'
+        rescue Exception => e
+          action.output['error'] = {'exception' => e.class.name, 'message' => e.message}
+          action.status = 'error'
+          failure = true
+        end
         yield(:after, action) if block_given?
         action
       end
     end
 
     def finalize(outputs)
+      if outputs.any? { |action| ['pending', 'error'].include?(action.status) }
+        return false
+      end
       outputs.each do |action|
         if action.respond_to?(:finalize)
           action.finalize(outputs)

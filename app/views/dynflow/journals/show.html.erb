@@ -1,5 +1,47 @@
 <p id="notice"><%= notice %></p>
 
+<p>
+  <b>Originator:</b>
+  <%= @journal.originator %>
+</p>
+
+<p>
+  <b>Status:</b>
+  <%= @journal.status %>
+</p>
+
+<p>
+  <b>Created at:</b>
+  <%= @journal.created_at %>
+</p>
+
+<p>
+  <b>Updated at:</b>
+  <%= @journal.updated_at %>
+</p>
+
+<table>
+  <tr>
+    <th>Action</th>
+    <th>Status</th>
+    <th>Input</th>
+    <th>Output</th>
+    <th></th>
+    <th></th>
+    <th></th>
+  </tr>
+<% @journal.actions.each do |action| %>
+  <tr>
+    <th><%= action.class.name %></th>
+    <th><%= action.status %></th>
+    <th><%= action.input.inspect %></th>
+    <th><%= action.output.inspect %></th>
+    <td><%= link_to 'Rerun', '' %></td>
+    <td><%= link_to 'Skip', '' %></td>
+  </tr>
+<% end %>
+</table>
+
 
 <%= link_to 'Edit', edit_journal_path(@journal) %> |
 <%= link_to 'Back', journals_path %>

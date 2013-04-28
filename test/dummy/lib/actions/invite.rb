@@ -22,6 +22,7 @@ module Actions
     end
 
     def run
+      raise 'Random error' if rand(2) == 1
       Rails.logger.debug "Sending message #{input['invitation_message']} to #{input['email']}"
       output['sent_at'] = Time.now.to_s
     end
