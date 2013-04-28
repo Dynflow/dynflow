@@ -72,7 +72,7 @@ module Dynflow
     end
 
     def self.trigger(*args)
-      Dynflow::Bus.trigger(self.plan(*args))
+      Dynflow::Bus.trigger(self, *args)
     end
 
     def self.plan(*args)

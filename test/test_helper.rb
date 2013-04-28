@@ -48,6 +48,17 @@ class TestScenarioFinalizer < Dynflow::Action
 
 end
 
+class MockedAction
+
+  def initialize(mocked_execution_plan)
+    @mocked_execution_plan = mocked_execution_plan
+  end
+
+  def plan
+    @mocked_execution_plan
+  end
+end
+
 class BusTestCase < Test::Unit::TestCase
 
   def setup
@@ -64,7 +75,8 @@ class BusTestCase < Test::Unit::TestCase
     TestScenarioFinalizer.init_recorded_outputs
     execution_plan = self.execution_plan
     execution_plan << TestScenarioFinalizer.new({})
-    Dynflow::Bus.trigger(execution_plan)
+
+    Dynflow::Bus.trigger(MockedAction.new(execution_plan))
     return TestScenarioFinalizer.recorded_outputs
   end
 end

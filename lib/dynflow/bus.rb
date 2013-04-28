@@ -42,7 +42,8 @@ module Dynflow
         super
       end
 
-      def trigger(execution_plan)
+      def trigger(action_class, *args)
+        execution_plan = action_class.plan(*args)
         outputs = []
         execution_plan.actions.each do |action|
           outputs << self.process(action)
