@@ -36,12 +36,12 @@
     <th><%= action.status %></th>
     <th><%= action.input.inspect %></th>
     <th><%= action.output.inspect %></th>
-    <td><%= link_to 'Rerun', '' %></td>
-    <td><%= link_to 'Skip', '' %></td>
+    <td><%= link_to 'Rerun', "#{journal_path(@journal)}/rerun_item/#{action.journal_item_id}", :method => :post %></td>
+    <td><%= link_to 'Skip', "#{journal_path(@journal)}/skip_item/#{action.journal_item_id}", :method => :post %></td>
   </tr>
 <% end %>
 </table>
 
-
+<%= link_to 'Resume', "#{journal_path(@journal)}/resume", :method => :post %> |
 <%= link_to 'Edit', edit_journal_path(@journal) %> |
 <%= link_to 'Back', journals_path %>

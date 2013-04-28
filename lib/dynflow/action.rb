@@ -54,6 +54,10 @@ module Dynflow
       @data['output']
     end
 
+    def output=(output)
+      @data['output'] = output
+    end
+
     # the block contains the expression in Apipie::Params::DSL
     # describing the format of message
     def self.input_format(&block)

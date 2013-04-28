@@ -83,5 +83,29 @@ module Dynflow
         format.json { head :no_content }
       end
     end
+
+    def resume
+      journal = Journal.find(params[:id])
+      Dynflow::Bus.impl.resume(journal)
+      redirect_to journal, :notice => "Resume"
+    end
+
+    def rerun_item
+      journal_item = JournalItem.find(params[:journal_item_id])
+      action = journal_item.action
+      action.status = 'pending'
+      action.output = {}
+      journal_item.action = action
+      journal_item.save!
+      Dynflow::Bus.impl.resume(journal_item.journal)
+      redirect_to journal_item.journal, :notice => "Rerun"
+    end
+
+    def skip_item
+      journal_item = JournalItem.find(params[:journal_item_id])
+      journal_item.update_attributes!(:status => 'skipped')
+      Dynflow::Bus.impl.resume(journal_item.journal)
+      redirect_to journal_item.journal, :notice => "Skip"
+    end
   end
 end

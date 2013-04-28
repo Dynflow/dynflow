@@ -9,8 +9,8 @@ module Dynflow
 
     def_delegators :actions, :'<<'
 
-    def initialize
-      @actions = []
+    def initialize(actions = [])
+      @actions = actions
     end
 
     def concat(other)

@@ -2,7 +2,7 @@ module Dynflow
   class JournalItem < ActiveRecord::Base
 
     belongs_to :journal
-    attr_accessible :action
+    attr_accessible :action, :status
 
     def action
       encoded_action = JSON.parse(self[:action]) rescue nil

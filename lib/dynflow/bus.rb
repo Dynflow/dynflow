@@ -22,7 +22,7 @@ module Dynflow
     def run_execution_plan(execution_plan)
       failure = false
       execution_plan.actions.map do |action|
-        next action if failure
+        next action if failure || action.status == 'skipped' || action.status == 'success'
         yield(:before, action) if block_given?
         begin
           action = self.process(action)
@@ -46,6 +46,7 @@ module Dynflow
           action.finalize(outputs)
         end
       end
+      return true
     end
 
     def process(action)
@@ -82,15 +83,29 @@ module Dynflow
           execution_plan = prepare_execution_plan(action_class, *args)
         end
         journal = create_journal(action_class, execution_plan)
+        execute(journal, execution_plan)
+      end
+
+      def resume(journal)
+        execution_plan = ExecutionPlan.new(journal.actions)
+        execute(journal, execution_plan)
+      end
+
+      def execute(journal, execution_plan)
         outputs = run_execution_plan(execution_plan) do |phase, action|
           if phase == :after
             update_journal(journal, action)
           end
         end
+        finalized = false
         ActiveRecord::Base.transaction do
-          self.finalize(outputs)
+          finalized = self.finalize(outputs)
         end
-        update_journal_status(journal, 'finished')
+        if finalized
+          update_journal_status(journal, 'finished')
+        else
+          update_journal_status(journal, 'paused')
+        end
       end
 
       # performs the planning phase of an action, but rollbacks any db
