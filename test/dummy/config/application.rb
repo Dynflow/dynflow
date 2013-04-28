@@ -57,4 +57,5 @@ module Dummy
   end
 end
 
+Dynflow::Bus.impl = Dynflow::Bus::RailsBus.new
 Dir[File.join(Rails.root, 'lib/actions/*.rb')].each { |f| require f }
