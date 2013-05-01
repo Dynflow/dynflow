@@ -7,9 +7,8 @@ module Dynflow
     # argument the plan_action is used as default.
     attr_accessor :from_subscription
 
-    # with journaled bus, here is a reference to a journal item
-    # representing this action. Used for updating the state in journal
-    attr_accessor :journal_item_id
+    # persistent representation of the action
+    attr_accessor :persistence
 
     attr_accessor :status
 
@@ -86,6 +85,10 @@ module Dynflow
       Dynflow::Bus.trigger(self, *args)
     end
 
+    ##################
+    # Planning Phase #
+    ##################
+
     def self.plan(*args)
       action = self.new({})
       yield action if block_given?
@@ -126,6 +129,28 @@ module Dynflow
 
     def execution_plan
       @execution_plan
+    end
+
+    ###############
+    # Persistence #
+    ###############
+
+    def persist
+      if @persistence
+        @persistence.persist(self)
+      end
+    end
+
+    def persist_before_run
+      if @persistence
+        @persistence.before_run(self)
+      end
+    end
+
+    def persist_after_run
+      if @persistence
+        @persistence.after_run(self)
+      end
     end
 
     def validate!

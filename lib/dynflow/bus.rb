@@ -6,7 +6,7 @@ module Dynflow
     class << self
       extend Forwardable
 
-      def_delegators :impl, :wait_for, :process, :trigger, :finalize
+      def_delegators :impl, :trigger, :resume, :preview_execution_plan
 
       def impl
         @impl ||= Bus::MemoryBus.new
@@ -14,16 +14,51 @@ module Dynflow
       attr_writer :impl
     end
 
+    # Entry point for running an action
+    def trigger(action_class, *args)
+      execution_plan = in_transaction_if_possible do
+        prepare_execution_plan(action_class, *args)
+      end
+      persist_plan_if_possible(action_class, execution_plan)
+      return execute(execution_plan)
+    end
+
     def prepare_execution_plan(action_class, *args)
       action_class.plan(*args)
     end
 
-    # provided block yields every action before and after processing
+    # execution and finalizaition. Usable for resuming paused plan
+    # as well as starting from scratch
+    def execute(execution_plan)
+      run_execution_plan(execution_plan)
+      in_transaction_if_possible do
+        self.finalize(execution_plan)
+      end
+      return execution_plan
+    end
+
+    alias_method :resume, :execute
+
+    def finalize(execution_plan)
+      if execution_plan.actions.any? { |action| ['pending', 'error'].include?(action.status) }
+        execution_plan.status = 'paused'
+      else
+        execution_plan.actions.each do |action|
+          if action.respond_to?(:finalize)
+            action.finalize(execution_plan.actions)
+          end
+        end
+        execution_plan.status = 'finished'
+      end
+    ensure
+      execution_plan.persist
+    end
+
     def run_execution_plan(execution_plan)
       failure = false
       execution_plan.actions.map do |action|
         next action if failure || action.status == 'skipped' || action.status == 'success'
-        yield(:before, action) if block_given?
+        action.persist_before_run
         begin
           action = self.process(action)
           action.status = 'success'
@@ -32,21 +67,36 @@ module Dynflow
           action.status = 'error'
           failure = true
         end
-        yield(:after, action) if block_given?
+        action.persist_after_run
         action
       end
     end
 
-    def finalize(outputs)
-      if outputs.any? { |action| ['pending', 'error'].include?(action.status) }
-        return false
-      end
-      outputs.each do |action|
-        if action.respond_to?(:finalize)
-          action.finalize(outputs)
+    def transaction_driver
+      nil
+    end
+
+    def in_transaction_if_possible
+      if transaction_driver
+        ret = nil
+        transaction_driver.transaction do
+          ret = yield
         end
+        return ret
+      else
+        return yield
       end
-      return true
+    end
+
+
+    def persistence_driver
+      nil
+    end
+
+    def persist_plan_if_possible(action_class, execution_plan)
+      if persistence_driver
+        persistence_driver.persist(action_class, execution_plan)
+      end
     end
 
     def process(action)
@@ -55,8 +105,20 @@ module Dynflow
       return action
     end
 
-    def wait_for(*args)
-      raise NotImplementedError, 'Abstract method'
+    # performs the planning phase of an action, but rollbacks any db
+    # changes done in this phase. Returns the resulting execution
+    # plan. Suitable for debugging.
+    def preview_execution_plan(action_class, *args)
+      unless @transaction_driver
+        raise "Bus doesn't know how to run in transaction"
+      end
+
+      execution_plan = nil
+      @transaction_driver.transaction do
+        execution_plan = prepare_execution_plan(action_class, *args)
+        @transaction_driver.rollback
+      end
+      return execution_plan
     end
 
     def logger
@@ -64,87 +126,34 @@ module Dynflow
     end
 
     class MemoryBus < Bus
+      # No modifications needed: the default implementation is
+      # in memory. TODO: get rid of this class
+    end
 
-      def trigger(action_class, *args)
-        execution_plan = prepare_execution_plan(action_class, *args)
-        outputs = run_execution_plan(execution_plan)
-        self.finalize(outputs)
+    class ActiveRecordTransaction
+      class << self
+
+        def transaction(&block)
+          ActiveRecord::Base.transaction(&block)
+        end
+
+        def rollback
+          raise ActiveRecord::Rollback
+        end
+
       end
-
     end
 
     # uses Rails API for db features
     # encapsulates the planning and finalization phase into
     class RailsBus < Bus
 
-      def trigger(action_class, *args)
-        execution_plan = nil
-        ActiveRecord::Base.transaction do
-          execution_plan = prepare_execution_plan(action_class, *args)
-        end
-        create_journal(action_class, execution_plan)
-        return execute(execution_plan)
+      def transaction_driver
+        ActiveRecordTransaction
       end
 
-      def resume(journal)
-        execution_plan = ExecutionPlan.new(journal.actions)
-        execution_plan.persistence = journal
-        return execute(execution_plan)
-      end
-
-      def execute(execution_plan)
-        journal = execution_plan.persistence
-        outputs = run_execution_plan(execution_plan) do |phase, action|
-          if phase == :after
-            update_journal(journal, action)
-          end
-        end
-        finalized = false
-        ActiveRecord::Base.transaction do
-          finalized = self.finalize(outputs)
-        end
-        if finalized
-          update_journal_status(journal, 'finished')
-        else
-          update_journal_status(journal, 'paused')
-        end
-        return execution_plan
-      end
-
-      # performs the planning phase of an action, but rollbacks any db
-      # changes done in this phase. Returns the resulting execution
-      # plan. Suitable for debugging.
-      def preview_execution_plan(action_class, *args)
-        execution_plan = nil
-        ActiveRecord::Base.transaction do
-          execution_plan = prepare_execution_plan(action_class, *args)
-          raise ActiveRecord::Rollback
-        end
-        return execution_plan
-      end
-
-      def create_journal(action_class, execution_plan)
-        journal = Dynflow::Journal.create! do |journal|
-          journal.originator = action_class.name
-          journal.status = 'running'
-        end
-        execution_plan.actions.each do |action|
-          journal_item = journal.journal_items.create do |journal_item|
-            journal_item.action = action
-          end
-          action.journal_item_id = journal_item.id
-        end
-        execution_plan.persistence = journal
-        return journal
-      end
-
-      def update_journal(journal, action)
-        JournalItem.find(action.journal_item_id).
-          update_attributes(:action => action)
-      end
-
-      def update_journal_status(journal, status)
-        journal.update_attributes!(:status => status)
+      def persistence_driver
+        Dynflow::Journal
       end
 
     end

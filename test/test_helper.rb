@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'minitest/spec'
 require 'dynflow'
+require 'pry'
 
 BUS_IMPL = Dynflow::Bus::MemoryBus
 
@@ -16,7 +17,9 @@ class TestBus < BUS_IMPL
     if action.class == TestScenarioFinalizer
       return super
     elsif action.class == expected.class && action.input == expected.input
-      return expected
+      action.output = expected.output
+      action.status = 'success'
+      return action
     else
       raise "Unexpected input. Expected #{expected.class} #{expected.input.inspect}, got #{action.class} #{action.input.inspect}"
     end
@@ -42,8 +45,8 @@ class TestScenarioFinalizer < Dynflow::Action
 
   end
 
-  def finalize(outputs)
-    self.class.save_recorded_outputs(outputs)
+  def finalize(actions)
+    self.class.save_recorded_outputs(actions)
   end
 
 end
@@ -70,6 +73,7 @@ module BusTestCase
   end
 
   def assert_scenario
+    original_bus_impl = Dynflow::Bus.impl
     Dynflow::Bus.impl = TestBus.new(@expected_scenario)
     event_outputs = nil
     TestScenarioFinalizer.init_recorded_outputs
@@ -78,6 +82,8 @@ module BusTestCase
 
     Dynflow::Bus.trigger(MockedAction.new(execution_plan))
     return TestScenarioFinalizer.recorded_outputs
+  ensure
+    Dynflow::Bus.impl = original_bus_impl
   end
 end
 
@@ -85,7 +91,7 @@ class ParticipantTestCase < Test::Unit::TestCase
 
   def run_action(action)
     Dynflow::Bus.impl = Dynflow::Bus.new
-    output = Dynflow::Bus.process(action)
+    output = Dynflow::Bus.impl.process(action)
     return output
   end
 end

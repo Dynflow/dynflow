@@ -43,28 +43,12 @@ describe 'execution plan persistence' do
     @user = User.create!(:login => "root")
   end
 
-  it 'returns the execution plan obejct when triggering an action' do
-    ret = Actions::SendInvitations.trigger(@event, 'Hello', ['root'])
-    ret.must_be_instance_of Dynflow::ExecutionPlan
-  end
-
-  it 'persists the execution plan' do
+  it 'persists and restores the execution plan' do
     plan = Actions::SendInvitations.trigger(@event, 'Hello', ['root'])
-    plan.persistence.new_record?.must_equal false
-  end
-
-  it 'is able to restore the execution plan' do
-    plan = Actions::SendInvitations.trigger(@event, 'fail in execution phase', ['root'])
-
-    # TODO: status should be directly an execution plan property
-    plan.persistence.status.must_equal 'paused'
-
-    action = plan.actions.first
-    action.input['invitation_message'] = 'success'
-    Dynflow::Bus.impl.update_journal(plan.persistence, action)
     plan.persistence.reload
-    Dynflow::Bus.impl.resume(plan.persistence)
-
-    plan.persistence.status.must_equal 'finished'
+    restored_plan = plan.persistence.execution_plan
+    restored_plan.object_id.wont_equal plan.object_id
+    restored_plan.status.must_equal plan.status
+    restored_plan.actions.must_equal plan.actions
   end
 end

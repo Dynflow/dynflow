@@ -29,6 +29,7 @@ module Dynflow
       end
 
       def run
+        raise 'Simulate error in execution phase' if input['name'] == 'fail_in_run'
         output['id'] = input['name']
       end
 
@@ -53,12 +54,25 @@ module Dynflow
     end
 
 
+    it 'returns the execution plan obejct when triggering an action' do
+      ret = Promotion.trigger(['zoo'], [])
+      ret.must_be_instance_of Dynflow::ExecutionPlan
+    end
+
     # the following should be generic
     it 'saves errors of actions'
 
     it 'allows skipping an action'
 
-    it 'allows rerunning an action'
+    it 'allows rerunning an action' do
+      plan = Promotion.trigger(['fail_in_run'], [])
+      plan.status.must_equal 'paused'
+
+      plan.actions.first.input['name'] = 'succeed'
+      Dynflow::Bus.impl.resume(plan)
+
+      plan.status.must_equal 'finished'
+    end
 
     it 'allows finishing a finalize phase'
 
