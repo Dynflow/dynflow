@@ -9,6 +9,9 @@ module Actions
     end
 
     def plan(event, invitation_message, invitee_login)
+      if invitee_login == 'failme'
+        raise Exceptions::PlanException
+      end
       invitee = User.find_by_login!(invitee_login)
       guest = Guest.create!(:event_id => event.id,
                             :user_id => invitee.id,
@@ -22,6 +25,9 @@ module Actions
     end
 
     def run
+      if input['invitation_message'] == 'fail in execution phase'
+        raise Exceptions::RunException
+      end
       Rails.logger.debug "Sending message #{input['invitation_message']} to #{input['email']}"
       output['sent_at'] = Time.now.to_s
     end
@@ -29,7 +35,7 @@ module Actions
     def finalize(outputs)
       Guest.find(input['guest_id']).update_attributes!(:invitation_status => 'sent')
       if input['invitation_message'] == 'fail in finalization phase'
-        raise "Simulate error in finalization phase"
+        raise Exceptions::FinalizeException
       end
     end
 

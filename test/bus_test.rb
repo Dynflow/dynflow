@@ -2,7 +2,8 @@ require 'test_helper'
 require 'set'
 
 module Dynflow
-  class BusTest < BusTestCase
+  describe "bus" do
+    include BusTestCase
     class Promotion < Action
 
       def plan(repo_names, package_names)
@@ -40,7 +41,7 @@ module Dynflow
       end
     end
 
-    def test_optimistic_case
+    it "performs the actions from an action's execution plan" do
       expect_action(CloneRepo.new({'name' => 'zoo'}, {'id' => '123'}))
       expect_action(CloneRepo.new({'name' => 'foo'}, {'id' => '456'}))
       first_action, second_action = assert_scenario
@@ -50,6 +51,16 @@ module Dynflow
       assert_equal({'name' => 'foo'}, second_action.input)
       assert_equal({'id' => '456'},   second_action.output)
     end
+
+
+    # the following should be generic
+    it 'saves errors of actions'
+
+    it 'allows skipping an action'
+
+    it 'allows rerunning an action'
+
+    it 'allows finishing a finalize phase'
 
   end
 end

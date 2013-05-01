@@ -5,6 +5,10 @@ module Dynflow
 
     attr_reader :actions
 
+    # allows storing and reloading the execution plan to something
+    # more persistent than memory
+    attr_accessor :persistence
+
     extend Forwardable
 
     def_delegators :actions, :'<<'

@@ -82,16 +82,18 @@ module Dynflow
         ActiveRecord::Base.transaction do
           execution_plan = prepare_execution_plan(action_class, *args)
         end
-        journal = create_journal(action_class, execution_plan)
-        return execute(journal, execution_plan)
+        create_journal(action_class, execution_plan)
+        return execute(execution_plan)
       end
 
       def resume(journal)
         execution_plan = ExecutionPlan.new(journal.actions)
-        return execute(journal, execution_plan)
+        execution_plan.persistence = journal
+        return execute(execution_plan)
       end
 
-      def execute(journal, execution_plan)
+      def execute(execution_plan)
+        journal = execution_plan.persistence
         outputs = run_execution_plan(execution_plan) do |phase, action|
           if phase == :after
             update_journal(journal, action)
@@ -106,7 +108,7 @@ module Dynflow
         else
           update_journal_status(journal, 'paused')
         end
-        return journal
+        return execution_plan
       end
 
       # performs the planning phase of an action, but rollbacks any db
@@ -132,6 +134,7 @@ module Dynflow
           end
           action.journal_item_id = journal_item.id
         end
+        execution_plan.persistence = journal
         return journal
       end
 

@@ -59,7 +59,7 @@ class MockedAction
   end
 end
 
-class BusTestCase < Test::Unit::TestCase
+module BusTestCase
 
   def setup
     @expected_scenario = []
