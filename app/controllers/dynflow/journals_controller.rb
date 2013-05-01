@@ -2,6 +2,9 @@ require_dependency "dynflow/application_controller"
 
 module Dynflow
   class JournalsController < ApplicationController
+
+    before_filter :authenticate
+
     # GET /journals
     # GET /journals.json
     def index
@@ -106,6 +109,12 @@ module Dynflow
       journal_item.update_attributes!(:status => 'skipped')
       Dynflow::Bus.impl.resume(journal_item.journal)
       redirect_to journal_item.journal, :notice => "Skip"
+    end
+
+    protected
+
+    def authenticate
+      User.current = User.first
     end
   end
 end

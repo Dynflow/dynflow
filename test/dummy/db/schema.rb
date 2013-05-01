@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130428132103) do
+ActiveRecord::Schema.define(:version => 20130501082737) do
 
   create_table "dynflow_journal_items", :force => true do |t|
     t.integer  "journal_id"

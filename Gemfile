@@ -2,8 +2,12 @@ source 'https://rubygems.org'
 
 gemspec
 
-group :development do
+group :development, :test do
   gem 'pry'
+end
+
+group :test do
+  gem 'database_cleaner'
 end
 
 group :engine do

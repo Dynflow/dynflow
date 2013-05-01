@@ -83,12 +83,12 @@ module Dynflow
           execution_plan = prepare_execution_plan(action_class, *args)
         end
         journal = create_journal(action_class, execution_plan)
-        execute(journal, execution_plan)
+        return execute(journal, execution_plan)
       end
 
       def resume(journal)
         execution_plan = ExecutionPlan.new(journal.actions)
-        execute(journal, execution_plan)
+        return execute(journal, execution_plan)
       end
 
       def execute(journal, execution_plan)
@@ -106,12 +106,14 @@ module Dynflow
         else
           update_journal_status(journal, 'paused')
         end
+        return journal
       end
 
       # performs the planning phase of an action, but rollbacks any db
       # changes done in this phase. Returns the resulting execution
       # plan. Suitable for debugging.
       def preview_execution_plan(action_class, *args)
+        execution_plan = nil
         ActiveRecord::Base.transaction do
           execution_plan = prepare_execution_plan(action_class, *args)
           raise ActiveRecord::Rollback

@@ -22,13 +22,15 @@ module Actions
     end
 
     def run
-      raise 'Random error' if rand(2) == 1
       Rails.logger.debug "Sending message #{input['invitation_message']} to #{input['email']}"
       output['sent_at'] = Time.now.to_s
     end
 
     def finalize(outputs)
       Guest.find(input['guest_id']).update_attributes!(:invitation_status => 'sent')
+      if input['invitation_message'] == 'fail in finalization phase'
+        raise "Simulate error in finalization phase"
+      end
     end
 
   end
