@@ -88,6 +88,7 @@ module Dynflow
         Dynflow::Bus.impl.resume(failed_plan)
 
         failed_plan.status.must_equal 'finished'
+        failed_action.output.must_equal('id' => 'succeed')
       end
 
     end

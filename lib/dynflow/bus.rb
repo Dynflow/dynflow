@@ -105,7 +105,11 @@ module Dynflow
 
     def process(action)
       # TODO: here goes the message validation
-      action.run if action.respond_to?(:run)
+      if action.respond_to?(:run)
+        # clear previous output records
+        action.output = {}
+        action.run
+      end
       return action
     end
 
