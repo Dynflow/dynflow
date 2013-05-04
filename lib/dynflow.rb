@@ -5,6 +5,7 @@ require 'dynflow/dispatcher'
 require 'dynflow/bus'
 require 'dynflow/orch_request'
 require 'dynflow/orch_response'
+require 'dynflow/step'
 require 'dynflow/action'
 
 if defined? ::Rails::Engine

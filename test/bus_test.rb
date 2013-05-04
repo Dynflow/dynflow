@@ -2,134 +2,118 @@ require 'test_helper'
 require 'set'
 
 module Dynflow
-  describe "bus" do
-    include BusTestCase
-    class Promotion < Action
+  module BusTest
+    describe "bus" do
 
-      def plan(repo_names, package_names)
-        repo_names.each do |repo_name|
-          plan_action(CloneRepo, {'name' => repo_name})
+      class Promotion < Action
+
+        def plan(repo_names, package_names)
+          repo_names.each do |repo_name|
+            plan_action(CloneRepo, {'name' => repo_name})
+          end
+
+          package_names.each do |package_name|
+            plan_action(ClonePackage, {'name' => package_name})
+          end
         end
 
-        package_names.each do |package_name|
-          plan_action(ClonePackage, {'name' => package_name})
+      end
+
+      class CloneRepo < Action
+
+        input_format do
+          param :name, String
         end
+
+        output_format do
+          param :id, String
+        end
+
+        def run
+          raise 'Simulate error in execution phase' if input['name'] == 'fail_in_run'
+          output['id'] = input['name']
+        end
+
+        def finalize(outputs)
+          raise 'Simulate error in finalize phase' if input['name'] == 'fail_in_finalize'
+        end
+
+      end
+
+      it 'returns the execution plan obejct when triggering an action' do
+        Promotion.trigger(['sucess'], []).must_be_instance_of Dynflow::ExecutionPlan
+      end
+
+      describe 'handling errros in execution phase' do
+
+        let(:failed_plan)   { Promotion.trigger(['fail_in_run'], []) }
+        let(:failed_step) { failed_plan.run_steps.first }
+
+        it 'pauses the process' do
+          failed_plan.status.must_equal 'paused'
+        end
+
+        it 'saves errors of actions' do
+          failed_step.status.must_equal "error"
+          expected_error = {
+            'exception' => 'RuntimeError',
+            'message'   => 'Simulate error in execution phase'
+          }
+          failed_step.error.must_equal expected_error
+        end
+
+        it 'allows skipping the step' do
+          Dynflow::Bus.impl.skip(failed_step)
+          Dynflow::Bus.impl.resume(failed_plan)
+
+          failed_plan.status.must_equal 'finished'
+          failed_step.status.must_equal 'skipped'
+        end
+
+        it 'allows rerunning the step' do
+          failed_step.input['name'] = 'succeed'
+          Dynflow::Bus.impl.resume(failed_plan)
+
+          failed_plan.status.must_equal 'finished'
+          failed_step.output.must_equal('id' => 'succeed')
+        end
+
+      end
+
+      describe 'handling errors in finalizatoin phase' do
+
+        let(:failed_plan)   { Promotion.trigger(['fail_in_finalize'], []) }
+        let(:failed_step) { failed_plan.finalize_steps.first }
+
+        it 'pauses the process' do
+          failed_plan.status.must_equal 'paused'
+        end
+
+        it 'saves errors of actions' do
+          expected_error = {
+            'exception' => 'RuntimeError',
+            'message'   => 'Simulate error in finalize phase'
+          }
+          failed_step.error.must_equal expected_error
+        end
+
+        it 'allows finishing a finalize phase' do
+          failed_step.input['name'] = 'succeed'
+          Dynflow::Bus.impl.resume(failed_plan)
+
+          failed_plan.status.must_equal 'finished'
+        end
+
+        it 'allows skipping the step' do
+          Dynflow::Bus.impl.skip(failed_step)
+          Dynflow::Bus.impl.resume(failed_plan)
+
+          failed_plan.status.must_equal 'finished'
+          failed_step.status.must_equal 'skipped'
+        end
+
       end
 
     end
-
-    class CloneRepo < Action
-
-      input_format do
-        param :name, String
-      end
-
-      output_format do
-        param :id, String
-      end
-
-      def run
-        raise 'Simulate error in execution phase' if input['name'] == 'fail_in_run'
-        output['id'] = input['name']
-      end
-
-      def finalize(outputs)
-        raise 'Simulate error in finalize phase' if input['name'] == 'fail_in_finalize'
-      end
-
-    end
-
-    def execution_plan
-      ExecutionPlan.new.tap do |ep|
-        ep << CloneRepo.new('name' => 'zoo')
-        ep << CloneRepo.new('name' => 'foo')
-      end
-    end
-
-    it "performs the actions from an action's execution plan" do
-      expect_action(CloneRepo.new({'name' => 'zoo'}, {'id' => '123'}))
-      expect_action(CloneRepo.new({'name' => 'foo'}, {'id' => '456'}))
-      first_action, second_action = assert_scenario
-
-      assert_equal({'name' => 'zoo'}, first_action.input)
-      assert_equal({'id' => '123'},   first_action.output)
-      assert_equal({'name' => 'foo'}, second_action.input)
-      assert_equal({'id' => '456'},   second_action.output)
-    end
-
-    it 'returns the execution plan obejct when triggering an action' do
-      Promotion.trigger(['sucess'], []).must_be_instance_of Dynflow::ExecutionPlan
-    end
-
-    describe 'handling errros in execution phase' do
-
-      let(:failed_plan)   { Promotion.trigger(['fail_in_run'], []) }
-      let(:failed_action) { failed_plan.actions.first }
-
-      it 'pauses the process' do
-        failed_plan.status.must_equal 'paused'
-      end
-
-      it 'saves errors of actions' do
-        failed_action.status.must_equal "error"
-        expected_error = {
-          'exception' => 'RuntimeError',
-          'message'   => 'Simulate error in execution phase'
-        }
-        failed_action.run_error.must_equal expected_error
-      end
-
-      it 'allows skipping an action' do
-        Dynflow::Bus.impl.skip(failed_action)
-        Dynflow::Bus.impl.resume(failed_plan)
-
-        failed_plan.status.must_equal 'finished'
-        failed_action.status.must_equal 'skipped'
-      end
-
-      it 'allows rerunning an action' do
-        failed_action.input['name'] = 'succeed'
-        Dynflow::Bus.impl.resume(failed_plan)
-
-        failed_plan.status.must_equal 'finished'
-        failed_action.output.must_equal('id' => 'succeed')
-      end
-
-    end
-
-    describe 'handling errors in finalizatoin phase' do
-
-      let(:failed_plan)   { Promotion.trigger(['fail_in_finalize'], []) }
-      let(:failed_action) { failed_plan.actions.first }
-
-      it 'pauses the process' do
-        failed_plan.status.must_equal 'paused'
-      end
-
-      it 'saves errors of actions' do
-        expected_error = {
-          'exception' => 'RuntimeError',
-          'message'   => 'Simulate error in finalize phase'
-        }
-        failed_action.finalize_error.must_equal expected_error
-      end
-
-      it 'allows finishing a finalize phase' do
-        failed_action.input['name'] = 'succeed'
-        Dynflow::Bus.impl.resume(failed_plan)
-
-        failed_plan.status.must_equal 'finished'
-      end
-
-      it 'allows skipping an action' do
-        Dynflow::Bus.impl.finalize_skip(failed_action)
-        Dynflow::Bus.impl.resume(failed_plan)
-
-        failed_plan.status.must_equal 'finished'
-        failed_action.status.must_equal 'finalize_skipped'
-      end
-
-    end
-
   end
 end

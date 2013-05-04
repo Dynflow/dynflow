@@ -5,12 +5,7 @@ module Dynflow
     # was triggered from subscription. If so, the implicit plan
     # method uses the input of the parent action. Otherwise, the
     # argument the plan_action is used as default.
-    attr_accessor :from_subscription
-
-    # persistent representation of the action
-    attr_accessor :persistence
-
-    attr_accessor :status
+    attr_accessor :from_subscription, :input, :output
 
     def self.inherited(child)
       self.actions << child
@@ -28,49 +23,16 @@ module Dynflow
       nil
     end
 
-    def initialize(input, output = {})
+    def initialize(input, output = nil)
       # for preparation phase
       @execution_plan = ExecutionPlan.new
-      self.status = 'pending' # default status
 
-      output ||= {}
-      super('input' => input, 'output' => output)
+      @input = input
+      @output = output || {}
     end
 
     def inspect
       "#{self.class.name}: #{input.inspect} ~> #{output.inspect}"
-    end
-
-    def input
-      @data['input']
-    end
-
-    def input=(input)
-      @data['input'] = input
-    end
-
-    def output
-      @data['output']
-    end
-
-    def output=(output)
-      @data['output'] = output
-    end
-
-    def run_error
-      @data['run_error']
-    end
-
-    def run_error=(run_error)
-      @data['run_error'] = run_error
-    end
-
-    def finalize_error
-      @data['finalize_error']
-    end
-
-    def finalize_error=(finalize_error)
-      @data['finalize_error'] = finalize_error
     end
 
     # the block contains the expression in Apipie::Params::DSL
@@ -100,10 +62,6 @@ module Dynflow
     def self.trigger(*args)
       Dynflow::Bus.trigger(self, *args)
     end
-
-    ##################
-    # Planning Phase #
-    ##################
 
     def self.plan(*args)
       action = self.new({})
@@ -147,30 +105,8 @@ module Dynflow
       @execution_plan
     end
 
-    ###############
-    # Persistence #
-    ###############
-
-    def persist
-      if @persistence
-        @persistence.persist(self)
-      end
-    end
-
-    def persist_before_run
-      if @persistence
-        @persistence.before_run(self)
-      end
-    end
-
-    def persist_after_run
-      if @persistence
-        @persistence.after_run(self)
-      end
-    end
-
     def validate!
-      self.clss.output_format.validate!(@data['output'])
+      self.clss.output_format.validate!(output)
     end
 
   end

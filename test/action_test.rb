@@ -1,7 +1,7 @@
 require 'test_helper'
 
 module Dynflow
-  class CloneRepo < Action
+  class ActionTest < Action
 
     output_format do
       param :id, String
@@ -13,11 +13,12 @@ module Dynflow
 
   end
 
-  class CloneRepoTest < ParticipantTestCase
+  describe 'running an action' do
 
-    def test_action
-      action = run_action(CloneRepo.new('name' => 'zoo'))
-      assert_equal(action.output['id'], "zoo")
+    it 'executed the run method storing results to output attribute'do
+      action = ActionTest.new('name' => 'zoo')
+      action.run
+      action.output.must_equal('id' => "zoo")
     end
 
   end

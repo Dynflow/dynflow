@@ -42,59 +42,48 @@ module Dynflow
 
     alias_method :resume, :execute
 
-    def skip(action)
-      action.status = 'skipped'
-    end
-
-    def finalize_skip(action)
-      action.status = 'finalize_skipped'
+    def skip(step)
+      step.status = 'skipped'
     end
 
     # return true if everyting worked fine
     def finalize(execution_plan)
-      failure = false
-      if execution_plan.actions.any? { |action| ['pending', 'error'].include?(action.status) }
-        failure = true
+      success = true
+      if execution_plan.run_steps.any? { |action| ['pending', 'error'].include?(action.status) }
+        success = false
       else
-        execution_plan.actions.each do |action|
-          break if failure
-          next if %w[skipped finalize_skipped].include?(action.status)
+        execution_plan.finalize_steps.each do |step|
+          break unless success
+          next if %w[skipped].include?(step.status)
 
-          if action.respond_to?(:finalize)
-            begin
-              action.finalize(execution_plan.actions)
-            rescue Exception => e
-              action.finalize_error = {'exception' => e.class.name, 'message' => e.message}
-              failure = true
-            end
+          success = step.catch_errors do
+            step.action.finalize(execution_plan.run_steps)
           end
         end
       end
 
-      if failure
-        execution_plan.status = 'paused'
-      else
+      if success
         execution_plan.status = 'finished'
+      else
+        execution_plan.status = 'paused'
       end
-      return !failure
+      return success
     end
 
+    # return true if the run phase finished successfully
     def run_execution_plan(execution_plan)
-      failure = false
-      execution_plan.actions.map do |action|
-        next action if failure || %w[skipped finalize_skipped success].include?(action.status)
-        action.persist_before_run
-        begin
-          action = self.process(action)
-          action.status = 'success'
-        rescue Exception => e
-          action.run_error = {'exception' => e.class.name, 'message' => e.message}
-          action.status = 'error'
-          failure = true
+      success = true
+      execution_plan.run_steps.map do |step|
+        next step if !success || %w[skipped success].include?(step.status)
+        step.persist_before_run
+        success = step.catch_errors do
+          step.output = {}
+          step.action.run
         end
-        action.persist_after_run
-        action
+        step.persist_after_run
+        step
       end
+      return success
     end
 
     def transaction_driver
@@ -126,16 +115,6 @@ module Dynflow
       if persistence_driver
         persistence_driver.persist(action_class, execution_plan)
       end
-    end
-
-    def process(action)
-      # TODO: here goes the message validation
-      if action.respond_to?(:run)
-        # clear previous output records
-        action.output = {}
-        action.run
-      end
-      return action
     end
 
     # performs the planning phase of an action, but rollbacks any db
