@@ -53,28 +53,44 @@ module Dynflow
       assert_equal({'id' => '456'},   second_action.output)
     end
 
-
     it 'returns the execution plan obejct when triggering an action' do
-      ret = Promotion.trigger(['zoo'], [])
-      ret.must_be_instance_of Dynflow::ExecutionPlan
+      Promotion.trigger(['sucess'], []).must_be_instance_of Dynflow::ExecutionPlan
     end
 
-    # the following should be generic
-    it 'saves errors of actions'
+    describe 'handling errros in execution phase' do
 
-    it 'allows skipping an action'
+      let(:failed_plan)   { Promotion.trigger(['fail_in_run'], []) }
+      let(:failed_action) { failed_plan.actions.first }
 
-    it 'allows rerunning an action' do
-      plan = Promotion.trigger(['fail_in_run'], [])
-      plan.status.must_equal 'paused'
+      it 'pauses the process' do
+        failed_plan.status.must_equal 'paused'
+      end
 
-      plan.actions.first.input['name'] = 'succeed'
-      Dynflow::Bus.impl.resume(plan)
+      it 'saves errors of actions' do
+        failed_action.status.must_equal "error"
+        expected_error = {
+          'exception' => 'RuntimeError',
+          'message'   => 'Simulate error in execution phase'
+        }
+        failed_action.output['error'].must_equal expected_error
+      end
 
-      plan.status.must_equal 'finished'
+      it 'allows skipping an action'
+
+      it 'allows rerunning an action' do
+        failed_action.input['name'] = 'succeed'
+        Dynflow::Bus.impl.resume(failed_plan)
+
+        failed_plan.status.must_equal 'finished'
+      end
+
     end
 
-    it 'allows finishing a finalize phase'
+    describe 'handling errors in finalizatoin phase' do
+
+      it 'allows finishing a finalize phase'
+
+    end
 
   end
 end
