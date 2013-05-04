@@ -33,6 +33,10 @@ module Dynflow
         output['id'] = input['name']
       end
 
+      def finalize(outputs)
+        raise 'Simulate error in finalize phase' if input['name'] == 'fail_in_finalize'
+      end
+
     end
 
     def execution_plan
@@ -72,7 +76,7 @@ module Dynflow
           'exception' => 'RuntimeError',
           'message'   => 'Simulate error in execution phase'
         }
-        failed_action.output['error'].must_equal expected_error
+        failed_action.run_error.must_equal expected_error
       end
 
       it 'allows skipping an action' do
@@ -95,7 +99,35 @@ module Dynflow
 
     describe 'handling errors in finalizatoin phase' do
 
-      it 'allows finishing a finalize phase'
+      let(:failed_plan)   { Promotion.trigger(['fail_in_finalize'], []) }
+      let(:failed_action) { failed_plan.actions.first }
+
+      it 'pauses the process' do
+        failed_plan.status.must_equal 'paused'
+      end
+
+      it 'saves errors of actions' do
+        expected_error = {
+          'exception' => 'RuntimeError',
+          'message'   => 'Simulate error in finalize phase'
+        }
+        failed_action.finalize_error.must_equal expected_error
+      end
+
+      it 'allows finishing a finalize phase' do
+        failed_action.input['name'] = 'succeed'
+        Dynflow::Bus.impl.resume(failed_plan)
+
+        failed_plan.status.must_equal 'finished'
+      end
+
+      it 'allows skipping an action' do
+        Dynflow::Bus.impl.finalize_skip(failed_action)
+        Dynflow::Bus.impl.resume(failed_plan)
+
+        failed_plan.status.must_equal 'finished'
+        failed_action.status.must_equal 'finalize_skipped'
+      end
 
     end
 

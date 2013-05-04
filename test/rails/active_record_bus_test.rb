@@ -28,9 +28,7 @@ describe 'transactions' do
     Actions::SendInvitations.trigger(@event, 'do not fail in finalization phase', ['root'])
     Guest.last.invitation_status.must_equal 'sent'
 
-    proc do
-      Actions::SendInvitations.trigger(@event, 'fail in finalization phase', ['root'])
-    end.must_raise Actions::Exceptions::FinalizeException
+    Actions::SendInvitations.trigger(@event, 'fail in finalization phase', ['root'])
     Guest.last.invitation_status.must_equal 'send_pending'
   end
 end

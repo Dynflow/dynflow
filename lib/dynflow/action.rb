@@ -57,6 +57,22 @@ module Dynflow
       @data['output'] = output
     end
 
+    def run_error
+      @data['run_error']
+    end
+
+    def run_error=(run_error)
+      @data['run_error'] = run_error
+    end
+
+    def finalize_error
+      @data['finalize_error']
+    end
+
+    def finalize_error=(finalize_error)
+      @data['finalize_error'] = finalize_error
+    end
+
     # the block contains the expression in Apipie::Params::DSL
     # describing the format of message
     def self.input_format(&block)

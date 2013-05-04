@@ -32,8 +32,11 @@ module Dynflow
     def execute(execution_plan)
       run_execution_plan(execution_plan)
       in_transaction_if_possible do
-        self.finalize(execution_plan)
+        unless self.finalize(execution_plan)
+          rollback_transaction
+        end
       end
+      execution_plan.persist
       return execution_plan
     end
 
@@ -43,31 +46,49 @@ module Dynflow
       action.status = 'skipped'
     end
 
+    def finalize_skip(action)
+      action.status = 'finalize_skipped'
+    end
+
+    # return true if everyting worked fine
     def finalize(execution_plan)
+      failure = false
       if execution_plan.actions.any? { |action| ['pending', 'error'].include?(action.status) }
-        execution_plan.status = 'paused'
+        failure = true
       else
         execution_plan.actions.each do |action|
+          break if failure
+          next if %w[skipped finalize_skipped].include?(action.status)
+
           if action.respond_to?(:finalize)
-            action.finalize(execution_plan.actions)
+            begin
+              action.finalize(execution_plan.actions)
+            rescue Exception => e
+              action.finalize_error = {'exception' => e.class.name, 'message' => e.message}
+              failure = true
+            end
           end
         end
+      end
+
+      if failure
+        execution_plan.status = 'paused'
+      else
         execution_plan.status = 'finished'
       end
-    ensure
-      execution_plan.persist
+      return !failure
     end
 
     def run_execution_plan(execution_plan)
       failure = false
       execution_plan.actions.map do |action|
-        next action if failure || action.status == 'skipped' || action.status == 'success'
+        next action if failure || %w[skipped finalize_skipped success].include?(action.status)
         action.persist_before_run
         begin
           action = self.process(action)
           action.status = 'success'
         rescue Exception => e
-          action.output['error'] = {'exception' => e.class.name, 'message' => e.message}
+          action.run_error = {'exception' => e.class.name, 'message' => e.message}
           action.status = 'error'
           failure = true
         end
@@ -90,6 +111,10 @@ module Dynflow
       else
         return yield
       end
+    end
+
+    def rollback_transaction
+      transaction_driver.rollback if transaction_driver
     end
 
 
@@ -117,14 +142,14 @@ module Dynflow
     # changes done in this phase. Returns the resulting execution
     # plan. Suitable for debugging.
     def preview_execution_plan(action_class, *args)
-      unless @transaction_driver
+      unless transaction_driver
         raise "Bus doesn't know how to run in transaction"
       end
 
       execution_plan = nil
-      @transaction_driver.transaction do
+      transaction_driver.transaction do
         execution_plan = prepare_execution_plan(action_class, *args)
-        @transaction_driver.rollback
+        transaction_driver.rollback
       end
       return execution_plan
     end
