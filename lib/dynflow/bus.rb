@@ -6,7 +6,7 @@ module Dynflow
     class << self
       extend Forwardable
 
-      def_delegators :impl, :trigger, :resume, :preview_execution_plan
+      def_delegators :impl, :trigger, :resume, :skip, :preview_execution_plan
 
       def impl
         @impl ||= Bus::MemoryBus.new
@@ -38,6 +38,10 @@ module Dynflow
     end
 
     alias_method :resume, :execute
+
+    def skip(action)
+      action.status = 'skipped'
+    end
 
     def finalize(execution_plan)
       if execution_plan.actions.any? { |action| ['pending', 'error'].include?(action.status) }

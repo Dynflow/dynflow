@@ -75,7 +75,13 @@ module Dynflow
         failed_action.output['error'].must_equal expected_error
       end
 
-      it 'allows skipping an action'
+      it 'allows skipping an action' do
+        Dynflow::Bus.impl.skip(failed_action)
+        Dynflow::Bus.impl.resume(failed_plan)
+
+        failed_plan.status.must_equal 'finished'
+        failed_action.status.must_equal 'skipped'
+      end
 
       it 'allows rerunning an action' do
         failed_action.input['name'] = 'succeed'
