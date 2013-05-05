@@ -19,6 +19,10 @@ module Dynflow
       @status = 'new'
     end
 
+    def steps
+      self.run_steps + self.finalize_steps
+    end
+
     def <<(action)
       run_step = Step::Run.new(action)
       @run_steps << run_step if action.respond_to? :run
@@ -31,11 +35,13 @@ module Dynflow
     end
 
     # update the persistence based on the current status
-    def persist
-      # TODO: move to step
-      return
+    def persist(include_steps = false)
       if @persistence
         @persistence.persist(self)
+
+        if include_steps
+          steps.each { |step| step.persist }
+        end
       end
     end
 

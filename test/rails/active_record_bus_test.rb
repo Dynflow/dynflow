@@ -47,6 +47,6 @@ describe 'execution plan persistence' do
     restored_plan = plan.persistence.execution_plan
     restored_plan.object_id.wont_equal plan.object_id
     restored_plan.status.must_equal plan.status
-    restored_plan.actions.must_equal plan.actions
+    restored_plan.steps.must_equal plan.steps
   end
 end

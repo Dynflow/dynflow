@@ -11,20 +11,9 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130501082737) do
+ActiveRecord::Schema.define(:version => 20130505205911) do
 
-  create_table "dynflow_journal_items", :force => true do |t|
-    t.integer  "journal_id"
-    t.text     "action"
-    t.string   "status"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
-  end
-
-  add_index "dynflow_journal_items", ["journal_id"], :name => "index_dynflow_journal_items_on_journal_id"
-  add_index "dynflow_journal_items", ["status"], :name => "index_dynflow_journal_items_on_status"
-
-  create_table "dynflow_journals", :force => true do |t|
+  create_table "dynflow_ar_persisted_plans", :force => true do |t|
     t.string   "originator"
     t.integer  "user_id"
     t.string   "status"
@@ -32,8 +21,19 @@ ActiveRecord::Schema.define(:version => 20130501082737) do
     t.datetime "updated_at", :null => false
   end
 
-  add_index "dynflow_journals", ["status"], :name => "index_dynflow_journals_on_status"
-  add_index "dynflow_journals", ["user_id"], :name => "index_dynflow_journals_on_user_id"
+  add_index "dynflow_ar_persisted_plans", ["status"], :name => "index_dynflow_ar_persisted_plans_on_status"
+  add_index "dynflow_ar_persisted_plans", ["user_id"], :name => "index_dynflow_ar_persisted_plans_on_user_id"
+
+  create_table "dynflow_ar_persisted_steps", :force => true do |t|
+    t.integer  "ar_persisted_plan_id"
+    t.text     "data"
+    t.string   "status"
+    t.datetime "created_at",           :null => false
+    t.datetime "updated_at",           :null => false
+  end
+
+  add_index "dynflow_ar_persisted_steps", ["ar_persisted_plan_id"], :name => "index_dynflow_ar_persisted_steps_on_ar_persisted_plan_id"
+  add_index "dynflow_ar_persisted_steps", ["status"], :name => "index_dynflow_ar_persisted_steps_on_status"
 
   create_table "events", :force => true do |t|
     t.string   "name"

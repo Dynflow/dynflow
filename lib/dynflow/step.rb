@@ -92,7 +92,7 @@ module Dynflow
 
     def self.decode(data)
       ret = data['step_class'].constantize.allocate
-      ret.instance_variable_set("@action_class", data['action_class'])
+      ret.instance_variable_set("@action_class", data['action_class'].constantize)
       ret.instance_variable_set("@status",       data['status'])
       ret.instance_variable_set("@data",         decode_data(data['data']))
       return ret
@@ -115,13 +115,13 @@ module Dynflow
 
     # we need this to encode the reference correctly
     def encoded_data
-      walk(data) do |item|
+      self.class.walk(data) do |item|
         item.encode if item.is_a? Reference
       end
     end
 
     def replace_references!
-      @data = walk(data) do |item|
+      @data = self.class.walk(data) do |item|
         item.dereference if item.is_a? Reference
       end
     end
@@ -129,7 +129,7 @@ module Dynflow
     # walks hash depth-first, yielding on every value
     # if yield return non-false value, use that instead of original
     # value in a resulting hash
-    def walk(data, &block)
+    def self.walk(data, &block)
       if converted = (yield data)
         return converted
       end
@@ -183,10 +183,14 @@ module Dynflow
         # not using the original action object
         @action_class = run_step.action_class
         self.status = 'pending' # default status
-        @data = {
-          'input' => Reference.new(run_step, 'input'),
-          'output' => Reference.new(run_step, 'output'),
-        }
+        if run_step.respond_to? :run
+          @data = {
+            'input' => Reference.new(run_step, 'input'),
+            'output' => Reference.new(run_step, 'output'),
+          }
+        else
+          @data = run_step.data
+        end
       end
 
     end

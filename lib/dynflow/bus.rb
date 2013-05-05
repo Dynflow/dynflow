@@ -36,7 +36,7 @@ module Dynflow
           rollback_transaction
         end
       end
-      execution_plan.persist
+      execution_plan.persist(true)
       return execution_plan
     end
 
@@ -166,7 +166,7 @@ module Dynflow
       end
 
       def persistence_driver
-        Dynflow::Journal
+        Dynflow::ArPersistedPlan
       end
 
     end

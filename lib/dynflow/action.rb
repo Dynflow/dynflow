@@ -1,5 +1,5 @@
 module Dynflow
-  class Action < Message
+  class Action
 
     # only for the planning phase: flag indicating that the action
     # was triggered from subscription. If so, the implicit plan
@@ -29,6 +29,12 @@ module Dynflow
 
       @input = input
       @output = output || {}
+    end
+
+
+    def ==(other)
+      [self.class.name, self.input, self.output] ==
+        [other.class.name, other.input, other.output]
     end
 
     def inspect
