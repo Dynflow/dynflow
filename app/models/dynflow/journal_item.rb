@@ -21,6 +21,10 @@ module Dynflow
 
     # vvvv interface required by Dynflow::Action
 
+    def persistence_id
+      self.id
+    end
+
     def persist(action)
       self.update_attributes!(:action => action)
     end

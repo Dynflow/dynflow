@@ -17,6 +17,10 @@ module Dynflow
 
     # vvvv interface required by Dynflow::Bus
 
+    def persistence_id
+      self.id
+    end
+
     def self.persist(originator_class, execution_plan)
       journal = self.create! do |journal|
         journal.originator = originator_class.name

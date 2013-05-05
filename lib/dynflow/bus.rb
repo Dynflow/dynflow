@@ -52,6 +52,7 @@ module Dynflow
       if execution_plan.run_steps.any? { |action| ['pending', 'error'].include?(action.status) }
         success = false
       else
+        execution_plan.finalize_steps.each(&:replace_references!)
         execution_plan.finalize_steps.each do |step|
           break unless success
           next if %w[skipped].include?(step.status)

@@ -1,6 +1,39 @@
 module Dynflow
   class Step
 
+    class Reference
+
+      def initialize(step, field)
+        unless %w[input output].include? field
+          raise "Unexpected reference field: #{field}. Only input and output allowed"
+        end
+        @step  = step
+        @field = field
+      end
+
+      def encode
+        unless @step.persistence
+          raise "Reference can't be serialized without persistence available"
+        end
+
+        {
+          'dynflow_step_persistence_id' => @step.persistence.persistence_id,
+          'field' => @field
+        }
+      end
+
+      def self.decode(data)
+        return nil unless data.has_key?('dynflow_step_persistence_id')
+        persistence_id = data['dynflow_step_persistence_id']
+        self.new(Dynflow::Bus.find_step(persistence_id), data['field'])
+      end
+
+      def dereference
+        @step.send(@field)
+      end
+
+    end
+
     extend Forwardable
 
     def_delegators :@data, '[]', '[]='
@@ -61,7 +94,7 @@ module Dynflow
       ret = data['step_class'].constantize.allocate
       ret.instance_variable_set("@action_class", data['action_class'])
       ret.instance_variable_set("@status",       data['status'])
-      ret.instance_variable_set("@data",         data['data'])
+      ret.instance_variable_set("@data",         decode_data(data['data']))
       return ret
     end
 
@@ -70,8 +103,44 @@ module Dynflow
         'step_class'   => self.class.name,
         'action_class' => action_class.name,
         'status'       => status,
-        'data'         => data
+        'data'         => encoded_data
       }
+    end
+
+    def self.decode_data(data)
+      walk(data) do |item|
+        Reference.decode(data)
+      end
+    end
+
+    # we need this to encode the reference correctly
+    def encoded_data
+      walk(data) do |item|
+        item.encode if item.is_a? Reference
+      end
+    end
+
+    def replace_references!
+      @data = walk(data) do |item|
+        item.dereference if item.is_a? Reference
+      end
+    end
+
+    # walks hash depth-first, yielding on every value
+    # if yield return non-false value, use that instead of original
+    # value in a resulting hash
+    def walk(data, &block)
+      if converted = (yield data)
+        return converted
+      end
+      case data
+      when Array
+        data.map { |d| walk(d, &block) }
+      when Hash
+        data.reduce({}) { |h, (k, v)| h.update(k => walk(v, &block)) }
+      else
+        data
+      end
     end
 
     def persist
@@ -114,7 +183,10 @@ module Dynflow
         # not using the original action object
         @action_class = run_step.action_class
         self.status = 'pending' # default status
-        @data = run_step.data
+        @data = {
+          'input' => Reference.new(run_step, 'input'),
+          'output' => Reference.new(run_step, 'output'),
+        }
       end
 
     end
