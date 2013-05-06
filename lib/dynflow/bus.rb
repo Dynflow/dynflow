@@ -17,11 +17,16 @@ module Dynflow
 
     # Entry point for running an action
     def trigger(action_class, *args)
-      execution_plan = in_transaction_if_possible do
-        prepare_execution_plan(action_class, *args)
+      execution_plan = nil
+      in_transaction_if_possible do
+        execution_plan = prepare_execution_plan(action_class, *args)
+        rollback_transaction if execution_plan.status == 'error'
       end
       persist_plan_if_possible(execution_plan)
-      return execute(execution_plan)
+      unless execution_plan.status == 'error'
+        execute(execution_plan)
+      end
+      return execution_plan
     end
 
     def prepare_execution_plan(action_class, *args)
@@ -38,7 +43,6 @@ module Dynflow
         end
       end
       execution_plan.persist(true)
-      return execution_plan
     end
 
     alias_method :resume, :execute

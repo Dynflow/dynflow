@@ -5,7 +5,7 @@ module Dynflow
     # was triggered from subscription. If so, the implicit plan
     # method uses the input of the parent action. Otherwise, the
     # argument the plan_action is used as default.
-    attr_accessor :from_subscription, :input, :output
+    attr_accessor :execution_plan, :from_subscription, :input, :output
 
     def self.inherited(child)
       self.actions << child
@@ -72,8 +72,19 @@ module Dynflow
     def self.plan(*args)
       action = self.new({})
       yield action if block_given?
-      action.plan(*args)
-      action.add_subscriptions(*args)
+
+      plan_step = Step::Plan.new(action)
+      action.execution_plan.plan_steps << plan_step
+      plan_step.catch_errors do
+        action.plan(*args)
+      end
+
+      if action.execution_plan.plan_steps.any? { |step| step.status == 'error' }
+        action.execution_plan.status = 'error'
+      else
+        action.add_subscriptions(*args)
+      end
+
       action.execution_plan
     end
 

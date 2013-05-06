@@ -17,9 +17,7 @@ describe 'transactions' do
     # success means a guest record was created
     Guest.all.size.must_equal 1
 
-    proc do
-      Actions::SendInvitations.trigger(@event, "Hello", ['root', 'failme'])
-    end.must_raise Actions::Exceptions::PlanException
+    Actions::SendInvitations.trigger(@event, "Hello", ['root', 'failme'])
     # fails means the guest records were not affected at all
     Guest.all.size.must_equal 1
   end

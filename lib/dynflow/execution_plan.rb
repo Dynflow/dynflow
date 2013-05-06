@@ -3,7 +3,7 @@ require 'forwardable'
 module Dynflow
   class ExecutionPlan
 
-    attr_reader :run_steps, :finalize_steps
+    attr_reader :plan_steps, :run_steps, :finalize_steps
 
     # allows storing and reloading the execution plan to something
     # more persistent than memory
@@ -13,14 +13,15 @@ module Dynflow
 
     extend Forwardable
 
-    def initialize(run_steps = [], finalize_steps = [])
+    def initialize(plan_steps = [], run_steps = [], finalize_steps = [])
+      @plan_steps = plan_steps
       @run_steps = run_steps
       @finalize_steps = finalize_steps
       @status = 'new'
     end
 
     def steps
-      self.run_steps + self.finalize_steps
+      self.plan_steps + self.run_steps + self.finalize_steps
     end
 
     def <<(action)
@@ -30,8 +31,10 @@ module Dynflow
     end
 
     def concat(other)
+      self.plan_steps.concat(other.plan_steps)
       self.run_steps.concat(other.run_steps)
       self.finalize_steps.concat(other.finalize_steps)
+      self.status = other.status
     end
 
     # update the persistence based on the current status

@@ -184,6 +184,18 @@ module Dynflow
       end
     end
 
+    class Plan < Step
+
+      def initialize(action)
+        # we want to have the steps separated:
+        # not using the original action object
+        @action_class = action.class
+        self.status = 'finished' # default status
+        @data = {}.with_indifferent_access
+      end
+
+    end
+
     class Run < Step
 
       def initialize(action)

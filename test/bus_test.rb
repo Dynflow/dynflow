@@ -29,6 +29,11 @@ module Dynflow
           param :id, String
         end
 
+        def plan(input)
+          raise 'Simulate error in plan phase' if input['name'] == 'fail_in_plan'
+          plan_self(input)
+        end
+
         def run
           raise 'Simulate error in execution phase' if input['name'] == 'fail_in_run'
           output['id'] = input['name']
@@ -42,6 +47,26 @@ module Dynflow
 
       it 'returns the execution plan obejct when triggering an action' do
         Promotion.trigger(['sucess'], []).must_be_instance_of Dynflow::ExecutionPlan
+      end
+
+      describe 'handling errros in plan phase' do
+
+        let(:failed_plan)   { Promotion.trigger(['fail_in_plan'], []) }
+        let(:failed_step) { failed_plan.plan_steps.last }
+
+        it 'marks the process as error' do
+          failed_plan.status.must_equal 'error'
+        end
+
+        it 'saves errors of actions' do
+          failed_step.status.must_equal "error"
+          expected_error = {
+            'exception' => 'RuntimeError',
+            'message'   => 'Simulate error in plan phase'
+          }
+          failed_step.error.must_equal expected_error
+        end
+
       end
 
       describe 'handling errros in execution phase' do

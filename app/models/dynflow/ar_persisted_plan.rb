@@ -8,6 +8,10 @@ module Dynflow
       self.ar_persisted_steps.map(&:step)
     end
 
+    def plan_steps
+      self.steps.find_all { |step| step.is_a? Step::Plan }
+    end
+
     def run_steps
       self.steps.find_all { |step| step.is_a? Step::Run }
     end
@@ -17,7 +21,7 @@ module Dynflow
     end
 
     def execution_plan
-      execution_plan = ExecutionPlan.new(self.run_steps, self.finalize_steps)
+      execution_plan = ExecutionPlan.new(self.plan_steps, self.run_steps, self.finalize_steps)
       execution_plan.status = self.status
       execution_plan.persistence = self
       return execution_plan
