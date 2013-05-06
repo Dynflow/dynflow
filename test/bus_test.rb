@@ -63,8 +63,8 @@ module Dynflow
         end
 
         it 'allows skipping the step' do
-          Dynflow::Bus.impl.skip(failed_step)
-          Dynflow::Bus.impl.resume(failed_plan)
+          Dynflow::Bus.skip(failed_step)
+          Dynflow::Bus.resume(failed_plan)
 
           failed_plan.status.must_equal 'finished'
           failed_step.status.must_equal 'skipped'
@@ -72,7 +72,7 @@ module Dynflow
 
         it 'allows rerunning the step' do
           failed_step.input['name'] = 'succeed'
-          Dynflow::Bus.impl.resume(failed_plan)
+          Dynflow::Bus.resume(failed_plan)
 
           failed_plan.status.must_equal 'finished'
           failed_step.output.must_equal('id' => 'succeed')
@@ -99,14 +99,14 @@ module Dynflow
 
         it 'allows finishing a finalize phase' do
           failed_step.input['name'] = 'succeed'
-          Dynflow::Bus.impl.resume(failed_plan)
+          Dynflow::Bus.resume(failed_plan)
 
           failed_plan.status.must_equal 'finished'
         end
 
         it 'allows skipping the step' do
-          Dynflow::Bus.impl.skip(failed_step)
-          Dynflow::Bus.impl.resume(failed_plan)
+          Dynflow::Bus.skip(failed_step)
+          Dynflow::Bus.resume(failed_plan)
 
           failed_plan.status.must_equal 'finished'
           failed_step.status.must_equal 'skipped'
