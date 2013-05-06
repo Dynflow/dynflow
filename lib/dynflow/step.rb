@@ -3,6 +3,8 @@ module Dynflow
 
     class Reference
 
+      attr_reader :step, :field
+
       def initialize(step, field)
         unless %w[input output].include? field
           raise "Unexpected reference field: #{field}. Only input and output allowed"
@@ -23,13 +25,25 @@ module Dynflow
       end
 
       def self.decode(data)
+        return nil unless data.is_a? Hash
         return nil unless data.has_key?('dynflow_step_persistence_id')
         persistence_id = data['dynflow_step_persistence_id']
-        self.new(Dynflow::Bus.find_step(persistence_id), data['field'])
+        self.new(Dynflow::Bus.persisted_step(persistence_id), data['field'])
       end
 
       def dereference
         @step.send(@field)
+      end
+
+      def inspect
+        ret = "References "
+        ret << @step.class.name.split('::').last
+        ret << "/"
+        ret << @step.action_class.name
+        ret << "(#{@step.persistence.persistence_id})" if @step.persistence
+        ret << "/"
+        ret << @field
+        return ret
       end
 
     end
@@ -109,20 +123,29 @@ module Dynflow
 
     def self.decode_data(data)
       walk(data) do |item|
-        Reference.decode(data)
+        Reference.decode(item)
       end
     end
 
     # we need this to encode the reference correctly
     def encoded_data
       self.class.walk(data) do |item|
-        item.encode if item.is_a? Reference
+        if item.is_a? Reference
+          item.encode
+        end
       end
     end
 
     def replace_references!
       @data = self.class.walk(data) do |item|
-        item.dereference if item.is_a? Reference
+        if item.is_a? Reference
+          if item.step.status == 'skipped' || item.step.status == 'error'
+            self.status = 'skipped'
+            item
+          else
+            item.dereference
+          end
+        end
       end
     end
 
@@ -183,7 +206,7 @@ module Dynflow
         # not using the original action object
         @action_class = run_step.action_class
         self.status = 'pending' # default status
-        if run_step.respond_to? :run
+        if run_step.action.respond_to? :run
           @data = {
             'input' => Reference.new(run_step, 'input'),
             'output' => Reference.new(run_step, 'output'),

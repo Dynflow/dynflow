@@ -87,7 +87,7 @@ class EventsController < ApplicationController
 
   def process_invitation
     @event = Event.find(params[:id])
-    invitation_message = params[:invitation_message]
+    invitation_message = params[:invitation_text]
     invitees = params[:invitees].split(/[, ]/).reject(&:empty?)
 
     ::Actions::SendInvitations.trigger(@event, invitation_message, invitees)

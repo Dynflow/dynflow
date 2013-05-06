@@ -1,0 +1,15 @@
+<h1>Listing execution plans</h1>
+
+<table>
+  <tr>
+    <th>Status</th>
+    <th></th>
+  </tr>
+
+<% @plans.each do |plan| %>
+  <tr>
+    <th><%= plan.status %></th>
+    <td><%= link_to 'Show', plan_path(:id => plan.persistence.persistence_id) %></td>
+  </tr>
+<% end %>
+</table>

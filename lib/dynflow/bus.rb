@@ -6,7 +6,8 @@ module Dynflow
     class << self
       extend Forwardable
 
-      def_delegators :impl, :trigger, :resume, :skip, :preview_execution_plan
+      def_delegators :impl, :trigger, :resume, :skip, :preview_execution_plan,
+        :persisted_plans, :persisted_plan, :persisted_step
 
       def impl
         @impl ||= Bus::MemoryBus.new
@@ -19,7 +20,7 @@ module Dynflow
       execution_plan = in_transaction_if_possible do
         prepare_execution_plan(action_class, *args)
       end
-      persist_plan_if_possible(action_class, execution_plan)
+      persist_plan_if_possible(execution_plan)
       return execute(execution_plan)
     end
 
@@ -44,6 +45,7 @@ module Dynflow
 
     def skip(step)
       step.status = 'skipped'
+      step.persist
     end
 
     # return true if everyting worked fine
@@ -112,9 +114,29 @@ module Dynflow
       nil
     end
 
-    def persist_plan_if_possible(action_class, execution_plan)
+    def persist_plan_if_possible(execution_plan)
       if persistence_driver
-        persistence_driver.persist(action_class, execution_plan)
+        persistence_driver.persist(execution_plan)
+      end
+    end
+
+    def persisted_plans(status = nil)
+      if persistence_driver
+        persistence_driver.persisted_plans(status)
+      else
+        []
+      end
+    end
+
+    def persisted_plan(persistence_id)
+      if persistence_driver
+        persistence_driver.persisted_plan(persistence_id)
+      end
+    end
+
+    def persisted_step(persistence_id)
+      if persistence_driver
+        persistence_driver.persisted_step(persistence_id)
       end
     end
 

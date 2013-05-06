@@ -29,9 +29,24 @@ module Dynflow
       self.id
     end
 
-    def self.persist(originator_class, execution_plan)
+    def self.persisted_plans(status = nil)
+      scope = self
+      if status
+        scope = scope.where(:status => status)
+      end
+      scope.all.map(&:execution_plan)
+    end
+
+    def self.persisted_plan(persistence_id)
+      self.find(persistence_id).execution_plan
+    end
+
+    def self.persisted_step(persistence_id)
+      ArPersistedStep.find(persistence_id).step
+    end
+
+    def self.persist(execution_plan)
       persisted_plan = self.create! do |persisted_plan|
-        persisted_plan.originator = originator_class.name
         persisted_plan.status = execution_plan.status
       end
       execution_plan.steps.each do |step|

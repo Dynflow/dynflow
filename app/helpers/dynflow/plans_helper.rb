@@ -1,4 +1,4 @@
 module Dynflow
-  module JournalsHelper
+  module PlansHelper
   end
 end
