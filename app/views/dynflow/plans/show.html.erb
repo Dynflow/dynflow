@@ -1,0 +1,34 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <b>Status:</b>
+  <%= @plan.status %>
+</p>
+
+<table>
+  <tr>
+    <th>Id</th>
+    <th>Phase</th>
+    <th>Action</th>
+    <th>Status</th>
+    <th>Input</th>
+    <th>Output</th>
+    <th>Error</th>
+    <th></th>
+  </tr>
+<% @plan.steps.each do |step| %>
+  <tr>
+    <th><%= step.persistence.persistence_id %></th>
+    <th><%= step.class.name.split('::').last %></th>
+    <th><%= step.action_class.name %></th>
+    <th><%= step.status %></th>
+    <th><%= step.input.inspect %></th>
+    <th><%= step.output.inspect %></th>
+    <th><%= step.error.inspect %></th>
+    <td><%= link_to 'Skip', "#{plan_path(:id => @plan.persistence.persistence_id)}/skip_step/#{step.persistence.persistence_id}", :method => :post %></td>
+  </tr>
+<% end %>
+</table>
+
+<%= link_to 'Resume', "#{plan_path(:id => @plan.persistence.persistence_id)}/resume", :method => :post %> |
+<%= link_to 'Back', plans_path %>
