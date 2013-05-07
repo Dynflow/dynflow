@@ -6,11 +6,6 @@ require 'dynflow/bus'
 require 'dynflow/step'
 require 'dynflow/action'
 
-if defined? ::Rails::Engine
-  require 'jquery-rails'
-  require 'dynflow/engine'
-end
-
 module Dynflow
 
 end

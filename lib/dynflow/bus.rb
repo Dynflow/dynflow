@@ -164,33 +164,5 @@ module Dynflow
       @logger ||= Dynflow::Logger.new(self.class)
     end
 
-    class ActiveRecordTransaction
-      class << self
-
-        def transaction(&block)
-          ActiveRecord::Base.transaction(&block)
-        end
-
-        def rollback
-          raise ActiveRecord::Rollback
-        end
-
-      end
-    end
-
-    # uses Rails API for db features
-    # encapsulates the planning and finalization phase into
-    class RailsBus < Bus
-
-      def transaction_driver
-        ActiveRecordTransaction
-      end
-
-      def persistence_driver
-        Dynflow::ArPersistedPlan
-      end
-
-    end
-
   end
 end
