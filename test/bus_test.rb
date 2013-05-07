@@ -64,7 +64,9 @@ module Dynflow
             'exception' => 'RuntimeError',
             'message'   => 'Simulate error in plan phase'
           }
-          failed_step.error.must_equal expected_error
+          failed_step.error['exception'].must_equal expected_error['exception']
+          failed_step.error['message'].must_equal expected_error['message']
+          failed_step.error['backtrace'].must_be_instance_of Array
         end
 
       end
@@ -84,7 +86,9 @@ module Dynflow
             'exception' => 'RuntimeError',
             'message'   => 'Simulate error in execution phase'
           }
-          failed_step.error.must_equal expected_error
+          failed_step.error['exception'].must_equal expected_error['exception']
+          failed_step.error['message'].must_equal expected_error['message']
+          failed_step.error['backtrace'].must_be_instance_of Array
         end
 
         it 'allows skipping the step' do
@@ -119,7 +123,9 @@ module Dynflow
             'exception' => 'RuntimeError',
             'message'   => 'Simulate error in finalize phase'
           }
-          failed_step.error.must_equal expected_error
+          failed_step.error['exception'].must_equal expected_error['exception']
+          failed_step.error['message'].must_equal expected_error['message']
+          failed_step.error['backtrace'].must_be_instance_of Array
         end
 
         it 'allows finishing a finalize phase' do

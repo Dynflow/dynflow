@@ -94,7 +94,8 @@ module Dynflow
     rescue Exception => e
       self.error = {
         "exception" => e.class.name,
-        "message"   => e.message
+        "message"   => e.message,
+        "backtrace"   => e.backtrace
       }
       self.status = 'error'
       return false
