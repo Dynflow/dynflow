@@ -10,7 +10,7 @@ module Dynflow
         :persisted_plans, :persisted_plan, :persisted_step
 
       def impl
-        @impl ||= Bus::MemoryBus.new
+        @impl ||= Bus.new
       end
       attr_writer :impl
     end
@@ -162,11 +162,6 @@ module Dynflow
 
     def logger
       @logger ||= Dynflow::Logger.new(self.class)
-    end
-
-    class MemoryBus < Bus
-      # No modifications needed: the default implementation is
-      # in memory. TODO: get rid of this class
     end
 
     class ActiveRecordTransaction
