@@ -24,6 +24,10 @@ module Dynflow
       self.plan_steps + self.run_steps + self.finalize_steps
     end
 
+    def failed_steps
+      self.steps.find_all { |step| step.status == 'error' }
+    end
+
     def <<(action)
       run_step = Step::Run.new(action)
       @run_steps << run_step if action.respond_to? :run

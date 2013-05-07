@@ -79,7 +79,7 @@ module Dynflow
         action.plan(*args)
       end
 
-      if action.execution_plan.plan_steps.any? { |step| step.status == 'error' }
+      if action.execution_plan.failed_steps.any?
         action.execution_plan.status = 'error'
       else
         action.add_subscriptions(*args)
