@@ -3,115 +3,86 @@ require 'test_helper'
 module Dynflow
   module ExecutionPlanTest
     describe ExecutionPlan do
-      class Promotion < Action
+      class IncommingIssues < Action
 
-        def plan(repo_names, package_names)
-          repo_names.each do |repo_name|
-            plan_action(CloneRepo, {'name' => repo_name})
+        def plan(issues)
+          issues.each do |issue|
+            plan_action(IncommingIssue, issue)
           end
-
-          package_names.each do |package_name|
-            plan_action(ClonePackage, {'name' => package_name})
-          end
-
-          plan_self('actions' => repo_names.size + package_names.size)
+          plan_self('issues' => issues)
         end
 
         input_format do
-          param :actions, Integer
+          param :issues, Array do
+            param :author, String
+            param :text, String
+          end
         end
 
         def run; end
 
       end
 
-      class PromotionObserver < Action
+      class IncommingIssue < Action
+
+        def plan(issue)
+          plan_self(issue)
+          plan_action(Triage, issue)
+        end
+
+        input_format do
+          param :author, String
+          param :text, String
+        end
+
+        def run; end
+
+      end
+
+      class Triage < Action
+
+        input_format do
+          param :author, String
+          param :text, String
+        end
+
+        output_format do
+          param :assignee, String
+          param :severity, %w[low medium high]
+        end
+
+        def run; end
+
+      end
+
+      class NotifyAssignee < Action
 
         def self.subscribe
-          Promotion
+          Triage
         end
-
-        def run; end
-
-      end
-
-      class CloneRepo < Action
 
         input_format do
-          param :name, String
-        end
-
-        output_format do
-          param :id, String
+          param :triage, String # TODO - connect to Triage output
         end
 
         def run; end
-
-      end
-
-      class ClonePackage < Action
-
-        input_format do
-          param :name, String
-        end
-
-        output_format do
-          param :id, String
-        end
-
-        def run; end
-
-      end
-
-      class UpdateIndex < Action
-
-        def self.subscribe
-          ClonePackage
-        end
-
-        def plan(input)
-          plan_action(YetAnotherAction, {'hello' => 'world'})
-          super
-        end
-
-        output_format do
-          param :indexed_name, String
-        end
-
-        def run; end
-
-      end
-
-      class YetAnotherAction < Action
-
-        input_format do
-          param :name, String
-          param :hello, String
-        end
-
-        output_format do
-          param :hello, String
-        end
-
-        def plan(arg)
-          plan_self(input.merge(arg))
-        end
-
-        def run; end
-
       end
 
       it "builds the execution plan" do
-        execution_plan = Promotion.plan(['zoo', 'foo'], ['elephant'])
+        issues_data = [
+                       { 'author' => 'Peter Smith', 'text' => 'Failing test' },
+                       { 'author' => 'John Doe', 'text' => 'Internal server error' }
+                      ]
+        execution_plan = IncommingIssues.plan(issues_data)
         expected_plan_actions =
           [
-           CloneRepo.new('name' => 'zoo'),
-           CloneRepo.new('name' => 'foo'),
-           ClonePackage.new('name' => 'elephant'),
-           YetAnotherAction.new('name' => 'elephant', 'hello' => 'world'),
-           UpdateIndex.new('name' => 'elephant'),
-           Promotion.new('actions' => 3) ,
-           PromotionObserver.new('actions' => 3)
+           IncommingIssue.new("author"=>"Peter Smith", "text"=>"Failing test"),
+           Triage.new("author"=>"Peter Smith", "text"=>"Failing test"),
+           NotifyAssignee.new("author"=>"Peter Smith", "text"=>"Failing test"),
+           IncommingIssue.new("author"=>"John Doe", "text"=>"Internal server error"),
+           Triage.new("author"=>"John Doe", "text"=>"Internal server error"),
+           NotifyAssignee.new("author"=>"John Doe", "text"=>"Internal server error"),
+           IncommingIssues.new("issues"=>[{"author"=>"Peter Smith", "text"=>"Failing test"}, {"author"=>"John Doe", "text"=>"Internal server error"}])
           ]
         execution_plan.run_steps.map(&:action).must_equal expected_plan_actions
       end
