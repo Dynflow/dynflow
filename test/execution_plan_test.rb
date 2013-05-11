@@ -58,7 +58,7 @@ module Dynflow
         end
 
         input_format do
-          param :triage, String # TODO - connect to Triage output
+          param :triage, Triage
         end
 
         def run; end
@@ -89,10 +89,12 @@ module Dynflow
 
       it 'constructs the plan of actions to be executed in run phase' do
         assert_run_steps <<EXPECTED, execution_plan
-Triage/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}
-NotifyAssignee/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}
-Triage/Run: {"author"=>"John Doe", "text"=>"Internal server error"}
-NotifyAssignee/Run: {"author"=>"John Doe", "text"=>"Internal server error"}
+Sequence:
+  Triage/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}
+  NotifyAssignee/Run: {"author"=>"Peter Smith", "text"=>"Failing test", "triage" => Reference(Triage/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}/output)}
+Sequence:
+  Triage/Run: {"author"=>"John Doe", "text"=>"Internal server error"}
+  NotifyAssignee/Run: {"author"=>"John Doe", "text"=>"Internal server error", "triage" => Reference(Triage/Run: {"author"=>"John Doe", "text"=>"Internal server error"}/output)}}
 EXPECTED
       end
 

@@ -36,11 +36,7 @@ module Dynflow
       end
 
       def inspect
-        ret = "References "
-        ret << @step.inspect
-        ret << "/"
-        ret << @field
-        return ret
+        "Reference(#{@step.inspect}/#{@field})"
       end
 
     end
