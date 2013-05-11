@@ -37,10 +37,7 @@ module Dynflow
 
       def inspect
         ret = "References "
-        ret << @step.class.name.split('::').last
-        ret << "/"
-        ret << @step.action_class.name
-        ret << "(#{@step.persistence.persistence_id})" if @step.persistence
+        ret << @step.inspect
         ret << "/"
         ret << @field
         return ret
@@ -84,7 +81,17 @@ module Dynflow
 
     # get a fresh instance of action class for execution
     def action
-      self.action_class.new(input, output)
+      action_class.new(input, output)
+    end
+
+    def inspect
+      ret = action_class.name
+      ret << "/"
+      ret << self.class.name.split('::').last
+      ret << "##{persistence.persistence_id}" if persistence && persistence.persistence_id
+      ret << ": #{input.inspect}"
+      ret << " ~> #{output.inspect}" if status != 'pending'
+      return ret
     end
 
     def catch_errors

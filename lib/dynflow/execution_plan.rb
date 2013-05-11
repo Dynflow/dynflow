@@ -28,6 +28,11 @@ module Dynflow
       self.steps.find_all { |step| step.status == 'error' }
     end
 
+    def inspect_steps(steps = nil)
+      steps ||= self.steps
+      steps.map(&:inspect).join("\n")
+    end
+
     def <<(action)
       run_step = Step::Run.new(action)
       @run_steps << run_step if action.respond_to? :run

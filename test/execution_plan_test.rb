@@ -19,8 +19,6 @@ module Dynflow
           end
         end
 
-        def run; end
-
       end
 
       class IncommingIssue < Action
@@ -34,8 +32,6 @@ module Dynflow
           param :author, String
           param :text, String
         end
-
-        def run; end
 
       end
 
@@ -68,23 +64,36 @@ module Dynflow
         def run; end
       end
 
-      it "builds the execution plan" do
-        issues_data = [
-                       { 'author' => 'Peter Smith', 'text' => 'Failing test' },
-                       { 'author' => 'John Doe', 'text' => 'Internal server error' }
-                      ]
-        execution_plan = IncommingIssues.plan(issues_data)
-        expected_plan_actions =
-          [
-           IncommingIssue.new("author"=>"Peter Smith", "text"=>"Failing test"),
-           Triage.new("author"=>"Peter Smith", "text"=>"Failing test"),
-           NotifyAssignee.new("author"=>"Peter Smith", "text"=>"Failing test"),
-           IncommingIssue.new("author"=>"John Doe", "text"=>"Internal server error"),
-           Triage.new("author"=>"John Doe", "text"=>"Internal server error"),
-           NotifyAssignee.new("author"=>"John Doe", "text"=>"Internal server error"),
-           IncommingIssues.new("issues"=>[{"author"=>"Peter Smith", "text"=>"Failing test"}, {"author"=>"John Doe", "text"=>"Internal server error"}])
-          ]
-        execution_plan.run_steps.map(&:action).must_equal expected_plan_actions
+      def assert_run_steps(expected, execution_plan)
+        steps_string =  execution_plan.inspect_steps(execution_plan.run_steps)
+        steps_string.gsub!(/^.*::/,'')
+        steps_string.must_equal expected.chomp
+      end
+
+      let :issues_data do
+        [
+         { 'author' => 'Peter Smith', 'text' => 'Failing test' },
+         { 'author' => 'John Doe', 'text' => 'Internal server error' }
+        ]
+      end
+
+      let :execution_plan do
+        IncommingIssues.plan(issues_data)
+      end
+
+      it 'includes only actions with run method defined in run steps' do
+        actions_with_run = [Dynflow::ExecutionPlanTest::Triage,
+                            Dynflow::ExecutionPlanTest::NotifyAssignee]
+        execution_plan.run_steps.map(&:action_class).uniq.must_equal(actions_with_run)
+      end
+
+      it 'constructs the plan of actions to be executed in run phase' do
+        assert_run_steps <<EXPECTED, execution_plan
+Triage/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}
+NotifyAssignee/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}
+Triage/Run: {"author"=>"John Doe", "text"=>"Internal server error"}
+NotifyAssignee/Run: {"author"=>"John Doe", "text"=>"Internal server error"}
+EXPECTED
       end
 
     end
