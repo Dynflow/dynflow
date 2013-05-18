@@ -37,6 +37,13 @@ module Dynflow
 
       class Triage < Action
 
+        def plan(issue)
+          triage = plan_self(issue)
+          plan_action(UpdateIssue,
+                      'triage_input' => triage.input,
+                      'triage_output' => triage.output)
+        end
+
         input_format do
           param :author, String
           param :text, String
@@ -49,6 +56,16 @@ module Dynflow
 
         def run; end
 
+      end
+
+      class UpdateIssue < Action
+
+        input_format do
+          param :triage_input, Triage.input
+          param :triage_output, Triage.output
+        end
+
+        def run; end
       end
 
       class NotifyAssignee < Action
@@ -78,12 +95,13 @@ module Dynflow
       end
 
       let :execution_plan do
-        IncommingIssues.plan(issues_data)
+        IncommingIssues.plan(issues_data).execution_plan
       end
 
       it 'includes only actions with run method defined in run steps' do
-        actions_with_run = [Dynflow::ExecutionPlanTest::Triage,
-                            Dynflow::ExecutionPlanTest::NotifyAssignee]
+        actions_with_run = [Triage,
+                            UpdateIssue,
+                            NotifyAssignee]
         execution_plan.run_steps.map(&:action_class).uniq.must_equal(actions_with_run)
       end
 

@@ -33,10 +33,12 @@ module Dynflow
       steps.map(&:inspect).join("\n")
     end
 
-    def <<(action)
-      run_step = Step::Run.new(action)
-      @run_steps << run_step if action.respond_to? :run
-      @finalize_steps << Step::Finalize.new(run_step) if action.respond_to? :finalize
+    def <<(step)
+      case step
+      when Step::Run then self.run_steps << step
+      when Step::Finalize then self.finalize_steps << step
+      else raise ArgumentError, 'Only Run or Finalize steps can be planned'
+      end
     end
 
     def concat(other)

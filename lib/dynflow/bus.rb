@@ -30,7 +30,7 @@ module Dynflow
     end
 
     def prepare_execution_plan(action_class, *args)
-      action_class.plan(*args)
+      action_class.plan(*args).execution_plan
     end
 
     # execution and finalizaition. Usable for resuming paused plan

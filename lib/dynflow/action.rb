@@ -3,22 +3,22 @@ module Dynflow
 
     class Dependency < Apipie::Params::Descriptor::Base
 
-      attr_reader :action_class, :attr
+      attr_reader :action_class, :field
 
       extend Forwardable
 
       def_delegators :@descriptor, :description, :invalid_param_error, :json_schema, :param, :params
 
-      def initialize(action_class, attr)
-        @descriptor = case attr
+      def initialize(action_class, field)
+        @descriptor = case field
                       when :input then action_class.input_format
                       when :output then action_class.output_format
                       else
-                        raise ArgumentError, 'attr can be either :input of :output'
+                        raise ArgumentError, 'field can be either :input of :output'
                       end
 
         @action_class = action_class
-        @attr = attr
+        @field = field
       end
     end
 
@@ -26,7 +26,12 @@ module Dynflow
     # was triggered from subscription. If so, the implicit plan
     # method uses the input of the parent action. Otherwise, the
     # argument the plan_action is used as default.
-    attr_accessor :execution_plan, :from_subscription, :input, :output
+    attr_accessor :from_subscription
+
+    # for planning phase
+    attr_reader :execution_plan
+
+    attr_accessor :input, :output
 
     def self.inherited(child)
       self.actions << child
@@ -45,11 +50,19 @@ module Dynflow
     end
 
     def initialize(input, output = nil)
-      # for preparation phase
-      @execution_plan = ExecutionPlan.new
-
       @input = input
       @output = output || {}
+
+      # for preparation phase
+      if output == :reference
+        # needed for steps initialization, quite hackish, fix!
+        @output = {}
+
+        @execution_plan = ExecutionPlan.new
+        @run_step = Step::Run.new(self)
+        @finalize_step = Step::Finalize.new(@run_step)
+        @output = Step::Reference.new(@run_step, :output)
+      end
     end
 
 
@@ -101,7 +114,7 @@ module Dynflow
     end
 
     def self.plan(*args)
-      action = self.new({})
+      action = self.new({}, :reference)
       yield action if block_given?
 
       plan_step = Step::Plan.new(action)
@@ -116,7 +129,7 @@ module Dynflow
         action.add_subscriptions(*args)
       end
 
-      action.execution_plan
+      return action
     end
 
     # for subscribed actions: by default take the input of the
@@ -135,22 +148,23 @@ module Dynflow
 
     def plan_self(input)
       self.input = input
-      @execution_plan << self
+      @run_step.input = input
+      @finalize_step.input = input
+      @execution_plan << @run_step if self.respond_to? :run
+      @execution_plan << @finalize_step if self.respond_to? :finalize
+      return self # to stay consistent with plan_action
     end
 
     def plan_action(action_class, *args)
-      sub_action_plan = action_class.plan(*args) do |action|
+      sub_action = action_class.plan(*args) do |action|
         action.input = self.input
       end
-      @execution_plan.concat(sub_action_plan)
+      @execution_plan.concat(sub_action.execution_plan)
+      return sub_action
     end
 
     def add_subscriptions(*plan_args)
       @execution_plan.concat(Dispatcher.execution_plan_for(self, *plan_args))
-    end
-
-    def execution_plan
-      @execution_plan
     end
 
     def validate!

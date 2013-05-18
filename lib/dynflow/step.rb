@@ -6,11 +6,11 @@ module Dynflow
       attr_reader :step, :field
 
       def initialize(step, field)
-        unless %w[input output].include? field
-          raise "Unexpected reference field: #{field}. Only input and output allowed"
-        end
         @step  = step
-        @field = field
+        @field = field.to_s
+        unless %w[input output].include? @field
+          raise "#{self.inspect}: Unexpected reference field. Only input and output allowed"
+        end
       end
 
       def encode
@@ -195,7 +195,7 @@ module Dynflow
         # not using the original action object
         @action_class = action.class
         self.status = 'finished' # default status
-        @data = {}.with_indifferent_access
+        @data = {}
       end
 
     end
@@ -210,7 +210,7 @@ module Dynflow
         @data = {
           'input'  => action.input,
           'output' => action.output
-        }.with_indifferent_access
+        }
       end
 
     end

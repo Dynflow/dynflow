@@ -23,11 +23,11 @@ module Dynflow
 
         execution_plan = ExecutionPlan.new
         ordered_actions.each do |action_class|
-          sub_action_plan = action_class.plan(*plan_args) do |sub_action|
+          sub_action = action_class.plan(*plan_args) do |sub_action|
             sub_action.input = action.input
             sub_action.from_subscription = true
           end
-          execution_plan.concat(sub_action_plan)
+          execution_plan.concat(sub_action.execution_plan)
         end
         return execution_plan
       end
