@@ -1,6 +1,7 @@
 module Dynflow
   class Action
 
+    # Used for specifying dependencies in input_format
     class Dependency < Apipie::Params::Descriptor::Base
 
       attr_reader :action_class, :field
@@ -22,11 +23,13 @@ module Dynflow
       end
     end
 
-    # only for the planning phase: flag indicating that the action
-    # was triggered from subscription. If so, the implicit plan
-    # method uses the input of the parent action. Otherwise, the
+    # only for the planning phase: action that caused this action
+    # to be triggered. In other words, this action was subscribed to
+    # a class of the trigger.
+    # If trigger present, the implicit plan
+    # method uses the input of the trigger. Otherwise, the
     # argument the plan_action is used as default.
-    attr_accessor :from_subscription
+    attr_accessor :trigger
 
     # for planning phase
     attr_reader :execution_plan
@@ -135,10 +138,10 @@ module Dynflow
     # for subscribed actions: by default take the input of the
     # subscribed action
     def plan(*args)
-      if from_subscription
+      if trigger
         # if the action is triggered by subscription, by default use the
         # input of parent action
-        plan_self(self.input)
+        plan_self(trigger.input)
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
@@ -148,7 +151,8 @@ module Dynflow
 
     def plan_self(input)
       self.input = input
-      @run_step.input = input
+      add_trigger_reference if trigger
+      @run_step.input = self.input
       @finalize_step.input = input
       @execution_plan << @run_step if self.respond_to? :run
       @execution_plan << @finalize_step if self.respond_to? :finalize
@@ -167,8 +171,25 @@ module Dynflow
       @execution_plan.concat(Dispatcher.execution_plan_for(self, *plan_args))
     end
 
+    # If triggered with subscription, check if the trigger output is
+    # not reference in input_format. If so, make the reference in the input.
+    def add_trigger_reference
+      trigger_dependencies = self.class.input_format.params.find_all do |description|
+        descriptor = description.descriptor
+        descriptor.is_a?(Dependency) && descriptor.action_class == trigger.class
+      end.map { |description| [description.name, description.descriptor] }
+
+      trigger_dependencies.each do |name, dependency|
+        self.input[name.to_s] = case dependency.field
+                                when :input then trigger.input
+                                when :output then trigger.output
+                                else raise ArgumentError, "Unknown dependency field: #{dependency.field}"
+        end
+      end
+    end
+
     def validate!
-      self.clss.output_format.validate!(output)
+      self.class.output_format.validate!(output)
     end
 
   end
