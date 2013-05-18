@@ -85,8 +85,9 @@ module Dynflow
       ret << "/"
       ret << self.class.name.split('::').last
       ret << "##{persistence.persistence_id}" if persistence && persistence.persistence_id
-      ret << ": #{input.inspect}"
+      ret << "(#{input.inspect}"
       ret << " ~> #{output.inspect}" if status != 'pending'
+      ret << ")"
       return ret
     end
 
@@ -138,6 +139,10 @@ module Dynflow
           item.encode
         end
       end
+    end
+
+    def satisfying_step(step)
+      return self if self.equal?(step)
     end
 
     def replace_references!
@@ -211,6 +216,11 @@ module Dynflow
           'input'  => action.input,
           'output' => action.output
         }
+      end
+
+      # steps referenced by this step
+      def dependencies
+        self.input.values.find_all { |value| value.is_a? Reference }.map(&:step)
       end
 
     end

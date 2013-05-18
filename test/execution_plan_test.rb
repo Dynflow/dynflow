@@ -81,10 +81,20 @@ module Dynflow
         def run; end
       end
 
-      def assert_run_steps(expected, execution_plan)
-        steps_string =  execution_plan.inspect_steps(execution_plan.run_steps)
-        steps_string.gsub!(/^.*::/,'')
-        steps_string.must_equal expected.chomp
+      def inspect_step(out, step, prefix)
+        if step.respond_to? :steps
+          out << prefix << step.class.name << "\n"
+          step.steps.each { |sub_step| inspect_step(out, sub_step, prefix + "  ") }
+        else
+          string = step.inspect.gsub(step.action_class.name.sub(/\w+\Z/,''),'')
+          out << prefix << string << "\n"
+        end
+      end
+
+      def assert_run_plan(expected, execution_plan)
+        plan_string = ""
+        inspect_step(plan_string, execution_plan.run_plan, "")
+        plan_string.chomp.must_equal expected.chomp
       end
 
       let :issues_data do
@@ -106,13 +116,16 @@ module Dynflow
       end
 
       it 'constructs the plan of actions to be executed in run phase' do
-        assert_run_steps <<EXPECTED, execution_plan
-Sequence:
-  Triage/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}
-  NotifyAssignee/Run: {"author"=>"Peter Smith", "text"=>"Failing test", "triage" => Reference(Triage/Run: {"author"=>"Peter Smith", "text"=>"Failing test"}/output)}
-Sequence:
-  Triage/Run: {"author"=>"John Doe", "text"=>"Internal server error"}
-  NotifyAssignee/Run: {"author"=>"John Doe", "text"=>"Internal server error", "triage" => Reference(Triage/Run: {"author"=>"John Doe", "text"=>"Internal server error"}/output)}}
+        assert_run_plan <<EXPECTED, execution_plan
+Dynflow::ExecutionPlan::Concurrence
+  Dynflow::ExecutionPlan::Sequence
+    Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})
+    UpdateIssue/Run({"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
+    NotifyAssignee/Run({"author"=>"Peter Smith", "text"=>"Failing test", "triage"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
+  Dynflow::ExecutionPlan::Sequence
+    Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})
+    UpdateIssue/Run({"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
+    NotifyAssignee/Run({"author"=>"John Doe", "text"=>"Internal server error", "triage"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
 EXPECTED
       end
 

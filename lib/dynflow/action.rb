@@ -140,8 +140,9 @@ module Dynflow
     def plan(*args)
       if trigger
         # if the action is triggered by subscription, by default use the
-        # input of parent action
-        plan_self(trigger.input)
+        # input of parent action.
+        # should be replaced by referencing the input from input format
+        plan_self(trigger.input.dup)
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
