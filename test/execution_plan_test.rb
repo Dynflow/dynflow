@@ -58,7 +58,7 @@ module Dynflow
         end
 
         input_format do
-          param :triage, Triage
+          param :triage, Triage.output
         end
 
         def run; end

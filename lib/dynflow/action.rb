@@ -1,6 +1,27 @@
 module Dynflow
   class Action
 
+    class Dependency < Apipie::Params::Descriptor::Base
+
+      attr_reader :action_class, :attr
+
+      extend Forwardable
+
+      def_delegators :@descriptor, :description, :invalid_param_error, :json_schema, :param, :params
+
+      def initialize(action_class, attr)
+        @descriptor = case attr
+                      when :input then action_class.input_format
+                      when :output then action_class.output_format
+                      else
+                        raise ArgumentError, 'attr can be either :input of :output'
+                      end
+
+        @action_class = action_class
+        @attr = attr
+      end
+    end
+
     # only for the planning phase: flag indicating that the action
     # was triggered from subscription. If so, the implicit plan
     # method uses the input of the parent action. Otherwise, the
@@ -63,6 +84,16 @@ module Dynflow
       else
         nil
       end
+    end
+
+    # use when referencing output from another action's input_format
+    def self.input
+      Dependency.new(self, :input)
+    end
+
+    # use when referencing output from another action's input_format
+    def self.output
+      Dependency.new(self, :output)
     end
 
     def self.trigger(*args)

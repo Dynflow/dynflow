@@ -1,3 +1,4 @@
+require 'apipie-params'
 require 'active_support/core_ext/hash/indifferent_access'
 require 'dynflow/logger'
 require 'dynflow/execution_plan'
