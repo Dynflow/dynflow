@@ -90,8 +90,7 @@ module Dynflow
           plan_action(Merge,
                       'commit' => commit,
                       'ci_output' => ci.output,
-                      'review1_output' => review1.output,
-                      'review2_output' => review2.output)
+                      'review_outputs' => [review1.output, review2.output])
         end
 
         input_format do
@@ -132,10 +131,7 @@ module Dynflow
         input_format do
           param :commit, Commit.input
           param :ci_output, Ci.output
-          param :review1_output, Review.output
-          param :review2_output, Review.output
-          #TODO:
-          # param :reviews_output, array_of(Review.output)
+          param :review_outputs, array_of(Review.output)
         end
 
         def run; end
@@ -204,7 +200,7 @@ Dynflow::ExecutionPlan::Concurrence
     Ci/Run({"commit"=>{"sha"=>"abc123"}})
     Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})
     Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})
-    Merge/Run({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/Run({"commit"=>{"sha"=>"abc123"}})/output), "review1_output"=>Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), "review2_output"=>Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)})
+    Merge/Run({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/Run({"commit"=>{"sha"=>"abc123"}})/output), "review_outputs"=>[Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)]})
 EXPECTED
         end
 

@@ -220,7 +220,13 @@ module Dynflow
 
       # steps referenced by this step
       def dependencies
-        self.input.values.find_all { |value| value.is_a? Reference }.map(&:step)
+        self.input.values.map do |value|
+          if value.is_a? Reference
+            value
+          elsif value.is_a? Array
+            value.find_all { |val| val.is_a? Reference }
+          end
+        end.compact.flatten.map(&:step)
       end
 
     end
