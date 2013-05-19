@@ -79,18 +79,12 @@ module Dynflow
 
     # return true if the run phase finished successfully
     def run_execution_plan(execution_plan)
-      success = true
-      execution_plan.run_steps.map do |step|
-        next step if !success || %w[skipped success].include?(step.status)
-        step.persist_before_run
-        success = step.catch_errors do
-          step.output = {}
-          step.action.run
-        end
-        step.persist_after_run
-        step
-      end
+      success = execution_driver.run(execution_plan.run_plan)
       return success
+    end
+
+    def execution_driver
+      @execution_driver ||= Executor.new
     end
 
     def transaction_driver
@@ -112,7 +106,6 @@ module Dynflow
     def rollback_transaction
       transaction_driver.rollback if transaction_driver
     end
-
 
     def persistence_driver
       nil

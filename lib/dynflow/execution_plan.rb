@@ -6,8 +6,9 @@ module Dynflow
     class RunPlan
       attr_reader :steps
 
-      def initialize
+      def initialize(&block)
         @steps = []
+        yield @steps if block_given?
       end
 
       def add_if_satisfied(step, deps)
