@@ -81,6 +81,66 @@ module Dynflow
         def run; end
       end
 
+      class Commit < Action
+
+        def plan(commit)
+          ci = plan_action(Ci, 'commit' => commit)
+          review1 = plan_action(Review, 'commit' => commit, 'reviewer' => 'Morfeus')
+          review2 = plan_action(Review, 'commit' => commit, 'reviewer' => 'Neo')
+          plan_action(Merge,
+                      'commit' => commit,
+                      'ci_output' => ci.output,
+                      'review1_output' => review1.output,
+                      'review2_output' => review2.output)
+        end
+
+        input_format do
+          param :sha, String
+        end
+
+      end
+
+      class Ci < Action
+
+        input_format do
+          param :commit, Commit.input
+        end
+
+        output_format do
+          param :passed, :boolean
+        end
+
+        def run; end
+      end
+
+      class Review < Action
+
+        input_format do
+          param :reviewer, String
+          param :commit, Commit.input
+        end
+
+        output_format do
+          param :passed, :boolean
+        end
+
+        def run; end
+      end
+
+      class Merge < Action
+
+        input_format do
+          param :commit, Commit.input
+          param :ci_output, Ci.output
+          param :review1_output, Review.output
+          param :review2_output, Review.output
+          #TODO:
+          # param :reviews_output, array_of(Review.output)
+        end
+
+        def run; end
+      end
+
       def inspect_step(out, step, prefix)
         if step.respond_to? :steps
           out << prefix << step.class.name << "\n"
@@ -104,19 +164,20 @@ module Dynflow
         ]
       end
 
-      let :execution_plan do
-        IncommingIssues.plan(issues_data).execution_plan
-      end
+      describe 'single dependencies' do
+        let :execution_plan do
+          IncommingIssues.plan(issues_data).execution_plan
+        end
 
-      it 'includes only actions with run method defined in run steps' do
-        actions_with_run = [Triage,
-                            UpdateIssue,
-                            NotifyAssignee]
-        execution_plan.run_steps.map(&:action_class).uniq.must_equal(actions_with_run)
-      end
+        it 'includes only actions with run method defined in run steps' do
+          actions_with_run = [Triage,
+                              UpdateIssue,
+                              NotifyAssignee]
+          execution_plan.run_steps.map(&:action_class).uniq.must_equal(actions_with_run)
+        end
 
-      it 'constructs the plan of actions to be executed in run phase' do
-        assert_run_plan <<EXPECTED, execution_plan
+        it 'constructs the plan of actions to be executed in run phase' do
+          assert_run_plan <<EXPECTED, execution_plan
 Dynflow::ExecutionPlan::Concurrence
   Dynflow::ExecutionPlan::Sequence
     Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})
@@ -127,6 +188,26 @@ Dynflow::ExecutionPlan::Concurrence
     UpdateIssue/Run({"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
     NotifyAssignee/Run({"author"=>"John Doe", "text"=>"Internal server error", "triage"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
 EXPECTED
+        end
+
+      end
+
+      describe 'multi dependencies' do
+        let :execution_plan do
+          Commit.plan('sha' => 'abc123').execution_plan
+        end
+
+        it 'constructs the plan of actions to be executed in run phase' do
+          assert_run_plan <<EXPECTED, execution_plan
+Dynflow::ExecutionPlan::Concurrence
+  Dynflow::ExecutionPlan::Sequence
+    Ci/Run({"commit"=>{"sha"=>"abc123"}})
+    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})
+    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})
+    Merge/Run({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/Run({"commit"=>{"sha"=>"abc123"}})/output), "review1_output"=>Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), "review2_output"=>Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)})
+EXPECTED
+        end
+
       end
 
     end
