@@ -5,7 +5,7 @@ module Actions
       param :event_id, Integer
       param :invitation_message, String
       param :guest_id, Integer
-      param :email, string
+      param :email, String
     end
 
     def self.subscribe

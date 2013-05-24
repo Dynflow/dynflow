@@ -21,6 +21,11 @@ module Dynflow
         @action_class = action_class
         @field = field
       end
+
+      def self.build(*args)
+        # we don't want this class to be buildable directly from the DSL
+      end
+
     end
 
     # only for the planning phase: action that caused this action

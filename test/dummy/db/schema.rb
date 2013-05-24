@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130506185041) do
+ActiveRecord::Schema.define(:version => 20130524211907) do
 
   create_table "dynflow_ar_persisted_plans", :force => true do |t|
     t.integer  "user_id"

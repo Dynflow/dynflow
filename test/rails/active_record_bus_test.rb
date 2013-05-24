@@ -13,7 +13,7 @@ describe 'transactions' do
   end
 
   it 'runs planning phase in a transaction' do
-    Actions::SendInvitations.trigger(@event, "Hello", ['root'])
+    plan = Actions::SendInvitations.trigger(@event, "Hello", ['root'])
     # success means a guest record was created
     Guest.all.size.must_equal 1
 

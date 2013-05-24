@@ -87,6 +87,7 @@ module Dynflow
       ret << "##{persistence.persistence_id}" if persistence && persistence.persistence_id
       ret << "(#{input.inspect}"
       ret << " ~> #{output.inspect}" if status != 'pending'
+      ret << " ! #{error['exception']}: #{error['message']}" if error && !error.empty?
       ret << ")"
       return ret
     end
