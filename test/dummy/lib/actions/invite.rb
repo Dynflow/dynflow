@@ -5,7 +5,11 @@ module Actions
       param :event_id, Integer
       param :invitation_message, String
       param :guest_id, Integer
-      param :email, string
+      param :email, String
+    end
+
+    output_format do
+      param :sent_at, Time
     end
 
     def plan(event, invitation_message, invitee_login)

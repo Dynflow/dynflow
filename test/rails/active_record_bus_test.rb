@@ -39,12 +39,33 @@ describe 'execution plan persistence' do
     @user = User.create!(:login => "root")
   end
 
-  it 'persists and restores the execution plan' do
-    plan = Actions::SendInvitations.trigger(@event, 'Hello', ['root'])
-    plan.persistence.reload
-    restored_plan = plan.persistence.execution_plan
-    restored_plan.object_id.wont_equal plan.object_id
-    restored_plan.status.must_equal plan.status
-    restored_plan.steps.must_equal plan.steps
+  let(:bus) { Dynflow::Bus.impl }
+  let(:original_plan) do
+    plan = bus.prepare_execution_plan(Actions::SendInvitations, @event, 'Hello', ['root'])
+    bus.persist_plan_if_possible(plan)
+    plan
   end
+
+  let(:restored_plan) do
+    original_plan.persistence.reload
+    original_plan.persistence.execution_plan
+  end
+
+
+  it 'persists and restores the execution plan' do
+    restored_plan.object_id.wont_equal original_plan.object_id
+    restored_plan.status.must_equal original_plan.status
+    restored_plan.steps.must_equal original_plan.steps
+  end
+
+  it 'loads every persisted step just once (ever when referenced)' do
+    referenced_step = original_plan.finalize_steps[0].output.step
+    step = original_plan.run_steps[0]
+    step.equal?(referenced_step).must_equal true
+
+    referenced_step = restored_plan.finalize_steps[0].output.step
+    step = restored_plan.run_steps[0]
+    step.equal?(referenced_step).must_equal true
+  end
+
 end
