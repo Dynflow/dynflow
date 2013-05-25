@@ -248,6 +248,14 @@ module Dynflow
         Dynflow::Persistence::ActiveRecord::PersistedPlan
       end
 
+      def self.migrations_path
+        File.expand_path('../../../db/migrate', __FILE__)
+      end
+
+      def self.bootstrap_migrations(app)
+        app.config.paths['db/migrate'] << self.migrations_path
+      end
+
     end
 
   end
