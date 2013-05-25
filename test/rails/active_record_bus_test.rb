@@ -1,6 +1,6 @@
 require 'rails_test_helper'
 
-Dynflow::Bus.impl = Dynflow::Bus::RailsBus.new
+Dynflow::Bus.impl = Dynflow::Bus::ActiveRecordBus.new
 
 describe 'transactions' do
 

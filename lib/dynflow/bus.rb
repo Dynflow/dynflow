@@ -233,9 +233,7 @@ module Dynflow
       end
     end
 
-    # uses Rails API for db features
-    # encapsulates the planning and finalization phase into
-    class RailsBus < Bus
+    class ActiveRecordBus < Bus
 
       def initialize
         require 'dynflow/persistence/active_record/persisted_plan'
