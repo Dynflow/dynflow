@@ -237,12 +237,17 @@ module Dynflow
     # encapsulates the planning and finalization phase into
     class RailsBus < Bus
 
+      def initialize
+        require 'dynflow/persistence/active_record/persisted_plan'
+        require 'dynflow/persistence/active_record/persisted_step'
+      end
+
       def transaction_driver
         ActiveRecordTransaction
       end
 
       def persistence_driver
-        Dynflow::ArPersistedPlan
+        Dynflow::Persistence::ActiveRecord::PersistedPlan
       end
 
     end

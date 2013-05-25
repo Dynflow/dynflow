@@ -11,7 +11,7 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130525083535) do
+ActiveRecord::Schema.define(:version => 20130525133441) do
 
   create_table "dynflow_ar_persisted_plans", :force => true do |t|
     t.integer  "user_id"
@@ -25,14 +25,14 @@ ActiveRecord::Schema.define(:version => 20130525083535) do
   add_index "dynflow_ar_persisted_plans", ["user_id"], :name => "index_dynflow_ar_persisted_plans_on_user_id"
 
   create_table "dynflow_ar_persisted_steps", :force => true do |t|
-    t.integer  "ar_persisted_plan_id"
+    t.integer  "persisted_plan_id"
     t.text     "data"
     t.string   "status"
-    t.datetime "created_at",           :null => false
-    t.datetime "updated_at",           :null => false
+    t.datetime "created_at",        :null => false
+    t.datetime "updated_at",        :null => false
   end
 
-  add_index "dynflow_ar_persisted_steps", ["ar_persisted_plan_id"], :name => "index_dynflow_ar_persisted_steps_on_ar_persisted_plan_id"
+  add_index "dynflow_ar_persisted_steps", ["persisted_plan_id"], :name => "index_dynflow_ar_persisted_steps_on_persisted_plan_id"
   add_index "dynflow_ar_persisted_steps", ["status"], :name => "index_dynflow_ar_persisted_steps_on_status"
 
   create_table "events", :force => true do |t|
