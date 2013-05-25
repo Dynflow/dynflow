@@ -127,14 +127,47 @@ module Dynflow
 
     def persisted_plan(persistence_id)
       if persistence_driver
-        persistence_driver.persisted_plan(persistence_id)
+        with_persisted_steps_cache do
+          persisted_plan = persistence_driver.persisted_plan(persistence_id)
+
+          plan_steps = persisted_plan.plan_step_ids.map do |step_id|
+            persisted_step(step_id)
+          end
+
+          run_steps = persisted_plan.run_step_ids.map do |step_id|
+            persisted_step(step_id)
+          end
+
+          finalize_steps = persisted_plan.finalize_step_ids.map do |step_id|
+            persisted_step(step_id)
+          end
+
+          execution_plan = ExecutionPlan.new(plan_steps, run_steps, finalize_steps)
+          execution_plan.status = persisted_plan.status
+          execution_plan.persistence = persisted_plan
+          return execution_plan
+        end
       end
     end
 
     def persisted_step(persistence_id)
       if persistence_driver
-        persistence_driver.persisted_step(persistence_id)
+        cache = Thread.current[:dynflow_persisted_steps_cache]
+        if cache && cache[persistence_id]
+          step = cache[persistence_id]
+        else
+          step = persistence_driver.persisted_step(persistence_id)
+          cache[persistence_id] = step if cache
+        end
+        return step
       end
+    end
+
+    def with_persisted_steps_cache
+      Thread.current[:dynflow_persisted_steps_cache] = {}
+      yield
+    ensure
+      Thread.current[:dynflow_persisted_steps_cache] = nil
     end
 
     # performs the planning phase of an action, but rollbacks any db

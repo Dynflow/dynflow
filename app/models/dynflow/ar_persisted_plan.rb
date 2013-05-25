@@ -8,29 +8,30 @@ module Dynflow
       self.ar_persisted_steps.map(&:step)
     end
 
-    def plan_steps
-      self.steps.find_all { |step| step.is_a? Step::Plan }
-    end
-
-    def run_steps
-      self.steps.find_all { |step| step.is_a? Step::Run }
-    end
-
-    def finalize_steps
-      self.steps.find_all { |step| step.is_a? Step::Finalize }
-    end
-
-    def execution_plan
-      execution_plan = ExecutionPlan.new(self.plan_steps, self.run_steps, self.finalize_steps)
-      execution_plan.status = self.status
-      execution_plan.persistence = self
-      return execution_plan
-    end
-
     # vvvv interface required by Dynflow::Bus
 
     def persistence_id
       self.id
+    end
+
+    def persisted_step_ids(step_type)
+      persisted_steps = ar_persisted_steps.find_all do |persisted|
+        persisted.step.is_a? step_type
+      end
+
+      persisted_steps.map(&:persistence_id)
+    end
+
+    def plan_step_ids
+      persisted_step_ids(Step::Plan)
+    end
+
+    def run_step_ids
+      persisted_step_ids(Step::Run)
+    end
+
+    def finalize_step_ids
+      persisted_step_ids(Step::Finalize)
     end
 
     def self.persisted_plans(status = nil)
@@ -38,11 +39,11 @@ module Dynflow
       if status
         scope = scope.where(:status => status)
       end
-      scope.all.map(&:execution_plan)
+      scope.all
     end
 
     def self.persisted_plan(persistence_id)
-      self.find(persistence_id).execution_plan
+      self.find(persistence_id)
     end
 
     def self.persisted_step(persistence_id)

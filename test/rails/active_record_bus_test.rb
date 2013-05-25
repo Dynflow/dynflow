@@ -47,8 +47,7 @@ describe 'execution plan persistence' do
   end
 
   let(:restored_plan) do
-    original_plan.persistence.reload
-    original_plan.persistence.execution_plan
+    bus.persisted_plan(original_plan.persistence.persistence_id)
   end
 
 
