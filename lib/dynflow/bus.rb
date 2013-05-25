@@ -113,7 +113,11 @@ module Dynflow
 
     def persist_plan_if_possible(execution_plan)
       if persistence_driver
-        persistence_driver.persist(execution_plan)
+        # TODO: the whole serialization logic should not be dependent on the
+        # persistence driver
+        persistence_driver.persist(execution_plan) do |persisted_plan|
+          persisted_plan.serialized_run_plan = self.serialize_run_plan(execution_plan.run_plan)
+        end
       end
     end
 
@@ -143,8 +147,10 @@ module Dynflow
           end
 
           execution_plan = ExecutionPlan.new(plan_steps, run_steps, finalize_steps)
+          execution_plan.run_plan = restore_run_plan(persisted_plan.serialized_run_plan)
           execution_plan.status = persisted_plan.status
           execution_plan.persistence = persisted_plan
+
           return execution_plan
         end
       end
@@ -168,6 +174,29 @@ module Dynflow
       yield
     ensure
       Thread.current[:dynflow_persisted_steps_cache] = nil
+    end
+
+    def serialize_run_plan(run_plan)
+      out = {}
+      out['step_type'] = run_plan.class.name
+      if run_plan.is_a? Dynflow::Step
+        out['persistence_id'] = run_plan.persistence.id
+      else
+        out['steps'] = run_plan.steps.map { |step| serialize_run_plan(step) }
+      end
+      return out
+    end
+
+    def restore_run_plan(serialized_run_plan)
+      step_type = serialized_run_plan['step_type'].constantize
+      if step_type.ancestors.include?(Dynflow::Step)
+        return persisted_step(serialized_run_plan['persistence_id'])
+      else
+        steps = serialized_run_plan['steps'].map do |serialized_step|
+          restore_run_plan(serialized_step)
+        end
+        return step_type.new(steps)
+      end
     end
 
     # performs the planning phase of an action, but rollbacks any db

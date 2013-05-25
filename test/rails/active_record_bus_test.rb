@@ -50,14 +50,19 @@ describe 'execution plan persistence' do
     bus.persisted_plan(original_plan.persistence.persistence_id)
   end
 
-
-  it 'persists and restores the execution plan' do
+  it 'creates a new object' do
     restored_plan.object_id.wont_equal original_plan.object_id
+  end
+
+  it 'preserves the status' do
     restored_plan.status.must_equal original_plan.status
+  end
+
+  it 'preserves the steps' do
     restored_plan.steps.must_equal original_plan.steps
   end
 
-  it 'loads every persisted step just once (ever when referenced)' do
+  it 'loads every persisted step just once (even when referenced)' do
     referenced_step = original_plan.finalize_steps[0].output.step
     step = original_plan.run_steps[0]
     step.equal?(referenced_step).must_equal true
@@ -65,6 +70,11 @@ describe 'execution plan persistence' do
     referenced_step = restored_plan.finalize_steps[0].output.step
     step = restored_plan.run_steps[0]
     step.equal?(referenced_step).must_equal true
+  end
+
+  it 'preserves the run_plan' do
+    restored_run_plan = restored_plan.instance_variable_get('@run_plan')
+    restored_run_plan.must_equal original_plan.run_plan
   end
 
 end

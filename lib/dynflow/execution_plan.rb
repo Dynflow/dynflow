@@ -6,13 +6,17 @@ module Dynflow
     class RunPlan
       attr_reader :steps
 
-      def initialize(&block)
-        @steps = []
+      def initialize(steps = [], &block)
+        @steps = steps
         yield @steps if block_given?
       end
 
       def add_if_satisfied(step, deps)
         raise NotImplementedError, "Abstract method"
+      end
+
+      def ==(other)
+        self.class == other.class && self.steps == other.steps
       end
     end
 
@@ -125,28 +129,35 @@ module Dynflow
       self.steps.find_all { |step| step.status == 'error' }
     end
 
-    def run_plan
+    def run_plan(refresh = false)
+      return @run_plan if !refresh && @run_plan
+
       dep_tree = self.run_steps.reduce([]) do |dep_tree, step|
         dep_tree << [step, step.dependencies]
       end
 
-      run_plan = Concurrence.new
+      @run_plan = Concurrence.new
 
       something_deleted = true
       while something_deleted
         something_deleted = false
         satisfied_steps = dep_tree.delete_if do |step, deps|
-          if run_plan.add_if_satisfied(step, deps)
+          if @run_plan.add_if_satisfied(step, deps)
             something_deleted = true
           end
         end
+      end
+
+      # when restoring from persistence
+      def run_plan=(run_plan)
+        @run_plan = run_plan
       end
 
       if dep_tree.any?
         raise "Unresolved dependencies: #{dep_tree.inspect}"
       end
 
-      return run_plan
+      return @run_plan
     end
 
     def inspect_steps(steps = nil)

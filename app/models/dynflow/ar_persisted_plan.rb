@@ -4,6 +4,8 @@ module Dynflow
     has_many :ar_persisted_steps, :order => 'id'
     attr_accessible :status
 
+    serialize :serialized_run_plan
+
     def steps
       self.ar_persisted_steps.map(&:step)
     end
@@ -61,6 +63,10 @@ module Dynflow
         step.persistence = persisted_step
       end
       execution_plan.persistence = persisted_plan
+
+      yield persisted_plan if block_given?
+
+      persisted_plan.save!
       return persisted_plan
     end
 

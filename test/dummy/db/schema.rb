@@ -11,13 +11,14 @@
 #
 # It's strongly recommended to check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20130524211907) do
+ActiveRecord::Schema.define(:version => 20130525083535) do
 
   create_table "dynflow_ar_persisted_plans", :force => true do |t|
     t.integer  "user_id"
     t.string   "status"
-    t.datetime "created_at", :null => false
-    t.datetime "updated_at", :null => false
+    t.text     "serialized_run_plan"
+    t.datetime "created_at",          :null => false
+    t.datetime "updated_at",          :null => false
   end
 
   add_index "dynflow_ar_persisted_plans", ["status"], :name => "index_dynflow_ar_persisted_plans_on_status"
