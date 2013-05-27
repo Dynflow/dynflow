@@ -9,9 +9,33 @@ module Dynflow
       def_delegators :impl, :trigger, :resume, :skip, :preview_execution_plan,
         :persisted_plans, :persisted_plan, :persisted_step
 
-      def impl
-        @impl ||= Bus.new
+      # To use other then default bus for the code run in the block.
+      #
+      # @example Usage
+      #   using(TestBus.new) do
+      #     Action.trigger
+      #   end
+      #
+      def using(bus, &block)
+        original_bus = Thread.current[:dynflow_bus]
+        Thread.current[:dynflow_bus] = bus
+        yield
+      ensure
+        Thread.current[:dynflow_bus] = original_bus
       end
+
+      def impl
+        if Thread.current[:dynflow_bus]
+          # bus can be determined in the thread
+          return Thread.current[:dynflow_bus]
+        else
+          # otherwise a default one is used
+          @impl ||= Bus.new
+          return @impl
+        end
+      end
+
+      # the default bus can be specified
       attr_writer :impl
     end
 
