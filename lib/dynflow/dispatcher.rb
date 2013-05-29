@@ -26,6 +26,7 @@ module Dynflow
           sub_action = action_class.plan(*plan_args) do |sub_action|
             sub_action.input = action.input
             sub_action.trigger = action
+            sub_action.add_trigger_reference
           end
           execution_plan.concat(sub_action.execution_plan)
         end

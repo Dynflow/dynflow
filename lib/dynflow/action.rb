@@ -157,7 +157,6 @@ module Dynflow
 
     def plan_self(input)
       self.input = input
-      add_trigger_reference if trigger
       @run_step.input = self.input
       @finalize_step.input = input
       @execution_plan << @run_step if self.respond_to? :run
