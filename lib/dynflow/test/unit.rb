@@ -10,11 +10,10 @@ module Dynflow
     #    include Dynflow::Test::Unit
     #
     #    def test_action_triggered
-    #      action = dynflow_triggered_action do
-    #        MyClass.say_hello('World')
-    #      end
+    #      testing_bus.trigger(MyClass, 'World')
+    #      action = testing_bus.triggered_action
     #
-    #      assert_instance_of HelloAction, action
+    #      assert_instance_of MyClass, action
     #      assert_equal {'name' => 'World'}, action.input
     #
     #      send_mail = action.sub_actions.first
@@ -24,25 +23,22 @@ module Dynflow
     #  end
     module Unit
 
-      # Capture the action triggered by the code in the block.
-      #
-      # @returns [Dynflow::Action] with Dynflow::Test::Unit::IsolatedAction
-      def dynflow_triggered_action(&block)
-        bus = Dynflow::Test::Unit::Bus.new
-        Dynflow::Bus.using(bus, &block)
-        return bus.trigerred_action
+      # use instead of real bus to capture the triggered action and
+      # run it's plan in isolation
+      def testing_bus
+        @dynflow_testing_bus ||= Dynflow::Test::Unit::Bus.new
       end
 
       # Pseudo-bus capturing the triggered action and running the plan
       # of this action in isolation.
       class Bus
 
-        attr_reader :trigerred_action
+        attr_reader :triggered_action
 
         def trigger(action_class, *args)
-          @trigerred_action = action_class.new({}, :reference)
-          @trigerred_action.singleton_class.send(:include, IsolatedAction)
-          @trigerred_action.plan(*args)
+          @triggered_action = action_class.new({}, :reference)
+          @triggered_action.singleton_class.send(:include, IsolatedAction)
+          @triggered_action.plan(*args)
         end
 
       end
