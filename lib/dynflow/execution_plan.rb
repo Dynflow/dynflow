@@ -129,6 +129,7 @@ module Dynflow
       self.steps.find_all { |step| step.status == 'error' }
     end
 
+    # Calculate the run plan based on the dependencies between run steps
     def run_plan(refresh = false)
       return @run_plan if !refresh && @run_plan
 
@@ -148,16 +149,16 @@ module Dynflow
         end
       end
 
-      # when restoring from persistence
-      def run_plan=(run_plan)
-        @run_plan = run_plan
-      end
-
       if dep_tree.any?
         raise "Unresolved dependencies: #{dep_tree.inspect}"
       end
 
       return @run_plan
+    end
+
+    # when restoring from persistence
+    def run_plan=(run_plan)
+      @run_plan = run_plan
     end
 
     def inspect_steps(steps = nil)

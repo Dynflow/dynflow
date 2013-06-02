@@ -24,7 +24,7 @@ module Dynflow
         execution_plan = ExecutionPlan.new
         ordered_actions.each do |action_class|
           sub_action = action_class.plan(*plan_args) do |sub_action|
-            sub_action.input = action.input
+            sub_action.input = action.input.dup
             sub_action.trigger = action
             sub_action.add_trigger_reference
           end

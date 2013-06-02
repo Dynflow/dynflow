@@ -208,24 +208,25 @@ module Dynflow
 
     class Run < Step
 
-      def initialize(action)
-        # we want to have the steps separated:
-        # not using the original action object
-        @action_class = action.class
+      def initialize(action_class, input = nil, output = nil)
+        @action_class = action_class
         self.status = 'pending' # default status
+        input ||= {}
+        output ||= {}
         @data = {
-          'input'  => action.input,
-          'output' => action.output
+          'input'  => input,
+          'output' => output
         }
       end
 
-      # steps referenced by this step
+      # Output references needed for this step to run
+      # @return [Array<Reference>]
       def dependencies
         self.input.values.map do |value|
-          if value.is_a? Reference
+          if value.is_a?(Reference) && value.field.to_s == 'output'
             value
           elsif value.is_a? Array
-            value.find_all { |val| val.is_a? Reference }
+            value.find_all { |val| val.is_a?(Reference) && val.field.to_s == 'output' }
           end
         end.compact.flatten.map(&:step)
       end
@@ -239,7 +240,7 @@ module Dynflow
         # not using the original action object
         @action_class = run_step.action_class
         self.status = 'pending' # default status
-        if run_step.action.respond_to? :run
+        if run_step.action_class.instance_methods.include?(:run)
           @data = {
             'input' => Reference.new(run_step, 'input'),
             'output' => Reference.new(run_step, 'output'),

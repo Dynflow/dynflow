@@ -39,7 +39,8 @@ module Dynflow
     # for planning phase
     attr_reader :execution_plan
 
-    attr_accessor :input, :output
+    extend Forwardable
+    def_delegators :@run_step, :input, :input=, :output=
 
     def self.inherited(child)
       self.actions << child
@@ -58,19 +59,23 @@ module Dynflow
     end
 
     def initialize(input, output = nil)
-      @input = input
-      @output = output || {}
-
+      real_output = output
+      real_output = {} unless real_output.is_a? Hash
+      @run_step = Step::Run.new(self.class, input, real_output)
       # for preparation phase
       if output == :reference
         # needed for steps initialization, quite hackish, fix!
-        @output = {}
-
         @execution_plan = ExecutionPlan.new
-        @run_step = Step::Run.new(self)
         @finalize_step = Step::Finalize.new(@run_step)
         @output = Step::Reference.new(@run_step, :output)
       end
+    end
+
+    # provide the reference to the output if in planning phase
+    # TODO: get most of the planning outside of the action class as
+    # it's getting messy here
+    def output
+      return @output || @run_step.output
     end
 
 
@@ -147,7 +152,7 @@ module Dynflow
         # if the action is triggered by subscription, by default use the
         # input of parent action.
         # should be replaced by referencing the input from input format
-        plan_self(trigger.input.dup)
+        plan_self(self.input.merge(trigger.input))
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
@@ -166,7 +171,7 @@ module Dynflow
 
     def plan_action(action_class, *args)
       sub_action = action_class.plan(*args) do |action|
-        action.input = self.input
+        action.input = self.input.dup
       end
       @execution_plan.concat(sub_action.execution_plan)
       return sub_action

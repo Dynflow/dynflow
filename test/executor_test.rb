@@ -35,7 +35,7 @@ module Dynflow
     end
 
     def run_step(name, input)
-      Step::Run.new(Dummy.new(input.merge('action' => name.to_s)))
+      Step::Run.new(Dummy, input.merge('action' => name.to_s))
     end
 
     def output_ref(step)
