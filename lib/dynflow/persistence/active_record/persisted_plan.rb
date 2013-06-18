@@ -40,12 +40,24 @@ module Dynflow
           persisted_step_ids(Step::Finalize)
         end
 
-        def self.persisted_plans(status = nil)
+        def self.persisted_plans(status = 'all', search_options = {})
           scope = self
-          if status
+          case status
+          when 'not_finished'
+            scope = scope.where(:status => ['new', 'paused'])
+          when 'all'
+            # all
+          when String
             scope = scope.where(:status => status)
+          else
+            raise ArgumentError, "Unexpected argument #{status}"
           end
-          scope.order('updated_at DESC').all
+          scope = scope.order('updated_at DESC')
+          if per_page = search_options[:per_page]
+            page = [(search_options[:page] || 1).to_i, 1].max
+            scope = scope.limit(per_page).offset((page.to_i - 1) * per_page)
+          end
+          return scope.all
         end
 
         def self.persisted_plan(persistence_id)

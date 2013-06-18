@@ -1,5 +1,12 @@
 <h1>Listing execution plans</h1>
 
+<a href="<%= h(url("?status=all")) %>">all</a> |
+<a href="<%= h(url("?status=not_finished")) %>">not finished</a> |
+<a href="<%= h(url("?status=new")) %>">new</a> |
+<a href="<%= h(url("?status=paused")) %>">paused</a> |
+<a href="<%= h(url("?status=finished")) %>">finished</a> |
+<a href="<%= h(url("?status=error")) %>">error</a>
+
 <table class="table">
   <thead>
     <tr>
@@ -21,5 +28,12 @@
     <th><%= h(plan.persistence.updated_at) %></th>
     <td><a href="<%= h(url("/#{plan.persistence.persistence_id}")) %>">Show</a></td>
   </tr>
+
 <% end %>
 </table>
+<div class="pagination">
+  <ul>
+    <li><a href="<%= paginated_url(-1) %>">Prev</a></li>
+    <li><a href="<%= paginated_url(+1) %>">Next</a></li>
+  </ul>
+</div>

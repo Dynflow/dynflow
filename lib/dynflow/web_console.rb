@@ -14,6 +14,7 @@ module Dynflow
 
     set :public_folder, File.join(dir, 'assets')
     set :views, File.join(dir, 'views')
+    set :per_page, 10
 
     helpers ERB::Util
 
@@ -36,10 +37,19 @@ HTML
           ""
         end
       end
+
+      def page
+        [(params[:page] || 1).to_i, 1].max
+      end
+
+      def paginated_url(delta)
+        h(url("?" + Rack::Utils.build_query(params.merge(:page => page + delta))))
+      end
     end
 
     get('/') do
-      @plans = bus.persisted_plans
+      status = params[:status] || 'not_finished'
+      @plans = bus.persisted_plans(status, :page => page, :per_page => settings.per_page)
       erb :index
     end
 
