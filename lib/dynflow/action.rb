@@ -28,6 +28,18 @@ module Dynflow
 
     end
 
+    # used in case the action class does not exist (usually when
+    # deserializing old actions that were renamed)
+    class Unknown
+
+      attr_reader :name
+
+      def initialize(name)
+        @name = name
+      end
+
+    end
+
     # only for the planning phase: action that caused this action
     # to be triggered. In other words, this action was subscribed to
     # a class of the trigger.

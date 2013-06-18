@@ -112,7 +112,13 @@ module Dynflow
 
     def self.decode(data)
       ret = data['step_class'].constantize.allocate
-      ret.instance_variable_set("@action_class", data['action_class'].constantize)
+
+      action_class = begin
+                       data['action_class'].constantize
+                     rescue NameError => e
+                       Dynflow::Action::Unknown.new(data['action_class'])
+                     end
+      ret.instance_variable_set("@action_class", action_class)
       ret.instance_variable_set("@status",       data['status'])
       ret.instance_variable_set("@data",         decode_data(data['data']))
       return ret
