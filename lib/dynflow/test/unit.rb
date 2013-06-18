@@ -35,9 +35,11 @@ module Dynflow
 
         attr_reader :triggered_action
 
-        def trigger(action_class, *args)
+        def trigger(action_class, *args, &block)
           @triggered_action = action_class.new({}, :reference)
           @triggered_action.singleton_class.send(:include, IsolatedAction)
+          # for setting up additional fiels, such as input
+          yield @triggered_action if block
           @triggered_action.plan(*args)
         end
 
@@ -72,7 +74,7 @@ module Dynflow
         attr_reader :input, :output
 
         def initialize(action_class, args)
-          @action_class = acting_class
+          @action_class = action_class
           @args = args
           @input = Dynflow::Step::Reference.new(self, :input)
           @output = Dynflow::Step::Reference.new(self, :output)
