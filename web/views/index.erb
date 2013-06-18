@@ -6,6 +6,8 @@
       <th>Id</th>
       <th>Initiated by</th>
       <th>Status</th>
+      <th>Created at</th>
+      <th>Updated at</th>
       <th></th>
     </tr>
   </thead>
@@ -15,6 +17,8 @@
     <td><%= h(plan.persistence.persistence_id) %></td>
     <td><%= h(plan.plan_steps.first.action_class.name) %></td>
     <th><%= h(plan.status) %></th>
+    <th><%= h(plan.persistence.created_at) %></th>
+    <th><%= h(plan.persistence.updated_at) %></th>
     <td><a href="<%= h(url("/#{plan.persistence.persistence_id}")) %>">Show</a></td>
   </tr>
 <% end %>

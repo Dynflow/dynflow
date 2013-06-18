@@ -45,7 +45,7 @@ module Dynflow
           if status
             scope = scope.where(:status => status)
           end
-          scope.all
+          scope.order('updated_at DESC').all
         end
 
         def self.persisted_plan(persistence_id)
