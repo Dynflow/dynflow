@@ -1,3 +1,5 @@
+require 'dynflow/web_console'
+
 Rails.application.routes.draw do
 
   resources :users
@@ -10,6 +12,9 @@ Rails.application.routes.draw do
     end
   end
 
+  console = Dynflow::WebConsole.setup do
+    set :bus, Dynflow::Bus
+  end
 
-  mount Dynflow::Engine => "/dynflow"
+  mount console => "/dynflow"
 end

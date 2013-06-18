@@ -20,4 +20,5 @@ Gem::Specification.new do |s|
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
   s.add_development_dependency "minitest"
+  s.add_development_dependency "sinatra"
 end

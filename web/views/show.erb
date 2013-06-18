@@ -1,0 +1,36 @@
+<p id="notice"><%= h(@notice) %></p>
+
+<p>
+  <b>Status:</b>
+  <%= @plan.status %>
+</p>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Phase</th>
+      <th>Action</th>
+      <th>Status</th>
+      <th>Input</th>
+      <th>Output</th>
+      <th>Error</th>
+      <th></th>
+    </tr>
+  </thead>
+<% @plan.steps.each do |step| %>
+  <tr>
+    <td><%= h(step.persistence.persistence_id) %></td>
+    <td><%= h(step.class.name.split('::').last) %></td>
+    <td><%= h(step.action_class.name) %></td>
+    <td><%= h(step.status) %></td>
+    <td><%= prettyprint(step.input) %></td>
+    <td><%= prettyprint(step.output) %></td>
+    <td><%= prettyprint(step.error) %></td>
+    <td><a href="<%= h(url("/#{@plan.persistence.persistence_id}/steps/#{step.persistence.persistence_id}/skip")) %>" class="postlink">Skip</a></td>
+  </tr>
+<% end %>
+</table>
+
+<a href="<%= h(url("/#{@plan.persistence.persistence_id}/resume")) %>" class="postlink">Resume</a>
+<a href="<%= url '/' %>">Back</a>

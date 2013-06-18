@@ -1,0 +1,21 @@
+<h1>Listing execution plans</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Initiated by</th>
+      <th>Status</th>
+      <th></th>
+    </tr>
+  </thead>
+
+<% @plans.each do |plan| %>
+  <tr>
+    <td><%= h(plan.persistence.persistence_id) %></td>
+    <td><%= h(plan.plan_steps.first.action_class.name) %></td>
+    <th><%= h(plan.status) %></th>
+    <td><a href="<%= h(url("/#{plan.persistence.persistence_id}")) %>">Show</a></td>
+  </tr>
+<% end %>
+</table>
