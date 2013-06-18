@@ -123,14 +123,18 @@ module Dynflow
       end
     end
 
+    # @return [Array<Dynflow:ExecutionPlan>]
     def persisted_plans(status = nil)
       if persistence_driver
-        persistence_driver.persisted_plans(status)
+        persistence_driver.persisted_plans(status).map do |persisted_plan|
+          self.persisted_plan(persisted_plan.persistence_id)
+        end
       else
         []
       end
     end
 
+    # @return [Dynflow::ExecutionPlan]
     def persisted_plan(persistence_id)
       if persistence_driver
         with_persisted_steps_cache do
