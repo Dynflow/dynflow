@@ -1,4 +1,11 @@
 <h1>Listing execution plans</h1>
+<%= %w[not_finished all new paused finished error].map do |status|
+  if status == selected_status
+    status
+  else
+    %{<a href="#{h(url("?status=#{status}"))}">#{status}</a>}
+  end
+end.join(' | ') %>
 
 <a href="<%= h(url("?status=all")) %>">all</a> |
 <a href="<%= h(url("?status=not_finished")) %>">not finished</a> |

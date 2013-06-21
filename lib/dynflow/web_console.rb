@@ -45,11 +45,14 @@ HTML
       def paginated_url(delta)
         h(url("?" + Rack::Utils.build_query(params.merge(:page => page + delta))))
       end
+
+      def selected_status
+        params[:status] || 'not_finished'
+      end
     end
 
     get('/') do
-      status = params[:status] || 'not_finished'
-      @plans = bus.persisted_plans(status, :page => page, :per_page => settings.per_page)
+      @plans = bus.persisted_plans(selected_status, :page => page, :per_page => settings.per_page)
       erb :index
     end
 
