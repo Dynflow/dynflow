@@ -5,7 +5,7 @@ module Dynflow
       success =  case run_plan
                  when ExecutionPlan::Sequence then run_sequence(run_plan)
                  when ExecutionPlan::Concurrence then run_concurrence(run_plan)
-                 when Step then run_step(run_plan)
+                 when RunStep then run_step(run_plan)
                  else raise ArgumentError, "Don't konw how to run #{run_plan}"
                  end
 

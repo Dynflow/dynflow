@@ -5,8 +5,12 @@ require 'dynflow/execution_plan'
 require 'dynflow/dispatcher'
 require 'dynflow/executor'
 require 'dynflow/bus'
-require 'dynflow/step'
 require 'dynflow/action'
+
+files = Dir[File.dirname(__FILE__) + '/dynflow/execution/step.rb']
+files += Dir[File.dirname(__FILE__) + '/dynflow/execution/*.rb']
+
+files.uniq.each{ |file| require file }
 
 module Dynflow
 

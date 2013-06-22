@@ -168,8 +168,8 @@ module Dynflow
 
     def <<(step)
       case step
-      when Step::Run then self.run_steps << step
-      when Step::Finalize then self.finalize_steps << step
+      when RunStep then self.run_steps << step
+      when FinalizeStep then self.finalize_steps << step
       else raise ArgumentError, 'Only Run or Finalize steps can be planned'
       end
     end

@@ -73,13 +73,13 @@ module Dynflow
     def initialize(input, output = nil)
       real_output = output
       real_output = {} unless real_output.is_a? Hash
-      @run_step = Step::Run.new(self.class, input, real_output)
+      @run_step = RunStep.new(:action_class => self.class, :input => input, :output => real_output)
       # for preparation phase
       if output == :reference
         # needed for steps initialization, quite hackish, fix!
         @execution_plan = ExecutionPlan.new
-        @finalize_step = Step::Finalize.new(@run_step)
-        @output = Step::Reference.new(@run_step, :output)
+        @finalize_step = FinalizeStep.new(@run_step)
+        @output = Reference.new(@run_step, :output)
       end
     end
 
@@ -142,7 +142,7 @@ module Dynflow
       action = self.new({}, :reference)
       yield action if block_given?
 
-      plan_step = Step::Plan.new(action)
+      plan_step = PlanStep.new(action)
       action.execution_plan.plan_steps << plan_step
       plan_step.catch_errors do
         action.plan(*args)
