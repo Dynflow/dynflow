@@ -7,13 +7,6 @@
   end
 end.join(' | ') %>
 
-<a href="<%= h(url("?status=all")) %>">all</a> |
-<a href="<%= h(url("?status=not_finished")) %>">not finished</a> |
-<a href="<%= h(url("?status=new")) %>">new</a> |
-<a href="<%= h(url("?status=paused")) %>">paused</a> |
-<a href="<%= h(url("?status=finished")) %>">finished</a> |
-<a href="<%= h(url("?status=error")) %>">error</a>
-
 <table class="table">
   <thead>
     <tr>
