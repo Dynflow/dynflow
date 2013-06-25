@@ -12,6 +12,8 @@ files = Dir[File.dirname(__FILE__) + '/dynflow/execution/step.rb']
 files += Dir[File.dirname(__FILE__) + '/dynflow/execution/*.rb']
 files += Dir[File.dirname(__FILE__) + '/dynflow/initiators/*.rb']
 files += Dir[File.dirname(__FILE__) + '/dynflow/executors/*.rb']
+files += Dir[File.dirname(__FILE__) + '/dynflow/persistence/*.rb']
+files += Dir[File.dirname(__FILE__) + '/dynflow/serialization/*.rb']
 
 files.uniq.each{ |file| require file }
 
