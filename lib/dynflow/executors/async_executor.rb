@@ -1,3 +1,5 @@
+require 'dynflow/executors/executor'
+
 module Dynflow
   module Executors
     class AsyncExecutor < Executor

@@ -1,11 +1,11 @@
 require 'test_helper'
 
 
-class TestInitiator < MiniTest::Unit::TestCase
+class TestExecutorInitiator < MiniTest::Unit::TestCase
 
   def setup
     @plan = Dynflow::ExecutionPlan::Sequence.new
-    @initiator = Dynflow::Initiators::Initiator.new
+    @initiator = Dynflow::Initiators::ExecutorInitiator.new
   end
 
   def test_start

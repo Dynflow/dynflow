@@ -1,6 +1,6 @@
 module Dynflow
   module Initiators
-    class Initiator
+    class ExecutorInitiator
 
       attr_reader :executor_class
 

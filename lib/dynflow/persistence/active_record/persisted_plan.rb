@@ -88,7 +88,7 @@ module Dynflow
 
         # update the persistence status base on the current status of execution_plan
         def persist(execution_plan)
-          self.update_attributes!(status: execution_plan.status)
+          self.update_attributes!(status=> execution_plan.status)
         end
 
       end

@@ -2,6 +2,8 @@ require 'minitest/autorun'
 require 'dynflow'
 require 'pry'
 
+require 'actions/error_action'
+require 'actions/simple_action'
 
 module PlanAssertions
 

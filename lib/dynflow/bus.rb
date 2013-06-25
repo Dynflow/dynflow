@@ -86,7 +86,7 @@ module Dynflow
     end
 
     def execution_driver
-      @execution_driver ||= Initiators::Initiator.new
+      @execution_driver ||= Initiators::ExecutorInitiator.new
     end
 
     def transaction_driver
