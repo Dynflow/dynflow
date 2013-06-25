@@ -7,6 +7,15 @@ module Dynflow
     attr_accessor :status, :persistence
     attr_reader :data, :action_class
 
+    def prepare
+      persist_before_run
+      output = {}
+    end
+
+    def run
+      action.run
+    end
+
     def input
       @data['input']
     end

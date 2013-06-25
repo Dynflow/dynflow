@@ -81,12 +81,12 @@ module Dynflow
 
     # return true if the run phase finished successfully
     def run_execution_plan(execution_plan)
-      success = execution_driver.run(execution_plan.run_plan)
+      success = execution_driver.start(execution_plan.run_plan)
       return success
     end
 
     def execution_driver
-      @execution_driver ||= Executor.new
+      @execution_driver ||= Initiators::Initiator.new
     end
 
     def transaction_driver

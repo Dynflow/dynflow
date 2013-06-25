@@ -3,12 +3,14 @@ require 'active_support/core_ext/hash/indifferent_access'
 require 'dynflow/logger'
 require 'dynflow/execution_plan'
 require 'dynflow/dispatcher'
-require 'dynflow/executor'
 require 'dynflow/bus'
+require 'dynflow/worker'
 require 'dynflow/action'
 
 files = Dir[File.dirname(__FILE__) + '/dynflow/execution/step.rb']
 files += Dir[File.dirname(__FILE__) + '/dynflow/execution/*.rb']
+files += Dir[File.dirname(__FILE__) + '/dynflow/initiators/*.rb']
+files += Dir[File.dirname(__FILE__) + '/dynflow/executors/*.rb']
 
 files.uniq.each{ |file| require file }
 

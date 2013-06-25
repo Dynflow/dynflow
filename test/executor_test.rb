@@ -81,12 +81,12 @@ module Dynflow
     end
 
     it 'runs all steps' do
-      Executor.new.run(run_plan)
+      Executors::Executor.new(:plan => run_plan).execute
       Dummy.log.sort.must_equal %w[build_image deploy_image reserve_ip run_system set_dns]
     end
 
     it 'performs dereferention before runing the step' do
-      Executor.new.run(run_plan)
+      Executors::Executor.new(:plan => run_plan).execute
       deploy_image.input['image'].must_equal('from' => 'build_image')
     end
   end

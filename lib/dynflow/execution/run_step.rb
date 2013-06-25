@@ -9,7 +9,7 @@ module Dynflow
         'input'  => input,
         'output' => output
       }
-      self.status = 'pending' # default status
+      self.status = 'pending'
     end
 
     # Output references needed for this step to run
