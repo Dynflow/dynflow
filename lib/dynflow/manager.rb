@@ -29,6 +29,57 @@ module Dynflow
       return execution_plan
     end
 
+    # @return [Dynflow::ExecutionPlan]
+    def load_execution_plan(persistence_id)
+      if persistence_driver
+        persisted_plan = persistence_driver.persistence_class.persisted_plan(persistence_id)
+
+        plan_steps = persisted_plan.plan_step_ids.map do |step_id|
+          load_step(step_id)
+        end
+
+        run_steps = persisted_plan.run_step_ids.map do |step_id|
+          load_step(step_id)
+        end
+
+        finalize_steps = persisted_plan.finalize_step_ids.map do |step_id|
+          load_step(step_id)
+        end
+
+        execution_plan = ExecutionPlan.new(plan_steps, run_steps, finalize_steps)
+        execution_plan.run_plan = restore_run_plan(persisted_plan.serialized_run_plan)
+        execution_plan.status = persisted_plan.status
+        execution_plan.persistence = persisted_plan
+
+        return execution_plan
+      else
+        raise "No persistence driver configured"
+      end
+    end
+
+    def load_step(persistence_id)
+      if persistence_driver
+        persistence_driver.persistence_class.persisted_step(persistence_id)
+      else
+        raise "No persistence driver configured"
+      end
+    end
+
+
+
+    private
+
+    def restore_run_plan(serialized_run_plan)
+      step_type = serialized_run_plan['step_type'].constantize
+      if step_type.ancestors.include?(Step)
+        return load_step(serialized_run_plan['persistence_id'])
+      else
+        steps = serialized_run_plan['steps'].map do |serialized_step|
+          restore_run_plan(serialized_step)
+        end
+        return step_type.new(steps)
+      end
+    end
 
     def persist_plan(execution_plan)
       if self.persistence_driver

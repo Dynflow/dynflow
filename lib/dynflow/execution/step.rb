@@ -147,6 +147,12 @@ module Dynflow
       end
     end
 
+    def persistence_id
+      if @persistence
+        @persistence.id
+      end
+    end
+
     def persist
       if @persistence
         @persistence.persist(self)

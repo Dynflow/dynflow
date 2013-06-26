@@ -3,107 +3,6 @@ require 'forwardable'
 module Dynflow
   class ExecutionPlan
 
-    class RunPlan
-      attr_reader :steps
-
-      def initialize(steps = [], &block)
-        @steps = steps
-        yield @steps if block_given?
-      end
-
-      def add_if_satisfied(step, deps)
-        raise NotImplementedError, "Abstract method"
-      end
-
-      def ==(other)
-        self.class == other.class && self.steps == other.steps
-      end
-    end
-
-    class Concurrence < RunPlan
-
-      # if some step in steps satisfies all the deps (set of steps),
-      # add the step in argument into a sequence with this satisfying
-      # step.
-      #
-      # sequences don't include concurrent actions. In other
-      # words, the actions within a sequence are not marked for
-      # concurrence even though they might be independent from each
-      # other (having for example some common dependency/being common dependency
-      # for some step)
-      def add_if_satisfied(step, deps)
-        if deps.empty?
-          @steps << step
-          return true
-        end
-
-        satisfying_indexes = deps.map { |dep| satisfying_index(dep) }.compact
-
-        # all deps for the step are withing this plan
-        if satisfying_indexes.size == deps.size
-          sequence = merge_to_sequence(satisfying_indexes)
-          sequence.steps << step
-          return true
-        end
-        return false
-      end
-
-      private
-
-      # index of a step that is able to satisfy the dependent step
-      def satisfying_index(dependent_step)
-        return @steps.index { |step| step.satisfying_step(dependent_step) }
-      end
-
-      def merge_to_sequence(step_indexes)
-        step_indexes.sort!
-        step_index = step_indexes.first
-        sequence = convert_to_sequence(step_index)
-        steps_or_sequences = step_indexes[1..-1].reverse.map do |index|
-          @steps.delete_at(index)
-        end.reverse
-
-        steps_to_merge = steps_or_sequences.map do |step|
-          case step
-          when Step
-            step
-          when Sequence
-            step.steps
-          else
-            raise NotImplementedError, "Don't know how to merge #{step} to sequence"
-          end
-        end.flatten
-        sequence.steps.concat(steps_to_merge)
-        return sequence
-      end
-
-      def convert_to_sequence(step_index)
-        step = @steps[step_index]
-        case step
-        when Step
-          sequence = Sequence.new
-          sequence.steps << step
-          @steps[step_index] = sequence
-        when Sequence
-          sequence = step
-        else
-          raise NotImplementedError, "Don't know how convert #{step} to sequence"
-        end
-        return sequence
-      end
-
-    end
-
-    class Sequence < RunPlan
-
-      def satisfying_step(dependent_step)
-        if @steps.any? { |step| step.satisfying_step(dependent_step) }
-          return self
-        end
-      end
-
-    end
-
     attr_reader :plan_steps, :run_steps, :finalize_steps
 
     # allows storing and reloading the execution plan to something
@@ -181,6 +80,12 @@ module Dynflow
       self.status = other.status
     end
 
+    def persistence_id
+      if @persistence
+        @persistence.id
+      end
+    end
+
     # update the persistence based on the current status
     def persist(include_steps = false)
       if @persistence
@@ -191,6 +96,111 @@ module Dynflow
         end
       end
     end
+
+
+  #these classes should be pulled out
+  class RunPlan
+     attr_reader :steps
+
+     def initialize(steps = [], &block)
+       @steps = steps
+       yield @steps if block_given?
+     end
+
+     def add_if_satisfied(step, deps)
+       raise NotImplementedError, "Abstract method"
+     end
+
+     def ==(other)
+       self.class == other.class && self.steps == other.steps
+     end
+   end
+
+
+   class Concurrence < RunPlan
+
+     # if some step in steps satisfies all the deps (set of steps),
+     # add the step in argument into a sequence with this satisfying
+     # step.
+     #
+     # sequences don't include concurrent actions. In other
+     # words, the actions within a sequence are not marked for
+     # concurrence even though they might be independent from each
+     # other (having for example some common dependency/being common dependency
+     # for some step)
+     def add_if_satisfied(step, deps)
+       if deps.empty?
+         @steps << step
+         return true
+       end
+
+       satisfying_indexes = deps.map { |dep| satisfying_index(dep) }.compact
+
+       # all deps for the step are withing this plan
+       if satisfying_indexes.size == deps.size
+         sequence = merge_to_sequence(satisfying_indexes)
+         sequence.steps << step
+         return true
+       end
+       return false
+     end
+
+     private
+
+     # index of a step that is able to satisfy the dependent step
+     def satisfying_index(dependent_step)
+       return @steps.index { |step| step.satisfying_step(dependent_step) }
+     end
+
+     def merge_to_sequence(step_indexes)
+       step_indexes.sort!
+       step_index = step_indexes.first
+       sequence = convert_to_sequence(step_index)
+       steps_or_sequences = step_indexes[1..-1].reverse.map do |index|
+         @steps.delete_at(index)
+       end.reverse
+
+       steps_to_merge = steps_or_sequences.map do |step|
+         case step
+         when Step
+           step
+         when Sequence
+           step.steps
+         else
+           raise NotImplementedError, "Don't know how to merge #{step} to sequence"
+         end
+       end.flatten
+       sequence.steps.concat(steps_to_merge)
+       return sequence
+     end
+
+     def convert_to_sequence(step_index)
+       step = @steps[step_index]
+       case step
+       when Step
+         sequence = Sequence.new
+         sequence.steps << step
+         @steps[step_index] = sequence
+       when Sequence
+         sequence = step
+       else
+         raise NotImplementedError, "Don't know how convert #{step} to sequence"
+       end
+       return sequence
+     end
+
+   end
+
+
+   class Sequence < RunPlan
+
+     def satisfying_step(dependent_step)
+       if @steps.any? { |step| step.satisfying_step(dependent_step) }
+         return self
+       end
+     end
+
+   end
 
   end
 end
