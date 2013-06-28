@@ -35,15 +35,20 @@ module Dynflow
         persisted_plan = persistence_driver.persistence_class.persisted_plan(persistence_id)
 
         plan_steps = persisted_plan.plan_step_ids.map do |step_id|
-          load_step(step_id)
+          load_step_without_plan(step_id)
         end
 
         run_steps = persisted_plan.run_step_ids.map do |step_id|
-          load_step(step_id)
+          load_step_without_plan(step_id)
         end
 
         finalize_steps = persisted_plan.finalize_step_ids.map do |step_id|
-          load_step(step_id)
+          load_step_without_plan(step_id)
+        end
+
+        #set the execution plan on the step
+        (plan_steps + run_steps + finalize_steps).each do |step|
+          step.execution_plan = persisted_plan
         end
 
         execution_plan = ExecutionPlan.new(plan_steps, run_steps, finalize_steps)
@@ -58,6 +63,17 @@ module Dynflow
     end
 
     def load_step(persistence_id)
+      step = load_step_without_plan(persistence_id)
+      plan = load_execution_plan(persistence_id)
+      return plan.steps.select{|s| s.persistence_id == persistence_id}.first
+    end
+
+
+
+    private
+
+    #Load a persisted step, but don't try to load its plan and associate it
+    def load_step_without_plan(persistence_id)
       if persistence_driver
         persistence_driver.persistence_class.persisted_step(persistence_id)
       else
@@ -65,14 +81,10 @@ module Dynflow
       end
     end
 
-
-
-    private
-
     def restore_run_plan(serialized_run_plan)
       step_type = serialized_run_plan['step_type'].constantize
       if step_type.ancestors.include?(Step)
-        return load_step(serialized_run_plan['persistence_id'])
+        return load_step_without_plan(serialized_run_plan['persistence_id'])
       else
         steps = serialized_run_plan['steps'].map do |serialized_step|
           restore_run_plan(serialized_step)

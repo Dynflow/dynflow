@@ -4,7 +4,7 @@ module Dynflow
 
     def_delegators :@data, '[]', '[]='
 
-    attr_accessor :status, :persistence
+    attr_accessor :status, :persistence, :execution_plan
     attr_reader :data, :action_class
 
     def prepare
@@ -144,6 +144,12 @@ module Dynflow
         data.reduce({}) { |h, (k, v)| h.update(k => walk(v, &block)) }
       else
         data
+      end
+    end
+
+    def persisted_plan_id
+      if @persistence
+        @persistence.persisted_plan_id
       end
     end
 

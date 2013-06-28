@@ -41,6 +41,9 @@ module Dynflow
           concurrence.steps.each do |run_plan|
             threads << Thread.new do
               Thread.current['status'] = run(run_plan)
+
+              #TODO figure out how to make this pluggable?
+              ActiveRecord::Base.connection.close if Object.constants.include?(:ActiveRecord)
             end
           end
 
