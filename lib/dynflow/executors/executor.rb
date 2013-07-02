@@ -2,15 +2,14 @@ module Dynflow
   module Executors
     class Executor
 
-      attr_reader :plan, :worker
+      attr_reader :worker
 
-      def initialize(args)
-        @plan = args[:plan]
+      def initialize(args={})
         @worker = Worker.new
       end
 
-      def execute
-        run(@plan)
+      def execute(plan)
+        run(plan)
       end
 
       private
@@ -24,6 +23,16 @@ module Dynflow
                      end
 
           return success
+        end
+
+        def run_step(step)
+          step.replace_references!
+          
+          if %w[skipped success].include?(step.status)
+            return true
+          else
+            @worker.run(step)
+          end
         end
 
         def run_sequence(sequence)
@@ -55,15 +64,6 @@ module Dynflow
           return success
         end
 
-        def run_step(step)
-          step.replace_references!
-          
-          if %w[skipped success].include?(step.status)
-            return true
-          else
-            @worker.run(step)
-          end
-        end
     end
   end
 end

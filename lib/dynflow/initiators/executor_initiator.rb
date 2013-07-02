@@ -9,8 +9,8 @@ module Dynflow
       end
 
       def start(plan)
-        executor = @executor_class.new(:plan => plan)
-        executor.execute
+        executor = @executor_class.new
+        executor.execute(plan.run_plan)
       end
 
     end

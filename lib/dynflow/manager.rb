@@ -24,7 +24,7 @@ module Dynflow
       end
       persist_plan(execution_plan)
       unless execution_plan.status == 'error'
-        @initiator.start(execution_plan.run_plan)
+        @initiator.start(execution_plan)
       end
       return execution_plan
     end
@@ -64,7 +64,7 @@ module Dynflow
 
     def load_step(persistence_id)
       step = load_step_without_plan(persistence_id)
-      plan = load_execution_plan(persistence_id)
+      plan = load_execution_plan(step.persisted_plan_id)
       return plan.steps.select{|s| s.persistence_id == persistence_id}.first
     end
 
