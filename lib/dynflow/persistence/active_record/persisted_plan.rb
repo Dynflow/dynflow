@@ -29,15 +29,15 @@ module Dynflow
         end
 
         def plan_step_ids
-          persisted_step_ids(Step::Plan)
+          persisted_step_ids(PlanStep)
         end
 
         def run_step_ids
-          persisted_step_ids(Step::Run)
+          persisted_step_ids(RunStep)
         end
 
         def finalize_step_ids
-          persisted_step_ids(Step::Finalize)
+          persisted_step_ids(FinalizeStep)
         end
 
         def self.persisted_plans(status = 'all', search_options = {})
@@ -88,7 +88,7 @@ module Dynflow
 
         # update the persistence status base on the current status of execution_plan
         def persist(execution_plan)
-          self.update_attributes!(status: execution_plan.status)
+          self.update_attributes!(:status=> execution_plan.status)
         end
 
       end

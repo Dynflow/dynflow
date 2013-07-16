@@ -35,11 +35,11 @@ module Dynflow
     end
 
     def run_step(name, input)
-      Step::Run.new(Dummy, input.merge('action' => name.to_s))
+      RunStep.new(:action_class => Dummy, :input => input.merge('action' => name.to_s))
     end
 
     def output_ref(step)
-      Step::Reference.new(step, 'output')
+      Reference.new(step, 'output')
     end
 
     let(:build_image) do
@@ -81,12 +81,12 @@ module Dynflow
     end
 
     it 'runs all steps' do
-      Executor.new.run(run_plan)
+      Executors::Executor.new.execute(run_plan)
       Dummy.log.sort.must_equal %w[build_image deploy_image reserve_ip run_system set_dns]
     end
 
     it 'performs dereferention before runing the step' do
-      Executor.new.run(run_plan)
+      Executors::Executor.new.execute(run_plan)
       deploy_image.input['image'].must_equal('from' => 'build_image')
     end
   end

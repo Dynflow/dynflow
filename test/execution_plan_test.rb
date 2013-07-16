@@ -30,13 +30,13 @@ module Dynflow
           assert_run_plan <<EXPECTED, execution_plan
 Dynflow::ExecutionPlan::Concurrence
   Dynflow::ExecutionPlan::Sequence
-    Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})
-    UpdateIssue/Run({"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
-    NotifyAssignee/Run({"author"=>"Peter Smith", "text"=>"Failing test", "triage"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
+    Triage/RunStep({"author"=>"Peter Smith", "text"=>"Failing test"})
+    UpdateIssue/RunStep({"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Reference(Triage/RunStep({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
+    NotifyAssignee/RunStep({"author"=>"Peter Smith", "text"=>"Failing test", "triage"=>Reference(Triage/RunStep({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
   Dynflow::ExecutionPlan::Sequence
-    Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})
-    UpdateIssue/Run({"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
-    NotifyAssignee/Run({"author"=>"John Doe", "text"=>"Internal server error", "triage"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
+    Triage/RunStep({"author"=>"John Doe", "text"=>"Internal server error"})
+    UpdateIssue/RunStep({"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Reference(Triage/RunStep({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
+    NotifyAssignee/RunStep({"author"=>"John Doe", "text"=>"Internal server error", "triage"=>Reference(Triage/RunStep({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
 EXPECTED
         end
 
@@ -51,10 +51,10 @@ EXPECTED
           assert_run_plan <<EXPECTED, execution_plan
 Dynflow::ExecutionPlan::Concurrence
   Dynflow::ExecutionPlan::Sequence
-    Ci/Run({"commit"=>{"sha"=>"abc123"}})
-    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})
-    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})
-    Merge/Run({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/Run({"commit"=>{"sha"=>"abc123"}})/output), "review_outputs"=>[Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)]})
+    Ci/RunStep({"commit"=>{"sha"=>"abc123"}})
+    Review/RunStep({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})
+    Review/RunStep({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})
+    Merge/RunStep({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/RunStep({"commit"=>{"sha"=>"abc123"}})/output), "review_outputs"=>[Reference(Review/RunStep({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), Reference(Review/RunStep({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)]})
 EXPECTED
         end
 

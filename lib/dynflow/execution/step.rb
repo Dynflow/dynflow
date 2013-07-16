@@ -1,55 +1,20 @@
 module Dynflow
   class Step
-
-    class Reference
-
-      attr_reader :step, :field
-
-      def initialize(step, field)
-        @step  = step
-        @field = field.to_s
-        unless %w[input output].include? @field
-          raise "#{self.inspect}: Unexpected reference field. Only input and output allowed"
-        end
-      end
-
-      def encode
-        unless @step.persistence
-          raise "Reference can't be serialized without persistence available"
-        end
-
-        {
-          'dynflow_step_persistence_id' => @step.persistence.persistence_id,
-          'field' => @field
-        }
-      end
-
-      def self.decode(data)
-        return nil unless data.is_a? Hash
-        return nil unless data.has_key?('dynflow_step_persistence_id')
-        persistence_id = data['dynflow_step_persistence_id']
-        self.new(Dynflow::Bus.persisted_step(persistence_id), data['field'])
-      end
-
-      def dereference
-        @step.send(@field)
-      end
-
-      def inspect
-        "Reference(#{@step.inspect}/#{@field})"
-      end
-
-    end
-
     extend Forwardable
 
     def_delegators :@data, '[]', '[]='
 
-    attr_accessor :status
+    attr_accessor :status, :persistence, :execution_plan
     attr_reader :data, :action_class
 
-    # persistent representation of the step
-    attr_accessor :persistence
+    def prepare
+      persist_before_run
+      output = {}
+    end
+
+    def run
+      action.run
+    end
 
     def input
       @data['input']
@@ -182,6 +147,18 @@ module Dynflow
       end
     end
 
+    def persisted_plan_id
+      if @persistence
+        @persistence.persisted_plan_id
+      end
+    end
+
+    def persistence_id
+      if @persistence
+        @persistence.id
+      end
+    end
+
     def persist
       if @persistence
         @persistence.persist(self)
@@ -200,62 +177,5 @@ module Dynflow
       end
     end
 
-    class Plan < Step
-
-      def initialize(action)
-        # we want to have the steps separated:
-        # not using the original action object
-        @action_class = action.class
-        self.status = 'finished' # default status
-        @data = {}
-      end
-
-    end
-
-    class Run < Step
-
-      def initialize(action_class, input = nil, output = nil)
-        @action_class = action_class
-        self.status = 'pending' # default status
-        input ||= {}
-        output ||= {}
-        @data = {
-          'input'  => input,
-          'output' => output
-        }
-      end
-
-      # Output references needed for this step to run
-      # @return [Array<Reference>]
-      def dependencies
-        self.input.values.map do |value|
-          if value.is_a?(Reference) && value.field.to_s == 'output'
-            value
-          elsif value.is_a? Array
-            value.find_all { |val| val.is_a?(Reference) && val.field.to_s == 'output' }
-          end
-        end.compact.flatten.map(&:step)
-      end
-
-    end
-
-    class Finalize < Step
-
-      def initialize(run_step)
-        # we want to have the steps separated:
-        # not using the original action object
-        @action_class = run_step.action_class
-        self.status = 'pending' # default status
-        if run_step.action_class.instance_methods.include?(:run)
-          @data = {
-            'input' => Reference.new(run_step, 'input'),
-            'output' => Reference.new(run_step, 'output'),
-          }
-        else
-          @data = run_step.data
-        end
-      end
-
-    end
   end
 end

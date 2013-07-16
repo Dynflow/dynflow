@@ -100,41 +100,42 @@ class Print < Dynflow::Action
   end
 end
 
-short_article = Article.new('Short', 'Short', false)
-long_article = Article.new('Long', 'This is long', false)
-colorful_article = Article.new('Long Color', 'This is long in color', true)
+module Dynflow
+  class ArticleScenario
 
-pp Publish.plan(short_article).actions
-# the expanded workflow is:
-# [
-#  Publish: {"title"=>"Short", "body"=>"Short"} ~> {},
-#  Review:  {"title"=>"Short", "body"=>"Short"} ~> {},
-#  Print:   {"title"=>"Short", "body"=>"Short", "color"=>false} ~> {}
-# ]
+    def run(manager)
+      short_article = Article.new('Short', 'Short', false)
+      long_article = Article.new('Long', 'This is long', false)
+      colorful_article = Article.new('Long Color', 'This is long in color', true)
+=begin
+      puts "\n\n"
+      puts "Running case: short_article"
+      manager.trigger(Publish, short_article)
+      # Produces:
+      # Starting
+      # Reviewing Short
+      # Too Short
 
-begin
-  Publish.trigger(short_article)
-rescue => e
-  puts e.message
+      puts "\n\n"
+      puts "Running case: long_article"
+      manager.trigger(Publish, long_article)
+      # Produces:
+      # Starting
+      # Reviewing Long
+      # Printing blank&white
+      # Printer says 'Here you are'
+      # The rating was 12
+=end
+      puts "\n\n"
+      puts "Running case: colorful_article"
+      manager.trigger(Publish, colorful_article)
+      # Produces:
+      # Starting
+      # Reviewing Long Color
+      # Printing in color
+      # Printer says 'Here you are'
+      # The rating was 21
+    end
+
+  end
 end
-# Produces:
-# Starting
-# Reviewing Short
-# Too Short
-
-Publish.trigger(long_article)
-# Produces:
-# Starting
-# Reviewing Long
-# Printing blank&white
-# Printer says 'Here you are'
-# The rating was 12
-
-
-Publish.trigger(colorful_article)
-# Produces:
-# Starting
-# Reviewing Long Color
-# Printing in color
-# Printer says 'Here you are'
-# The rating was 21

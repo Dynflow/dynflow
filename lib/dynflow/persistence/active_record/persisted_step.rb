@@ -24,6 +24,10 @@ module Dynflow
           self.id
         end
 
+        def plan_persistence_id
+          self.persisted_plan.id
+        end
+
         def persist(step)
           self.update_attributes!(:data => step.encode.to_json, :status => step.status)
         end

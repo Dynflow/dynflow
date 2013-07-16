@@ -19,6 +19,8 @@ Gem::Specification.new do |s|
   s.add_dependency "activesupport"
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
+  s.add_dependency "eventmachine"
+  s.add_dependency "stomp"
 
   s.add_development_dependency "minitest", '~>4.7.5'
   s.add_development_dependency "sinatra"
