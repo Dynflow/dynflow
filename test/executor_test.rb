@@ -5,13 +5,15 @@ module Dynflow
   describe "executor" do
 
     let(:execution_plan) do
-      plan = ExecutionPlan.new
+      plan           = ExecutionPlan.new
       plan.run_steps = run_steps
     end
 
     let(:run_steps) do
       []
     end
+
+    let(:bus) { Dynflow::Bus.new }
 
     before do
       Dummy.log_init
@@ -80,14 +82,17 @@ module Dynflow
       end
     end
 
-    it 'runs all steps' do
-      Executor.new.run(run_plan)
-      Dummy.log.sort.must_equal %w[build_image deploy_image reserve_ip run_system set_dns]
-    end
+    describe 'Executors::PooledSequential' do
+      it 'runs all steps' do
+        Executors::PooledSequential.new.send :dispatch, run_plan
+        Dummy.log.sort.must_equal %w[build_image deploy_image reserve_ip run_system set_dns]
+      end
 
-    it 'performs dereferention before runing the step' do
-      Executor.new.run(run_plan)
-      deploy_image.input['image'].must_equal('from' => 'build_image')
+      it 'performs dereferention before runing the step' do
+        Executors::PooledSequential.new.send :dispatch, run_plan
+        deploy_image.input['image'].must_equal('from' => 'build_image')
+      end
+
     end
   end
 
