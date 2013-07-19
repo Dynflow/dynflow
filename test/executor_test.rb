@@ -13,6 +13,8 @@ module Dynflow
       []
     end
 
+    let(:bus) { Dynflow::Bus.new }
+
     before do
       Dummy.log_init
     end
@@ -82,12 +84,12 @@ module Dynflow
 
     describe 'Executors::PooledSequential' do
       it 'runs all steps' do
-        Executors::PooledSequential.new.run(run_plan).wait
+        Executors::PooledSequential.new.send :dispatch, run_plan
         Dummy.log.sort.must_equal %w[build_image deploy_image reserve_ip run_system set_dns]
       end
 
       it 'performs dereferention before runing the step' do
-        Executors::PooledSequential.new.run(run_plan).wait
+        Executors::PooledSequential.new.send :dispatch, run_plan
         deploy_image.input['image'].must_equal('from' => 'build_image')
       end
 

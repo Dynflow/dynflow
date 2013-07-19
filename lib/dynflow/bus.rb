@@ -18,6 +18,8 @@ module Dynflow
     end
 
     # Entry point for running an action
+    # @returns [Executors::Future, false] false is returned on error,
+    #     otherwise a_future is returned which is set after execution_plan's finalization
     def trigger(action_class, *args)
       execution_plan = nil
       in_transaction_if_possible do
@@ -25,10 +27,9 @@ module Dynflow
         rollback_transaction if execution_plan.status == 'error'
       end
       persist_plan_if_possible(execution_plan)
-      unless execution_plan.status == 'error'
-        execute(execution_plan)
-      end
-      return execution_plan
+
+      return Executors::Future.new.set(execution_plan) if execution_plan.status == 'error'
+      execute(execution_plan) # TODO check for error
     end
 
     def prepare_execution_plan(action_class, *args)
@@ -38,13 +39,7 @@ module Dynflow
     # execution and finalizaition. Usable for resuming paused plan
     # as well as starting from scratch
     def execute(execution_plan)
-      run_execution_plan(execution_plan)
-      in_transaction_if_possible do
-        unless self.finalize(execution_plan)
-          rollback_transaction
-        end
-      end
-      execution_plan.persist(true)
+      execution_driver.run self, execution_plan
     end
 
     alias_method :resume, :execute
@@ -52,37 +47,6 @@ module Dynflow
     def skip(step)
       step.status = 'skipped'
       step.persist
-    end
-
-    # return true if everyting worked fine
-    def finalize(execution_plan)
-      success = true
-      if execution_plan.run_steps.any? { |action| ['pending', 'error'].include?(action.status) }
-        success = false
-      else
-        execution_plan.finalize_steps.each(&:replace_references!)
-        execution_plan.finalize_steps.each do |step|
-          break unless success
-          next if %w[skipped].include?(step.status)
-
-          success = step.catch_errors do
-            step.action.finalize(execution_plan.run_steps)
-          end
-        end
-      end
-
-      if success
-        execution_plan.status = 'finished'
-      else
-        execution_plan.status = 'paused'
-      end
-      return success
-    end
-
-    # return true if the run phase finished successfully
-    def run_execution_plan(execution_plan)
-      future = execution_driver.run(execution_plan.run_plan)
-      return future.value
     end
 
     def execution_driver

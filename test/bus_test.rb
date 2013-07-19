@@ -46,12 +46,12 @@ module Dynflow
       end
 
       it 'returns the execution plan obejct when triggering an action' do
-        Promotion.trigger(['sucess'], []).must_be_instance_of Dynflow::ExecutionPlan
+        Promotion.trigger(['sucess'], []).value.must_be_instance_of Dynflow::ExecutionPlan
       end
 
       describe 'handling errros in plan phase' do
 
-        let(:failed_plan)   { Promotion.trigger(['fail_in_plan'], []) }
+        let(:failed_plan) { Promotion.trigger(['fail_in_plan'], []).value }
         let(:failed_step) { failed_plan.plan_steps.last }
 
         it 'marks the process as error' do
@@ -73,7 +73,7 @@ module Dynflow
 
       describe 'handling errros in execution phase' do
 
-        let(:failed_plan)   { Promotion.trigger(['fail_in_run'], []) }
+        let(:failed_plan)   { Promotion.trigger(['fail_in_run'], []).value }
         let(:failed_step) { failed_plan.run_steps.first }
 
         it 'pauses the process' do
@@ -93,7 +93,7 @@ module Dynflow
 
         it 'allows skipping the step' do
           Dynflow::Bus.skip(failed_step)
-          Dynflow::Bus.resume(failed_plan)
+          Dynflow::Bus.resume(failed_plan).wait
 
           failed_plan.status.must_equal 'finished'
           failed_step.status.must_equal 'skipped'
@@ -101,7 +101,7 @@ module Dynflow
 
         it 'allows rerunning the step' do
           failed_step.input['name'] = 'succeed'
-          Dynflow::Bus.resume(failed_plan)
+          Dynflow::Bus.resume(failed_plan).wait
 
           failed_plan.status.must_equal 'finished'
           failed_step.output.must_equal('id' => 'succeed')
@@ -111,7 +111,7 @@ module Dynflow
 
       describe 'handling errors in finalizatoin phase' do
 
-        let(:failed_plan)   { Promotion.trigger(['fail_in_finalize'], []) }
+        let(:failed_plan)   { Promotion.trigger(['fail_in_finalize'], []).value }
         let(:failed_step) { failed_plan.finalize_steps.first }
 
         it 'pauses the process' do
@@ -130,14 +130,14 @@ module Dynflow
 
         it 'allows finishing a finalize phase' do
           failed_step.input['name'] = 'succeed'
-          Dynflow::Bus.resume(failed_plan)
+          Dynflow::Bus.resume(failed_plan).wait
 
           failed_plan.status.must_equal 'finished'
         end
 
         it 'allows skipping the step' do
           Dynflow::Bus.skip(failed_step)
-          Dynflow::Bus.resume(failed_plan)
+          Dynflow::Bus.resume(failed_plan).wait
 
           failed_plan.status.must_equal 'finished'
           failed_step.status.must_equal 'skipped'

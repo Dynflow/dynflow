@@ -37,8 +37,8 @@ module Dynflow
     end
 
     class Abstract
-      def run(step)
-        dispatch step
+      def run(bus, execution_plan)
+        raise NotImplementedError
       end
 
       protected
@@ -75,6 +75,40 @@ module Dynflow
         step.persist_after_run
         return success
       end
+
+      def run_execution_plan(bus, execution_plan)
+        dispatch execution_plan.run_plan
+        bus.in_transaction_if_possible do
+          bus.rollback_transaction unless finalize_execution_plan(execution_plan)
+        end
+        execution_plan.persist(true)
+        return execution_plan
+      end
+
+      # return true if everything worked fine
+      def finalize_execution_plan(execution_plan)
+        success = true
+        if execution_plan.run_steps.any? { |action| ['pending', 'error'].include?(action.status) }
+          success = false
+        else
+          execution_plan.finalize_steps.each(&:replace_references!)
+          execution_plan.finalize_steps.each do |step|
+            break unless success
+            next if %w[skipped].include?(step.status)
+
+            success = step.catch_errors do
+              step.action.finalize(execution_plan.run_steps)
+            end
+          end
+        end
+
+        if success
+          execution_plan.status = 'finished'
+        else
+          execution_plan.status = 'paused'
+        end
+        return success
+      end
     end
 
     class PooledSequential < Abstract
@@ -85,8 +119,8 @@ module Dynflow
 
       # @returns [Future] value of the future is set when computation is finished
       #     value can be result or an error
-      def run(step)
-        @queue.push [step, future = Future.new]
+      def run(bus, execution_plan)
+        @queue.push [bus, execution_plan, future = Future.new]
         return future
       end
 
@@ -104,9 +138,9 @@ module Dynflow
 
       def work
         loop do
-          step, future = @queue.pop
+          bus, execution_plan, future = @queue.pop
           future.set begin
-                       dispatch(step)
+                       run_execution_plan bus, execution_plan
                      rescue => error
                        $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
                        error
