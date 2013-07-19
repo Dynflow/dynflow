@@ -21,5 +21,6 @@ Gem::Specification.new do |s|
   s.add_dependency "apipie-params"
 
   s.add_development_dependency "minitest", '~>4.7.5'
+  s.add_development_dependency "minitest-reporters"
   s.add_development_dependency "sinatra"
 end

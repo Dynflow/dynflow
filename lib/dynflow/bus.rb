@@ -81,12 +81,12 @@ module Dynflow
 
     # return true if the run phase finished successfully
     def run_execution_plan(execution_plan)
-      success = execution_driver.run(execution_plan.run_plan)
-      return success
+      future = execution_driver.run(execution_plan.run_plan)
+      return future.value
     end
 
     def execution_driver
-      @execution_driver ||= Executor.new
+      @execution_driver ||= Executors::PooledSequential.new
     end
 
     def transaction_driver
