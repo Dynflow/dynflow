@@ -1,25 +1,41 @@
-require 'test_helper'
+require_relative 'test_helper'
 
 module Dynflow
-  class ActionTest < Action
+  #class ActionTest < Action
+  #
+  #  output_format do
+  #    param :id, String
+  #  end
+  #
+  #  def run
+  #    output['id'] = input['name']
+  #  end
+  #
+  #end
+  #
+  #describe 'running an action' do
+  #
+  #  it 'executed the run method storing results to output attribute'do
+  #    action = ActionTest.new('name' => 'zoo')
+  #    action.run
+  #    action.output.must_equal('id' => "zoo")
+  #  end
+  #
+  #end
 
-    output_format do
-      param :id, String
-    end
 
-    def run
-      output['id'] = input['name']
-    end
+  describe 'children' do
+    smart_action_class   = Class.new(Dynflow::Action)
+    smarter_action_class = Class.new(smart_action_class)
 
-  end
+    it { refute smart_action_class.ignored_child? }
+    it { refute smarter_action_class.ignored_child? }
+    it { assert smarter_action_class.planning.ignored_child? }
 
-  describe 'running an action' do
-
-    it 'executed the run method storing results to output attribute'do
-      action = ActionTest.new('name' => 'zoo')
-      action.run
-      action.output.must_equal('id' => "zoo")
-    end
-
+    it { smart_action_class.all_children.must_include smarter_action_class }
+    it { smart_action_class.all_children.size.must_equal 1 }
+    it { smart_action_class.all_children.wont_include smarter_action_class.planning }
+    it { smart_action_class.all_children.wont_include smarter_action_class.running }
+    it { smart_action_class.all_children.wont_include smarter_action_class.finalizing }
   end
 end

@@ -2,19 +2,23 @@ module Dynflow
   class World
     include Algebrick::TypeCheck
 
-    attr_reader :executor, :persistence_adapter, :transaction_adapter
+    attr_reader :executor, :persistence_adapter, :transaction_adapter, :action_classes, :subscription_index
 
     def initialize(executor, persistence_adapter, transaction_adapter, action_classes = Action.all_children)
-      # TODO type-check? how?
       @executor            = is_kind_of! executor, Executors::Abstract
       @persistence_adapter = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
       @transaction_adapter = is_kind_of! transaction_adapter, TransactionAdapters::Abstract
       @suspended_actions   = {}
-      @action_classes      = action_classes
+
+      @action_classes     = action_classes
+      @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
+        next unless klass.subscribe
+        index[klass.subscribe] << klass
+      end.freeze
     end
 
     def subscribed_actions(action)
-
+      @subscription_index[action.class]
     end
 
     # @return [Future]
