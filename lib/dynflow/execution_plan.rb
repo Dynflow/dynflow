@@ -8,7 +8,7 @@ module Dynflow
 
     def initialize(world, action_class)
       @id                   = rand(1e10).to_s(36) # TODO replace with uuid?
-      @world                = is_kind_of! world, Bus
+      @world                = is_kind_of! world, World
       @planning_scope_stack = []
       prepare(action_class)
 

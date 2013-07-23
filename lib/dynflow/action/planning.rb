@@ -5,8 +5,8 @@ module Dynflow
     def initialize(world, status, id, execution_plan, trigger)
       super world, status, id
       @input          = {}
-      @execution_plan = execution_plan
-      @trigger        = trigger
+      @execution_plan = is_kind_of! execution_plan, ExecutionPlan
+      @trigger        = is_kind_of! trigger, Action, NilClass
     end
 
     def execute(*args)

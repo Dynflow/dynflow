@@ -35,8 +35,8 @@ module Dynflow
     attr_reader :world, :status, :id
 
     def initialize(world, status, id)
-      @world      = is_kind_of! world, Bus
-      @id         = id
+      @world      = is_kind_of! world, World
+      @id         = id or raise ArgumentError, 'missing id'
       self.status = status
     end
 
