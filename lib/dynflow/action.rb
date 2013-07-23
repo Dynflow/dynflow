@@ -1,218 +1,75 @@
 module Dynflow
-  class Action
+  class Action < Serializable
+    include Algebrick::TypeCheck
 
-    # Used for specifying dependencies in input_format
-    class Dependency < Apipie::Params::Descriptor::Base
+    require 'dynflow/action/planning'
+    require 'dynflow/action/running'
+    require 'dynflow/action/finalizing'
 
-      attr_reader :action_class, :field
-
-      extend Forwardable
-
-      def_delegators :@descriptor, :description, :invalid_param_error, :json_schema, :param, :params
-
-      def initialize(action_class, field)
-        @descriptor = case field
-                      when :input then action_class.input_format
-                      when :output then action_class.output_format
-                      else
-                        raise ArgumentError, 'field can be either :input of :output'
-                      end
-
-        @action_class = action_class
-        @field = field
-      end
-
-      def self.build(*args)
-        # we don't want this class to be buildable directly from the DSL
-      end
-
+    def self.planning
+      @planning ||= Class.new(self) { include Planning }
     end
 
-    # used in case the action class does not exist (usually when
-    # deserializing old actions that were renamed)
-    class Unknown
-
-      attr_reader :name
-
-      def initialize(name)
-        @name = name
-      end
-
+    def self.running
+      @running ||= Class.new(self) { include Running }
     end
 
-    # only for the planning phase: action that caused this action
-    # to be triggered. In other words, this action was subscribed to
-    # a class of the trigger.
-    # If trigger present, the implicit plan
-    # method uses the input of the trigger. Otherwise, the
-    # argument the plan_action is used as default.
-    attr_accessor :trigger
-
-    # for planning phase
-    attr_reader :execution_plan
-
-    extend Forwardable
-    def_delegators :@run_step, :input, :input=, :output=
-
-    def self.inherited(child)
-      self.actions << child
+    def self.finishing
+      @finishing ||= Class.new(self) { include Finalizing }
     end
 
-    def self.actions
-      @actions ||= []
+    def self.all_children
+      # TODO
     end
 
-    def self.subscribe
-      nil
+    attr_reader :world, :status, :id
+
+    def initialize(world, status, id)
+      @world      = is_kind_of! world, Bus
+      @id         = id
+      self.status = status
     end
 
-    def self.require
-      nil
+    def to_hash
+      { class: self.class.to_s }
     end
 
-    def initialize(input, output = nil)
-      real_output = output
-      real_output = {} unless real_output.is_a? Hash
-      @run_step = Step::Run.new(self.class, input, real_output)
-      # for preparation phase
-      if output == :reference
-        # needed for steps initialization, quite hackish, fix!
-        @execution_plan = ExecutionPlan.new
-        @finalize_step = Step::Finalize.new(@run_step)
-        @output = Step::Reference.new(@run_step, :output)
-      end
+    STATES = [:pending, :success, :suspended, :error]
+
+    protected
+
+    def status=(status)
+      raise "unknown state #{status}" unless STATES.include? status
+      @status = status
     end
 
-    # provide the reference to the output if in planning phase
-    # TODO: get most of the planning outside of the action class as
-    # it's getting messy here
-    def output
-      return @output || @run_step.output
-    end
-
-
-    def ==(other)
-      [self.class.name, self.input, self.output] ==
-        [other.class.name, other.input, other.output]
-    end
-
-    def inspect
-      "#{self.class.name}: #{input.inspect} ~> #{output.inspect}"
-    end
-
-    # the block contains the expression in Apipie::Params::DSL
-    # describing the format of message
-    def self.input_format(&block)
-      if block
-        @input_format_block = block
-      elsif @input_format_block
-        @input_format ||= Apipie::Params::Description.define(&@input_format_block)
-      else
-        nil
-      end
-    end
-
-    # the block contains the expression in Apipie::Params::DSL
-    # describing the format of message
-    def self.output_format(&block)
-      if block
-        @output_format_block = block
-      elsif @output_format_block
-        @output_format ||= Apipie::Params::Description.define(&@output_format_block)
-      else
-        nil
-      end
-    end
-
-    # use when referencing output from another action's input_format
-    def self.input
-      Dependency.new(self, :input)
-    end
-
-    # use when referencing output from another action's input_format
-    def self.output
-      Dependency.new(self, :output)
-    end
-
-    def self.trigger(*args)
-      Dynflow::Bus.trigger(self, *args)
-    end
-
-    def self.plan(*args)
-      action = self.new({}, :reference)
-      yield action if block_given?
-
-      plan_step = Step::Plan.new(action)
-      action.execution_plan.plan_steps << plan_step
-      plan_step.catch_errors do
-        action.plan(*args)
-      end
-
-      if action.execution_plan.failed_steps.any?
-        action.execution_plan.status = 'error'
-      else
-        action.add_subscriptions(*args)
-      end
-
-      return action
-    end
-
-    # for subscribed actions: by default take the input of the
-    # subscribed action
+    # @override
     def plan(*args)
       if trigger
         # if the action is triggered by subscription, by default use the
         # input of parent action.
         # should be replaced by referencing the input from input format
-        plan_self(self.input.merge(trigger.input))
+        plan_self(input.merge(trigger.input))
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
-        plan_self(args.first)
+        plan_self
+      end
+      self
+    end
+
+    private
+
+    def with_error_handling(&block)
+      begin
+        block.call
+        self.status = :success
+      rescue => e
+        self.status = :error
+        self.error 'exception' => e.class.name,
+                   'message'   => e.message,
+                   'backtrace' => e.backtrace
       end
     end
-
-    def plan_self(input)
-      self.input = input
-      @run_step.input = self.input
-      @finalize_step.input = input
-      @execution_plan << @run_step if self.respond_to? :run
-      @execution_plan << @finalize_step if self.respond_to? :finalize
-      return self # to stay consistent with plan_action
-    end
-
-    def plan_action(action_class, *args)
-      sub_action = action_class.plan(*args) do |action|
-        action.input = self.input.dup
-      end
-      @execution_plan.concat(sub_action.execution_plan)
-      return sub_action
-    end
-
-    def add_subscriptions(*plan_args)
-      @execution_plan.concat(Dispatcher.execution_plan_for(self, *plan_args))
-    end
-
-    # If triggered with subscription, check if the trigger output is
-    # not reference in input_format. If so, make the reference in the input.
-    def add_trigger_reference
-      trigger_dependencies = self.class.input_format.params.find_all do |description|
-        descriptor = description.descriptor
-        descriptor.is_a?(Dependency) && descriptor.action_class == trigger.class
-      end.map { |description| [description.name, description.descriptor] }
-
-      trigger_dependencies.each do |name, dependency|
-        self.input[name.to_s] = case dependency.field
-                                when :input then trigger.input
-                                when :output then trigger.output
-                                else raise ArgumentError, "Unknown dependency field: #{dependency.field}"
-        end
-      end
-    end
-
-    def validate!
-      self.class.output_format.validate!(output)
-    end
-
   end
 end

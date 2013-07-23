@@ -1,15 +1,19 @@
 require 'apipie-params'
-require 'active_support/core_ext/hash/indifferent_access'
-require 'dynflow/logger'
-require 'dynflow/execution_plan'
-require 'dynflow/dispatcher'
-require 'dynflow/executor'
-require 'dynflow/bus'
-require 'dynflow/step'
-require 'dynflow/action'
+require 'algebrick'
+require 'thread'
+require 'set'
 
 module Dynflow
 
-  ROOT_PATH = File.expand_path('../..', __FILE__)
+  require 'dynflow/future'
+  require 'dynflow/serializable'
+  require 'dynflow/transaction_adapters'
+  require 'dynflow/persistence_adapters'
+  require 'dynflow/executors'
+  require 'dynflow/action'
+  require 'dynflow/flows'
+  require 'dynflow/execution_plan'
+  require 'dynflow/world'
+  require 'dynflow/simple_world'
 
 end

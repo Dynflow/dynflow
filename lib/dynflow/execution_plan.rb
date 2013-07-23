@@ -1,196 +1,73 @@
-require 'forwardable'
-
 module Dynflow
-  class ExecutionPlan
+  class ExecutionPlan < Serializable
+    include Algebrick::TypeCheck
 
-    class RunPlan
-      attr_reader :steps
+    require 'dynflow/execution_plan/steps'
 
-      def initialize(steps = [], &block)
-        @steps = steps
-        yield @steps if block_given?
-      end
+    attr_reader :id, :world, :plan_steps
 
-      def add_if_satisfied(step, deps)
-        raise NotImplementedError, "Abstract method"
-      end
+    def initialize(world, action_class)
+      @id                   = rand(1e10).to_s(36) # TODO replace with uuid?
+      @world                = is_kind_of! world, Bus
+      @planning_scope_stack = []
+      prepare(action_class)
 
-      def ==(other)
-        self.class == other.class && self.steps == other.steps
-      end
+      @plan_steps = {}
     end
 
-    class Concurrence < RunPlan
-
-      # if some step in steps satisfies all the deps (set of steps),
-      # add the step in argument into a sequence with this satisfying
-      # step.
-      #
-      # sequences don't include concurrent actions. In other
-      # words, the actions within a sequence are not marked for
-      # concurrence even though they might be independent from each
-      # other (having for example some common dependency/being common dependency
-      # for some step)
-      def add_if_satisfied(step, deps)
-        if deps.empty?
-          @steps << step
-          return true
-        end
-
-        satisfying_indexes = deps.map { |dep| satisfying_index(dep) }.compact
-
-        # all deps for the step are withing this plan
-        if satisfying_indexes.size == deps.size
-          sequence = merge_to_sequence(satisfying_indexes)
-          sequence.steps << step
-          return true
-        end
-        return false
-      end
-
-      private
-
-      # index of a step that is able to satisfy the dependent step
-      def satisfying_index(dependent_step)
-        return @steps.index { |step| step.satisfying_step(dependent_step) }
-      end
-
-      def merge_to_sequence(step_indexes)
-        step_indexes.sort!
-        step_index = step_indexes.first
-        sequence = convert_to_sequence(step_index)
-        steps_or_sequences = step_indexes[1..-1].reverse.map do |index|
-          @steps.delete_at(index)
-        end.reverse
-
-        steps_to_merge = steps_or_sequences.map do |step|
-          case step
-          when Step
-            step
-          when Sequence
-            step.steps
-          else
-            raise NotImplementedError, "Don't know how to merge #{step} to sequence"
-          end
-        end.flatten
-        sequence.steps.concat(steps_to_merge)
-        return sequence
-      end
-
-      def convert_to_sequence(step_index)
-        step = @steps[step_index]
-        case step
-        when Step
-          sequence = Sequence.new
-          sequence.steps << step
-          @steps[step_index] = sequence
-        when Sequence
-          sequence = step
-        else
-          raise NotImplementedError, "Don't know how convert #{step} to sequence"
-        end
-        return sequence
-      end
-
+    def generate_action_id
+      @last_action_id ||= 0
+      @last_action_id += 1
     end
 
-    class Sequence < RunPlan
-
-      def satisfying_step(dependent_step)
-        if @steps.any? { |step| step.satisfying_step(dependent_step) }
-          return self
-        end
-      end
-
+    def generate_step_id
+      @last_step_id ||= 0
+      @last_step_id += 1
     end
 
-    attr_reader :plan_steps, :run_steps, :finalize_steps
-
-    # allows storing and reloading the execution plan to something
-    # more persistent than memory
-    attr_accessor :persistence
-    # one of [new, running, paused, aborted, finished]
-    attr_accessor :status
-
-    extend Forwardable
-
-    def initialize(plan_steps = [], run_steps = [], finalize_steps = [])
-      @plan_steps = plan_steps
-      @run_steps = run_steps
-      @finalize_steps = finalize_steps
-      @status = 'new'
+    def plan(*args)
+      root_plan_step.execute(*args)
     end
 
-    def steps
-      self.plan_steps + self.run_steps + self.finalize_steps
+    # @api private
+    def with_planning_scope(&block)
+      switch_scope Concurrence, &block
     end
 
-    def failed_steps
-      self.steps.find_all { |step| step.status == 'error' }
+    # @api private
+    def switch_scope(scope_class, &block)
+      @planning_scope_stack << scope_class.new
+      block.call
+    ensure
+      @planning_scope_stack.pop
     end
 
-    # Calculate the run plan based on the dependencies between run steps
-    def run_plan(refresh = false)
-      return @run_plan if !refresh && @run_plan
-
-      dep_tree = self.run_steps.reduce([]) do |dep_tree, step|
-        dep_tree << [step, step.dependencies]
-      end
-
-      @run_plan = Concurrence.new
-
-      something_deleted = true
-      while something_deleted
-        something_deleted = false
-        satisfied_steps = dep_tree.delete_if do |step, deps|
-          if @run_plan.add_if_satisfied(step, deps)
-            something_deleted = true
-          end
-        end
-      end
-
-      if dep_tree.any?
-        raise "Unresolved dependencies: #{dep_tree.inspect}"
-      end
-
-      return @run_plan
+    def add_plan_step(action_class, planned_by)
+      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.id)
     end
 
-    # when restoring from persistence
-    def run_plan=(run_plan)
-      @run_plan = run_plan
+    def add_run_step(action)
+      @planning_scope_stack.last << action # FIXME
     end
 
-    def inspect_steps(steps = nil)
-      steps ||= self.steps
-      steps.map(&:inspect).join("\n")
+    def add_finalize_step(action)
     end
 
-    def <<(step)
-      case step
-      when Step::Run then self.run_steps << step
-      when Step::Finalize then self.finalize_steps << step
-      else raise ArgumentError, 'Only Run or Finalize steps can be planned'
-      end
+    def to_hash
+      # TODO
     end
 
-    def concat(other)
-      self.plan_steps.concat(other.plan_steps)
-      self.run_steps.concat(other.run_steps)
-      self.finalize_steps.concat(other.finalize_steps)
-      self.status = other.status
+    private
+
+    def prepare(action_class)
+      persistence_adapter.save_execution_plan self.to_hash
+      new_plan_step generate_step_id, action_class, generate_action_id
     end
 
-    # update the persistence based on the current status
-    def persist(include_steps = false)
-      if @persistence
-        @persistence.persist(self)
-
-        if include_steps
-          steps.each { |step| step.persist }
-        end
-      end
+    def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)
+      @plan_steps[id] = step = Steps::Planning.new(self, id, :pending, action_class, action_id)
+      @plan_steps[planned_by_step_id].children << step.id if planned_by_step_id
+      step
     end
-
   end
 end

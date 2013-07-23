@@ -2,3 +2,6 @@ Gemfile.lock
 *.swp
 *.swn
 *.swo
+.bin
+.bundle
+.idea
