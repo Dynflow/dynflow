@@ -59,8 +59,8 @@ module Dynflow
     class UpdateIssue < Action
 
       input_format do
-        param :triage_input, Triage.input
-        param :triage_output, Triage.output
+        param :triage_input, Triage.input_format
+        param :triage_output, Triage.output_format
       end
 
       def run; end
@@ -73,7 +73,7 @@ module Dynflow
       end
 
       input_format do
-        param :triage, Triage.output
+        param :triage, Triage.output_format
       end
 
       def run; end
@@ -100,7 +100,7 @@ module Dynflow
     class Ci < Action
 
       input_format do
-        param :commit, Commit.input
+        param :commit, Commit.input_format
       end
 
       output_format do
@@ -114,7 +114,7 @@ module Dynflow
 
       input_format do
         param :reviewer, String
-        param :commit, Commit.input
+        param :commit, Commit.input_format
       end
 
       output_format do
@@ -127,9 +127,9 @@ module Dynflow
     class Merge < Action
 
       input_format do
-        param :commit, Commit.input
-        param :ci_output, Ci.output
-        param :review_outputs, array_of(Review.output)
+        param :commit, Commit.input_format
+        param :ci_output, Ci.output_format
+        param :review_outputs, array_of(Review.output_format)
       end
 
       def run; end

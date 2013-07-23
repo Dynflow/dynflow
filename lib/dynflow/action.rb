@@ -2,6 +2,9 @@ module Dynflow
   class Action < Serializable
     include Algebrick::TypeCheck
 
+    require 'dynflow/action/format'
+    extend Format
+
     require 'dynflow/action/planning'
     require 'dynflow/action/running'
     require 'dynflow/action/finalizing'

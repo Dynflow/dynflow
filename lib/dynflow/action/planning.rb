@@ -11,7 +11,7 @@ module Dynflow
 
     def execute(*args)
       execution_plan.with_planning_scope do
-        plan *args
+        plan(*args)
       end
       world.subscribed_actions(self).each do |action_class|
         execution_plan.add_plan_step(action_class, self).execute(self, *args)
