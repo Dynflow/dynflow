@@ -35,7 +35,7 @@ module Dynflow
     end
 
     ## world.wakeup(step_id, :finished, task)
-    ## world.wakeup(step_id, :update_progress, taks['progress'])
+    ## world.wakeup(step_id, :update_progress, tasks['progress'])
     #def wake_up(step_id, method, *args)
     #  @suspended_actions[step_id] # TODO tell executor to weak up the action with method(*args)
     #end

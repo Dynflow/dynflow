@@ -1,5 +1,6 @@
 require 'multi_json'
 
+
 module Dynflow
   module PersistenceAdapters
     class SimpleFileStorage < Abstract
@@ -10,24 +11,24 @@ module Dynflow
       def initialize(storage_dir)
         raise ArgumentError unless File.exist?(storage_dir) && File.directory?(storage_dir)
         @storage_dir = storage_dir
-        Dir.mkdir plans_dir unless File.exist? plans_dir
-        Dir.mkdir actions_dir unless File.exist? actions_dir
+        Dir.mkdir(plans_dir) unless File.exist?(plans_dir)
+        Dir.mkdir(actions_dir) unless File.exist?(actions_dir)
       end
 
       def load_execution_plan(execution_plan_id)
-        load plans_dir, execution_plan_id.to_s
+        load(plans_dir, execution_plan_id.to_s)
       end
 
       def save_execution_plan(execution_plan_id, value)
-        save plans_dir, execution_plan_id.to_s, value
+        save(plans_dir, execution_plan_id.to_s, value)
       end
 
       def load_action(execution_plan_id, action_id)
-        load actions_dir, execution_plan_id.to_s + action_id.to_s
+        load(actions_dir, execution_plan_id.to_s + action_id.to_s)
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save actions_dir, execution_plan_id.to_s + action_id.to_s, value
+        save(actions_dir, execution_plan_id.to_s + action_id.to_s, value)
       end
 
       private
@@ -54,7 +55,7 @@ module Dynflow
           is_kind_of! value, Hash
           File.open(path, 'w') { |f| f.write MultiJson.dump(value) }
         else
-          File.delete path
+          File.delete(path)
         end
         return value
       end

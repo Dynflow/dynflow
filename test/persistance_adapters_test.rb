@@ -10,10 +10,10 @@ module PersistenceAdapterTest
     plan = { 'id' => 1 }
     -> { storage.load_execution_plan(1) }.must_raise KeyError
 
-    storage.save_execution_plan 1, plan
+    storage.save_execution_plan(1, plan)
     storage.load_execution_plan(1).must_equal plan
 
-    storage.save_execution_plan 1, nil
+    storage.save_execution_plan(1, nil)
     -> { storage.load_execution_plan(1) }.must_raise KeyError
   end
 
@@ -21,10 +21,10 @@ module PersistenceAdapterTest
     action = { 'id' => 1 }
     -> { storage.load_action(1, 1) }.must_raise KeyError
 
-    storage.save_action 1, 1, action
+    storage.save_action(1, 1, action)
     storage.load_action(1, 1).must_equal action
 
-    storage.save_action 1, 1, nil
+    storage.save_action(1, 1, nil)
     -> { storage.load_action(1, 1) }.must_raise KeyError
   end
 end

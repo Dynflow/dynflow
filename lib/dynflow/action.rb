@@ -10,15 +10,24 @@ module Dynflow
     require 'dynflow/action/finalizing'
 
     def self.planning
-      @planning ||= Class.new(self) { include Planning; ignored_child! }
+      @planning ||= Class.new(self) do
+        include Planning
+        ignored_child!
+      end
     end
 
     def self.running
-      @running ||= Class.new(self) { include Running; ignored_child! }
+      @running ||= Class.new(self) do
+        include Running
+        ignored_child!
+      end
     end
 
     def self.finalizing
-      @finishing ||= Class.new(self) { include Finalizing; ignored_child! }
+      @finishing ||= Class.new(self) do
+        include Finalizing
+        ignored_child!
+      end
     end
 
     def self.all_children
@@ -35,8 +44,8 @@ module Dynflow
     attr_reader :world, :status, :id
 
     def initialize(world, status, id)
-      @world      = is_kind_of! world, World
-      @id         = id or raise ArgumentError, 'missing id'
+      @world = is_kind_of! world, World
+      @id = id or raise ArgumentError, 'missing id'
       self.status = status
     end
 
