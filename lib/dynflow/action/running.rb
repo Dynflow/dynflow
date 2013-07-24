@@ -4,7 +4,7 @@ module Dynflow
 
     def initialize(world, status, id, input)
       super world, status, id
-      @input  = input
+      @input  = is_kind_of! input, Hash
       @output = {}
       @error  = {}
     end

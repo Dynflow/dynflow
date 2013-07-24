@@ -2,19 +2,24 @@ module Dynflow
   class World
     include Algebrick::TypeCheck
 
-    attr_reader :executor, :persistence_adapter, :transaction_adapter
+    attr_reader :executor, :persistence_adapter, :transaction_adapter, :action_classes, :subscription_index
 
     def initialize(executor, persistence_adapter, transaction_adapter, action_classes = Action.all_children)
-      # TODO type-check? how?
       @executor            = is_kind_of! executor, Executors::Abstract
       @persistence_adapter = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
       @transaction_adapter = is_kind_of! transaction_adapter, TransactionAdapters::Abstract
       @suspended_actions   = {}
-      @action_classes      = action_classes
+
+      @action_classes     = action_classes
+      @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
+        next index unless klass.subscribe
+        index[klass.subscribe] << klass
+        index
+      end.tap { |o| o.freeze }
     end
 
     def subscribed_actions(action)
-
+      @subscription_index.has_key?(action.class) ? @subscription_index[action.class] : []
     end
 
     # @return [Future]
@@ -30,7 +35,7 @@ module Dynflow
     end
 
     ## world.wakeup(step_id, :finished, task)
-    ## world.wakeup(step_id, :update_progress, taks['progress'])
+    ## world.wakeup(step_id, :update_progress, tasks['progress'])
     #def wake_up(step_id, method, *args)
     #  @suspended_actions[step_id] # TODO tell executor to weak up the action with method(*args)
     #end

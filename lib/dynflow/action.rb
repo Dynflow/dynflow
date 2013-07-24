@@ -10,26 +10,42 @@ module Dynflow
     require 'dynflow/action/finalizing'
 
     def self.planning
-      @planning ||= Class.new(self) { include Planning }
+      @planning ||= Class.new(self) do
+        include Planning
+        ignored_child!
+      end
     end
 
     def self.running
-      @running ||= Class.new(self) { include Running }
+      @running ||= Class.new(self) do
+        include Running
+        ignored_child!
+      end
     end
 
-    def self.finishing
-      @finishing ||= Class.new(self) { include Finalizing }
+    def self.finalizing
+      @finishing ||= Class.new(self) do
+        include Finalizing
+        ignored_child!
+      end
     end
 
     def self.all_children
-      # TODO
+      children.
+          inject(children) { |children, child| children + child.all_children }.
+          select { |ch| not ch.ignored_child? }
+    end
+
+    # @return [nil, Class] a child of Action
+    def self.subscribe
+      nil
     end
 
     attr_reader :world, :status, :id
 
     def initialize(world, status, id)
-      @world      = is_kind_of! world, Bus
-      @id         = id
+      @world = is_kind_of! world, World
+      @id = id or raise ArgumentError, 'missing id'
       self.status = status
     end
 
@@ -73,6 +89,22 @@ module Dynflow
                    'message'   => e.message,
                    'backtrace' => e.backtrace
       end
+    end
+
+    def self.ignored_child?
+      !!@ignored_child
+    end
+
+    def self.inherited(child)
+      children << child
+    end
+
+    def self.children
+      @children ||= []
+    end
+
+    def self.ignored_child!
+      @ignored_child = true
     end
   end
 end

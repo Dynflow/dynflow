@@ -1,6 +1,8 @@
 module Dynflow
   module ExecutionPlan::Steps
     class Abstract < Serializable
+      include Algebrick::TypeCheck
+
       def self.new_from_hash(execution_plan, hash)
         raise ArgumentError unless hash[:class] == self.to_s
         new execution_plan, *hash.values_at(:id, :state, :action_class, :action_id)
@@ -9,11 +11,11 @@ module Dynflow
       attr_reader :execution_plan, :id, :state, :action_class, :action_id
 
       def initialize(execution_plan, id, state, action_class, action_id)
-        @id             = id
-        @execution_plan = execution_plan
+        @id             = id or raise ArgumentError, 'missing id'
+        @execution_plan = is_kind_of! execution_plan, ExecutionPlan
         self.state      = state
-        @action_class   = action_class
-        @action_id      = action_id
+        @action_class   = is_kind_of! action_class, Class
+        @action_id      = action_id or raise ArgumentError, 'missing action_id'
       end
 
       def persistence_adapter
