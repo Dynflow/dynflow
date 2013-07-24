@@ -12,9 +12,9 @@ module Dynflow
       when !block && @input_format
         return @input_format
       when block && @input_format
-        raise "The input_format has already been defined"
+        raise 'The input_format has already been defined'
       when !block && !@input_format
-        raise "The input_format has not been defined yet"
+        raise 'The input_format has not been defined yet'
       end
     end
 
@@ -25,9 +25,9 @@ module Dynflow
       when !block && @output_format
         return @output_format
       when block && @output_format
-        raise "The output_format has already been defined"
+        raise 'The output_format has already been defined'
       when !block && !@output_format
-        raise "The output_format has not been dfined yet"
+        raise 'The output_format has not been defined yet'
       end
     end
 
