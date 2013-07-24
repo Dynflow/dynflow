@@ -1,4 +1,5 @@
 require 'multi_json'
+require 'active_support/hash_with_indifferent_access'
 
 
 module Dynflow
@@ -43,7 +44,9 @@ module Dynflow
 
       def load(dir, file_name)
         if File.exist? "#{dir}/#{file_name}"
-          File.open("#{dir}/#{file_name}", 'r') { |f| MultiJson.load f.read }
+          File.open("#{dir}/#{file_name}", 'r') do |f|
+            HashWithIndifferentAccess.new MultiJson.load(f.read)
+          end
         else
           raise KeyError
         end

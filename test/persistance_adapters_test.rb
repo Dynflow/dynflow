@@ -7,22 +7,26 @@ module PersistenceAdapterTest
   end
 
   def test_save_execution_plan
-    plan = { 'id' => 1 }
+    plan = { id: 1, 'value' => 2 }
     -> { storage.load_execution_plan(1) }.must_raise KeyError
 
     storage.save_execution_plan(1, plan)
-    storage.load_execution_plan(1).must_equal plan
+    storage.load_execution_plan(1)[:id].must_equal 1
+    storage.load_execution_plan(1)['value'].must_equal 2
+    storage.load_execution_plan(1).keys.size.must_equal 2
 
     storage.save_execution_plan(1, nil)
     -> { storage.load_execution_plan(1) }.must_raise KeyError
   end
 
   def test_save_action
-    action = { 'id' => 1 }
+    action = { id: 1, 'value' => 2 }
     -> { storage.load_action(1, 1) }.must_raise KeyError
 
     storage.save_action(1, 1, action)
-    storage.load_action(1, 1).must_equal action
+    storage.load_action(1, 1)[:id].must_equal 1
+    storage.load_action(1, 1)['value'].must_equal 2
+    storage.load_action(1, 1).keys.size.must_equal 2
 
     storage.save_action(1, 1, nil)
     -> { storage.load_action(1, 1) }.must_raise KeyError
