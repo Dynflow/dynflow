@@ -12,13 +12,14 @@ module Dynflow
 
       @action_classes     = action_classes
       @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
-        next unless klass.subscribe
+        next index unless klass.subscribe
         index[klass.subscribe] << klass
-      end.freeze
+        index
+      end.tap { |o| o.freeze }
     end
 
     def subscribed_actions(action)
-      @subscription_index[action.class]
+      @subscription_index.has_key?(action.class) ? @subscription_index[action.class] : []
     end
 
     # @return [Future]

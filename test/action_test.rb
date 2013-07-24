@@ -37,5 +37,18 @@ module Dynflow
     it { smart_action_class.all_children.wont_include smarter_action_class.planning }
     it { smart_action_class.all_children.wont_include smarter_action_class.running }
     it { smart_action_class.all_children.wont_include smarter_action_class.finalizing }
+
+    describe 'World#subscribed_actions' do
+      event_action_class      = Class.new(Dynflow::Action)
+      subscribed_action_class = Class.new(Dynflow::Action) do
+        singleton_class.send(:define_method, :subscribe) { event_action_class }
+      end
+
+      world = SimpleWorld.new
+
+      it { subscribed_action_class.subscribe.must_equal event_action_class }
+      it { world.subscribed_actions(event_action_class.allocate).must_include subscribed_action_class }
+      it { world.subscribed_actions(event_action_class.allocate).size.must_equal 1 }
+    end
   end
 end
