@@ -1,7 +1,6 @@
 require 'multi_json'
 require 'active_support/hash_with_indifferent_access'
 
-
 module Dynflow
   module PersistenceAdapters
     class SimpleFileStorage < Abstract

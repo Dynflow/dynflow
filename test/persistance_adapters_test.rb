@@ -63,4 +63,22 @@ class SimpleFileStorageTest < MiniTest::Unit::TestCase
   end
 end
 
+require 'dynflow/persistence_adapters/active_record'
+
+class ActiveRecordTest < MiniTest::Unit::TestCase
+  include PersistenceAdapterTest
+
+  def setup
+    ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+    path = File.dirname(__FILE__) + '/../lib/dynflow/persistence_adapters/active_record/migrations'
+    ::ActiveRecord::Migrator.migrate path
+  end
+
+  def storage
+    @storage ||= begin
+      Dynflow::PersistenceAdapters::ActiveRecord.new
+    end
+  end
+end
+
 
