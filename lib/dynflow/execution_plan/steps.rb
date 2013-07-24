@@ -59,6 +59,16 @@ module Dynflow
     end
 
     class Running < Abstract
+
+      def action
+        action_hash = persistence_adapter.load_action(execution_plan.id, action_id)
+        # TODO: dereference if possible
+        Action.running.new_from_hash(execution_plan.world,
+                                     state,
+                                     action_id,
+                                     action_hash)
+      end
+
       def execute
 
       end
