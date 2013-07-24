@@ -9,11 +9,11 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def load_step(execution_plan_id, step_id)
+      def load_action(execution_plan_id, action_id)
         raise NotImplementedError
       end
 
-      def save_step(execution_plan_id, step_id, value)
+      def save_action(execution_plan_id, action_id, value)
         raise NotImplementedError
       end
     end
