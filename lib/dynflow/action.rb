@@ -1,3 +1,5 @@
+require 'active_support/inflector'
+
 module Dynflow
   class Action < Serializable
     include Algebrick::TypeCheck
@@ -44,13 +46,18 @@ module Dynflow
     attr_reader :world, :status, :id
 
     def initialize(world, status, id)
+      unless [Planning, Running, Finalizing].any? { |phase| self.is_a? phase }
+        raise "It's not expected to initialize this class directly"
+      end
+
       @world = is_kind_of! world, World
       @id = id or raise ArgumentError, 'missing id'
       self.status = status
     end
 
     def to_hash
-      { class: self.class.to_s }
+      # superclass because we run this from the phases of action class
+      { class: self.class.superclass.name }
     end
 
     STATES = [:pending, :success, :suspended, :error]
