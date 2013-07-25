@@ -90,13 +90,15 @@ module Dynflow
         self.sub_flows.map(&:flatten!)
       end
 
-      private
+      protected
 
       # adds the +new_flow+ in a way that it's in sequence with
       # the +satisfying_flows+
       def add_to_sequence(satisfying_flows, new_flow)
         raise NotImplementedError
       end
+
+      private
 
       def find_satisfying_sub_flows(dependency_graph, new_flow)
         satisfying_flows = Set.new
@@ -128,7 +130,7 @@ module Dynflow
 
     class Concurrence < AbstractComposed
 
-      private
+      protected
 
       def add_to_sequence(satisfying_flows, dependent_flow)
         if satisfying_flows.empty?
@@ -154,7 +156,7 @@ module Dynflow
 
     class Sequence < AbstractComposed
 
-      private
+      protected
 
       def add_to_sequence(satisfying_flows, dependent_flow)
         # the flows are already in sequence, we don't need to do anything extra
