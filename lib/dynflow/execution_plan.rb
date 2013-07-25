@@ -3,6 +3,8 @@ module Dynflow
     include Algebrick::TypeCheck
 
     require 'dynflow/execution_plan/steps'
+    require 'dynflow/execution_plan/output_reference'
+    require 'dynflow/execution_plan/dependency_graph'
 
     attr_reader :id, :world, :root_plan_step, :plan_steps, :run_flow
 
@@ -14,7 +16,7 @@ module Dynflow
       @run_flow         = Flows::Concurrence.new([])
       @run_flow_stack   = []
       @root_plan_step   = nil
-      @dependency_graph = Steps::DependencyGraph.new
+      @dependency_graph = DependencyGraph.new
 
       prepare(action_class)
     end
@@ -69,7 +71,7 @@ module Dynflow
     end
 
     def add_run_step(action)
-      run_step = Steps::Running.new(self,
+      run_step = Steps::RunStep.new(self,
                                     self.generate_step_id,
                                     :pending,
                                     action.class,
@@ -98,7 +100,7 @@ module Dynflow
     end
 
     def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)
-      @plan_steps[id] = step = Steps::Planning.new(self, id, :pending, action_class, action_id)
+      @plan_steps[id] = step = Steps::PlanStep.new(self, id, :pending, action_class, action_id)
       @plan_steps[planned_by_step_id].children << step.id if planned_by_step_id
       step
     end

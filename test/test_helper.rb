@@ -1,7 +1,7 @@
 require 'test/unit'
 require 'minitest/spec'
 require 'minitest/reporters'
-#MiniTest::Reporters.use!
+MiniTest::Reporters.use!
 require 'dynflow'
 require 'pry'
 

@@ -1,5 +1,5 @@
-require 'test_helper'
-require 'code_workflow_example'
+require_relative 'test_helper'
+require_relative 'code_workflow_example'
 
 module Dynflow
   module ExecutionPlanTest
@@ -31,11 +31,11 @@ Dynflow::Flows::Concurrence
   Dynflow::Flows::Sequence
     4: Triage {"author"=>"Peter Smith", "text"=>"Failing test"}
     6: UpdateIssue {"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Step(4).output}
-    8: NotifyAssignee {:triage=>Step(4).output}
+    8: NotifyAssignee {"triage"=>Step(4).output}
   Dynflow::Flows::Sequence
     11: Triage {"author"=>"John Doe", "text"=>"Internal server error"}
     13: UpdateIssue {"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Step(11).output}
-    15: NotifyAssignee {:triage=>Step(11).output}
+    15: NotifyAssignee {"triage"=>Step(11).output}
 EXPECTED
         end
 

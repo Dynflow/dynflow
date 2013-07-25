@@ -2,6 +2,7 @@ require 'apipie-params'
 require 'algebrick'
 require 'thread'
 require 'set'
+require 'active_support/core_ext/hash/indifferent_access'
 
 module Dynflow
 
