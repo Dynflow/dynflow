@@ -1,7 +1,6 @@
 require 'sqlite3'
 require 'active_record'
 require 'multi_json'
-require 'active_support/hash_with_indifferent_access'
 
 module Dynflow
   module PersistenceAdapters

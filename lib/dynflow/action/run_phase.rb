@@ -1,17 +1,17 @@
 module Dynflow
-  module Action::Running
+  module Action::RunPhase
 
     def self.included(base)
       base.extend(ClassMethods)
+      base.attr_indifferent_access_hash :input, :output
     end
 
-    attr_reader :input, :output, :error
+    def initialize(attributes, world)
+      super attributes, world
+      run_step_id || raise(ArgumentError, 'missing run_step_id')
 
-    def initialize(world, status, id, input, output = {}, error = {})
-      super world, status, id
-      @input  = is_kind_of! input, Hash
-      @output = output
-      @error  = error
+      self.input  = attributes[:input]
+      self.output = attributes[:output] || {}
     end
 
     def execute
@@ -24,19 +24,13 @@ module Dynflow
 
     def to_hash
       super.merge input:  input,
-                  output: output,
-                  error:  error
+                  output: output
     end
 
     module ClassMethods
-      def new_from_hash(world, status, action_id, hash)
+      def new_from_hash(hash, state, run_step_id, world)
         klass = hash[:class].constantize
-        klass.running.new(world,
-                          status,
-                          action_id,
-                          hash[:input],
-                          hash[:output],
-                          hash[:error])
+        klass.run_phase.new(hash.merge(state: state, run_step_id: run_step_id), world)
       end
     end
 

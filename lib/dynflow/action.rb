@@ -7,27 +7,27 @@ module Dynflow
     require 'dynflow/action/format'
     extend Format
 
-    require 'dynflow/action/planning'
-    require 'dynflow/action/running'
-    require 'dynflow/action/finalizing'
+    require 'dynflow/action/plan_phase'
+    require 'dynflow/action/run_phase'
+    require 'dynflow/action/final_phase'
 
-    def self.planning
+    def self.plan_phase
       @planning ||= Class.new(self) do
-        include Planning
+        include PlanPhase
         ignored_child!
       end
     end
 
-    def self.running
+    def self.run_phase
       @running ||= Class.new(self) do
-        include Running
+        include RunPhase
         ignored_child!
       end
     end
 
-    def self.finalizing
+    def self.final_phase
       @finishing ||= Class.new(self) do
-        include Finalizing
+        include FinalPhase
         ignored_child!
       end
     end
@@ -43,16 +43,33 @@ module Dynflow
       nil
     end
 
-    attr_reader :world, :status, :id
+    def self.attr_indifferent_access_hash(*names)
+      attr_reader(*names)
+      names.each do |name|
+        define_method "#{name}=" do |v|
+          is_kind_of! v, Hash
+          instance_variable_set :"@#{name}", v.with_indifferent_access
+        end
+      end
+    end
 
-    def initialize(world, status, id)
-      unless [Planning, Running, Finalizing].any? { |phase| self.is_a? phase }
+    attr_reader :world, :state, :id, :plan_step_id, :run_step_id, :finalize_step_id
+    attr_indifferent_access_hash :error
+
+    def initialize(attributes, world)
+      unless [PlanPhase, RunPhase, FinalPhase].any? { |phase| self.is_a? phase }
         raise "It's not expected to initialize this class directly"
       end
 
-      @world = is_kind_of! world, World
-      @id = id or raise ArgumentError, 'missing id'
-      self.status = status
+      is_kind_of! attributes, Hash
+
+      @world            = is_kind_of! world, World
+      self.state       = attributes[:state] || raise(ArgumentError, 'missing state')
+      @id               = attributes[:id] || raise(ArgumentError, 'missing id')
+      @plan_step_id     = attributes[:plan_step_id]
+      @run_step_id      = attributes[:run_step_id]
+      @finalize_step_id = attributes[:finalize_step_id]
+      self.error        = attributes[:error] || {}
     end
 
     def action_class
@@ -61,16 +78,21 @@ module Dynflow
     end
 
     def to_hash
-      { class: action_class.name }
+      { class:            action_class.name,
+        id:               id,
+        error:            error,
+        plan_step_id:     plan_step_id,
+        run_step_id:      run_step_id,
+        finalize_step_id: finalize_step_id }
     end
 
     STATES = [:pending, :success, :suspended, :error]
 
     protected
 
-    def status=(status)
-      raise "unknown state #{status}" unless STATES.include? status
-      @status = status
+    def state=(state)
+      raise "unknown state #{state}" unless STATES.include? state
+      @state = state
     end
 
     # @override
@@ -93,12 +115,12 @@ module Dynflow
     def with_error_handling(&block)
       begin
         block.call
-        self.status = :success
+        self.state = :success
       rescue => e
-        self.status = :error
-        self.error 'exception' => e.class.name,
-                   'message'   => e.message,
-                   'backtrace' => e.backtrace
+        self.state = :error
+        self.error  = { exception: e.class.name,
+                        message:   e.message,
+                        backtrace: e.backtrace }
       end
     end
 

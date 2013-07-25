@@ -9,7 +9,7 @@ module Dynflow
       end
 
       def load_execution_plan(execution_plan_id)
-        @execution_plans.fetch execution_plan_id
+        @execution_plans.fetch(execution_plan_id).with_indifferent_access
       end
 
       def save_execution_plan(execution_plan_id, value)
@@ -22,7 +22,7 @@ module Dynflow
       end
 
       def load_action(execution_plan_id, action_id)
-        @actions.fetch [execution_plan_id, action_id]
+        @actions.fetch([execution_plan_id, action_id]).with_indifferent_access
       end
 
       def save_action(execution_plan_id, action_id, value)

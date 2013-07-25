@@ -30,13 +30,13 @@ module Dynflow
 
     it { refute smart_action_class.ignored_child? }
     it { refute smarter_action_class.ignored_child? }
-    it { assert smarter_action_class.planning.ignored_child? }
+    it { assert smarter_action_class.plan_phase.ignored_child? }
 
     it { smart_action_class.all_children.must_include smarter_action_class }
     it { smart_action_class.all_children.size.must_equal 1 }
-    it { smart_action_class.all_children.wont_include smarter_action_class.planning }
-    it { smart_action_class.all_children.wont_include smarter_action_class.running }
-    it { smart_action_class.all_children.wont_include smarter_action_class.finalizing }
+    it { smart_action_class.all_children.wont_include smarter_action_class.plan_phase }
+    it { smart_action_class.all_children.wont_include smarter_action_class.run_phase }
+    it { smart_action_class.all_children.wont_include smarter_action_class.final_phase }
 
     describe 'World#subscribed_actions' do
       event_action_class      = Class.new(Dynflow::Action)

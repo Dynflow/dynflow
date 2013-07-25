@@ -1,10 +1,11 @@
 require 'test/unit'
 require 'minitest/spec'
-require 'minitest/reporters'
-#MiniTest::Reporters.use!
+if ENV['RM_INFO']
+  require 'minitest/reporters'
+  MiniTest::Reporters.use!
+end
 require 'dynflow'
 require 'pry'
-
 
 module PlanAssertions
 
