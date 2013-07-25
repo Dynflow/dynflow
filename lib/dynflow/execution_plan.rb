@@ -65,7 +65,7 @@ module Dynflow
     end
 
     def add_plan_step(action_class, planned_by)
-      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.plan_step.id)
+      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.plan_step_id)
     end
 
     def add_run_step(action)

@@ -53,7 +53,7 @@ module Dynflow
       # @return [Action]
       def execute(trigger, *args)
         action = action_class.planning.
-          new(execution_plan.world, :pending, action_id, execution_plan, self, trigger)
+          new(execution_plan.world, :pending, action_id, execution_plan, self.id, trigger)
 
         action.execute(*args)
         persistence_adapter.save_action(execution_plan.id, action_id, action.to_hash)

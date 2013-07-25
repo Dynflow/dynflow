@@ -1,12 +1,12 @@
 module Dynflow
   module Action::Planning
-    attr_reader :execution_plan, :trigger, :input, :plan_step
+    attr_reader :execution_plan, :trigger, :input, :plan_step_id
 
-    def initialize(world, status, id, execution_plan, plan_step, trigger)
+    def initialize(world, status, id, execution_plan, plan_step_id, trigger)
       super world, status, id
       @input          = {}
       @execution_plan = is_kind_of! execution_plan, ExecutionPlan
-      @plan_step       = plan_step
+      @plan_step_id   = plan_step_id
       @trigger        = is_kind_of! trigger, Action, NilClass
     end
 
@@ -44,8 +44,12 @@ module Dynflow
 
     def plan_self(input)
       @input = input
-      @run_step = execution_plan.add_run_step self if self.respond_to? :run
-      execution_plan.add_finalize_step self if self.respond_to? :finalize
+      if self.respond_to?(:run)
+        run_step = execution_plan.add_run_step(self)
+        @output_reference = ExecutionPlan::Steps::OutputReference.new(run_step.id)
+      end
+
+      execution_plan.add_finalize_step(self) if self.respond_to?(:finalize)
       return self # to stay consistent with plan_action
     end
 
@@ -54,12 +58,11 @@ module Dynflow
     end
 
     def output
-      return @output_reference if @output_reference
-
-      unless @run_step
+      unless @output_reference
         raise 'plan_self has to be invoked before being able to reference the output'
       end
-      @output_reference = ExecutionPlan::Steps::OutputReference.new(@run_step.id)
+
+      return @output_reference
     end
 
   end
