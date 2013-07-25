@@ -76,6 +76,10 @@ module Dynflow
         param :triage, Triage.output_format
       end
 
+      def plan(*args)
+        plan_self(:triage => trigger.output)
+      end
+
       def run; end
     end
 
@@ -89,6 +93,25 @@ module Dynflow
                     'commit' => commit,
                     'ci_output' => ci.output,
                     'review_outputs' => [review1.output, review2.output])
+      end
+
+      input_format do
+        param :sha, String
+      end
+
+    end
+
+    class FastCommit < Action
+
+      def plan(commit)
+        sequence do
+          concurrence do
+            plan_action(Ci, 'commit' => commit)
+            plan_action(Review, 'commit' => commit, 'reviewer' => 'Morfeus')
+          end
+
+          plan_action(Merge, 'commit' => commit)
+        end
       end
 
       input_format do

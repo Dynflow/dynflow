@@ -18,8 +18,8 @@ module Dynflow
       end.tap { |o| o.freeze }
     end
 
-    def subscribed_actions(action)
-      @subscription_index.has_key?(action.class) ? @subscription_index[action.class] : []
+    def subscribed_actions(action_class)
+      @subscription_index.has_key?(action_class) ? @subscription_index[action_class] : []
     end
 
     # @return [Future]

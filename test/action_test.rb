@@ -47,8 +47,8 @@ module Dynflow
       world = SimpleWorld.new
 
       it { subscribed_action_class.subscribe.must_equal event_action_class }
-      it { world.subscribed_actions(event_action_class.allocate).must_include subscribed_action_class }
-      it { world.subscribed_actions(event_action_class.allocate).size.must_equal 1 }
+      it { world.subscribed_actions(event_action_class).must_include subscribed_action_class }
+      it { world.subscribed_actions(event_action_class).size.must_equal 1 }
     end
   end
 end
