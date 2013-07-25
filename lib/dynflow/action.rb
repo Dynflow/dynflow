@@ -55,9 +55,13 @@ module Dynflow
       self.status = status
     end
 
-    def to_hash
+    def action_class
       # superclass because we run this from the phases of action class
-      { class: self.class.superclass.name }
+      self.class.superclass
+    end
+
+    def to_hash
+      { class: action_class.name }
     end
 
     STATES = [:pending, :success, :suspended, :error]

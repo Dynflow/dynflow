@@ -15,7 +15,7 @@ module Dynflow
         plan(*args)
       end
 
-      subscribed_actions = world.subscribed_actions(self.class.superclass)
+      subscribed_actions = world.subscribed_actions(self.action_class)
       if subscribed_actions.any?
         # we ancapsulate the flow for this action into a concurrence and
         # add the subscribed flows to it as well.
