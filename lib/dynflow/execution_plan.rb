@@ -83,9 +83,7 @@ module Dynflow
     end
 
     def to_hash
-      {
-        'plan_steps' => @plan_steps.map(&:to_hash),
-      }
+      { 'plan_steps' => @plan_steps.map(&:to_hash) }
     end
 
     private

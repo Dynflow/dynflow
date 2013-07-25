@@ -90,10 +90,7 @@ module Dynflow
       end
 
       def to_hash
-        {
-          'step_id' => step_id,
-          'subkeys' => subkeys
-        }
+        { 'step_id' => step_id, 'subkeys' => subkeys }
       end
 
       def self.new_from_hash(hash)
