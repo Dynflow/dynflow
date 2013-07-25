@@ -79,7 +79,7 @@ module Dynflow
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
-        plan_self
+        plan_self(*args)
       end
       self
     end
