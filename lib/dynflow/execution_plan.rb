@@ -89,7 +89,7 @@ module Dynflow
     private
 
     def persistence_adapter
-      @world.persistence_adapter
+      world.persistence_adapter
     end
 
     def prepare(action_class)
