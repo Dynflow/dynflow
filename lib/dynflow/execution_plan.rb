@@ -4,15 +4,19 @@ module Dynflow
 
     require 'dynflow/execution_plan/steps'
 
-    attr_reader :id, :world, :plan_steps
+    attr_reader :id, :world, :root_plan_step, :plan_steps, :run_flow
 
     def initialize(world, action_class)
-      @id                   = rand(1e10).to_s(36) # TODO replace with uuid?
-      @world                = is_kind_of! world, World
-      @planning_scope_stack = []
-      prepare(action_class)
+      @id               = rand(1e10).to_s(36) # TODO replace with uuid?
+      @world            = is_kind_of! world, World
+      @plan_steps       = {}
 
-      @plan_steps = {}
+      @run_flow         = Flows::Concurrence.new([])
+      @run_flow_stack   = []
+      @root_plan_step   = nil
+      @dependency_graph = Steps::DependencyGraph.new
+
+      prepare(action_class)
     end
 
     def generate_action_id
@@ -26,42 +30,73 @@ module Dynflow
     end
 
     def plan(*args)
-      root_plan_step.execute(*args)
+      with_planning_scope do
+        root_plan_step.execute(nil, *args)
+      end
+
+      if @dependency_graph.unresolved?
+        raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
+      end
+
+      if @run_flow.size == 1
+        @run_flow = @run_flow.sub_flows.first
+      end
+    end
+
+    # @api private
+    def current_run_flow
+      @run_flow_stack.last
     end
 
     # @api private
     def with_planning_scope(&block)
-      switch_scope Concurrence, &block
+      switch_flow(run_flow, &block)
     end
 
     # @api private
-    def switch_scope(scope_class, &block)
-      @planning_scope_stack << scope_class.new
+    # Switches the flow type (Sequence, Concurrence) to be used within the block.
+    def switch_flow(new_flow, &block)
+      @run_flow_stack << new_flow
       block.call
+      return new_flow
     ensure
-      @planning_scope_stack.pop
+      @run_flow_stack.pop
+      current_run_flow.add_and_resolve(@dependency_graph, new_flow) if current_run_flow
     end
 
     def add_plan_step(action_class, planned_by)
-      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.id)
+      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.plan_step.id)
     end
 
     def add_run_step(action)
-      @planning_scope_stack.last << action # FIXME
+      run_step = Steps::Running.new(self,
+                                    self.generate_step_id,
+                                    :pending,
+                                    action.class,
+                                    action.id)
+      @dependency_graph.add_dependencies(run_step, action.input)
+      current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(run_step))
+      return run_step
     end
 
     def add_finalize_step(action)
     end
 
     def to_hash
-      # TODO
+      {
+        'plan_steps' => @plan_steps.map(&:to_hash),
+      }
     end
 
     private
 
+    def persistence_adapter
+      @world.persistence_adapter
+    end
+
     def prepare(action_class)
-      persistence_adapter.save_execution_plan self.to_hash
-      new_plan_step generate_step_id, action_class, generate_action_id
+      persistence_adapter.save_execution_plan(self.id, self.to_hash)
+      @root_plan_step = new_plan_step(generate_step_id, action_class, generate_action_id)
     end
 
     def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)

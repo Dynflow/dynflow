@@ -7,6 +7,10 @@ module Dynflow
 
       include PlanAssertions
 
+      let :world do
+        SimpleWorld.new
+      end
+
       let :issues_data do
         [
          { 'author' => 'Peter Smith', 'text' => 'Failing test' },
@@ -16,27 +20,22 @@ module Dynflow
 
       describe 'single dependencies' do
         let :execution_plan do
-          CodeWorkflowExample::IncommingIssues.plan(issues_data).execution_plan
-        end
-
-        it 'includes only actions with run method defined in run steps' do
-          actions_with_run = [CodeWorkflowExample::Triage,
-                              CodeWorkflowExample::UpdateIssue,
-                              CodeWorkflowExample::NotifyAssignee]
-          execution_plan.run_steps.map(&:action_class).uniq.must_equal(actions_with_run)
+          ExecutionPlan.new(world, CodeWorkflowExample::IncommingIssues).tap do |plan|
+            plan.plan(issues_data)
+          end
         end
 
         it 'constructs the plan of actions to be executed in run phase' do
           assert_run_plan <<EXPECTED, execution_plan
-Dynflow::ExecutionPlan::Concurrence
-  Dynflow::ExecutionPlan::Sequence
-    Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})
-    UpdateIssue/Run({"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
-    NotifyAssignee/Run({"author"=>"Peter Smith", "text"=>"Failing test", "triage"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
-  Dynflow::ExecutionPlan::Sequence
-    Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})
-    UpdateIssue/Run({"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
-    NotifyAssignee/Run({"author"=>"John Doe", "text"=>"Internal server error", "triage"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
+Dynflow::Flows::Concurrence
+  Dynflow::Flows::Sequence
+    4: Triage {"author"=>"Peter Smith", "text"=>"Failing test"}
+    6: UpdateIssue {"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Step(4).output}
+    8: NotifyAssignee {:triage=>Step(4).output}
+  Dynflow::Flows::Sequence
+    11: Triage {"author"=>"John Doe", "text"=>"Internal server error"}
+    13: UpdateIssue {"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Step(11).output}
+    15: NotifyAssignee {:triage=>Step(11).output}
 EXPECTED
         end
 
@@ -44,22 +43,41 @@ EXPECTED
 
       describe 'multi dependencies' do
         let :execution_plan do
-          CodeWorkflowExample::Commit.plan('sha' => 'abc123').execution_plan
+          ExecutionPlan.new(world, CodeWorkflowExample::Commit).tap do |plan|
+            plan.plan('sha' => 'abc123')
+          end
         end
 
         it 'constructs the plan of actions to be executed in run phase' do
           assert_run_plan <<EXPECTED, execution_plan
-Dynflow::ExecutionPlan::Concurrence
-  Dynflow::ExecutionPlan::Sequence
-    Ci/Run({"commit"=>{"sha"=>"abc123"}})
-    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})
-    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})
-    Merge/Run({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/Run({"commit"=>{"sha"=>"abc123"}})/output), "review_outputs"=>[Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)]})
+Dynflow::Flows::Sequence
+  Dynflow::Flows::Concurrence
+    3: Ci {"commit"=>{"sha"=>"abc123"}}
+    5: Review {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"}
+    7: Review {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"}
+  9: Merge {"commit"=>{"sha"=>"abc123"}, "ci_output"=>Step(3).output, "review_outputs"=>[Step(5).output, Step(7).output]}
 EXPECTED
         end
 
       end
 
+      describe 'sequence and concurrence keyword used' do
+        let :execution_plan do
+          ExecutionPlan.new(world, CodeWorkflowExample::FastCommit).tap do |plan|
+            plan.plan('sha' => 'abc123')
+          end
+        end
+
+        it 'constructs the plan of actions to be executed in run phase' do
+          assert_run_plan <<EXPECTED, execution_plan
+Dynflow::Flows::Sequence
+  Dynflow::Flows::Concurrence
+    3: Ci {"commit"=>{"sha"=>"abc123"}}
+    5: Review {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"}
+  7: Merge {"commit"=>{"sha"=>"abc123"}}
+EXPECTED
+        end
+      end
     end
   end
 end
