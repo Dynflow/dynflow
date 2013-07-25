@@ -33,7 +33,6 @@ module Dynflow
     end
 
     def self.all_children
-      #noinspection RubyArgCount
       children.
           inject(children) { |children, child| children + child.all_children }.
           select { |ch| not ch.ignored_child? }
