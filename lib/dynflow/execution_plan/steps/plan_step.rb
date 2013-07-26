@@ -14,6 +14,7 @@ module Dynflow
         action     = action_class.plan_phase.new(attributes, execution_plan, trigger)
 
         action.execute(*args)
+        self.state = action.state
 
         persistence_adapter.save_action(execution_plan.id, action_id, action.to_hash)
         return action
