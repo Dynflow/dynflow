@@ -3,6 +3,19 @@ module Dynflow
     class PlanStep < Abstract
       attr_reader :children
 
+      def to_hash
+        super.merge(:children => children)
+      end
+
+      def new_from_hash(execution_plan, hash)
+        initialize(execution_plan,
+                   hash[:id],
+                   hash[:state],
+                   hash[:action_class].constantize,
+                   hash[:action_id])
+        @children = hash[:children]
+      end
+
       def initialize(execution_plan, id, state, action_class, action_id)
         super execution_plan, id, state, action_class, action_id
         @children = []
