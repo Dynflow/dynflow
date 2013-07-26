@@ -5,7 +5,7 @@ module Dynflow
 
       def self.new_from_hash(execution_plan, hash)
         raise ArgumentError unless hash[:class] == self.to_s
-        new(execution_plan, *hash.values_at(:id, :state, :action_class, :action_id))
+        new(execution_plan, hash[:id], hash[:state], hash[:action_class].constantize, hash[:action_id])
       end
 
       attr_reader :execution_plan, :id, :state, :action_class, :action_id
@@ -41,7 +41,7 @@ module Dynflow
         { id:           id,
           state:        state,
           class:        self.class.to_s,
-          action_class: action_class,
+          action_class: action_class.to_s,
           action_id:    action_id }
       end
     end
