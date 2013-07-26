@@ -16,6 +16,7 @@ module PlanAssertions
       out << prefix
       out << flow.step.id.to_s << ': '
       out << flow.step.action_class.to_s[/\w+\Z/]
+      out << "(#{flow.step.state})"
       out << ' '
       out << execution_plan.world.persistence_adapter.load_action(execution_plan.id, flow.step.action_id)[:input].inspect
       out << "\n"
@@ -27,10 +28,15 @@ module PlanAssertions
     end
   end
 
-  def assert_run_plan(expected, execution_plan)
+  def assert_run_flow(expected, execution_plan)
     plan_string = ""
     inspect_flow(plan_string, execution_plan, execution_plan.run_flow, "")
     plan_string.chomp.must_equal expected.chomp
+  end
+
+  def dedent(string)
+    dedent = string.scan(/^ */).map { |spaces| spaces.size }.min
+    string.lines.map { |line| line[dedent..-1] }.join("\n")
   end
 
 end

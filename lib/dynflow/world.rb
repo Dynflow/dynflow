@@ -24,14 +24,21 @@ module Dynflow
 
     # @return [Future]
     def trigger(action_class, *args)
-      execution_plan = ExecutionPlan.new(self, action_class)
-      execution_plan.plan(*args)
+      execution_plan = plan(action_class, *args)
 
       return execution_plan.id, unless execution_plan.success?
                                   Future.new.set(execution_plan)
                                 else
-                                  executor.execute execution_plan
+                                  execute execution_plan.id
                                 end
+    end
+
+    def plan(action_class, *args)
+      ExecutionPlan.new(self, action_class).tap { |e| e.plan(*args) }
+    end
+
+    def execute(execution_plan_id)
+      executor.execute execution_plan_id
     end
 
     ## world.wakeup(step_id, :finished, task)
