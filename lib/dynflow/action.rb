@@ -120,11 +120,12 @@ module Dynflow
       begin
         block.call
         self.state = :success
-      rescue => e
+      rescue => error
+        $stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         self.state = :error
-        self.error  = { exception: e.class.name,
-                        message:   e.message,
-                        backtrace: e.backtrace }
+        self.error = { exception: error.class.name,
+                       message:   error.message,
+                       backtrace: error.backtrace }
       end
     end
 
