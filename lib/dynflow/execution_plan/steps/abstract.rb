@@ -5,7 +5,7 @@ module Dynflow
 
       def self.new_from_hash(execution_plan, hash)
         raise ArgumentError unless hash[:class] == self.to_s
-        new(execution_plan, *hash.values_at(:id, :state, :action_class, :action_id))
+        new(execution_plan, hash[:id], hash[:state], hash[:action_class].constantize, hash[:action_id])
       end
 
       attr_reader :execution_plan, :id, :state, :action_class, :action_id
@@ -14,7 +14,11 @@ module Dynflow
         @id             = id || raise(ArgumentError, 'missing id')
         @execution_plan = is_kind_of! execution_plan, ExecutionPlan
         self.state      = state
-        @action_class   = is_kind_of! action_class, Class
+        @action_class   = action_class.tap do |action_class|
+          is_kind_of! action_class, Class
+          raise ArgumentError, 'action_class is not an child of Action' unless action_class < Action
+          raise ArgumentError, 'action_class must not be phase' if action_class.phase?
+        end
         @action_id      = action_id || raise(ArgumentError, 'missing action_id')
       end
 
@@ -37,7 +41,7 @@ module Dynflow
         { id:           id,
           state:        state,
           class:        self.class.to_s,
-          action_class: action_class,
+          action_class: action_class.to_s,
           action_id:    action_id }
       end
     end

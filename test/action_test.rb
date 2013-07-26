@@ -28,9 +28,9 @@ module Dynflow
     smart_action_class   = Class.new(Dynflow::Action)
     smarter_action_class = Class.new(smart_action_class)
 
-    it { refute smart_action_class.ignored_child? }
-    it { refute smarter_action_class.ignored_child? }
-    it { assert smarter_action_class.plan_phase.ignored_child? }
+    it { refute smart_action_class.phase? }
+    it { refute smarter_action_class.phase? }
+    it { assert smarter_action_class.plan_phase.phase? }
 
     it { smart_action_class.all_children.must_include smarter_action_class }
     it { smart_action_class.all_children.size.must_equal 1 }

@@ -12,30 +12,25 @@ module Dynflow
     require 'dynflow/action/final_phase'
 
     def self.plan_phase
-      @planning ||= Class.new(self) do
-        include PlanPhase
-        ignored_child!
-      end
+      @planning ||= Class.new(self) { include PlanPhase }
     end
 
     def self.run_phase
-      @running ||= Class.new(self) do
-        include RunPhase
-        ignored_child!
-      end
+      @running ||= Class.new(self) { include RunPhase }
     end
 
     def self.final_phase
-      @finishing ||= Class.new(self) do
-        include FinalPhase
-        ignored_child!
-      end
+      @finishing ||= Class.new(self) { include FinalPhase }
+    end
+
+    def self.phase?
+      [PlanPhase, RunPhase, FinalPhase].any? { |phase| self < phase }
     end
 
     def self.all_children
       children.
           inject(children) { |children, child| children + child.all_children }.
-          select { |ch| not ch.ignored_child? }
+          select { |ch| !ch.phase? }
     end
 
     # @return [nil, Class] a child of Action
@@ -57,14 +52,12 @@ module Dynflow
     attr_indifferent_access_hash :error
 
     def initialize(attributes, world)
-      unless [PlanPhase, RunPhase, FinalPhase].any? { |phase| self.is_a? phase }
-        raise "It's not expected to initialize this class directly"
-      end
+      raise "It's not expected to initialize this class directly, use phases." unless self.class.phase?
 
       is_kind_of! attributes, Hash
 
       @world            = is_kind_of! world, World
-      self.state       = attributes[:state] || raise(ArgumentError, 'missing state')
+      self.state        = attributes[:state] || raise(ArgumentError, 'missing state')
       @id               = attributes[:id] || raise(ArgumentError, 'missing id')
       @plan_step_id     = attributes[:plan_step_id]
       @run_step_id      = attributes[:run_step_id]
@@ -72,9 +65,17 @@ module Dynflow
       self.error        = attributes[:error] || {}
     end
 
-    def action_class
+    def self.action_class
       # superclass because we run this from the phases of action class
-      self.class.superclass
+      if phase?
+        superclass
+      else
+        self
+      end
+    end
+
+    def action_class
+      self.class.action_class
     end
 
     def to_hash
@@ -116,16 +117,14 @@ module Dynflow
       begin
         block.call
         self.state = :success
-      rescue => e
+      rescue => error
+        # TODO log to a logger instead
+        $stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         self.state = :error
-        self.error  = { exception: e.class.name,
-                        message:   e.message,
-                        backtrace: e.backtrace }
+        self.error = { exception: error.class.name,
+                       message:   error.message,
+                       backtrace: error.backtrace }
       end
-    end
-
-    def self.ignored_child?
-      !!@ignored_child
     end
 
     def self.inherited(child)
@@ -134,10 +133,6 @@ module Dynflow
 
     def self.children
       @children ||= []
-    end
-
-    def self.ignored_child!
-      @ignored_child = true
     end
   end
 end
