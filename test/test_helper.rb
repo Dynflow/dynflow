@@ -15,7 +15,7 @@ module PlanAssertions
     when Dynflow::Flows::Atom
       out << prefix
       out << flow.step.id.to_s << ': '
-      out << flow.step.action_class.action_class.to_s[/\w+\Z/]
+      out << flow.step.action_class.to_s[/\w+\Z/]
       out << ' '
       out << execution_plan.world.persistence_adapter.load_action(execution_plan.id, flow.step.action_id)[:input].inspect
       out << "\n"

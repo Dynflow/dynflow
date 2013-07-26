@@ -74,7 +74,7 @@ module Dynflow
       run_step = Steps::RunStep.new(self,
                                     self.generate_step_id,
                                     :pending,
-                                    action.class,
+                                    action.action_class,
                                     action.id)
       @dependency_graph.add_dependencies(run_step, action.input)
       current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(run_step))

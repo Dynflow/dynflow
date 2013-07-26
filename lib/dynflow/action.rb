@@ -14,28 +14,28 @@ module Dynflow
     def self.plan_phase
       @planning ||= Class.new(self) do
         include PlanPhase
-        ignored_child!
+        this_is_phase!
       end
     end
 
     def self.run_phase
       @running ||= Class.new(self) do
         include RunPhase
-        ignored_child!
+        this_is_phase!
       end
     end
 
     def self.final_phase
       @finishing ||= Class.new(self) do
         include FinalPhase
-        ignored_child!
+        this_is_phase!
       end
     end
 
     def self.all_children
       children.
           inject(children) { |children, child| children + child.all_children }.
-          select { |ch| not ch.ignored_child? }
+          select { |ch| !ch.phase? }
     end
 
     # @return [nil, Class] a child of Action
@@ -74,7 +74,11 @@ module Dynflow
 
     def self.action_class
       # superclass because we run this from the phases of action class
-      superclass
+      if phase?
+        superclass
+      else
+        self
+      end
     end
 
     def action_class
@@ -121,6 +125,7 @@ module Dynflow
         block.call
         self.state = :success
       rescue => error
+        # TODO log to a logger instead
         $stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         self.state = :error
         self.error = { exception: error.class.name,
@@ -129,8 +134,8 @@ module Dynflow
       end
     end
 
-    def self.ignored_child?
-      !!@ignored_child
+    def self.phase?
+      !!@phase
     end
 
     def self.inherited(child)
@@ -141,8 +146,8 @@ module Dynflow
       @children ||= []
     end
 
-    def self.ignored_child!
-      @ignored_child = true
+    def self.this_is_phase!
+      @phase = true
     end
   end
 end

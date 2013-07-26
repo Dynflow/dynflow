@@ -14,7 +14,11 @@ module Dynflow
         @id             = id || raise(ArgumentError, 'missing id')
         @execution_plan = is_kind_of! execution_plan, ExecutionPlan
         self.state      = state
-        @action_class   = is_kind_of! action_class, Class
+        @action_class   = action_class.tap do |action_class|
+          is_kind_of! action_class, Class
+          raise ArgumentError, 'action_class is not an child of Action' unless action_class < Action
+          raise ArgumentError, 'action_class must not be phase' if action_class.phase?
+        end
         @action_id      = action_id || raise(ArgumentError, 'missing action_id')
       end
 
