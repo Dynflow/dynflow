@@ -29,7 +29,7 @@ module Dynflow
       return execution_plan.id, unless execution_plan.success?
                                   Future.new.set(execution_plan)
                                 else
-                                  execute execution_plan.id
+                                  execute execution_plan
                                 end
     end
 
@@ -37,8 +37,8 @@ module Dynflow
       ExecutionPlan.new(self, action_class).tap { |e| e.plan(*args) }
     end
 
-    def execute(execution_plan_id)
-      executor.execute execution_plan_id
+    def execute(execution_plan)
+      executor.execute execution_plan # FIXME pass only execution_plan_id
     end
 
     ## world.wakeup(step_id, :finished, task)

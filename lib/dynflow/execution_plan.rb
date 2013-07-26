@@ -9,9 +9,9 @@ module Dynflow
     attr_reader :id, :world, :root_plan_step, :plan_steps, :run_flow
 
     def initialize(world, action_class)
-      @id               = rand(1e10).to_s(36) # TODO replace with uuid?
-      @world            = is_kind_of! world, World
-      @plan_steps       = {}
+      @id         = rand(1e10).to_s(36) # TODO replace with uuid?
+      @world      = is_kind_of! world, World
+      @plan_steps = {}
 
       @run_flow         = Flows::Concurrence.new([])
       @run_flow_stack   = []
@@ -85,7 +85,7 @@ module Dynflow
     end
 
     def to_hash
-      { 'plan_steps' => @plan_steps.map(&:to_hash) }
+      { id: id } # TODO
     end
 
     private
