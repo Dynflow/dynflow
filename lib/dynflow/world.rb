@@ -44,6 +44,17 @@ module Dynflow
       executor.execute execution_plan_id
     end
 
+    def persisted_plans(find_options)
+      persistence_adapter.find_execution_plans(find_options).map do |execution_plan_hash|
+        ExecutionPlan.new_from_hash(execution_plan_hash, self)
+      end
+    end
+
+    def persisted_plan(id)
+      execution_plan_hash = persistence_adapter.load_execution_plan(id)
+      ExecutionPlan.new_from_hash(execution_plan_hash, self)
+    end
+
     ## world.wakeup(step_id, :finished, task)
     ## world.wakeup(step_id, :update_progress, tasks['progress'])
     #def wake_up(step_id, method, *args)

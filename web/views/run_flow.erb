@@ -1,0 +1,22 @@
+<table class="run-flow <%= h(flow_css_classes(flow)) %>">
+  <% if flow.is_a? Dynflow::Flows::Atom %>
+    <tr>
+      <td class="<%= h(flow_css_classes(flow)) %>">
+         <span class="step-label">
+           <%= h(flow.step.action_class.name) %>
+         </span>
+         <%= erb :action, locals: { action_hash: load_action_hash(@plan, flow.step) } %>
+      </td>
+    </tr>
+  <% else %>
+    <% flow.sub_flows.each do |sub_flow| %>
+      <tr>
+        <td class="run-flow <%= h(flow_css_classes(flow, sub_flow)) %>">
+          <%= erb :run_flow, locals: { flow: sub_flow } %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+</table>
+
+

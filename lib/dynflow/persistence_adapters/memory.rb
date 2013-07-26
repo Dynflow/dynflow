@@ -8,6 +8,23 @@ module Dynflow
         @actions         = {}
       end
 
+      def supported_options_for_find
+        [:result, :page, :per_page]
+      end
+
+      def check_find_options!(options)
+        unsupported_options = options.keys - supported_options_for_find
+        if unsupported_options.any?
+          raise ArgumentError,
+                "Unsupported options: #{unsupported_options.join(', ')}"
+        end
+      end
+
+      def find_execution_plans(options)
+        check_find_options!(options)
+        @execution_plans.values.map(&:with_indifferent_access)
+      end
+
       def load_execution_plan(execution_plan_id)
         @execution_plans.fetch(execution_plan_id).with_indifferent_access
       end
