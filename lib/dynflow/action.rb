@@ -64,7 +64,7 @@ module Dynflow
       is_kind_of! attributes, Hash
 
       @world            = is_kind_of! world, World
-      self.state       = attributes[:state] || raise(ArgumentError, 'missing state')
+      self.state        = attributes[:state] || raise(ArgumentError, 'missing state')
       @id               = attributes[:id] || raise(ArgumentError, 'missing id')
       @plan_step_id     = attributes[:plan_step_id]
       @run_step_id      = attributes[:run_step_id]
@@ -72,9 +72,13 @@ module Dynflow
       self.error        = attributes[:error] || {}
     end
 
-    def action_class
+    def self.action_class
       # superclass because we run this from the phases of action class
-      self.class.superclass
+      superclass
+    end
+
+    def action_class
+      self.class.action_class
     end
 
     def to_hash
