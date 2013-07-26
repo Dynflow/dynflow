@@ -12,24 +12,19 @@ module Dynflow
     require 'dynflow/action/final_phase'
 
     def self.plan_phase
-      @planning ||= Class.new(self) do
-        include PlanPhase
-        this_is_phase!
-      end
+      @planning ||= Class.new(self) { include PlanPhase }
     end
 
     def self.run_phase
-      @running ||= Class.new(self) do
-        include RunPhase
-        this_is_phase!
-      end
+      @running ||= Class.new(self) { include RunPhase }
     end
 
     def self.final_phase
-      @finishing ||= Class.new(self) do
-        include FinalPhase
-        this_is_phase!
-      end
+      @finishing ||= Class.new(self) { include FinalPhase }
+    end
+
+    def self.phase?
+      [PlanPhase, RunPhase, FinalPhase].any? { |phase| self < phase }
     end
 
     def self.all_children
@@ -57,9 +52,7 @@ module Dynflow
     attr_indifferent_access_hash :error
 
     def initialize(attributes, world)
-      unless [PlanPhase, RunPhase, FinalPhase].any? { |phase| self.is_a? phase }
-        raise "It's not expected to initialize this class directly"
-      end
+      raise "It's not expected to initialize this class directly, use phases." unless self.class.phase?
 
       is_kind_of! attributes, Hash
 
@@ -134,20 +127,12 @@ module Dynflow
       end
     end
 
-    def self.phase?
-      !!@phase
-    end
-
     def self.inherited(child)
       children << child
     end
 
     def self.children
       @children ||= []
-    end
-
-    def self.this_is_phase!
-      @phase = true
     end
   end
 end
