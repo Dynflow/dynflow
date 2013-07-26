@@ -38,7 +38,7 @@ module Dynflow
       def plan(issue)
         triage = plan_self(issue)
         plan_action(UpdateIssue,
-                    'triage_input' => triage.input,
+                    'triage_input'  => triage.input,
                     'triage_output' => triage.output)
       end
 
@@ -52,7 +52,9 @@ module Dynflow
         param :severity, %w[low medium high]
       end
 
-      def run; end
+      def run
+        self.output = { ok: true }
+      end
 
     end
 
@@ -63,7 +65,8 @@ module Dynflow
         param :triage_output, Triage.output_format
       end
 
-      def run; end
+      def run
+      end
     end
 
     class NotifyAssignee < Action
@@ -80,18 +83,19 @@ module Dynflow
         plan_self(:triage => trigger.output)
       end
 
-      def run; end
+      def run
+      end
     end
 
     class Commit < Action
 
       def plan(commit)
-        ci = plan_action(Ci, 'commit' => commit)
+        ci      = plan_action(Ci, 'commit' => commit)
         review1 = plan_action(Review, 'commit' => commit, 'reviewer' => 'Morfeus')
         review2 = plan_action(Review, 'commit' => commit, 'reviewer' => 'Neo')
         plan_action(Merge,
-                    'commit' => commit,
-                    'ci_output' => ci.output,
+                    'commit'         => commit,
+                    'ci_output'      => ci.output,
                     'review_outputs' => [review1.output, review2.output])
       end
 
@@ -130,7 +134,8 @@ module Dynflow
         param :passed, :boolean
       end
 
-      def run; end
+      def run
+      end
     end
 
     class Review < Action
@@ -144,7 +149,8 @@ module Dynflow
         param :passed, :boolean
       end
 
-      def run; end
+      def run
+      end
     end
 
     class Merge < Action
@@ -155,7 +161,8 @@ module Dynflow
         param :review_outputs, array_of(Review.output_format)
       end
 
-      def run; end
+      def run
+      end
     end
 
   end

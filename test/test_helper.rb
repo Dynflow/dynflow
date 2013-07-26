@@ -18,7 +18,12 @@ module PlanAssertions
       out << flow.step.action_class.to_s[/\w+\Z/]
       out << "(#{flow.step.state})"
       out << ' '
-      out << execution_plan.world.persistence_adapter.load_action(execution_plan.id, flow.step.action_id)[:input].inspect
+      action_data = execution_plan.world.persistence_adapter.load_action(execution_plan.id, flow.step.action_id)
+      out << action_data[:input].inspect
+      if (output = action_data[:output])
+        out << ' --> '
+        out << output.inspect
+      end
       out << "\n"
     else
       out << prefix << flow.class.name << "\n"
@@ -36,7 +41,7 @@ module PlanAssertions
 
   def dedent(string)
     dedent = string.scan(/^ */).map { |spaces| spaces.size }.min
-    string.lines.map { |line| line[dedent..-1] }.join("\n")
+    string.lines.map { |line| line[dedent..-1] }.join
   end
 
 end

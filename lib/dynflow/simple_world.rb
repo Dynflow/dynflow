@@ -1,7 +1,7 @@
 module Dynflow
   class SimpleWorld < World
     def initialize
-      super Executors::Sequential.new,
+      super Executors::PooledSequential.new(self),
             PersistenceAdapters::Memory.new,
             TransactionAdapters::None.new
     end

@@ -15,11 +15,11 @@ module Dynflow
     end
 
     def execute
-      with_suspend do
-        with_error_handling do
-          run
-        end
+      #with_suspend do
+      with_error_handling do
+        run
       end
+      #end
     end
 
     def to_hash
