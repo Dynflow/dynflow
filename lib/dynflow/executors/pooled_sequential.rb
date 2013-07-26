@@ -54,7 +54,7 @@ module Dynflow
 
       def run_step(step)
         step.execute
-        world.persistence_adapter.save_execution_plan step.execution_plan.id, step.execution_plan.to_hash
+        step.execution_plan.persist
       end
 
       def run_execution_plan(execution_plan)

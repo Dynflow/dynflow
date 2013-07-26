@@ -10,6 +10,17 @@ module Dynflow
         @flows = flows
       end
 
+      def to_hash
+        super.merge(:flows => flows.map(&:to_hash))
+      end
+
+      def new_from_hash(execution_plan, hash)
+        flows = hash[:flows].map do |flow_hash|
+          Abstract.new_from_hash(execution_plan, flow_hash)
+        end
+        initialize(flows)
+      end
+
       def <<(v)
         @flows << v
         self
