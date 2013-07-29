@@ -66,7 +66,7 @@ module Dynflow
 
       describe 'single dependencies' do
         let :execution_plan do
-          world.plan CodeWorkflowExample::IncommingIssues, issues_data
+          world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
         end
 
         test_execution_plan <<-PLAN_STEPS, <<-PLANNED_RUN_FLOW, <<-EXECUTED_RUN_FLOW
@@ -104,7 +104,7 @@ module Dynflow
 
       describe 'multi dependencies' do
         let :execution_plan do
-          world.plan CodeWorkflowExample::Commit, 'sha' => 'abc123'
+          world.plan(CodeWorkflowExample::Commit, 'sha' => 'abc123')
         end
 
         test_execution_plan <<-PLAN_STEPS, <<-PLANNED_RUN_FLOW, <<-EXECUTED_RUN_FLOW
@@ -132,7 +132,7 @@ module Dynflow
 
       describe 'sequence and concurrence keyword used' do
         let :execution_plan do
-          world.plan CodeWorkflowExample::FastCommit, 'sha' => 'abc123'
+          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
         test_execution_plan <<-PLAN_STEPS, <<-PLANNED_RUN_FLOW, <<-EXECUTED_RUN_FLOW

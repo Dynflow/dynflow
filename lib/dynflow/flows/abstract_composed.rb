@@ -62,7 +62,7 @@ module Dynflow
 
       def self.new_from_hash(hash, execution_plan)
         check_class_matching hash
-        new hash[:flows].map { |flow_hash| from_hash(flow_hash, execution_plan) }
+        new(hash[:flows].map { |flow_hash| from_hash(flow_hash, execution_plan) })
       end
 
       # adds the +new_flow+ in a way that it's in sequence with

@@ -118,7 +118,7 @@ module Dynflow
     end
 
     def self.new_from_hash(hash, world)
-      new hash, world
+      new(hash, world)
     end
 
     private
