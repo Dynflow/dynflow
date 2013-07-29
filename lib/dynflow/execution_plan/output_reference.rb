@@ -13,11 +13,9 @@ module Dynflow
     end
 
     def to_hash
-      { 'step_id' => step_id, 'subkeys' => subkeys }
-    end
-
-    def self.new_from_hash(hash)
-      self.new(hash['step_id'], hash['subkeys'])
+      { class:   self.class.to_s,
+        step_id: step_id,
+        subkeys: subkeys }
     end
 
     def inspect
@@ -25,5 +23,13 @@ module Dynflow
         ret << @subkeys.map { |k| "[#{k}]" }.join('') if @subkeys.any?
       end
     end
+
+    protected
+
+    def self.new_from_hash(hash)
+      check_class_matching hash
+      new(hash['step_id'], hash['subkeys'])
+    end
+
   end
 end

@@ -3,9 +3,15 @@ module Dynflow
     class PlanStep < Abstract
       attr_reader :children
 
-      def initialize(execution_plan, id, state, action_class, action_id)
+      def to_hash
+        super.merge(:children => children)
+      end
+
+      # @param [Array] children is a private API parameter
+      def initialize(execution_plan, id, state, action_class, action_id, children = [])
         super execution_plan, id, state, action_class, action_id
-        @children = []
+        children.all? { |child| is_kind_of! child, Integer }
+        @children = children
       end
 
       # @return [Action]
@@ -18,6 +24,16 @@ module Dynflow
 
         persistence_adapter.save_action(execution_plan.id, action_id, action.to_hash)
         return action
+      end
+
+      def self.new_from_hash(hash, execution_plan)
+        check_class_matching hash
+        new execution_plan,
+            hash[:id],
+            hash[:state],
+            hash[:action_class].constantize,
+            hash[:action_id],
+            hash[:children]
       end
     end
   end

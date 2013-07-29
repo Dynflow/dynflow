@@ -1,8 +1,16 @@
 module Dynflow
   module Flows
 
-    class Abstract
+    class Abstract < Serializable
       include Algebrick::TypeCheck
+
+      def initialize
+        raise 'cannot instantiate Flows::Abstract'
+      end
+
+      def to_hash
+        { :class => self.class.name }
+      end
 
       def empty?
         self.size == 0
