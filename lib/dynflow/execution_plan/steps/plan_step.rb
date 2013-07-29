@@ -28,7 +28,6 @@ module Dynflow
 
       def self.new_from_hash(hash, execution_plan)
         check_class_matching hash
-        #noinspection RubyArgCount
         new execution_plan,
             hash[:id],
             hash[:state],

@@ -9,7 +9,10 @@ module Dynflow
 
       # @returns [Future] value of the future is set when computation is finished
       #     value can be result or an error
-      def execute(execution_plan)
+      def execute(execution_plan_id)
+        # TODO use Persistence
+        execution_plan = ExecutionPlan.from_hash(
+            world.persistence_adapter.load_execution_plan(execution_plan_id), world)
         @queue.push [execution_plan, future = Future.new]
         return future
       end

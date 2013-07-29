@@ -30,10 +30,14 @@ module Dynflow
         end
 
         it 'executes the run steps' do
-          result = world.execute(execution_plan).value
+          result = world.execute(execution_plan.id).value
           raise result if result.is_a? Exception
 
-          assert_run_flow executed_run_flow, execution_plan
+          # TODO use Persistence
+          assert_run_flow(executed_run_flow,
+                          ExecutionPlan.from_hash(
+                              world.persistence_adapter.load_execution_plan(execution_plan.id),
+                              world))
         end
       end
 
@@ -44,6 +48,7 @@ module Dynflow
         end
 
         let :deserialized_execution_plan do
+          # TODO use Persistence
           ExecutionPlan.from_hash(
               world.persistence_adapter.load_execution_plan(execution_plan.id),
               world)
