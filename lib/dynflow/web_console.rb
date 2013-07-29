@@ -59,18 +59,6 @@ HTML
         end
       end
 
-      def page
-        [(params[:page] || 1).to_i, 1].max
-      end
-
-      def paginated_url(delta)
-        h(url("?" + Rack::Utils.build_query(params.merge(:page => page + delta))))
-      end
-
-      def selected_result
-        params[:result] ||=  ['pending', 'error', 'success']
-      end
-
       def atom_css_classes(atom)
         classes = ["atom"]
         case atom.step.state
@@ -104,9 +92,7 @@ HTML
     end
 
     get('/') do
-      @plans = world.persisted_plans(:result => selected_result,
-                                     :page => page,
-                                     :per_page => settings.per_page)
+      @plans = world.persisted_plans
       erb :index
     end
 

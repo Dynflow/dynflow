@@ -1,11 +1,4 @@
 <h1>Listing execution plans</h1>
-<%= %w[pending error success].map do |result|
-  if result == selected_result
-    result
-  else
-    %{<a href="#{h(url("?result=#{result}"))}">#{result}</a>}
-  end
-end.join(' | ') %>
 
 <table class="table">
   <thead>
@@ -27,9 +20,3 @@ end.join(' | ') %>
 
 <% end %>
 </table>
-<div class="pagination">
-  <ul>
-    <li><a href="<%= paginated_url(-1) %>">Prev</a></li>
-    <li><a href="<%= paginated_url(+1) %>">Next</a></li>
-  </ul>
-</div>

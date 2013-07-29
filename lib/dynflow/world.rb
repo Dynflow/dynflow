@@ -44,8 +44,8 @@ module Dynflow
       executor.execute execution_plan_id
     end
 
-    def persisted_plans(find_options)
-      persistence_adapter.find_execution_plans(find_options).map do |execution_plan_hash|
+    def persisted_plans
+      persistence_adapter.find_execution_plans.map do |execution_plan_hash|
         ExecutionPlan.new_from_hash(execution_plan_hash, self)
       end
     end
