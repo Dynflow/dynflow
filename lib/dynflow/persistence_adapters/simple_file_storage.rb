@@ -14,6 +14,12 @@ module Dynflow
         Dir.mkdir(actions_dir) unless File.exist?(actions_dir)
       end
 
+      def find_execution_plans
+        Dir["#{plans_dir}/*"].map do |path|
+          load(plans_dir, File.basename(path))
+        end
+      end
+
       def load_execution_plan(execution_plan_id)
         load(plans_dir, execution_plan_id.to_s)
       end

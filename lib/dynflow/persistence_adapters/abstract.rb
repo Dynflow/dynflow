@@ -5,6 +5,10 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def find_execution_plans
+        raise NotImplementedError
+      end
+
       def save_execution_plan(execution_plan_id, value)
         raise NotImplementedError
       end

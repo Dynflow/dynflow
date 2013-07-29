@@ -15,6 +15,12 @@ module Dynflow
         self.table_name = 'dynflow_actions'
       end
 
+      def find_execution_plans
+        ExecutionPlan.all.map do |record|
+          HashWithIndifferentAccess.new(MultiJson.load(record.data))
+        end
+      end
+
       def load_execution_plan(execution_plan_id)
         load ExecutionPlan, execution_plan_id
       end

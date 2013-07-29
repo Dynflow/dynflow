@@ -91,7 +91,7 @@ HTML
     end
 
     get('/') do
-      @plans = world.persistence.load_execution_plans
+      @plans = world.persistence.find_execution_plans
       erb :index
     end
 

@@ -23,7 +23,7 @@ module Dynflow
       adapter.save_action(step.execution_plan.id, step.action_id, action.to_hash)
     end
 
-    def load_execution_plans
+    def find_execution_plans
       adapter.find_execution_plans.map do |execution_plan_hash|
         ExecutionPlan.new_from_hash(execution_plan_hash, @world)
       end
