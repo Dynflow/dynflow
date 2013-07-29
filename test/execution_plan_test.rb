@@ -69,6 +69,64 @@ module Dynflow
 
       end
 
+      describe '#result' do
+
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+        end
+
+        describe 'for error in planning phase' do
+
+          before { execution_plan.plan_steps[2].state = :error }
+
+          it 'should be :error' do
+            execution_plan.result.must_equal :error
+            execution_plan.error?.must_equal true
+          end
+
+        end
+
+
+        describe 'for error in running phase' do
+
+          before { execution_plan.run_flow.all_steps[2].state = :error }
+
+          it 'should be :error' do
+            execution_plan.result.must_equal :error
+          end
+
+        end
+
+        describe 'for pending step in running phase' do
+
+          before { execution_plan.run_flow.all_steps[2].state = :pending }
+
+          it 'should be :pending' do
+            execution_plan.result.must_equal :pending
+          end
+
+        end
+
+        describe 'for all steps successful or skipped' do
+
+          before do
+            execution_plan.run_flow.all_steps.each_with_index do |step, index|
+              if index == 2
+                step.state = :skipped
+              else
+                step.state = :success
+              end
+            end
+          end
+
+          it 'should be :success' do
+            execution_plan.result.must_equal :success
+          end
+
+        end
+
+      end
+
       describe 'single dependencies' do
         let :execution_plan do
           world.plan(CodeWorkflowExample::IncommingIssues, issues_data)

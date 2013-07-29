@@ -26,6 +26,26 @@ module Dynflow
       @dependency_graph = DependencyGraph.new
     end
 
+    def result
+      # fail in planning phase: we don't care about the rest
+      if @plan_steps.values.any? { |step| step.state == :error }
+        return :error
+      end
+
+      all_steps = run_flow.all_steps
+      if all_steps.any? { |step| step.state == :error }
+        return :error
+      elsif all_steps.all? { |step| [:success, :skipped].include?(step.state) }
+        return :success
+      else
+        return :pending
+      end
+    end
+
+    def error?
+      result == :error
+    end
+
     def generate_action_id
       @last_action_id ||= 0
       @last_action_id += 1

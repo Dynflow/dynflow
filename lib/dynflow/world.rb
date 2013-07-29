@@ -26,7 +26,7 @@ module Dynflow
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
 
-      return execution_plan.id, unless execution_plan.success?
+      return execution_plan.id, if execution_plan.error?
                                   Future.new.set(execution_plan)
                                 else
                                   execute execution_plan.id
