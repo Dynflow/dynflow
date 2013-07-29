@@ -14,13 +14,6 @@ module Dynflow
         super.merge(:flows => flows.map(&:to_hash))
       end
 
-      def new_from_hash(execution_plan, hash)
-        flows = hash[:flows].map do |flow_hash|
-          Abstract.new_from_hash(execution_plan, flow_hash)
-        end
-        initialize(flows)
-      end
-
       def <<(v)
         @flows << v
         self
@@ -66,6 +59,11 @@ module Dynflow
       end
 
       protected
+
+      def self.new_from_hash(hash, execution_plan)
+        check_class_matching hash
+        new hash[:flows].map { |flow_hash| from_hash(flow_hash, execution_plan) }
+      end
 
       # adds the +new_flow+ in a way that it's in sequence with
       # the +satisfying_flows+

@@ -8,11 +8,6 @@ module Dynflow
         super.merge(:step => step.to_hash)
       end
 
-      def new_from_hash(execution_plan, hash)
-        step = ExecutionPlan::Steps::Abstract.new_from_hash(execution_plan, hash[:step])
-        initialize(step)
-      end
-
       def initialize(step)
         @step = is_kind_of! step, ExecutionPlan::Steps::Abstract
       end
@@ -28,6 +23,14 @@ module Dynflow
       def flatten!
         # nothing to do
       end
+
+      protected
+
+      def self.new_from_hash(hash, execution_plan)
+        check_class_matching hash
+        new ExecutionPlan::Steps::Abstract.from_hash(hash[:step], execution_plan)
+      end
+
     end
   end
 end

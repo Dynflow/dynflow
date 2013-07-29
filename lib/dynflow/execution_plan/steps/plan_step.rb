@@ -7,18 +7,11 @@ module Dynflow
         super.merge(:children => children)
       end
 
-      def new_from_hash(execution_plan, hash)
-        initialize(execution_plan,
-                   hash[:id],
-                   hash[:state],
-                   hash[:action_class].constantize,
-                   hash[:action_id])
-        @children = hash[:children]
-      end
-
-      def initialize(execution_plan, id, state, action_class, action_id)
+      # @param [Array] children is a private API parameter
+      def initialize(execution_plan, id, state, action_class, action_id, children = [])
         super execution_plan, id, state, action_class, action_id
-        @children = []
+        children.all? { |child| is_kind_of! child, Integer }
+        @children = children
       end
 
       # @return [Action]
@@ -31,6 +24,17 @@ module Dynflow
 
         persistence_adapter.save_action(execution_plan.id, action_id, action.to_hash)
         return action
+      end
+
+      def self.new_from_hash(hash, execution_plan)
+        check_class_matching hash
+        #noinspection RubyArgCount
+        new execution_plan,
+            hash[:id],
+            hash[:state],
+            hash[:action_class].constantize,
+            hash[:action_id],
+            hash[:children]
       end
     end
   end

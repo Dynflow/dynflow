@@ -48,6 +48,12 @@ module Dynflow
       end
     end
 
+    def self.from_hash(hash, phase, *args)
+      check_class_key_present hash
+      raise ArgumentError, "unknown phase '#{phase}'" unless [:plan_phase, :run_phase, :final_phase].include? phase
+      hash[:class].constantize.send(phase).new_from_hash(hash, *args)
+    end
+
     attr_reader :world, :state, :id, :plan_step_id, :run_step_id, :finalize_step_id
     attr_indifferent_access_hash :error
 
@@ -109,6 +115,10 @@ module Dynflow
         plan_self(*args)
       end
       self
+    end
+
+    def self.new_from_hash(hash, world)
+      new hash, world
     end
 
     private

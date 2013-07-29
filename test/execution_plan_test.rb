@@ -40,21 +40,18 @@ module Dynflow
       describe 'serialization' do
 
         let :execution_plan do
-          ExecutionPlan.new(world, CodeWorkflowExample::FastCommit).tap do |plan|
-            plan.plan('sha' => 'abc123')
-          end
-        end
-
-        let :serialized_execution_plan do
-          MultiJson.dump(execution_plan.to_hash)
+          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
         let :deserialized_execution_plan do
-          hash = MultiJson.load(serialized_execution_plan)
-          ExecutionPlan.new_from_hash(world, hash)
+          ExecutionPlan.from_hash(
+              world.persistence_adapter.load_execution_plan(execution_plan.id),
+              world)
         end
 
         describe 'serialized execution plan' do
+
+          before { execution_plan.persist }
 
           it 'restores the plan properly' do
             deserialized_execution_plan.id.must_equal execution_plan.id
@@ -69,9 +66,7 @@ module Dynflow
 
       describe 'single dependencies' do
         let :execution_plan do
-          ExecutionPlan.new(world, CodeWorkflowExample::IncommingIssues).tap do |plan|
-            plan.plan(issues_data)
-          end
+          world.plan CodeWorkflowExample::IncommingIssues, issues_data
         end
 
         test_execution_plan <<-PLAN_STEPS, <<-PLANNED_RUN_FLOW, <<-EXECUTED_RUN_FLOW
@@ -109,9 +104,7 @@ module Dynflow
 
       describe 'multi dependencies' do
         let :execution_plan do
-          ExecutionPlan.new(world, CodeWorkflowExample::Commit).tap do |plan|
-            plan.plan('sha' => 'abc123')
-          end
+          world.plan CodeWorkflowExample::Commit, 'sha' => 'abc123'
         end
 
         test_execution_plan <<-PLAN_STEPS, <<-PLANNED_RUN_FLOW, <<-EXECUTED_RUN_FLOW
@@ -139,9 +132,7 @@ module Dynflow
 
       describe 'sequence and concurrence keyword used' do
         let :execution_plan do
-          ExecutionPlan.new(world, CodeWorkflowExample::FastCommit).tap do |plan|
-            plan.plan('sha' => 'abc123')
-          end
+          world.plan CodeWorkflowExample::FastCommit, 'sha' => 'abc123'
         end
 
         test_execution_plan <<-PLAN_STEPS, <<-PLANNED_RUN_FLOW, <<-EXECUTED_RUN_FLOW

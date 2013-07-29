@@ -29,8 +29,8 @@ module Dynflow
 
     module ClassMethods
       def new_from_hash(hash, state, run_step_id, world)
-        klass = hash[:class].constantize
-        klass.run_phase.new(hash.merge(state: state, run_step_id: run_step_id), world)
+        new hash.merge(state: state, run_step_id: run_step_id),
+            world
       end
     end
 

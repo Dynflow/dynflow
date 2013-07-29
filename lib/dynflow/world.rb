@@ -34,7 +34,10 @@ module Dynflow
     end
 
     def plan(action_class, *args)
-      ExecutionPlan.new(self, action_class).tap { |e| e.plan(*args) }
+      ExecutionPlan.new(self).tap do |e|
+        e.prepare(action_class)
+        e.plan(*args)
+      end
     end
 
     def execute(execution_plan)
