@@ -5,7 +5,7 @@
          <span class="step-label">
            <%= h(flow.step.action_class.name) %>
          </span>
-         <%= erb :action, locals: { action_hash: load_action_hash(@plan, flow.step) } %>
+         <%= erb :action, locals: { action: load_action(flow.step) } %>
       </td>
     </tr>
   <% else %>

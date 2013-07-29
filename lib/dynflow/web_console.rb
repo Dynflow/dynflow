@@ -40,9 +40,8 @@ HTML
         end
       end
 
-      def load_action_hash(plan, step)
-        action_hash = world.persistence_adapter.load_action(plan.id, step.action_id)
-        action_hash.with_indifferent_access
+      def load_action(step)
+        world.persistence.load_step_action(step)
       end
 
       def show_action_data(label, value)
@@ -92,12 +91,12 @@ HTML
     end
 
     get('/') do
-      @plans = world.persisted_plans
+      @plans = world.persistence.load_execution_plans
       erb :index
     end
 
     get('/:id') do |id|
-      @plan = world.persisted_plan(id)
+      @plan = world.persistence.load_execution_plan(id)
       erb :show
     end
 

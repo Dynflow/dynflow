@@ -33,11 +33,8 @@ module Dynflow
           result = world.execute(execution_plan.id).value
           raise result if result.is_a? Exception
 
-          # TODO use Persistence
           assert_run_flow(executed_run_flow,
-                          ExecutionPlan.from_hash(
-                              world.persistence_adapter.load_execution_plan(execution_plan.id),
-                              world))
+                          world.persistence.load_execution_plan(execution_plan.id))
         end
       end
 
@@ -48,10 +45,7 @@ module Dynflow
         end
 
         let :deserialized_execution_plan do
-          # TODO use Persistence
-          ExecutionPlan.from_hash(
-              world.persistence_adapter.load_execution_plan(execution_plan.id),
-              world)
+          world.persistence.load_execution_plan(execution_plan.id)
         end
 
         describe 'serialized execution plan' do

@@ -9,7 +9,7 @@ module Dynflow
   require 'dynflow/future'
   require 'dynflow/serializable'
   require 'dynflow/transaction_adapters'
-  require 'dynflow/persistence_adapters'
+  require 'dynflow/persistence'
   require 'dynflow/executors'
   require 'dynflow/action'
   require 'dynflow/flows'

@@ -1,15 +1,17 @@
 module Dynflow
   module ExecutionPlan::Steps
     class RunStep < Abstract
+
+      def phase
+        :run_phase
+      end
+
       def execute
-        attributes = persistence_adapter.load_action execution_plan.id, action_id
-        action     = action_class.from_hash(attributes, :run_phase, state, self.id, execution_plan.world)
-
+        action = persistence.load_step_action(self)
         action.execute
+
         self.state = action.state
-
-        persistence_adapter.save_action execution_plan.id, action_id, action.to_hash
-
+        persistence.save_step_action(self, action)
         return self
       end
     end

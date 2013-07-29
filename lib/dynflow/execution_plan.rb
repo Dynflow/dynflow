@@ -124,7 +124,7 @@ module Dynflow
     end
 
     def persist
-      persistence_adapter.save_execution_plan(self.id, self.to_hash)
+      persistence.save_execution_plan(self)
     end
 
     def self.new_from_hash(hash, world)
@@ -142,8 +142,8 @@ module Dynflow
 
     private
 
-    def persistence_adapter
-      world.persistence_adapter
+    def persistence
+      world.persistence
     end
 
     def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)

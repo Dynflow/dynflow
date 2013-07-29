@@ -23,8 +23,12 @@ module Dynflow
         @action_id = action_id || raise(ArgumentError, 'missing action_id')
       end
 
-      def persistence_adapter
-        execution_plan.world.persistence_adapter
+      def phase
+        raise NotImplementedError
+      end
+
+      def persistence
+        execution_plan.world.persistence
       end
 
       STATES = [:pending, :success, :suspended, :skipped, :error]

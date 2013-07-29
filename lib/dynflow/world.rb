@@ -2,11 +2,12 @@ module Dynflow
   class World
     include Algebrick::TypeCheck
 
-    attr_reader :executor, :persistence_adapter, :transaction_adapter, :action_classes, :subscription_index
+    attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index
 
     def initialize(executor, persistence_adapter, transaction_adapter, action_classes = Action.all_children)
       @executor            = is_kind_of! executor, Executors::Abstract
-      @persistence_adapter = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
+      persistence_adapter  = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
+      @persistence         = Persistence.new(self, persistence_adapter)
       @transaction_adapter = is_kind_of! transaction_adapter, TransactionAdapters::Abstract
       @suspended_actions   = {}
 
@@ -42,17 +43,6 @@ module Dynflow
 
     def execute(execution_plan_id)
       executor.execute execution_plan_id
-    end
-
-    def persisted_plans
-      persistence_adapter.find_execution_plans.map do |execution_plan_hash|
-        ExecutionPlan.new_from_hash(execution_plan_hash, self)
-      end
-    end
-
-    def persisted_plan(id)
-      execution_plan_hash = persistence_adapter.load_execution_plan(id)
-      ExecutionPlan.new_from_hash(execution_plan_hash, self)
     end
 
     ## world.wakeup(step_id, :finished, task)
