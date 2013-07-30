@@ -3,7 +3,6 @@ require 'sinatra'
 
 module Dynflow
   class WebConsole < Sinatra::Base
-    include Dedent
 
     def self.setup(&block)
       Sinatra.new(self) do

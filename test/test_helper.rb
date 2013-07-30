@@ -21,7 +21,12 @@ module PlanAssertions
     out
   end
 
+  def assert_planning_success(execution_plan)
+    execution_plan.plan_steps.all? { |id, plan_step| plan_step.state.must_equal :success }
+  end
+
   def assert_run_flow(expected, execution_plan)
+    assert_planning_success(execution_plan)
     inspect_flow(execution_plan, execution_plan.run_flow).chomp.must_equal dedent(expected).chomp
   end
 
