@@ -17,7 +17,7 @@
   </div>
   <div class="tab-pane active" id="run">
 
-    <table class="run-flow-hint">
+    <table class="flow-hint">
       <tr>
         <td class="border sequence"> </td>
         <td>sequence</td>
@@ -26,9 +26,10 @@
       </tr>
     </table>
 
-    <%= erb :run_flow, locals: { flow: @plan.run_flow } %>
+    <%= erb :flow, locals: { flow: @plan.run_flow } %>
   </div>
   <div class="tab-pane" id="finalize">
+    <%= erb :flow, locals: { flow: @plan.finalize_flow } %>
   </div>
 </div>
 

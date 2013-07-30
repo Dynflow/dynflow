@@ -27,55 +27,55 @@ ul.plan-step span.error {
   color: #99FF66;
 }
 
-table.run-flow td.run-flow.sequence,
-table.run-flow td.run-flow.concurrence,
-table.run-flow-hint td.border {
+table.flow td.flow.sequence,
+table.flow td.flow.concurrence,
+table.flow-hint td.border {
     border-style: solid;
     border-width: 4px;
     padding: 8px;
 }
 
-table.run-flow-hint td {
+table.flow-hint td {
     width: 6em;
     padding: 0.3em;
 }
 
-table.run-flow-hint {
+table.flow-hint {
     margin: 1em 0 1em 0;
 }
 
-table.run-flow td.sequence, table.run-flow-hint td.sequence {
+table.flow td.sequence, table.flow-hint td.sequence {
     border-color: #FF6600;
 }
 
-table.run-flow td.concurrence, table.run-flow-hint td.concurrence {
+table.flow td.concurrence, table.flow-hint td.concurrence {
     border-color: #005CE6;
 }
 
-table.run-flow table {
+table.flow table {
     width: 100%;
 }
 
-table.run-flow td.success, table.run-flow td.success span.step-label {
+table.flow td.success, table.flow td.success span.step-label {
     background-color: #DFF0D8;
     color: #468847;
 }
 
-table.run-flow td.error {
+table.flow td.error {
     background-color: #FF9D9D;
 }
 
-table.run-flow span.step-label {
+table.flow span.step-label {
     cursor: pointer;
 }
 
-table.run-flow div.action {
+table.flow div.action {
     background-color: white;
     margin: 5px -4px -4px -4px;
     padding: 10px;
     display: none;
 }
 
-table.run-flow td.error div.step-data {
+table.flow td.error div.step-data {
     display: block;
 }

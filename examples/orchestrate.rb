@@ -13,8 +13,8 @@ module Orchestrate
         plan_action(CreateMachine,
                     'host3',
                     'web_server',
-                    'db_machine' => 'host1',
-                    'storage_machine' => 'host2')
+                    :db_machine => 'host1',
+                    :storage_machine => 'host2')
       end
     end
   end
@@ -24,13 +24,18 @@ module Orchestrate
     def plan(name, profile, config_options = {})
       prepare_disk = plan_action(PrepareDisk, 'name' => name)
       create_vm    = plan_action(CreateVM,
-                                 'name' => name,
-                                 'disk' => prepare_disk.output['path'])
-      plan_action(AddIPtoHosts, 'name' => name, 'ip' => create_vm.output['ip'])
+                                 :name => name,
+                                 :disk => prepare_disk.output['path'])
+      plan_action(AddIPtoHosts, :name => name, :ip => create_vm.output[:ip])
       plan_action(ConfigureMachine,
-                  'ip' => create_vm.output['ip'],
-                  'profile' => profile,
-                  'config_options' => config_options)
+                  :ip => create_vm.output[:ip],
+                  :profile => profile,
+                  :config_options => config_options)
+      plan_self(:name => name)
+    end
+
+    def finalize
+      puts "We've create a machine #{input[:name]}"
     end
 
   end
@@ -47,7 +52,7 @@ module Orchestrate
 
     def run
       sleep(rand(5))
-      output['path'] = "/var/images/#{input['name']}.img"
+      output[:path] = "/var/images/#{input[:name]}.img"
     end
 
   end
@@ -65,7 +70,7 @@ module Orchestrate
 
     def run
       sleep(rand(5))
-      output['ip'] = "192.168.100.#{rand(256)}"
+      output[:ip] = "192.168.100.#{rand(256)}"
     end
 
   end
