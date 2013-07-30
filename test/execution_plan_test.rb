@@ -83,7 +83,10 @@ module Dynflow
 
         describe 'for error in running phase' do
 
-          before { execution_plan.run_flow.all_steps[2].state = :error }
+          before do
+            step_id = execution_plan.run_flow.all_step_ids[2]
+            execution_plan.run_steps[step_id].state = :error
+          end
 
           it 'should be :error' do
             execution_plan.result.must_equal :error
@@ -93,7 +96,10 @@ module Dynflow
 
         describe 'for pending step in running phase' do
 
-          before { execution_plan.run_flow.all_steps[2].state = :pending }
+          before do
+            step_id = execution_plan.run_flow.all_step_ids[2]
+            execution_plan.run_steps[step_id].state = :pending
+          end
 
           it 'should be :pending' do
             execution_plan.result.must_equal :pending
@@ -104,12 +110,9 @@ module Dynflow
         describe 'for all steps successful or skipped' do
 
           before do
-            execution_plan.run_flow.all_steps.each_with_index do |step, index|
-              if index == 2
-                step.state = :skipped
-              else
-                step.state = :success
-              end
+            execution_plan.run_flow.all_step_ids.each_with_index do |step_id, index|
+              step       = execution_plan.run_steps[step_id]
+              step.state = index == 2 ? :skipped : :success
             end
           end
 

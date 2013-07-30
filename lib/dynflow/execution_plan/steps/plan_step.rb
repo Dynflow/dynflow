@@ -1,13 +1,15 @@
 module Dynflow
   module ExecutionPlan::Steps
     class PlanStep < Abstract
-      attr_reader :children
+      attr_reader :children, :execution_plan
 
       # @param [Array] children is a private API parameter
-      def initialize(execution_plan, id, state, action_class, action_id, children = [])
-        super execution_plan, id, state, action_class, action_id
+      def initialize(execution_plan_id, id, state, action_class, action_id, world, execution_plan, children = [])
+        super execution_plan_id, id, state, action_class, action_id, world
         children.all? { |child| is_kind_of! child, Integer }
         @children = children
+
+        @execution_plan = is_kind_of! execution_plan, ExecutionPlan
       end
 
       def phase
@@ -31,13 +33,15 @@ module Dynflow
         return action
       end
 
-      def self.new_from_hash(hash, execution_plan)
+      def self.new_from_hash(hash, execution_plan_id, world, execution_plan)
         check_class_matching hash
-        new execution_plan,
+        new execution_plan_id,
             hash[:id],
             hash[:state],
             hash[:action_class].constantize,
             hash[:action_id],
+            world,
+            execution_plan,
             hash[:children]
       end
     end
