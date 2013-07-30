@@ -74,7 +74,7 @@ module Dynflow
 
     def plan(*args)
       with_planning_scope do
-        root_plan_step.execute(nil, *args)
+        root_plan_step.execute(self, nil, *args)
 
         if @dependency_graph.unresolved?
           raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
@@ -150,18 +150,14 @@ module Dynflow
     def self.new_from_hash(hash, world)
       check_class_matching hash
       execution_plan_id = hash[:id]
-      instance          = allocate
-      plan_steps        = steps_from_hash(hash[:plan_steps], execution_plan_id, world, instance)
+      plan_steps        = steps_from_hash(hash[:plan_steps], execution_plan_id, world)
 
-      instance.send(:initialize,
-                    world,
-                    execution_plan_id,
-                    plan_steps[hash[:root_plan_step_id]],
-                    Flows::Abstract.from_hash(hash[:run_flow]),
-                    plan_steps,
-                    steps_from_hash(hash[:run_steps], execution_plan_id, world))
-
-      return instance
+      self.new(world,
+               execution_plan_id,
+               plan_steps[hash[:root_plan_step_id]],
+               Flows::Abstract.from_hash(hash[:run_flow]),
+               plan_steps,
+               steps_from_hash(hash[:run_steps], execution_plan_id, world))
     end
 
     private
@@ -171,7 +167,7 @@ module Dynflow
     end
 
     def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)
-      @plan_steps[id] = step = Steps::PlanStep.new(self.id, id, :pending, action_class, action_id, world, self)
+      @plan_steps[id] = step = Steps::PlanStep.new(self.id, id, :pending, action_class, action_id, world)
       @plan_steps[planned_by_step_id].children << step.id if planned_by_step_id
       step
     end
@@ -182,10 +178,10 @@ module Dynflow
       end
     end
 
-    def self.steps_from_hash(hash, execution_plan_id, world, instance = nil)
+    def self.steps_from_hash(hash, execution_plan_id, world)
       hash.inject({}) do |h, (step_id, step_hash)|
-        args = [step_hash, execution_plan_id, world, instance].compact
-        h.update(step_id.to_i => Steps::Abstract.from_hash(*args))
+        step = Steps::Abstract.from_hash(step_hash, execution_plan_id, world)
+        h.update(step_id.to_i => step)
       end
     end
 

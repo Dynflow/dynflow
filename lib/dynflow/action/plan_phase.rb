@@ -29,7 +29,8 @@ module Dynflow
           trigger_flow = execution_plan.current_run_flow.sub_flows.pop
           execution_plan.switch_flow(Flows::Concurrence.new([trigger_flow])) do
             subscribed_actions.each do |action_class|
-              execution_plan.add_plan_step(action_class, self).execute(self, *args)
+              new_plan_step = execution_plan.add_plan_step(action_class, self)
+              new_plan_step.execute(execution_plan, self, *args)
             end
           end
         end
@@ -62,7 +63,7 @@ module Dynflow
     end
 
     def plan_action(action_class, *args)
-      execution_plan.add_plan_step(action_class, self).execute(nil, *args)
+      execution_plan.add_plan_step(action_class, self).execute(execution_plan, nil, *args)
     end
 
     def output
