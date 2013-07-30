@@ -8,6 +8,10 @@ module Dynflow
         @actions         = {}
       end
 
+      def find_execution_plans
+        @execution_plans.values.map(&:with_indifferent_access)
+      end
+
       def load_execution_plan(execution_plan_id)
         @execution_plans.fetch(execution_plan_id).with_indifferent_access
       end

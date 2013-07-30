@@ -2,11 +2,12 @@ module Dynflow
   class World
     include Algebrick::TypeCheck
 
-    attr_reader :executor, :persistence_adapter, :transaction_adapter, :action_classes, :subscription_index
+    attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index
 
     def initialize(executor, persistence_adapter, transaction_adapter, action_classes = Action.all_children)
       @executor            = is_kind_of! executor, Executors::Abstract
-      @persistence_adapter = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
+      persistence_adapter  = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
+      @persistence         = Persistence.new(self, persistence_adapter)
       @transaction_adapter = is_kind_of! transaction_adapter, TransactionAdapters::Abstract
       @suspended_actions   = {}
 
@@ -26,7 +27,7 @@ module Dynflow
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
 
-      return execution_plan.id, unless execution_plan.success?
+      return execution_plan.id, if execution_plan.error?
                                   Future.new.set(execution_plan)
                                 else
                                   execute execution_plan.id

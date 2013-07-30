@@ -33,11 +33,8 @@ module Dynflow
           result = world.execute(execution_plan.id).value
           raise result if result.is_a? Exception
 
-          # TODO use Persistence
           assert_run_flow(executed_run_flow,
-                          ExecutionPlan.from_hash(
-                              world.persistence_adapter.load_execution_plan(execution_plan.id),
-                              world))
+                          world.persistence.load_execution_plan(execution_plan.id))
         end
       end
 
@@ -48,21 +45,76 @@ module Dynflow
         end
 
         let :deserialized_execution_plan do
-          # TODO use Persistence
-          ExecutionPlan.from_hash(
-              world.persistence_adapter.load_execution_plan(execution_plan.id),
-              world)
+          world.persistence.load_execution_plan(execution_plan.id)
         end
 
         describe 'serialized execution plan' do
 
-          before { execution_plan.persist }
+          before { execution_plan.save }
 
           it 'restores the plan properly' do
             deserialized_execution_plan.id.must_equal execution_plan.id
 
             assert_plan_steps_equal execution_plan, deserialized_execution_plan
             assert_run_flow_equal execution_plan, deserialized_execution_plan
+          end
+
+        end
+
+      end
+
+      describe '#result' do
+
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+        end
+
+        describe 'for error in planning phase' do
+
+          before { execution_plan.plan_steps[2].state = :error }
+
+          it 'should be :error' do
+            execution_plan.result.must_equal :error
+            execution_plan.error?.must_equal true
+          end
+
+        end
+
+
+        describe 'for error in running phase' do
+
+          before { execution_plan.run_flow.all_steps[2].state = :error }
+
+          it 'should be :error' do
+            execution_plan.result.must_equal :error
+          end
+
+        end
+
+        describe 'for pending step in running phase' do
+
+          before { execution_plan.run_flow.all_steps[2].state = :pending }
+
+          it 'should be :pending' do
+            execution_plan.result.must_equal :pending
+          end
+
+        end
+
+        describe 'for all steps successful or skipped' do
+
+          before do
+            execution_plan.run_flow.all_steps.each_with_index do |step, index|
+              if index == 2
+                step.state = :skipped
+              else
+                step.state = :success
+              end
+            end
+          end
+
+          it 'should be :success' do
+            execution_plan.result.must_equal :success
           end
 
         end

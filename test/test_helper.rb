@@ -59,11 +59,11 @@ module PlanAssertions
       out << flow.step.action_class.to_s[/\w+\Z/]
       out << "(#{flow.step.state})"
       out << ' '
-      action_data = execution_plan.world.persistence_adapter.load_action(execution_plan.id, flow.step.action_id)
-      out << action_data[:input].inspect
-      if (output = action_data[:output])
+      action = execution_plan.world.persistence.load_action(flow.step)
+      out << action.input.inspect
+      unless flow.step.state == :pending
         out << ' --> '
-        out << output.inspect
+        out << action.output.inspect
       end
       out << "\n"
     else

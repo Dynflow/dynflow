@@ -1,39 +1,22 @@
 <h1>Listing execution plans</h1>
-<%= %w[not_finished all new paused finished error].map do |status|
-  if status == selected_status
-    status
-  else
-    %{<a href="#{h(url("?status=#{status}"))}">#{status}</a>}
-  end
-end.join(' | ') %>
 
 <table class="table">
   <thead>
     <tr>
       <th>Id</th>
       <th>Initiated by</th>
-      <th>Status</th>
-      <th>Created at</th>
-      <th>Updated at</th>
+      <th>Result</th>
       <th></th>
     </tr>
   </thead>
 
 <% @plans.each do |plan| %>
   <tr>
-    <td><%= h(plan.persistence.persistence_id) %></td>
-    <td><%= h(plan.plan_steps.first.action_class.name) %></td>
-    <th><%= h(plan.status) %></th>
-    <th><%= h(plan.persistence.created_at) %></th>
-    <th><%= h(plan.persistence.updated_at) %></th>
-    <td><a href="<%= h(url("/#{plan.persistence.persistence_id}")) %>">Show</a></td>
+    <td><%= h(plan.id) %></td>
+    <td><%= h(plan.root_plan_step.action_class.name) %></td>
+    <th><%= h(plan.result) %></th>
+    <td><a href="<%= h(url("/#{plan.id}")) %>">Show</a></td>
   </tr>
 
 <% end %>
 </table>
-<div class="pagination">
-  <ul>
-    <li><a href="<%= paginated_url(-1) %>">Prev</a></li>
-    <li><a href="<%= paginated_url(+1) %>">Next</a></li>
-  </ul>
-</div>

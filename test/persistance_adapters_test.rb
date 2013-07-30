@@ -6,6 +6,15 @@ module PersistenceAdapterTest
     raise NotImplementedError
   end
 
+  def test_load_execution_plans
+    plans = [{ id: 1 }, { id: 2 }]
+    plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
+    loaded_plans = storage.find_execution_plans
+    loaded_plans.size.must_equal 2
+    loaded_plans.must_include plans[0].with_indifferent_access
+    loaded_plans.must_include plans[1].with_indifferent_access
+  end
+
   def test_save_execution_plan
     plan = { id: 1 }
     -> { storage.load_execution_plan(1) }.must_raise KeyError
