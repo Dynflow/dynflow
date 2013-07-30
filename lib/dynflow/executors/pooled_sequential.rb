@@ -17,7 +17,7 @@ module Dynflow
       private
 
       def run_in_sequence(execution_plan, steps)
-        steps.each { |s| dispatch execution_plan, s }
+        steps.all? { |s| dispatch(execution_plan, s) }
       end
 
       def run_in_concurrence(execution_plan, steps)
@@ -30,8 +30,7 @@ module Dynflow
             execution_plan_id, future = @queue.pop
             execution_plan = world.persistence.load_execution_plan(execution_plan_id)
             with_active_record_pool do
-              future.set run_execution_plan execution_plan
-
+              future.set(run_execution_plan(execution_plan))
             end
           rescue => error
             # TODO use logger instead
@@ -57,17 +56,23 @@ module Dynflow
       def run_step(execution_plan, step)
         step.execute
         execution_plan.save
+        return step.state != :error
       end
 
       def run_execution_plan(execution_plan)
-        dispatch execution_plan, execution_plan.run_flow
+        dispatch(execution_plan, execution_plan.run_flow)
 
-        # TODO run finalize phase
-        # bus.in_transaction_if_possible do
-        #   bus.rollback_transaction unless finalize_execution_plan(execution_plan)
-        # end
+        world.transaction_adapter.transaction do
+          unless finalize_execution_plan(execution_plan)
+            world.transaction_adapter.rollback
+          end
+        end
 
         return execution_plan
+      end
+
+      def finalize_execution_plan(execution_plan)
+        dispatch(execution_plan, execution_plan.finalize_flow)
       end
 
       # TODO extract to an adapter

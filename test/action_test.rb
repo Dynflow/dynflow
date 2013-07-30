@@ -36,7 +36,7 @@ module Dynflow
     it { smart_action_class.all_children.size.must_equal 1 }
     it { smart_action_class.all_children.wont_include smarter_action_class.plan_phase }
     it { smart_action_class.all_children.wont_include smarter_action_class.run_phase }
-    it { smart_action_class.all_children.wont_include smarter_action_class.final_phase }
+    it { smart_action_class.all_children.wont_include smarter_action_class.finalize_phase }
 
     describe 'World#subscribed_actions' do
       event_action_class      = Class.new(Dynflow::Action)

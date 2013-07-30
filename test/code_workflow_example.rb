@@ -17,6 +17,10 @@ module Dynflow
         end
       end
 
+      def finalize
+        TestExecutionLog.finalize << self
+      end
+
     end
 
     class IncommingIssue < Action
@@ -56,6 +60,10 @@ module Dynflow
         self.output = { ok: true }
       end
 
+      def finalize
+        TestExecutionLog.finalize << self
+      end
+
     end
 
     class UpdateIssue < Action
@@ -84,6 +92,10 @@ module Dynflow
       end
 
       def run
+      end
+
+      def finalize
+        TestExecutionLog.finalize << self
       end
     end
 

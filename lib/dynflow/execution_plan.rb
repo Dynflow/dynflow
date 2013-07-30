@@ -6,7 +6,7 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :root_plan_step, :steps, :run_flow
+    attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow
 
     # all params with default values are part of *private* api
     # TODO replace id with uuid?
@@ -14,6 +14,7 @@ module Dynflow
         id = rand(1e10).to_s(36),
         root_plan_step = nil,
         run_flow = Flows::Concurrence.new([]),
+        finalize_flow = Flows::Sequence.new([]),
         steps = {})
 
       @id    = is_kind_of! id, String
@@ -21,6 +22,7 @@ module Dynflow
 
 
       @run_flow       = is_kind_of! run_flow, Flows::Abstract
+      @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
       @root_plan_step = root_plan_step
 
       steps.all? do |k, v|
@@ -107,19 +109,16 @@ module Dynflow
     end
 
     def add_run_step(action)
-      run_step = Steps::RunStep.new(self.id,
-                                    self.generate_step_id,
-                                    :pending,
-                                    action.action_class,
-                                    action.id,
-                                    world)
-      @dependency_graph.add_dependencies(run_step, action.input)
-      current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(run_step.id))
-      @steps[run_step.id] = run_step
-      return run_step
+      add_step(Steps::RunStep, action).tap do |step|
+        @dependency_graph.add_dependencies(step, action.input)
+        current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
+      end
     end
 
     def add_finalize_step(action)
+      add_step(Steps::FinalizeStep, action).tap do |step|
+        finalize_flow << Flows::Atom.new(step.id)
+      end
     end
 
     def to_hash
@@ -127,6 +126,7 @@ module Dynflow
         class:             self.class.to_s,
         root_plan_step_id: root_plan_step && root_plan_step.id,
         run_flow:          run_flow.to_hash,
+        finalize_flow:     finalize_flow.to_hash,
         steps:             steps.inject({}) { |h, (id, step)| h.update(id => step.to_hash) } }
     end
 
@@ -142,6 +142,7 @@ module Dynflow
                execution_plan_id,
                steps[hash[:root_plan_step_id]],
                Flows::Abstract.from_hash(hash[:run_flow]),
+               Flows::Abstract.from_hash(hash[:finalize_flow]),
                steps)
     end
 
@@ -155,6 +156,17 @@ module Dynflow
       @steps[id] = step = Steps::PlanStep.new(self.id, id, :pending, action_class, action_id, world)
       @steps[planned_by_step_id].children << step.id if planned_by_step_id
       step
+    end
+
+    def add_step(step_class, action)
+      step_class.new(self.id,
+                     self.generate_step_id,
+                     :pending,
+                     action.action_class,
+                     action.id,
+                     world).tap do |new_step|
+        @steps[new_step.id] = new_step
+      end
     end
 
     def self.steps_from_hash(hash, execution_plan_id, world)

@@ -8,8 +8,9 @@ module Dynflow
     extend Format
 
     require 'dynflow/action/plan_phase'
+    require 'dynflow/action/flow_phase'
     require 'dynflow/action/run_phase'
-    require 'dynflow/action/final_phase'
+    require 'dynflow/action/finalize_phase'
 
     def self.plan_phase
       @planning ||= Class.new(self) { include PlanPhase }
@@ -19,12 +20,12 @@ module Dynflow
       @running ||= Class.new(self) { include RunPhase }
     end
 
-    def self.final_phase
-      @finishing ||= Class.new(self) { include FinalPhase }
+    def self.finalize_phase
+      @finishing ||= Class.new(self) { include FinalizePhase }
     end
 
     def self.phase?
-      [PlanPhase, RunPhase, FinalPhase].any? { |phase| self < phase }
+      [PlanPhase, RunPhase, FinalizePhase].any? { |phase| self < phase }
     end
 
     def self.all_children
@@ -50,7 +51,7 @@ module Dynflow
 
     def self.from_hash(hash, phase, *args)
       check_class_key_present hash
-      raise ArgumentError, "unknown phase '#{phase}'" unless [:plan_phase, :run_phase, :final_phase].include? phase
+      raise ArgumentError, "unknown phase '#{phase}'" unless [:plan_phase, :run_phase, :finalize_phase].include? phase
       hash[:class].constantize.send(phase).new_from_hash(hash, *args)
     end
 

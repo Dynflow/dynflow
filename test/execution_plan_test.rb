@@ -129,6 +129,24 @@ module Dynflow
 
       end
 
+      describe 'persisted action' do
+
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+        end
+
+        let :action do
+          step = execution_plan.steps[4]
+          world.persistence.load_action(step)
+        end
+
+        it 'stores the ids for plan, run and finalize steps' do
+          action.plan_step_id.must_equal 3
+          action.run_step_id.must_equal 4
+          action.finalize_step_id.must_equal 5
+        end
+      end
+
       describe 'planning algorithm' do
 
         describe 'single dependencies' do
@@ -141,12 +159,12 @@ module Dynflow
               Dynflow::Flows::Concurrence
                 Dynflow::Flows::Sequence
                   4: Triage(pending) {"author"=>"Peter Smith", "text"=>"Failing test"}
-                  6: UpdateIssue(pending) {"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Step(4).output}
-                  8: NotifyAssignee(pending) {"triage"=>Step(4).output}
+                  7: UpdateIssue(pending) {"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Step(4).output}
+                  9: NotifyAssignee(pending) {"triage"=>Step(4).output}
                 Dynflow::Flows::Sequence
-                  11: Triage(pending) {"author"=>"John Doe", "text"=>"Internal server error"}
-                  13: UpdateIssue(pending) {"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Step(11).output}
-                  15: NotifyAssignee(pending) {"triage"=>Step(11).output}
+                  13: Triage(pending) {"author"=>"John Doe", "text"=>"Internal server error"}
+                  16: UpdateIssue(pending) {"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Step(13).output}
+                  18: NotifyAssignee(pending) {"triage"=>Step(13).output}
             RUN_FLOW
           end
 
@@ -183,6 +201,25 @@ module Dynflow
                 7: Merge(pending) {"commit"=>{"sha"=>"abc123"}}
             RUN_FLOW
           end
+        end
+
+        describe 'finalize flow' do
+
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+          end
+
+          it 'plans the finalize steps in a sequence' do
+            assert_finalize_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Sequence
+                5: Triage(pending) {\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}
+                10: NotifyAssignee(pending) {\"triage\"=>Step(4).output}
+                14: Triage(pending) {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}
+                19: NotifyAssignee(pending) {\"triage\"=>Step(13).output}
+                20: IncommingIssues(pending) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}]}
+            RUN_FLOW
+          end
+
         end
       end
     end
