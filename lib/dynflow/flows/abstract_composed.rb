@@ -33,9 +33,9 @@ module Dynflow
 
       alias_method :sub_flows, :flows
 
-      # @return [Array<Step>] all steps recursively in the flow
-      def all_steps
-        flows.map(&:all_steps).flatten
+      # @return [Array<Integer>] all step_ids recursively in the flow
+      def all_step_ids
+        flows.map(&:all_step_ids).flatten
       end
 
       def add_and_resolve(dependency_graph, new_flow)
@@ -60,9 +60,9 @@ module Dynflow
 
       protected
 
-      def self.new_from_hash(hash, execution_plan)
+      def self.new_from_hash(hash)
         check_class_matching hash
-        new(hash[:flows].map { |flow_hash| from_hash(flow_hash, execution_plan) })
+        new(hash[:flows].map { |flow_hash| from_hash(flow_hash) })
       end
 
       # adds the +new_flow+ in a way that it's in sequence with
@@ -75,14 +75,14 @@ module Dynflow
 
       def find_satisfying_sub_flows(dependency_graph, new_flow)
         satisfying_flows = Set.new
-        new_flow.all_steps.each do |step|
-          dependency_graph.required_step_ids(step.id).each do |required_step_id|
+        new_flow.all_step_ids.each do |step_id|
+          dependency_graph.required_step_ids(step_id).each do |required_step_id|
             satisfying_flow = sub_flows.find do |flow|
               flow.includes_step?(required_step_id)
             end
             if satisfying_flow
               satisfying_flows << satisfying_flow
-              dependency_graph.mark_satisfied(step.id, required_step_id)
+              dependency_graph.mark_satisfied(step_id, required_step_id)
             end
           end
         end

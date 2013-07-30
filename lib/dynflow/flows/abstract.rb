@@ -21,10 +21,10 @@ module Dynflow
       end
 
       def includes_step?(step_id)
-        self.all_steps.any? { |step| step.id == step_id }
+        self.all_step_ids.any? { |s| s == step_id }
       end
 
-      def all_steps
+      def all_step_ids
         raise NotImplementedError
       end
 

@@ -55,13 +55,14 @@ module PlanAssertions
     case flow
     when Dynflow::Flows::Atom
       out << prefix
-      out << flow.step.id.to_s << ': '
-      out << flow.step.action_class.to_s[/\w+\Z/]
-      out << "(#{flow.step.state})"
+      out << flow.step_id.to_s << ': '
+      step = execution_plan.run_steps[flow.step_id]
+      out << step.action_class.to_s[/\w+\Z/]
+      out << "(#{step.state})"
       out << ' '
-      action = execution_plan.world.persistence.load_action(flow.step)
+      action = execution_plan.world.persistence.load_action(step)
       out << action.input.inspect
-      unless flow.step.state == :pending
+      unless step.state == :pending
         out << ' --> '
         out << action.output.inspect
       end
@@ -86,9 +87,6 @@ module PlanAssertions
     out
   end
 
-  def dedent(string)
-    dedent = string.scan(/^ */).map { |spaces| spaces.size }.min
-    string.lines.map { |line| line[dedent..-1] }.join
-  end
+  include Dynflow::Dedent
 
 end

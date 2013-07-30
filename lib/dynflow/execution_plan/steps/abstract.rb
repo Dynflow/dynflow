@@ -3,11 +3,12 @@ module Dynflow
     class Abstract < Serializable
       include Algebrick::TypeCheck
 
-      attr_reader :execution_plan, :id, :state, :action_class, :action_id
+      attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world
 
-      def initialize(execution_plan, id, state, action_class, action_id)
-        @id             = id || raise(ArgumentError, 'missing id')
-        @execution_plan = is_kind_of! execution_plan, ExecutionPlan
+      def initialize(execution_plan_id, id, state, action_class, action_id, world)
+        @id                = id || raise(ArgumentError, 'missing id')
+        @execution_plan_id = is_kind_of! execution_plan_id, String
+        @world             = is_kind_of! world, World
 
         if state.is_a?(String) && STATES.map(&:to_s).include?(state)
           self.state = state.to_sym
@@ -28,7 +29,7 @@ module Dynflow
       end
 
       def persistence
-        execution_plan.world.persistence
+        world.persistence
       end
 
       STATES = [:pending, :success, :suspended, :skipped, :error]
@@ -52,13 +53,14 @@ module Dynflow
 
       protected
 
-      def self.new_from_hash(hash, execution_plan)
+      def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash
-        new execution_plan,
+        new execution_plan_id,
             hash[:id],
             hash[:state],
             hash[:action_class].constantize,
-            hash[:action_id]
+            hash[:action_id],
+            world
       end
 
     end
