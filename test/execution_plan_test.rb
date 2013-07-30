@@ -129,6 +129,24 @@ module Dynflow
 
       end
 
+      describe 'persisted action' do
+
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+        end
+
+        let :action do
+          step = execution_plan.steps[4]
+          world.persistence.load_action(step)
+        end
+
+        it 'stores the ids for plan, run and finalize steps' do
+          action.plan_step_id.must_equal 3
+          action.run_step_id.must_equal 4
+          action.finalize_step_id.must_equal 5
+        end
+      end
+
       describe 'planning algorithm' do
 
         describe 'single dependencies' do

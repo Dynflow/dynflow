@@ -109,15 +109,16 @@ module Dynflow
     end
 
     def add_run_step(action)
-      run_step = add_step(Steps::RunStep, action)
-      @dependency_graph.add_dependencies(run_step, action.input)
-      current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(run_step.id))
-      return run_step
+      add_step(Steps::RunStep, action).tap do |step|
+        @dependency_graph.add_dependencies(step, action.input)
+        current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
+      end
     end
 
     def add_finalize_step(action)
-      finalize_step = add_step(Steps::FinalizeStep, action)
-      finalize_flow << Flows::Atom.new(finalize_step.id)
+      add_step(Steps::FinalizeStep, action).tap do |step|
+        finalize_flow << Flows::Atom.new(step.id)
+      end
     end
 
     def to_hash

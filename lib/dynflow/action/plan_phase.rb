@@ -55,10 +55,15 @@ module Dynflow
       @input = input
       if self.respond_to?(:run)
         run_step          = execution_plan.add_run_step(self)
+        @run_step_id      = run_step.id
         @output_reference = ExecutionPlan::OutputReference.new(run_step.id)
       end
 
-      execution_plan.add_finalize_step(self) if self.respond_to?(:finalize)
+      if self.respond_to?(:finalize)
+        finalize_step = execution_plan.add_finalize_step(self)
+        @finalize_step_id = finalize_step.id
+      end
+
       return self # to stay consistent with plan_action
     end
 
