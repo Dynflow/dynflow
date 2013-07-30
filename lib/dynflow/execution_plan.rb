@@ -163,5 +163,7 @@ module Dynflow
         h.update(step_id.to_i => step)
       end
     end
+
+    private_class_method :steps_from_hash
   end
 end
