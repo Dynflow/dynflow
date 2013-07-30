@@ -27,7 +27,7 @@ module Dynflow
         action.execute(*args)
         self.state = action.state
 
-        persistence.save_step_action(self, action)
+        persistence.save_action(self, action)
         return action
       end
 

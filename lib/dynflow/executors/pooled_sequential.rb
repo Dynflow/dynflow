@@ -55,7 +55,7 @@ module Dynflow
 
       def run_step(step)
         step.execute
-        step.execution_plan.persist
+        step.execution_plan.save
       end
 
       def run_execution_plan(execution_plan)

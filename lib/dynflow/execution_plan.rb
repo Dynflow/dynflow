@@ -57,7 +57,7 @@ module Dynflow
     end
 
     def prepare(action_class)
-      persist
+      save
       @root_plan_step = new_plan_step(generate_step_id, action_class, generate_action_id)
     end
 
@@ -73,7 +73,7 @@ module Dynflow
       if @run_flow.size == 1
         @run_flow = @run_flow.sub_flows.first
       end
-      persist
+      save
     end
 
     # @api private
@@ -123,7 +123,7 @@ module Dynflow
         run_flow:          run_flow.to_hash }
     end
 
-    def persist
+    def save
       persistence.save_execution_plan(self)
     end
 

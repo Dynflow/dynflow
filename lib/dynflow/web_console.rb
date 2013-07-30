@@ -41,7 +41,7 @@ HTML
       end
 
       def load_action(step)
-        world.persistence.load_step_action(step)
+        world.persistence.load_action(step)
       end
 
       def show_action_data(label, value)

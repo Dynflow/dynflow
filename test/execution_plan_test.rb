@@ -50,7 +50,7 @@ module Dynflow
 
         describe 'serialized execution plan' do
 
-          before { execution_plan.persist }
+          before { execution_plan.save }
 
           it 'restores the plan properly' do
             deserialized_execution_plan.id.must_equal execution_plan.id

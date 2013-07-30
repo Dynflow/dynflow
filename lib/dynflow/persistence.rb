@@ -10,7 +10,7 @@ module Dynflow
       @adapter = persistence_adapter
     end
 
-    def load_step_action(step)
+    def load_action(step)
       attributes = adapter.load_action(step.execution_plan.id, step.action_id)
       return Action.from_hash(attributes,
                               step.phase,
@@ -19,11 +19,12 @@ module Dynflow
                               step.execution_plan.world)
     end
 
-    def save_step_action(step, action)
+    def save_action(step, action)
       adapter.save_action(step.execution_plan.id, step.action_id, action.to_hash)
     end
 
     def find_execution_plans
+      # TODO: add filtering and pagination
       adapter.find_execution_plans.map do |execution_plan_hash|
         ExecutionPlan.new_from_hash(execution_plan_hash, @world)
       end
