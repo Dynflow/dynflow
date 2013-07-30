@@ -27,7 +27,7 @@ module PlanAssertions
 
   def assert_run_flow_equal(expected_plan, execution_plan)
     expected = inspect_flow(expected_plan, expected_plan.run_flow)
-    current = inspect_flow(execution_plan, execution_plan.run_flow)
+    current  = inspect_flow(execution_plan, execution_plan.run_flow)
     assert_equal expected, current
   end
 
@@ -43,7 +43,7 @@ module PlanAssertions
     end
 
     expected_tree = inspect_plan_steps(expected_plan)
-    current_tree = inspect_plan_steps(execution_plan)
+    current_tree  = inspect_plan_steps(execution_plan)
     assert_equal expected_tree, current_tree
   end
 
@@ -55,13 +55,14 @@ module PlanAssertions
     case flow
     when Dynflow::Flows::Atom
       out << prefix
-      out << flow.step.id.to_s << ': '
-      out << flow.step.action_class.to_s[/\w+\Z/]
-      out << "(#{flow.step.state})"
+      out << flow.step_id.to_s << ': '
+      step = execution_plan.run_steps[flow.step_id]
+      out << step.action_class.to_s[/\w+\Z/]
+      out << "(#{step.state})"
       out << ' '
-      action = execution_plan.world.persistence.load_action(flow.step)
+      action = execution_plan.world.persistence.load_action(step)
       out << action.input.inspect
-      unless flow.step.state == :pending
+      unless step.state == :pending
         out << ' --> '
         out << action.output.inspect
       end

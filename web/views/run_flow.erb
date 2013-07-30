@@ -3,9 +3,9 @@
     <tr>
       <td class="<%= h(flow_css_classes(flow)) %>">
          <span class="step-label">
-           <%= h(flow.step.action_class.name) %>
+           <%= h(step(flow.step_id).action_class.name) %>
          </span>
-         <%= erb :action, locals: { action: load_action(flow.step) } %>
+         <%= erb :action, locals: { action: load_action(step(flow.step_id)) } %>
       </td>
     </tr>
   <% else %>

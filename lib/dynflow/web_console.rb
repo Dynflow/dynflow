@@ -3,6 +3,7 @@ require 'sinatra'
 
 module Dynflow
   class WebConsole < Sinatra::Base
+    include Dedent
 
     def self.setup(&block)
       Sinatra.new(self) do
@@ -32,9 +33,9 @@ module Dynflow
                          else
                            MultiJson.dump(value, :pretty => true)
                          end
-          <<HTML
-<pre class="prettyprint">#{h(pretty_value)}</pre>
-HTML
+          <<-HTML
+            <pre class="prettyprint">#{h(pretty_value)}</pre>
+          HTML
         else
           ""
         end
@@ -47,12 +48,12 @@ HTML
       def show_action_data(label, value)
         value_html = prettyprint(value)
         if !value_html.empty?
-        <<HTML
-<p>
-  #{h(label)}
-  #{value_html}
-</p>
-HTML
+          <<-HTML
+            <p>
+              #{h(label)}
+              #{value_html}
+            </p>
+          HTML
         else
           ""
         end
@@ -60,9 +61,12 @@ HTML
 
       def atom_css_classes(atom)
         classes = ["atom"]
-        case atom.step.state
-        when :success then classes << "success"
-        when :error then classes << "error"
+        step    = @plan.run_steps[atom.step_id]
+        case step.state
+        when :success
+          classes << "success"
+        when :error
+          classes << "error"
         end
         return classes.join(" ")
       end
@@ -70,8 +74,10 @@ HTML
       def flow_css_classes(flow, sub_flow = nil)
         classes = []
         case flow
-        when Flows::Sequence then classes << "sequence"
-        when Flows::Concurrence then classes << "concurrence"
+        when Flows::Sequence
+          classes << "sequence"
+        when Flows::Concurrence
+          classes << "concurrence"
         when Flows::Atom
           atom_css_classes(flow)
         else
@@ -83,9 +89,15 @@ HTML
 
       def step_css_class(step)
         case step.state
-        when :success then "success"
-        when :error then "danger"
+        when :success
+          "success"
+        when :error
+          "danger"
         end
+      end
+
+      def step(step_id)
+        @plan.run_steps[step_id]
       end
 
     end

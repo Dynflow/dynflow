@@ -10,56 +10,57 @@ module Dynflow
       # @returns [Future] value of the future is set when computation is finished
       #     value can be result or an error
       def execute(execution_plan_id)
-        execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
-        @queue.push [execution_plan, future = Future.new]
+        @queue.push [execution_plan_id, future = Future.new]
         return future
       end
 
       private
 
-      def run_in_sequence(steps)
-        steps.each { |s| dispatch s }
+      def run_in_sequence(execution_plan, steps)
+        steps.each { |s| dispatch execution_plan, s }
       end
 
-      def run_in_concurrence(steps)
-        run_in_sequence(steps)
+      def run_in_concurrence(execution_plan, steps)
+        run_in_sequence(execution_plan, steps)
       end
 
       def work
         loop do
-          execution_plan, future = @queue.pop
-          with_active_record_pool do
-            future.set begin
-                         run_execution_plan execution_plan
-                       rescue => error
-                         # TODO use logger instead
-                         $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
-                         error
-                       end
+          begin
+            execution_plan_id, future = @queue.pop
+            execution_plan = world.persistence.load_execution_plan(execution_plan_id)
+            with_active_record_pool do
+              future.set run_execution_plan execution_plan
+
+            end
+          rescue => error
+            # TODO use logger instead
+            $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+            future.set error
           end
         end
       end
 
-      def dispatch(flow)
+      def dispatch(execution_plan, flow)
         case flow
         when Flows::Sequence
-          run_in_sequence(flow.flows)
+          run_in_sequence(execution_plan, flow.flows)
         when Flows::Concurrence
-          run_in_concurrence(flow.flows)
+          run_in_concurrence(execution_plan, flow.flows)
         when Flows::Atom
-          run_step(flow.step)
+          run_step(execution_plan, execution_plan.run_steps[flow.step_id])
         else
           raise ArgumentError, "Don't know how to run #{flow}"
         end
       end
 
-      def run_step(step)
+      def run_step(execution_plan, step)
         step.execute
-        step.execution_plan.save
+        execution_plan.save
       end
 
       def run_execution_plan(execution_plan)
-        dispatch execution_plan.run_flow
+        dispatch execution_plan, execution_plan.run_flow
 
         # TODO run finalize phase
         # bus.in_transaction_if_possible do
