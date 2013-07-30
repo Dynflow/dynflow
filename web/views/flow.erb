@@ -1,4 +1,4 @@
-<table class="run-flow <%= h(flow_css_classes(flow)) %>">
+<table class="flow <%= h(flow_css_classes(flow)) %>">
   <% if flow.is_a? Dynflow::Flows::Atom %>
     <tr>
       <td class="<%= h(flow_css_classes(flow)) %>">
@@ -11,8 +11,8 @@
   <% else %>
     <% flow.sub_flows.each do |sub_flow| %>
       <tr>
-        <td class="run-flow <%= h(flow_css_classes(flow, sub_flow)) %>">
-          <%= erb :run_flow, locals: { flow: sub_flow } %>
+        <td class="flow <%= h(flow_css_classes(flow, sub_flow)) %>">
+          <%= erb :flow, locals: { flow: sub_flow } %>
         </td>
       </tr>
     <% end %>

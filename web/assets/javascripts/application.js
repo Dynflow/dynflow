@@ -16,7 +16,7 @@
     $(function() {
         $('.postlink').postlink();
 
-        $('table.run-flow span.step-label').click(function (e) {
+        $('table.flow span.step-label').click(function (e) {
             var stepData = $(this).next('div.action');
             stepData.slideToggle();
         });
