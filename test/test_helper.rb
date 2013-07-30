@@ -22,7 +22,10 @@ module PlanAssertions
   end
 
   def assert_planning_success(execution_plan)
-    execution_plan.plan_steps.all? { |id, plan_step| plan_step.state.must_equal :success }
+    plan_steps = execution_plan.steps.find_all do |step|
+      step.is_a? Dynflow::ExecutionPlan::Steps::PlanStep
+    end
+    plan_steps.all? { |id, plan_step| plan_step.state.must_equal :success }
   end
 
   def assert_run_flow(expected, execution_plan)
@@ -36,20 +39,16 @@ module PlanAssertions
     assert_equal expected, current
   end
 
-  def assert_plan_steps_equal(expected_plan, execution_plan)
-    execution_plan.plan_steps.keys.must_equal expected_plan.plan_steps.keys
+  def assert_steps_equal(expected, current)
+    current.id.must_equal expected.id
+    current.class.must_equal expected.class
+    current.state.must_equal expected.state
+    current.action_class.must_equal expected.action_class
+    current.action_id.must_equal expected.action_id
 
-    execution_plan.plan_steps.each do |id, step|
-      expected_step = expected_plan.plan_steps[id]
-
-      step.state.must_equal expected_step.state
-      step.action_class.must_equal expected_step.action_class
-      step.action_id.must_equal expected_step.action_id
+    if expected.respond_to?(:children)
+      current.children.must_equal(expected.children)
     end
-
-    expected_tree = inspect_plan_steps(expected_plan)
-    current_tree  = inspect_plan_steps(execution_plan)
-    assert_equal expected_tree, current_tree
   end
 
   def assert_plan_steps(expected, execution_plan)
@@ -61,7 +60,7 @@ module PlanAssertions
     when Dynflow::Flows::Atom
       out << prefix
       out << flow.step_id.to_s << ': '
-      step = execution_plan.run_steps[flow.step_id]
+      step = execution_plan.steps[flow.step_id]
       out << step.action_class.to_s[/\w+\Z/]
       out << "(#{step.state})"
       out << ' '
@@ -86,7 +85,7 @@ module PlanAssertions
     out << plan_step.action_class.to_s[/\w+\Z/]
     out << "\n"
     plan_step.children.each do |sub_step_id|
-      sub_step = execution_plan.plan_steps[sub_step_id]
+      sub_step = execution_plan.steps[sub_step_id]
       inspect_plan_step(out, execution_plan, sub_step, prefix + "  ")
     end
     out

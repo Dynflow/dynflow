@@ -60,7 +60,7 @@ module Dynflow
 
       def atom_css_classes(atom)
         classes = ["atom"]
-        step    = @plan.run_steps[atom.step_id]
+        step    = @plan.steps[atom.step_id]
         case step.state
         when :success
           classes << "success"
@@ -96,7 +96,7 @@ module Dynflow
       end
 
       def step(step_id)
-        @plan.run_steps[step_id]
+        @plan.steps[step_id]
       end
 
     end

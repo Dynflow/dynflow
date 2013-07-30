@@ -48,7 +48,7 @@ module Dynflow
         when Flows::Concurrence
           run_in_concurrence(execution_plan, flow.flows)
         when Flows::Atom
-          run_step(execution_plan, execution_plan.run_steps[flow.step_id])
+          run_step(execution_plan, execution_plan.steps[flow.step_id])
         else
           raise ArgumentError, "Don't know how to run #{flow}"
         end

@@ -18,7 +18,6 @@ module Dynflow
         super.merge(:children => children)
       end
 
-
       # @return [Action]
       def execute(execution_plan, trigger, *args)
         attributes = { id: action_id, state: :pending, plan_step_id: self.id }

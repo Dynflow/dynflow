@@ -33,7 +33,13 @@ module Dynflow
           it 'restores the plan properly' do
             deserialized_execution_plan.id.must_equal execution_plan.id
 
-            assert_plan_steps_equal execution_plan, deserialized_execution_plan
+            assert_steps_equal execution_plan.root_plan_step, deserialized_execution_plan.root_plan_step
+            assert_equal execution_plan.steps.keys, deserialized_execution_plan.steps.keys
+
+            deserialized_execution_plan.steps.each do |id, step|
+              assert_steps_equal(step, execution_plan.steps[id])
+            end
+
             assert_run_flow_equal execution_plan, deserialized_execution_plan
           end
 
@@ -49,7 +55,7 @@ module Dynflow
 
         describe 'for error in planning phase' do
 
-          before { execution_plan.plan_steps[2].state = :error }
+          before { execution_plan.steps[2].state = :error }
 
           it 'should be :error' do
             execution_plan.result.must_equal :error
@@ -63,7 +69,7 @@ module Dynflow
 
           before do
             step_id = execution_plan.run_flow.all_step_ids[2]
-            execution_plan.run_steps[step_id].state = :error
+            execution_plan.steps[step_id].state = :error
           end
 
           it 'should be :error' do
@@ -76,7 +82,7 @@ module Dynflow
 
           before do
             step_id = execution_plan.run_flow.all_step_ids[2]
-            execution_plan.run_steps[step_id].state = :pending
+            execution_plan.steps[step_id].state = :pending
           end
 
           it 'should be :pending' do
@@ -89,8 +95,8 @@ module Dynflow
 
           before do
             execution_plan.run_flow.all_step_ids.each_with_index do |step_id, index|
-              step       = execution_plan.run_steps[step_id]
-              step.state = index == 2 ? :skipped : :success
+              step       = execution_plan.steps[step_id]
+              step.state = (index == 2) ? :skipped : :success
             end
           end
 

@@ -1,9 +1,10 @@
 require_relative 'test_helper'
 require_relative 'code_workflow_example'
+
+ENV['RACK_ENV'] = 'test'
 require 'dynflow/web_console'
 
 require 'rack/test'
-ENV['RACK_ENV'] = 'test'
 
 module Dynflow
   describe 'web console' do
