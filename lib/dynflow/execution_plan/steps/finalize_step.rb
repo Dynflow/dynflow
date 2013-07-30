@@ -1,6 +1,6 @@
 module Dynflow
   module ExecutionPlan::Steps
-    class FinalizeStep < Abstract
+    class FinalizeStep < AbstractFlowStep
 
       def phase
         :finalize_phase

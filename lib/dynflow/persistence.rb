@@ -15,7 +15,6 @@ module Dynflow
       return Action.from_hash(attributes,
                               step.phase,
                               step.state,
-                              step.id,
                               step.world)
     end
 

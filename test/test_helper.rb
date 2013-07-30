@@ -7,11 +7,43 @@ end
 require 'dynflow'
 require 'pry'
 
+class TestExecutionLog
+
+  def initialize
+    @log = []
+  end
+
+  def <<(action)
+    @log << [action.action_class, action.input]
+  end
+
+  def log
+    @log
+  end
+
+  def self.setup
+    @run, @finalize = self.new, self.new
+  end
+
+  def self.teardown
+    @run, @finalize = nil, nil
+  end
+
+  def self.run
+    @run
+  end
+
+  def self.finalize
+    @finalize
+  end
+
+end
+
 module PlanAssertions
 
   def inspect_flow(execution_plan, flow)
     out = ""
-    inspect_subflow(out, execution_plan, execution_plan.run_flow, "")
+    inspect_subflow(out, execution_plan, flow, "")
     out
   end
 
@@ -22,15 +54,20 @@ module PlanAssertions
   end
 
   def assert_planning_success(execution_plan)
-    plan_steps = execution_plan.steps.find_all do |step|
+    plan_steps = execution_plan.steps.values.find_all do |step|
       step.is_a? Dynflow::ExecutionPlan::Steps::PlanStep
     end
-    plan_steps.all? { |id, plan_step| plan_step.state.must_equal :success }
+    plan_steps.all? { |plan_step| plan_step.state.must_equal :success }
   end
 
   def assert_run_flow(expected, execution_plan)
     assert_planning_success(execution_plan)
     inspect_flow(execution_plan, execution_plan.run_flow).chomp.must_equal dedent(expected).chomp
+  end
+
+  def assert_finalize_flow(expected, execution_plan)
+    assert_planning_success(execution_plan)
+    inspect_flow(execution_plan, execution_plan.finalize_flow).chomp.must_equal dedent(expected).chomp
   end
 
   def assert_run_flow_equal(expected_plan, execution_plan)
@@ -53,6 +90,27 @@ module PlanAssertions
 
   def assert_plan_steps(expected, execution_plan)
     inspect_plan_steps(execution_plan).chomp.must_equal dedent(expected).chomp
+  end
+
+  def assert_finalized(action_class, input)
+    assert_executed(:finalize, action_class, input)
+  end
+
+  def assert_executed(phase, action_class, input)
+    log = TestExecutionLog.send(phase).log
+
+    found_log = log.any? do |(logged_action_class, logged_input)|
+      action_class == logged_action_class && input == logged_input
+    end
+
+    unless found_log
+      message = ["#{action_class} with input #{input.inspect} not executed in #{phase} phase"]
+      message << "following actions were executed:"
+      log.each do |(logged_action_class, logged_input)|
+        message << "#{logged_action_class} #{logged_input.inspect}"
+      end
+      raise message.join("\n")
+    end
   end
 
   def inspect_subflow(out, execution_plan, flow, prefix)
