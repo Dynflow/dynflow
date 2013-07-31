@@ -10,10 +10,10 @@ module Dynflow
   require 'dynflow/serializable'
   require 'dynflow/transaction_adapters'
   require 'dynflow/persistence'
-  require 'dynflow/executors'
   require 'dynflow/action'
   require 'dynflow/flows'
   require 'dynflow/execution_plan'
+  require 'dynflow/executors'
   require 'dynflow/world'
   require 'dynflow/simple_world'
 

@@ -20,6 +20,10 @@ module Dynflow
         world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
       end
 
+      let :persisted_plan do
+        world.persistence.load_execution_plan(execution_plan.id)
+      end
+
       describe "execution plan state" do
 
         describe "after planning" do
@@ -87,9 +91,6 @@ module Dynflow
           TestExecutionLog.teardown
         end
 
-        let :persisted_plan do
-          world.persistence.load_execution_plan(execution_plan.id)
-        end
 
         it "runs all the steps in the run flow" do
           assert_run_flow <<-EXECUTED_RUN_FLOW, persisted_plan
@@ -107,11 +108,67 @@ module Dynflow
 
         it "runs all the steps in the finalize flow" do
           assert_finalized(Dynflow::CodeWorkflowExample::IncommingIssues,
-                           {"issues"=>[{"author"=>"Peter Smith", "text"=>"Failing test"}, {"author"=>"John Doe", "text"=>"Internal server error"}]})
+                           { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" },
+                                          { "author" => "John Doe", "text" => "Internal server error" }] })
           assert_finalized(Dynflow::CodeWorkflowExample::Triage,
-                           {"author"=>"Peter Smith", "text"=>"Failing test"})
+                           { "author" => "Peter Smith", "text" => "Failing test" })
         end
 
+      end
+
+      describe 'Parallel' do
+        describe 'FlowManager' do
+          let(:manager) { Executors::Parallel::FlowManager.new execution_plan, execution_plan.run_flow }
+          let(:root) { manager.instance_variable_get(:@run_cursor) }
+          it do
+            root.to_hash.must_equal(
+                children:       [{ children:       [],
+                                   depends_on:     { children:       [],
+                                                     depends_on:     { children:       [],
+                                                                       depends_on:     nil,
+                                                                       flow_step_id:   4,
+                                                                       done:           false,
+                                                                       flow_step_done: false },
+                                                     flow_step_id:   7,
+                                                     flow_step_done: false,
+                                                     done:           false },
+                                   flow_step_id:   9,
+                                   done:           false,
+                                   flow_step_done: false },
+                                 { children:       [],
+                                   depends_on:     { children:       [],
+                                                     depends_on:     { children:       [],
+                                                                       depends_on:     nil,
+                                                                       flow_step_id:   13,
+                                                                       done:           false,
+                                                                       flow_step_done: false },
+                                                     flow_step_id:   16,
+                                                     done:           false,
+                                                     flow_step_done: false },
+                                   flow_step_id:   18,
+                                   done:           false,
+                                   flow_step_done: false }],
+                depends_on:     nil,
+                flow_step_id:   nil,
+                done:           false,
+                flow_step_done: false)
+          end
+          describe 'to_run' do
+            def assert_to_run(execute_ids, expected)
+              execute_ids.each { |id| manager.cursor_index[id].flow_step_done }
+              root.to_run.must_equal Set.new(expected)
+            end
+
+            it { assert_to_run [], [4, 13] }
+            it { assert_to_run [4], [7, 13] }
+            it { assert_to_run [4, 7], [9, 13] }
+            it { assert_to_run [4, 13], [7, 16] }
+            it { assert_to_run [4, 13, 7], [9, 16] }
+            it { assert_to_run [4, 13, 7, 9], [16] }
+            it { assert_to_run [4, 13, 16, 7, 9], [18] }
+            it { assert_to_run [4, 13, 16, 18, 7, 9], [] }
+          end
+        end
       end
     end
   end

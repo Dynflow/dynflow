@@ -13,6 +13,10 @@ module Dynflow
         return self
       end
 
+      def clone
+        self.class.from_hash(to_hash, execution_plan_id, world)
+      end
+
       private
 
       def dereference(input)
