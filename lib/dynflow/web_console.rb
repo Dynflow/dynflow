@@ -24,6 +24,7 @@ module Dynflow
       end
 
       def prettyprint(value)
+        value = prettyprint_references(value)
         if value
           pretty_value = if !value.is_a?(Hash) && !value.is_a?(Array)
                            value.inspect
@@ -37,6 +38,21 @@ module Dynflow
           HTML
         else
           ""
+        end
+      end
+
+      def prettyprint_references(value)
+        case value
+        when Hash
+          value.reduce({}) do |h, (key, val)|
+            h.update(key => prettyprint_references(val))
+          end
+        when Array
+          value.map { |val| prettyprint_references(val) }
+        when ExecutionPlan::OutputReference
+          value.inspect
+        else
+          value
         end
       end
 
