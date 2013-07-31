@@ -159,11 +159,11 @@ module Dynflow
               Dynflow::Flows::Concurrence
                 Dynflow::Flows::Sequence
                   4: Triage(pending) {"author"=>"Peter Smith", "text"=>"Failing test"}
-                  7: UpdateIssue(pending) {"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Step(4).output}
+                  7: UpdateIssue(pending) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>Step(4).output[classification][assignee], "severity"=>Step(4).output[classification][severity]}
                   9: NotifyAssignee(pending) {"triage"=>Step(4).output}
                 Dynflow::Flows::Sequence
                   13: Triage(pending) {"author"=>"John Doe", "text"=>"Internal server error"}
-                  16: UpdateIssue(pending) {"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Step(13).output}
+                  16: UpdateIssue(pending) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>Step(13).output[classification][assignee], "severity"=>Step(13).output[classification][severity]}
                   18: NotifyAssignee(pending) {"triage"=>Step(13).output}
             RUN_FLOW
           end
