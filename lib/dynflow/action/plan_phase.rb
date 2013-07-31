@@ -52,11 +52,11 @@ module Dynflow
     end
 
     def plan_self(input)
-      @input = input
+      @input = input.with_indifferent_access
       if self.respond_to?(:run)
         run_step          = execution_plan.add_run_step(self)
         @run_step_id      = run_step.id
-        @output_reference = ExecutionPlan::OutputReference.new(run_step.id)
+        @output_reference = ExecutionPlan::OutputReference.new(run_step.id, id)
       end
 
       if self.respond_to?(:finalize)

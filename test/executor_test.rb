@@ -40,13 +40,13 @@ module Dynflow
           assert_run_flow <<-EXECUTED_RUN_FLOW, persisted_plan
             Dynflow::Flows::Concurrence
               Dynflow::Flows::Sequence
-                4: Triage(success) {"author"=>"Peter Smith", "text"=>"Failing test"} --> {\"ok\"=>true}
-                7: UpdateIssue(success) {"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Step(4).output} --> {}
-                9: NotifyAssignee(success) {"triage"=>Step(4).output} --> {}
+                4: Triage(success) {"author"=>"Peter Smith", "text"=>"Failing test"} --> {"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}
+                7: UpdateIssue(success) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>"John Doe", "severity"=>"medium"} --> {}
+                9: NotifyAssignee(success) {"triage"=>{"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}} --> {}
               Dynflow::Flows::Sequence
-                13: Triage(success) {"author"=>"John Doe", "text"=>"Internal server error"} --> {\"ok\"=>true}
-                16: UpdateIssue(success) {"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Step(13).output} --> {}
-                18: NotifyAssignee(success) {"triage"=>Step(13).output} --> {}
+                13: Triage(success) {"author"=>"John Doe", "text"=>"Internal server error"} --> {"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}
+                16: UpdateIssue(success) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>"John Doe", "severity"=>"medium"} --> {}
+                18: NotifyAssignee(success) {"triage"=>{"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}} --> {}
           EXECUTED_RUN_FLOW
         end
 

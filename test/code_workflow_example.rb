@@ -42,8 +42,10 @@ module Dynflow
       def plan(issue)
         triage = plan_self(issue)
         plan_action(UpdateIssue,
-                    'triage_input'  => triage.input,
-                    'triage_output' => triage.output)
+                    author:   triage.input[:author],
+                    text:     triage.input[:text],
+                    assignee: triage.output[:classification][:assignee],
+                    severity: triage.output[:classification][:severity])
       end
 
       input_format do
@@ -52,12 +54,14 @@ module Dynflow
       end
 
       output_format do
-        param :assignee, String
-        param :severity, %w[low medium high]
+        param :classification, Hash do
+          param :assignee, String
+          param :severity, %w[low medium high]
+        end
       end
 
       def run
-        self.output = { ok: true }
+        self.output[:classification] = { assignee: 'John Doe', severity: 'medium' }
       end
 
       def finalize
@@ -69,8 +73,10 @@ module Dynflow
     class UpdateIssue < Action
 
       input_format do
-        param :triage_input, Triage.input_format
-        param :triage_output, Triage.output_format
+        param :author, String
+        param :text, String
+        param :assignee, String
+        param :severity, %w[low medium high]
       end
 
       def run
