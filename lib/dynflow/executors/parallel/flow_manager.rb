@@ -27,19 +27,19 @@ module Dynflow
           execution_plan.steps[flow_step.id] = flow_step
           execution_plan.save
           cursor_index[flow_step.id].flow_step_done
-          to_run
+          what_is_next
         end
 
         # @return [Set] of step_ids to continue with
         def start
-          to_run.tap { |steps| raise 'invalid state' if steps.empty? && !done? }
+          what_is_next.tap { |steps| raise 'invalid state' if steps.empty? && !done? }
         end
 
         private
 
         # @return [Set] of step_ids to continue with
-        def to_run
-          new_flow_step_ids = @run_cursor.to_run - @steps_in_progress
+        def what_is_next
+          new_flow_step_ids = @run_cursor.what_is_next - @steps_in_progress
           @steps_in_progress.merge new_flow_step_ids
 
           new_flow_step_ids.map { |id| @execution_plan.steps[id].clone }

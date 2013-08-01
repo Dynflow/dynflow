@@ -40,10 +40,10 @@ module Dynflow
         end
 
         # @return [Set] of step_ids to continue with
-        def to_run
+        def what_is_next
           return Set.new if done?
-          return @depends_on.to_run if @depends_on && !@depends_on.done?
-          return @children.inject(Set.new) { |s, ch| s.merge ch.to_run }.flatten unless @children.empty?
+          return @depends_on.what_is_next if @depends_on && !@depends_on.done?
+          return @children.inject(Set.new) { |s, ch| s.merge ch.what_is_next }.flatten unless @children.empty?
 
           Set.new [flow_step_id].compact
         end

@@ -22,7 +22,7 @@ module Dynflow
 
     def inspect
       "Step(#{@step_id}).output".tap do |ret|
-        ret << @subkeys.map { |k| "[#{k}]" }.join('') if @subkeys.any?
+        ret << @subkeys.map { |k| "[:#{k}]" }.join('') if @subkeys.any?
       end
     end
 

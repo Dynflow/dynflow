@@ -110,17 +110,17 @@ module Dynflow
 
       describe 'plan steps' do
         let :execution_plan do
-          world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
         it 'stores the information about the sub actions' do
           assert_plan_steps <<-PLAN_STEPS, execution_plan
-            IncommingIssues
-              IncommingIssue
+            IncomingIssues
+              IncomingIssue
                 Triage
                   UpdateIssue
                   NotifyAssignee
-              IncommingIssue
+              IncomingIssue
                 Triage
                   UpdateIssue
                   NotifyAssignee
@@ -132,7 +132,7 @@ module Dynflow
       describe 'persisted action' do
 
         let :execution_plan do
-          world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
         let :action do
@@ -151,7 +151,7 @@ module Dynflow
 
         describe 'single dependencies' do
           let :execution_plan do
-            world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
           end
 
           it 'constructs the plan of actions to be executed in run phase' do
@@ -159,11 +159,11 @@ module Dynflow
               Dynflow::Flows::Concurrence
                 Dynflow::Flows::Sequence
                   4: Triage(pending) {"author"=>"Peter Smith", "text"=>"Failing test"}
-                  7: UpdateIssue(pending) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>Step(4).output[classification][assignee], "severity"=>Step(4).output[classification][severity]}
+                  7: UpdateIssue(pending) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>Step(4).output[:classification][:assignee], "severity"=>Step(4).output[:classification][:severity]}
                   9: NotifyAssignee(pending) {"triage"=>Step(4).output}
                 Dynflow::Flows::Sequence
                   13: Triage(pending) {"author"=>"John Doe", "text"=>"Internal server error"}
-                  16: UpdateIssue(pending) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>Step(13).output[classification][assignee], "severity"=>Step(13).output[classification][severity]}
+                  16: UpdateIssue(pending) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>Step(13).output[:classification][:assignee], "severity"=>Step(13).output[:classification][:severity]}
                   18: NotifyAssignee(pending) {"triage"=>Step(13).output}
             RUN_FLOW
           end
@@ -206,7 +206,7 @@ module Dynflow
         describe 'finalize flow' do
 
           let :execution_plan do
-            world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
           end
 
           it 'plans the finalize steps in a sequence' do
@@ -216,7 +216,7 @@ module Dynflow
                 10: NotifyAssignee(pending) {\"triage\"=>Step(4).output}
                 14: Triage(pending) {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}
                 19: NotifyAssignee(pending) {\"triage\"=>Step(13).output}
-                20: IncommingIssues(pending) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}]}
+                20: IncomingIssues(pending) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}]}
             RUN_FLOW
           end
 

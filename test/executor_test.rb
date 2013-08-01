@@ -17,7 +17,7 @@ module Dynflow
       end
 
       let :execution_plan do
-        world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
+        world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
       end
 
       let :persisted_plan do
@@ -107,7 +107,7 @@ module Dynflow
         end
 
         it "runs all the steps in the finalize flow" do
-          assert_finalized(Dynflow::CodeWorkflowExample::IncommingIssues,
+          assert_finalized(Dynflow::CodeWorkflowExample::IncomingIssues,
                            { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" },
                                           { "author" => "John Doe", "text" => "Internal server error" }] })
           assert_finalized(Dynflow::CodeWorkflowExample::Triage,
@@ -153,10 +153,11 @@ module Dynflow
                 done:           false,
                 flow_step_done: false)
           end
-          describe 'to_run' do
+
+          describe 'what_is_next' do
             def assert_to_run(execute_ids, expected)
               execute_ids.each { |id| manager.cursor_index[id].flow_step_done }
-              root.to_run.must_equal Set.new(expected)
+              root.what_is_next.must_equal Set.new(expected)
             end
 
             it { assert_to_run [], [4, 13] }
@@ -168,8 +169,66 @@ module Dynflow
             it { assert_to_run [4, 13, 16, 7, 9], [18] }
             it { assert_to_run [4, 13, 16, 18, 7, 9], [] }
           end
+
+        end
+
+        describe 'Pool::RoundRobin' do
+          let(:rr) { Dynflow::Executors::Parallel::Pool::RoundRobin.new }
+          it do
+            rr.next.must_be_nil
+            rr.next.must_be_nil
+            rr.must_be_empty
+            rr.add 1
+            rr.next.must_equal 1
+            rr.next.must_equal 1
+            rr.add 2
+            rr.next.must_equal 2
+            rr.next.must_equal 1
+            rr.next.must_equal 2
+            rr.delete 1
+            rr.next.must_equal 2
+            rr.next.must_equal 2
+            rr.delete 2
+            rr.next.must_be_nil
+            rr.must_be_empty
+          end
+        end
+
+        describe 'Pool::JobStorage' do
+          FakeStep = Struct.new(:execution_plan_id)
+
+          let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
+          it do
+            storage.must_be_empty
+            storage.pop.must_be_nil
+            storage.pop.must_be_nil
+
+            storage.add s = FakeStep.new(1)
+            storage.pop.must_equal s
+            storage.must_be_empty
+            storage.pop.must_be_nil
+
+            storage.add s11 = FakeStep.new(1)
+            storage.add s12 = FakeStep.new(1)
+            storage.add s13 = FakeStep.new(1)
+            storage.add s21 = FakeStep.new(2)
+            storage.add s22 = FakeStep.new(2)
+            storage.add s31 = FakeStep.new(3)
+
+            storage.pop.must_equal s21
+            storage.pop.must_equal s31
+            storage.pop.must_equal s11
+            storage.pop.must_equal s22
+            storage.pop.must_equal s12
+            storage.pop.must_equal s13
+
+            storage.must_be_empty
+            storage.pop.must_be_nil
+          end
         end
       end
+
+
     end
   end
 end
