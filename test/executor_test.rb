@@ -30,6 +30,29 @@ module Dynflow
 
         end
 
+        describe "when being executed" do
+
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::IncommingIssue, { 'text' => 'get a break' })
+          end
+
+          before do
+            TestPause.setup
+            world.execute(execution_plan.id)
+          end
+
+          after do
+            TestPause.teardown
+          end
+
+          it "is running" do
+            TestPause.when_paused do
+              plan = world.persistence.load_execution_plan(execution_plan.id)
+              plan.state.must_equal :running
+            end
+          end
+        end
+
         describe "when finished successfully" do
 
           it "is stopped" do

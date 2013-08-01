@@ -39,6 +39,43 @@ class TestExecutionLog
 
 end
 
+# To be able to stop a process in some step and perform assertions while paused
+class TestPause < Dynflow::Future
+
+  def self.setup
+    @pause = self.new
+    @ready = self.new
+  end
+
+  def self.teardown
+    @pause = nil
+    @ready = nil
+  end
+
+  # to be called from action
+  def self.pause
+    if !@pause
+      raise 'the TestPause class was not setup'
+    elsif @ready.ready?
+      raise 'you can pause only once'
+    else
+      @ready.set(true)
+      @pause.wait
+    end
+  end
+
+  # in the block perform assertions
+  def self.when_paused
+    if @pause
+      @ready.wait # wait till we are paused
+      yield
+      @pause.set(true) # resume the run
+    else
+      raise 'the TestPause class was not setup'
+    end
+  end
+end
+
 module PlanAssertions
 
   def inspect_flow(execution_plan, flow)

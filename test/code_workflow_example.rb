@@ -61,6 +61,7 @@ module Dynflow
       end
 
       def run
+        TestPause.pause if input[:text].include? 'get a break'
         raise 'Trolling detected' if input[:text].include? "trolling"
         self.output[:classification] = { assignee: 'John Doe', severity: 'medium' }
       end
