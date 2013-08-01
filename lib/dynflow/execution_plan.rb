@@ -22,13 +22,7 @@ module Dynflow
 
       @id    = is_kind_of! id, String
       @world = is_kind_of! world, World
-
-      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-        self.state = state.to_sym
-      else
-        self.state = state
-      end
-
+      self.state      = state
       @run_flow       = is_kind_of! run_flow, Flows::Abstract
       @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
       @root_plan_step = root_plan_step
@@ -42,8 +36,13 @@ module Dynflow
     end
 
     def state=(state)
-      raise "unknown state #{state}" unless STATES.include? state
-      @state = state
+      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
+        @state = state.to_sym
+      elsif STATES.include? state
+        @state = state
+      else
+        raise "unknown state #{state}"
+      end
     end
 
     def result
