@@ -4,19 +4,24 @@ module Dynflow
 
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index
 
-    def initialize(executor, persistence_adapter, transaction_adapter, action_classes = Action.all_children)
-      @executor            = is_kind_of! executor, Executors::Abstract
-      persistence_adapter  = is_kind_of! persistence_adapter, PersistenceAdapters::Abstract
+    def initialize(options = {})
+      options              = self.default_options.merge(options)
+      @executor            = is_kind_of! options[:executor], Executors::Abstract
+      persistence_adapter  = is_kind_of! options[:persistence_adapter], PersistenceAdapters::Abstract
       @persistence         = Persistence.new(self, persistence_adapter)
-      @transaction_adapter = is_kind_of! transaction_adapter, TransactionAdapters::Abstract
+      @transaction_adapter = is_kind_of! options[:transaction_adapter], TransactionAdapters::Abstract
       @suspended_actions   = {}
 
-      @action_classes     = action_classes
+      @action_classes     = options[:action_classes]
       @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
         next index unless klass.subscribe
         index[klass.subscribe] << klass
         index
       end.tap { |o| o.freeze }
+    end
+
+    def default_options
+      { action_classes: Action.all_children }
     end
 
     def subscribed_actions(action_class)
