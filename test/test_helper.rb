@@ -30,11 +30,11 @@ class TestExecutionLog
   end
 
   def self.run
-    @run
+    @run || []
   end
 
   def self.finalize
-    @finalize
+    @finalize || []
   end
 
 end

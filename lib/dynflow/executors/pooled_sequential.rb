@@ -60,12 +60,20 @@ module Dynflow
       end
 
       def run_execution_plan(execution_plan)
+        set_state(execution_plan, :running)
+
         dispatch(execution_plan, execution_plan.run_flow)
 
         world.transaction_adapter.transaction do
           unless finalize_execution_plan(execution_plan)
             world.transaction_adapter.rollback
           end
+        end
+
+        if execution_plan.result == :error
+          set_state(execution_plan, :paused)
+        else
+          set_state(execution_plan, :stopped)
         end
 
         return execution_plan
@@ -79,10 +87,17 @@ module Dynflow
       # free connection back to pool
       def with_active_record_pool(&block)
         if defined? ActiveRecord
-          ActiveRecord::Base.connection_pool.with_connection &block
+          ActiveRecord::Base.connection_pool.with_connection(&block)
         else
           block.call
         end
+      end
+
+      private
+
+      def set_state(execution_plan, state)
+        execution_plan.state = state
+        execution_plan.save
       end
     end
   end

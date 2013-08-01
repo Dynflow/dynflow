@@ -20,6 +20,38 @@ module Dynflow
         world.plan(CodeWorkflowExample::IncommingIssues, issues_data)
       end
 
+      describe "execution plan state" do
+
+        describe "after planning" do
+
+          it "is pending" do
+            execution_plan.state.must_equal :pending
+          end
+
+        end
+
+        describe "when finished successfully" do
+
+          it "is stopped" do
+            world.execute(execution_plan.id).value.tap do |plan|
+              plan.state.must_equal :stopped
+            end
+          end
+        end
+
+        describe "when finished with error" do
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::IncommingIssue, { 'text' => 'trolling' })
+          end
+
+          it "is paused" do
+            world.execute(execution_plan.id).value.tap do |plan|
+              plan.state.must_equal :paused
+            end
+          end
+        end
+      end
+
       describe "execution of run flow" do
 
         before do

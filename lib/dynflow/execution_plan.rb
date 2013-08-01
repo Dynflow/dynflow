@@ -6,21 +6,23 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow
+    attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow
+
+    STATES = [:pending, :running, :paused, :stopped]
 
     # all params with default values are part of *private* api
     # TODO replace id with uuid?
     def initialize(world,
-        id = rand(1e10).to_s(36),
-        root_plan_step = nil,
-        run_flow = Flows::Concurrence.new([]),
-        finalize_flow = Flows::Sequence.new([]),
-        steps = {})
+                   id             = rand(1e10).to_s(36),
+                   state          = :pending,
+                   root_plan_step = nil,
+                   run_flow       = Flows::Concurrence.new([]),
+                   finalize_flow  = Flows::Sequence.new([]),
+                   steps          = {})
 
       @id    = is_kind_of! id, String
       @world = is_kind_of! world, World
-
-
+      self.state      = state
       @run_flow       = is_kind_of! run_flow, Flows::Abstract
       @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
       @root_plan_step = root_plan_step
@@ -31,6 +33,16 @@ module Dynflow
       end
       @steps = steps
 
+    end
+
+    def state=(state)
+      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
+        @state = state.to_sym
+      elsif STATES.include? state
+        @state = state
+      else
+        raise "unknown state #{state}"
+      end
     end
 
     def result
@@ -124,6 +136,7 @@ module Dynflow
     def to_hash
       { id:                self.id,
         class:             self.class.to_s,
+        state:             self.state,
         root_plan_step_id: root_plan_step && root_plan_step.id,
         run_flow:          run_flow.to_hash,
         finalize_flow:     finalize_flow.to_hash,
@@ -140,6 +153,7 @@ module Dynflow
       steps = steps_from_hash(hash[:steps], execution_plan_id, world)
       self.new(world,
                execution_plan_id,
+               hash[:state],
                steps[hash[:root_plan_step_id]],
                Flows::Abstract.from_hash(hash[:run_flow]),
                Flows::Abstract.from_hash(hash[:finalize_flow]),

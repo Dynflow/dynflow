@@ -130,7 +130,7 @@ module Dynflow
         self.state = :success
       rescue => error
         # TODO log to a logger instead
-        $stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+        #$stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         self.state = :error
         self.error = { exception: error.class.name,
                        message:   error.message,
