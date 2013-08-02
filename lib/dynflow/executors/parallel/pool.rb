@@ -34,9 +34,9 @@ module Dynflow
             @jobs        = Hash.new { |h, k| h[k] = [] }
           end
 
-          def add(step)
-            @round_robin.add step.execution_plan_id unless tracked?(step)
-            @jobs[step.execution_plan_id] << step
+          def add(work)
+            @round_robin.add work.execution_plan_id unless tracked?(work)
+            @jobs[work.execution_plan_id] << work
           end
 
           def pop
@@ -51,8 +51,8 @@ module Dynflow
 
           private
 
-          def tracked?(step)
-            @jobs.has_key? step.execution_plan_id
+          def tracked?(work)
+            @jobs.has_key? work.execution_plan_id
           end
 
           def delete(execution_plan_id)
@@ -72,8 +72,8 @@ module Dynflow
 
         def on_message(message)
           match message,
-                Work.(~any) --> step do
-                  @jobs.add step
+                ~Work.to_m >>-> work do
+                  @jobs.add work
                   distribute_jobs
                 end,
                 WorkerDone.(~any, ~any) --> step, worker do
@@ -84,7 +84,7 @@ module Dynflow
         end
 
         def distribute_jobs
-          @free_workers.pop << Work[@jobs.pop] until @free_workers.empty? || @jobs.empty?
+          @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
         end
       end
     end

@@ -4,6 +4,7 @@ require_relative 'code_workflow_example'
 module Dynflow
   module ExecutorTest
     describe "executor" do
+      i_suck_and_my_tests_are_order_dependent!
 
       include PlanAssertions
 
