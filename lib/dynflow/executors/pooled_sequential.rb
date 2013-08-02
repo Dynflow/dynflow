@@ -64,14 +64,15 @@ module Dynflow
 
         dispatch(execution_plan, execution_plan.run_flow)
 
-        world.transaction_adapter.transaction do
-          unless finalize_execution_plan(execution_plan)
-            world.transaction_adapter.rollback
+        unless execution_plan.error?
+          world.transaction_adapter.transaction do
+            unless finalize_execution_plan(execution_plan)
+              world.transaction_adapter.rollback
+            end
           end
         end
 
-        set_state(execution_plan, execution_plan.result == :error ? :paused : :stopped)
-
+        set_state(execution_plan, execution_plan.error? ? :paused : :stopped)
         return execution_plan
       end
 

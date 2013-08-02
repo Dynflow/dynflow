@@ -4,6 +4,7 @@ module Dynflow
 
       # TODO add and store start_time, end_time and run_time duration
       def execute
+        return self if [:skipped, :success].include? self.state
         action = persistence.load_action(self)
         action.input = dereference(action.input)
         action.execute

@@ -88,13 +88,30 @@ module Dynflow
     def to_hash
       { class:            action_class.name,
         id:               id,
+        state:            state,
         error:            error,
         plan_step_id:     plan_step_id,
         run_step_id:      run_step_id,
         finalize_step_id: finalize_step_id }
     end
 
-    STATES = [:pending, :success, :suspended, :error]
+    STATES = [:pending, :success, :suspended, :skipped, :error]
+
+    # @api private
+    # @return [Array<Fixnum>] - ids of steps referenced from action
+    def required_step_ids(value = self.input)
+      ret = case value
+            when Hash
+              value.values.map { |val| required_step_ids(val) }
+            when Array
+              value.map { |val| required_step_ids(val) }
+            when ExecutionPlan::OutputReference
+              value.step_id
+            else
+              # no reference hidden in this arg
+            end
+      return Array(ret).flatten.compact
+    end
 
     protected
 

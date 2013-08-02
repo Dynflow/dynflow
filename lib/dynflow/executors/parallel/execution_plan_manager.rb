@@ -29,11 +29,11 @@ module Dynflow
 
           if current_manager.done?
             raise 'invalid state' unless next_steps.empty?
-            if next_manager?
+            if !execution_plan.error? && next_manager?
               next_manager!
               return start
             else
-              @execution_plan.state = execution_plan.result == :error ? :paused : :stopped
+              @execution_plan.state = execution_plan.error? ? :paused : :stopped
               @execution_plan.save
               @future.set @execution_plan
             end

@@ -9,6 +9,8 @@ require 'pry'
 
 class TestExecutionLog
 
+  include Enumerable
+
   def initialize
     @log = []
   end
@@ -19,6 +21,14 @@ class TestExecutionLog
 
   def log
     @log
+  end
+
+  def each(&block)
+    @log.each(&block)
+  end
+
+  def size
+    @log.size
   end
 
   def self.setup
