@@ -1,7 +1,7 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class Manager
+      class ExecutionPlanManager
         include Algebrick::TypeCheck
 
         attr_reader :execution_plan
@@ -14,6 +14,9 @@ module Dynflow
           finalize_manager = FlowManager.new(execution_plan, execution_plan.finalize_flow) unless execution_plan.finalize_flow.empty?
           @flow_managers = [run_manager, finalize_manager].compact
           @iteration     = 0
+
+          execution_plan.state = :running
+          execution_plan.save
         end
 
         def start
@@ -21,8 +24,8 @@ module Dynflow
         end
 
         # @return [Set] of step_ids to continue with
-        def done_give_me_next(flow_step)
-          next_steps = current_manager.done_give_me_next(flow_step)
+        def what_is_next(flow_step)
+          next_steps = current_manager.what_is_next(flow_step)
 
           if current_manager.done?
             raise 'invalid state' unless next_steps.empty?
@@ -30,6 +33,8 @@ module Dynflow
               next_manager!
               return start
             else
+              @execution_plan.state = execution_plan.result == :error ? :paused : :stopped
+              @execution_plan.save
               @future.set @execution_plan
             end
           end

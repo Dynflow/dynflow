@@ -10,7 +10,6 @@ module Dynflow
       def execute(execution_plan_id)
         raise NotImplementedError
       end
-
     end
   end
 end

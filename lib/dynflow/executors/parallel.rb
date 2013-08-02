@@ -5,7 +5,7 @@ module Dynflow
       require 'dynflow/executors/parallel/micro_actor'
       require 'dynflow/executors/parallel/cursor'
       require 'dynflow/executors/parallel/flow_manager'
-      require 'dynflow/executors/parallel/manager'
+      require 'dynflow/executors/parallel/execution_plan_manager'
       require 'dynflow/executors/parallel/core'
       require 'dynflow/executors/parallel/pool'
       require 'dynflow/executors/parallel/worker'
@@ -18,11 +18,11 @@ module Dynflow
 
       def initialize(world, pool_size = 10)
         super(world)
-        @manager = Core.new world, pool_size
+        @core = Core.new world, pool_size
       end
 
       def execute(execution_plan_id)
-        @manager << Execute[execution_plan_id, future = Future.new]
+        @core << Execute[execution_plan_id, future = Future.new]
         return future
       end
     end

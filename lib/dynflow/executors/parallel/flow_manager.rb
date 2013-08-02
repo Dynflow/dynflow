@@ -10,36 +10,37 @@ module Dynflow
           @execution_plan    = is_kind_of! execution_plan, ExecutionPlan
           @flow              = is_kind_of! flow, Flows::Abstract
           @cursor_index      = {}
-          @run_cursor        = build_cursor(flow, nil, nil)
+          @cursor            = build_cursor(flow, nil, nil)
           @steps_in_progress = Set.new
         end
 
         def done?
-          @run_cursor.done?
+          @cursor.done?
         end
 
         def run_flow?
           @execution_plan.run_flow == @flow
         end
 
-        # @return [Set] of step_ids to continue with
-        def done_give_me_next(flow_step)
+        # @return [Set] of steps to continue with
+        def what_is_next(flow_step)
           execution_plan.steps[flow_step.id] = flow_step
           execution_plan.save
-          cursor_index[flow_step.id].flow_step_done
-          what_is_next
+
+          cursor_index[flow_step.id].flow_step_done(flow_step.state)
+          next_steps
         end
 
-        # @return [Set] of step_ids to continue with
+        # @return [Set] of steps to continue with
         def start
-          what_is_next.tap { |steps| raise 'invalid state' if steps.empty? && !done? }
+          next_steps.tap { |steps| raise 'invalid state' if steps.empty? && !done? }
         end
 
         private
 
-        # @return [Set] of step_ids to continue with
-        def what_is_next
-          new_flow_step_ids = @run_cursor.what_is_next - @steps_in_progress
+        # @return [Set] of steps to continue with
+        def next_steps
+          new_flow_step_ids = @cursor.next_step_ids - @steps_in_progress
           @steps_in_progress.merge new_flow_step_ids
 
           new_flow_step_ids.map { |id| @execution_plan.steps[id].clone }

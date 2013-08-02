@@ -4,9 +4,9 @@ module Dynflow
       class Core < MicroActor
         def initialize(world, pool_size)
           super()
-          @world    = is_kind_of! world, World
-          @pool     = Pool.new(self, pool_size)
-          @managers = {}
+          @world                   = is_kind_of! world, World
+          @pool                    = Pool.new(self, pool_size)
+          @execution_plan_managers = {}
         end
 
         private
@@ -23,8 +23,8 @@ module Dynflow
         end
 
         def track_execution_plan(execution_plan_id, future)
-          execution_plan               = @world.persistence.load_execution_plan(execution_plan_id)
-          @managers[execution_plan_id] = Manager.new(execution_plan, future)
+          execution_plan                              = @world.persistence.load_execution_plan(execution_plan_id)
+          @execution_plan_managers[execution_plan_id] = ExecutionPlanManager.new(execution_plan, future)
         end
 
         def start_executing(manager)
@@ -32,9 +32,9 @@ module Dynflow
         end
 
         def update_manager(finished_step)
-          manager = @managers[finished_step.execution_plan_id]
-          manager.done_give_me_next(finished_step).each { |new_step| @pool << Work[new_step] }
-          @managers.delete(finished_step.execution_plan_id) if manager.done?
+          manager = @execution_plan_managers[finished_step.execution_plan_id]
+          manager.what_is_next(finished_step).each { |new_step| @pool << Work[new_step] }
+          @execution_plan_managers.delete(finished_step.execution_plan_id) if manager.done?
         end
       end
     end

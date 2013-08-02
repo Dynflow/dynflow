@@ -28,7 +28,7 @@ module Dynflow
         loop do
           begin
             execution_plan_id, future = @queue.pop
-            execution_plan = world.persistence.load_execution_plan(execution_plan_id)
+            execution_plan            = world.persistence.load_execution_plan(execution_plan_id)
             with_active_record_pool do
               future.set(run_execution_plan(execution_plan))
             end
@@ -70,11 +70,7 @@ module Dynflow
           end
         end
 
-        if execution_plan.result == :error
-          set_state(execution_plan, :paused)
-        else
-          set_state(execution_plan, :stopped)
-        end
+        set_state(execution_plan, execution_plan.result == :error ? :paused : :stopped)
 
         return execution_plan
       end
