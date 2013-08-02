@@ -12,9 +12,15 @@ module Dynflow
 
       # actor messages
       Execute    = Algebrick::Product.new execution_plan_id: String, future: Future
-      Work       = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep
-      PoolDone   = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep
-      WorkerDone = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, worker: Worker
+      Finalize   = Algebrick::Product.new sequential_amanger: SequentialManager, execution_plan_id: String
+      Step       = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, execution_plan_id: String
+      Work       = Algebrick::Variant.new Step, Finalize do
+        def execution_plan_id
+          self[:execution_plan_id]
+        end
+      end
+      PoolDone   = Algebrick::Product.new work: Work
+      WorkerDone = Algebrick::Product.new work: Work, worker: Worker
 
       def initialize(world, pool_size = 10)
         super(world)
