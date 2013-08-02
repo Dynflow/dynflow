@@ -115,6 +115,22 @@ module Dynflow
               world.persistence.load_execution_plan(execution_plan.id)
             end
 
+            describe "action with empty flows" do
+
+              let :execution_plan do
+                world.plan(CodeWorkflowExample::Dummy, {:text => "dummy"}).tap do |plan|
+                  assert_equal plan.run_flow.size, 0
+                  assert_equal plan.finalize_flow.size, 0
+                end
+              end
+
+              it "doesn't cause problems" do
+                world.execute(execution_plan.id).value.result.must_equal :success
+                world.execute(execution_plan.id).value.state.must_equal :stopped
+              end
+
+            end
+
             it "runs all the steps in the run flow" do
               assert_run_flow <<-EXECUTED_RUN_FLOW, persisted_plan
                 Dynflow::Flows::Concurrence

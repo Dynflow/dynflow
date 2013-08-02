@@ -1,6 +1,9 @@
 module Dynflow
   module CodeWorkflowExample
 
+    class Dummy < Action
+    end
+
     class IncomingIssues < Action
 
       def plan(issues)
