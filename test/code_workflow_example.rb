@@ -1,11 +1,11 @@
 module Dynflow
   module CodeWorkflowExample
 
-    class IncommingIssues < Action
+    class IncomingIssues < Action
 
       def plan(issues)
         issues.each do |issue|
-          plan_action(IncommingIssue, issue)
+          plan_action(IncomingIssue, issue)
         end
         plan_self('issues' => issues)
       end
@@ -23,7 +23,7 @@ module Dynflow
 
     end
 
-    class IncommingIssue < Action
+    class IncomingIssue < Action
 
       def plan(issue)
         plan_self(issue)

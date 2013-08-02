@@ -2,6 +2,7 @@ module Dynflow
   module ExecutionPlan::Steps
     class AbstractFlowStep < Abstract
 
+      # TODO add and store start_time, end_time and run_time duration
       def execute
         action = persistence.load_action(self)
         action.input = dereference(action.input)
@@ -11,6 +12,10 @@ module Dynflow
         persistence.save_action(self, action)
 
         return self
+      end
+
+      def clone
+        self.class.from_hash(to_hash, execution_plan_id, world)
       end
 
       private
