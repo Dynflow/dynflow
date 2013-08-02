@@ -13,20 +13,17 @@ module Dynflow
       def run
         with_state_updates do
           dispatch(execution_plan.run_flow)
+          finalize
         end
-
-        finalize
 
         return execution_plan
       end
 
       def finalize
         unless execution_plan.error?
-          with_state_updates do
-            world.transaction_adapter.transaction do
-              unless dispatch(execution_plan.finalize_flow)
-                world.transaction_adapter.rollback
-              end
+          world.transaction_adapter.transaction do
+            unless dispatch(execution_plan.finalize_flow)
+              world.transaction_adapter.rollback
             end
           end
         end
@@ -66,16 +63,10 @@ module Dynflow
         return step.state != :error
       end
 
-
-      def set_state(execution_plan, state)
-        execution_plan.state = state
-        execution_plan.save
-      end
-
       def with_state_updates(&block)
-        set_state(execution_plan, :running)
+        execution_plan.set_state(:running)
         block.call
-        set_state(execution_plan, execution_plan.result == :error ? :paused : :stopped)
+        execution_plan.set_state(execution_plan.error? ? :paused : :stopped)
       end
     end
   end

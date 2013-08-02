@@ -12,19 +12,16 @@ module Dynflow
           @execution_plan = is_kind_of! execution_plan, ExecutionPlan
           @future         = is_kind_of! future, Future
 
-          @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow) unless execution_plan.run_flow.empty?
-          raise unless @run_manager || @finalize_manager
-
-          execution_plan.state = :running
-          execution_plan.save
+          execution_plan.set_state(:running)
+        rescue => error
+          # TODO use logger
+          # $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+          @future.set(error)
         end
 
         def start
-          if @run_manager
-            @run_manager.start.map { |s| Step[s, execution_plan.id] }
-          else
-            start_finalize
-          end
+          raise "The future was already set" if @future.ready?
+          start_run or start_finalize or finish
         end
 
         # @return [Array<Work>] of Work items to continue with
@@ -39,11 +36,7 @@ module Dynflow
                   next_steps = @run_manager.what_is_next(step)
 
                   if @run_manager.done?
-                    if !execution_plan.finalize_flow.empty?
-                      start_finalize
-                    else
-                      finish
-                    end
+                    start_finalize or finish
                   else
                     next_steps.map { |s| Step[s, execution_plan.id] }
                   end
@@ -62,19 +55,28 @@ module Dynflow
         private
 
         def no_work
-          raise unless done?
+          raise "No work but not done" unless done?
           []
         end
 
+        def start_run
+          unless execution_plan.run_flow.empty?
+            raise 'run phase already started' if @run_manager
+            @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow)
+            @run_manager.start.map { |s| Step[s, execution_plan.id] }
+          end
+        end
+
         def start_finalize
-          raise 'finalization already started' if @finalize_manager
-          @finalize_manager = SequentialManager.new(@world, execution_plan.id)
-          [Finalize[@finalize_manager, execution_plan.id]]
+          unless execution_plan.run_flow.empty?
+            raise 'finalize phase already started' if @finalize_manager
+            @finalize_manager = SequentialManager.new(@world, execution_plan.id)
+            [Finalize[@finalize_manager, execution_plan.id]]
+          end
         end
 
         def finish
-          @execution_plan.state = execution_plan.result == :error ? :paused : :stopped
-          @execution_plan.save
+          @execution_plan.set_state(execution_plan.error? ? :paused : :stopped)
           @future.set @execution_plan
           return no_work
         end

@@ -26,8 +26,8 @@ module Dynflow
               future.set(sequential.execution_plan)
             end
           rescue => error
-            # TODO use logger instead
-            $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+            # TODO use logger
+            # $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
             future.set error
           end
         end

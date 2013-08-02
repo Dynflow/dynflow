@@ -12,19 +12,23 @@ module Dynflow
         private
 
         def on_message(message)
-          match message,
+          match(message,
                 Execute.(~any, ~any) --> execution_plan_id, future do
-                  manager = track_execution_plan execution_plan_id, future
-                  start_executing manager
+                  if manager = track_execution_plan(execution_plan_id, future)
+                    start_executing(manager)
+                  end
                 end,
                 PoolDone.(~any) --> step do
-                  update_manager step
-                end
+                  update_manager(step)
+                end)
         end
 
         def track_execution_plan(execution_plan_id, future)
-          execution_plan                              = @world.persistence.load_execution_plan(execution_plan_id)
-          @execution_plan_managers[execution_plan_id] = ExecutionPlanManager.new(@world, execution_plan, future)
+          execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
+          manager        = ExecutionPlanManager.new(@world, execution_plan, future)
+          unless future.ready?
+            @execution_plan_managers[execution_plan_id] = manager
+          end
         end
 
         def start_executing(manager)

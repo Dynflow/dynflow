@@ -45,6 +45,16 @@ module Dynflow
       end
     end
 
+    def set_state(state)
+      # TODO: this should be run in transaction if we wanted to be 100%
+      # sure one plan won't be running twice.
+      if state == :running && self.state == :running
+        raise "The execution plan #{self.id} is already running"
+      end
+      self.state = state
+      self.save
+    end
+
     def result
       all_steps = steps.values
       if all_steps.any? { |step| step.state == :error }

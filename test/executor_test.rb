@@ -71,6 +71,14 @@ module Dynflow
                   plan.state.must_equal :running
                 end
               end
+
+              it "fails when trying to execute again" do
+                TestPause.when_paused do
+                  error = world.execute(execution_plan.id).value
+                  assert error.is_a? Exception
+                  error.message.must_match(/already running/)
+                end
+              end
             end
 
             describe "when finished successfully" do
