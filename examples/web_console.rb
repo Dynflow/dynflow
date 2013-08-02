@@ -6,7 +6,7 @@ $:.unshift(File.expand_path('../../lib', __FILE__))
 require 'dynflow'
 require_relative 'orchestrate'
 
-world = Dynflow::SimpleWorld.new
+world = Dynflow::SimpleWorld.new(:executor_class => Dynflow::Executors::Parallel)
 
 require 'dynflow/web_console'
 dynflow_console = Dynflow::WebConsole.setup do

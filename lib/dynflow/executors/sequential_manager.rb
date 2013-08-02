@@ -21,10 +21,12 @@ module Dynflow
       end
 
       def finalize
-        with_state_updates do
-          world.transaction_adapter.transaction do
-            unless dispatch(execution_plan.finalize_flow)
-              world.transaction_adapter.rollback
+        unless execution_plan.error?
+          with_state_updates do
+            world.transaction_adapter.transaction do
+              unless dispatch(execution_plan.finalize_flow)
+                world.transaction_adapter.rollback
+              end
             end
           end
         end

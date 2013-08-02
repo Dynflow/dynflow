@@ -13,10 +13,6 @@ module Dynflow
           @future         = is_kind_of! future, Future
 
           @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow) unless execution_plan.run_flow.empty?
-          @finalize_manager = SequentialManager.new(world, execution_plan.id) unless execution_plan.finalize_flow.empty?
-          #finalize_manager = FlowManager.new(execution_plan, execution_plan.finalize_flow) unless execution_plan.finalize_flow.empty?
-          #@flow_managers = [run_manager, finalize_manager].compact
-          #@iteration     = 0
           raise unless @run_manager || @finalize_manager
 
           execution_plan.state = :running
@@ -27,7 +23,7 @@ module Dynflow
           if @run_manager
             @run_manager.start.map { |s| Step[s, execution_plan.id] }
           else
-            [Finalize[@finalize_manager, execution_plan.id]]
+            start_finalize
           end
         end
 
@@ -35,16 +31,18 @@ module Dynflow
         def what_is_next(work)
           is_kind_of! work, Work
 
-          match work,
+          match(work,
                 Step.(~any, any) --> step do
-                  raise unless @run_manager && !@run_manager.done?
+                  raise unless @run_manager
+                  raise if @run_manager.done?
+
                   next_steps = @run_manager.what_is_next(step)
 
                   if @run_manager.done?
-                    if @finalize_manager
-                      [Finalize[@finalize_manager, execution_plan.id]]
+                    if !execution_plan.finalize_flow.empty?
+                      start_finalize
                     else
-                      return no_work
+                      finish
                     end
                   else
                     next_steps.map { |s| Step[s, execution_plan.id] }
@@ -52,28 +50,9 @@ module Dynflow
                 end,
                 Finalize.(any, any) --> do
                   raise unless @finalize_manager
-                  @execution_plan.state = execution_plan.result == :error ? :paused : :stopped
-                  @execution_plan.save
-                  @future.set @execution_plan
-                  return no_work
-                end
-
-          ## TODO
-          #next_steps = current_manager.what_is_next(flow_step)
-          #
-          #if current_manager.done?
-          #  raise 'invalid state' unless next_steps.empty?
-          #  if next_manager?
-          #    next_manager!
-          #    return start
-          #  else
-          #    @execution_plan.state = execution_plan.result == :error ? :paused : :stopped
-          #    @execution_plan.save
-          #    @future.set @execution_plan
-          #  end
-          #end
-          #
-          #return next_steps
+                  @execution_plan = @finalize_manager.execution_plan
+                  finish
+                end)
         end
 
         def done?
@@ -87,39 +66,18 @@ module Dynflow
           []
         end
 
-        #def run_phase?
-        #  phase == :run
-        #end
-        #
-        #def finalize_phase?
-        #  phase == :finalize
-        #end
-        #
-        #def phase
-        #  if @run_manager
-        #    if !@run_manager.done?
-        #      :run
-        #    elsif @finalize_manager
-        #      :finalize
-        #    else
-        #      raise
-        #    end
-        #  else
-        #    @finalize_manager ? :finalize : raise
-        #  end
-        #end
+        def start_finalize
+          raise 'finalization already started' if @finalize_manager
+          @finalize_manager = SequentialManager.new(@world, execution_plan.id)
+          [Finalize[@finalize_manager, execution_plan.id]]
+        end
 
-        #def current_manager
-        #  @flow_managers[@iteration]
-        #end
-        #
-        #def next_manager?
-        #  @iteration < @flow_managers.size-1
-        #end
-        #
-        #def next_manager!
-        #  @iteration += 1
-        #end
+        def finish
+          @execution_plan.state = execution_plan.result == :error ? :paused : :stopped
+          @execution_plan.save
+          @future.set @execution_plan
+          return no_work
+        end
 
       end
     end

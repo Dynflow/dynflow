@@ -37,9 +37,6 @@ module Dynflow
           next_work.all? { |w| is_kind_of! w, Work }
           next_work.each { |new_work| @pool << new_work }
           @execution_plan_managers.delete(finished_work.execution_plan_id) if manager.done?
-          if !manager.done? && next_work.empty?
-            raise
-          end
         end
       end
     end
