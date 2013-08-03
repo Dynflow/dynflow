@@ -1,9 +1,6 @@
 module Dynflow
   module CodeWorkflowExample
 
-    class Dummy < Action
-    end
-
     class IncomingIssues < Action
 
       def plan(issues)
@@ -186,6 +183,16 @@ module Dynflow
       end
 
       def run
+      end
+    end
+
+    class Dummy < Action
+    end
+
+    class DummyWithFinalize < Action
+
+      def finalize
+        TestExecutionLog.finalize << self
       end
     end
 
