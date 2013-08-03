@@ -37,11 +37,11 @@ module Dynflow
       end
 
       def load_action(execution_plan_id, action_id)
-        load Action, execution_plan_id + action_id
+        load Action, execution_plan_id.to_s + action_id.to_s
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save Action, execution_plan_id + action_id, value
+        save Action, execution_plan_id.to_s + action_id.to_s, value
       end
 
       private

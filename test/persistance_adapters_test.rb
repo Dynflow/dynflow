@@ -7,7 +7,7 @@ module PersistenceAdapterTest
   end
 
   def test_load_execution_plans
-    plans = [{ id: 1 }, { id: 2 }]
+    plans = [{ id: 'plan1' }, { id: 'plan2' }]
     plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
     loaded_plans = storage.find_execution_plans
     loaded_plans.size.must_equal 2
@@ -16,29 +16,29 @@ module PersistenceAdapterTest
   end
 
   def test_save_execution_plan
-    plan = { id: 1 }
-    -> { storage.load_execution_plan(1) }.must_raise KeyError
+    plan = { id: 'plan1' }
+    -> { storage.load_execution_plan('plan1') }.must_raise KeyError
 
-    storage.save_execution_plan(1, plan)
-    storage.load_execution_plan(1)[:id].must_equal 1
-    storage.load_execution_plan(1)['id'].must_equal 1
-    storage.load_execution_plan(1).keys.size.must_equal 1
+    storage.save_execution_plan('plan1', plan)
+    storage.load_execution_plan('plan1')[:id].must_equal 'plan1'
+    storage.load_execution_plan('plan1')['id'].must_equal 'plan1'
+    storage.load_execution_plan('plan1').keys.size.must_equal 1
 
-    storage.save_execution_plan(1, nil)
-    -> { storage.load_execution_plan(1) }.must_raise KeyError
+    storage.save_execution_plan('plan1', nil)
+    -> { storage.load_execution_plan('plan1') }.must_raise KeyError
   end
 
   def test_save_action
     action = { id: 1 }
-    -> { storage.load_action(1, 1) }.must_raise KeyError
+    -> { storage.load_action('plan1', 1) }.must_raise KeyError
 
-    storage.save_action(1, 1, action)
-    storage.load_action(1, 1)[:id].must_equal 1
-    storage.load_action(1, 1)['id'].must_equal 1
-    storage.load_action(1, 1).keys.size.must_equal 1
+    storage.save_action('plan1', 1, action)
+    storage.load_action('plan1', 1)[:id].must_equal 1
+    storage.load_action('plan1', 1)['id'].must_equal 1
+    storage.load_action('plan1', 1).keys.size.must_equal 1
 
-    storage.save_action(1, 1, nil)
-    -> { storage.load_action(1, 1) }.must_raise KeyError
+    storage.save_action('plan1', 1, nil)
+    -> { storage.load_action('plan1', 1) }.must_raise KeyError
   end
 end
 
