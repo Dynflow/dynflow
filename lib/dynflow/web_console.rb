@@ -60,6 +60,14 @@ module Dynflow
         world.persistence.load_action(step)
       end
 
+      def step_error(step)
+        if step.state == :error
+          action = world.persistence.adapter.load_action(step.execution_plan_id,
+                                                         step.action_id)
+          return action[:error]
+        end
+      end
+
       def show_action_data(label, value)
         value_html = prettyprint(value)
         if !value_html.empty?

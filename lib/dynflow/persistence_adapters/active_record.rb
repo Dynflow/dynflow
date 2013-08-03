@@ -23,7 +23,7 @@ module Dynflow
       end
 
       def find_execution_plans
-        ExecutionPlan.all.map do |record|
+        ExecutionPlan.order('created_at DESC').all.map do |record|
           HashWithIndifferentAccess.new(MultiJson.load(record.data))
         end
       end
