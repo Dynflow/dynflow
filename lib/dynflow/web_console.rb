@@ -82,6 +82,8 @@ module Dynflow
           classes << "success"
         when :error
           classes << "error"
+        when :skipped
+          classes << "skipped"
         end
         return classes.join(" ")
       end
@@ -128,12 +130,25 @@ module Dynflow
     end
 
     post('/:id/resume') do |id|
-      @plan = world.persistence.load_execution_plan(id)
-      if @plan.state != :paused
-        redirect(url "/#{id}?notice=#{url_encode('The exeuction has to be paused to be able to resume')}")
+      plan = world.persistence.load_execution_plan(id)
+      if plan.state != :paused
+        redirect(url "/#{plan.id}?notice=#{url_encode('The exeuction has to be paused to be able to resume')}")
       else
-        world.execute(@plan.id)
-        redirect(url "/#{id}?notice=#{url_encode('The execution was resumed')}")
+        world.execute(plan.id)
+        redirect(url "/#{plan.id}?notice=#{url_encode('The execution was resumed')}")
+      end
+    end
+
+    post('/:id/skip/:step_id') do |id, step_id|
+      plan = world.persistence.load_execution_plan(id)
+      step = plan.steps[step_id.to_i]
+      if plan.state != :paused 
+        redirect(url "/#{plan.id}?notice=#{url_encode('The exeuction has to be paused to be able to skip')}")
+      elsif step.state != :error
+        redirect(url "/#{plan.id}?notice=#{url_encode('The step has to be failed to be able to skip')}")
+      else
+        plan.skip(step)
+        redirect(url "/#{plan.id}")
       end
     end
 

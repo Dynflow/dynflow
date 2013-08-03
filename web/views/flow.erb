@@ -2,10 +2,7 @@
   <% if flow.is_a? Dynflow::Flows::Atom %>
     <tr>
       <td class="<%= h(flow_css_classes(flow)) %>">
-         <span class="step-label">
-           <%= h(flow.step_id) %>: <%= h(step(flow.step_id).action_class.name) %>
-         </span>
-         <%= erb :action, locals: { action: load_action(step(flow.step_id)) } %>
+        <%= erb :flow_step, locals: { step: step(flow.step_id) } %>
       </td>
     </tr>
   <% else %>
