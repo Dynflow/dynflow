@@ -79,8 +79,7 @@ class ActiveRecordTest < MiniTest::Unit::TestCase
 
   def setup
     ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
-    path = File.dirname(__FILE__) + '/../lib/dynflow/persistence_adapters/active_record/migrations'
-    ::ActiveRecord::Migrator.migrate path
+    ::ActiveRecord::Migrator.migrate Dynflow::PersistenceAdapters::ActiveRecord.migrations_path
   end
 
   def storage

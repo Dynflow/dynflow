@@ -1,4 +1,3 @@
-require 'sqlite3'
 require 'active_record'
 require 'multi_json'
 
@@ -6,6 +5,14 @@ module Dynflow
   module PersistenceAdapters
     class ActiveRecord < Abstract
       include Algebrick::TypeCheck
+
+      def self.migrations_path
+        File.expand_path('../active_record/migrations', __FILE__)
+      end
+
+      def self.bootstrap_migrations(app)
+        app.config.paths['db/migrate'] << self.migrations_path
+      end
 
       class ExecutionPlan < ::ActiveRecord::Base
         self.table_name = 'dynflow_execution_plans'
