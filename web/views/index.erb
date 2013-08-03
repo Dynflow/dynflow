@@ -5,6 +5,7 @@
     <tr>
       <th>Id</th>
       <th>Initiated by</th>
+      <th>State</th>
       <th>Result</th>
       <th></th>
     </tr>
@@ -14,6 +15,7 @@
   <tr>
     <td><%= h(plan.id) %></td>
     <td><%= h(plan.root_plan_step.action_class.name) %></td>
+    <th><%= h(plan.state) %></th>
     <th><%= h(plan.result) %></th>
     <td><a href="<%= h(url("/#{plan.id}")) %>">Show</a></td>
   </tr>

@@ -127,5 +127,15 @@ module Dynflow
       erb :show
     end
 
+    post('/:id/resume') do |id|
+      @plan = world.persistence.load_execution_plan(id)
+      if @plan.state != :paused
+        redirect(url "/#{id}?notice=#{url_encode('The exeuction has to be paused to be able to resume')}")
+      else
+        world.execute(@plan.id)
+        redirect(url "/#{id}?notice=#{url_encode('The execution was resumed')}")
+      end
+    end
+
   end
 end

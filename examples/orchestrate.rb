@@ -96,9 +96,25 @@ module Orchestrate
     end
 
     def run
+      # for demonstration of resuming after error
+      if Orchestrate.should_fail?
+        Orchestrate.should_pass!
+        raise "temporary unavailabe"
+      end
+
       sleep(rand(5))
     end
 
+  end
+
+
+  # for simulation of the execution failing for the first time
+  def self.should_fail?
+    ! @should_pass
+  end
+
+  def self.should_pass!
+    @should_pass = true
   end
 
 end
