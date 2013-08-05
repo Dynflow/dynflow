@@ -1,3 +1,5 @@
+require 'uuidtools'
+
 module Dynflow
   class ExecutionPlan < Serializable
     include Algebrick::TypeCheck
@@ -11,9 +13,8 @@ module Dynflow
     STATES = [:pending, :running, :paused, :stopped]
 
     # all params with default values are part of *private* api
-    # TODO replace id with uuid?
     def initialize(world,
-                   id             = rand(1e10).to_s(36),
+                   id             = UUIDTools::UUID.random_create.to_s,
                    state          = :pending,
                    root_plan_step = nil,
                    run_flow       = Flows::Concurrence.new([]),
