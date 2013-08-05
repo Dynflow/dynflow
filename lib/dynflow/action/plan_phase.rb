@@ -27,7 +27,7 @@ module Dynflow
           # we ancapsulate the flow for this action into a concurrence and
           # add the subscribed flows to it as well.
           trigger_flow = execution_plan.current_run_flow.sub_flows.pop
-          execution_plan.switch_flow(Flows::Concurrence.new([trigger_flow])) do
+          execution_plan.switch_flow(Flows::Concurrence.new([trigger_flow].compact)) do
             subscribed_actions.each do |action_class|
               new_plan_step = execution_plan.add_plan_step(action_class, self)
               new_plan_step.execute(execution_plan, self, *args)
