@@ -56,12 +56,16 @@ module Dynflow
           when Flows::Sequence
             raise 'empty Sequences are not supported' if flow.sub_flows.empty?
             before_last = flow.sub_flows[0..-2].inject(nil) do |req, subflow|
-              build_cursor subflow, nil, req
+              build_cursor(subflow, nil, req)
             end
             raise 'multiple requires is not supported' if requires
-            build_cursor flow.sub_flows.last, parent, before_last if flow.sub_flows.last
+            if flow.sub_flows.last
+              build_cursor(flow.sub_flows.last, parent, before_last)
+            end
           when Flows::Atom
-            Cursor.new(self, parent, requires, flow.step_id).tap { |c| @cursor_index[flow.step_id] = c }
+            Cursor.new(self, parent, requires, flow.step_id).tap do |c|
+              @cursor_index[flow.step_id] = c
+            end
           end
         end
       end
