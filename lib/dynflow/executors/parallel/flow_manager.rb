@@ -51,12 +51,12 @@ module Dynflow
           case flow
           when Flows::Concurrence
             concurrence = Cursor.new(self, parent, requires)
-            flow.sub_flows.map { |flow| build_cursor(flow, concurrence, nil) }
+            flow.sub_flows.map { |subflow| build_cursor(subflow, concurrence, nil) }
             concurrence
           when Flows::Sequence
             raise 'empty Sequences are not supported' if flow.sub_flows.empty?
-            before_last = flow.sub_flows[0..-2].inject(nil) do |req, flow|
-              build_cursor flow, nil, req
+            before_last = flow.sub_flows[0..-2].inject(nil) do |req, subflow|
+              build_cursor subflow, nil, req
             end
             raise 'multiple requires is not supported' if requires
             build_cursor flow.sub_flows.last, parent, before_last if flow.sub_flows.last
