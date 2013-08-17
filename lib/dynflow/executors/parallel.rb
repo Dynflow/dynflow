@@ -11,10 +11,12 @@ module Dynflow
       require 'dynflow/executors/parallel/worker'
 
       # actor messages
-      Execute    = Algebrick::Product.new execution_plan_id: String, future: Future
-      Finalize   = Algebrick::Product.new sequential_amanger: SequentialManager, execution_plan_id: String
-      Step       = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, execution_plan_id: String
-      Work       = Algebrick::Variant.new Step, Finalize do
+      Execute     = Algebrick::Product.new execution_plan_id: String, future: Future
+      Resumption  = Algebrick::Product.new execution_plan_id: String, step_id: Fixnum, method: Symbol, args: Array
+      Finalize    = Algebrick::Product.new sequential_amanger: SequentialManager, execution_plan_id: String
+      Step        = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, execution_plan_id: String
+      ResumedStep = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, execution_plan_id: String, resumption: Resumption
+      Work        = Algebrick::Variant.new Step, ResumedStep, Finalize do
         def execution_plan_id
           self[:execution_plan_id]
         end
@@ -30,6 +32,10 @@ module Dynflow
       def execute(execution_plan_id)
         @core << Execute[execution_plan_id, future = Future.new]
         return future
+      end
+
+      def resume(execution_plan_id, step_id, method, *args)
+        @core << Resumption[execution_plan_id, step_id, method, args]
       end
     end
   end

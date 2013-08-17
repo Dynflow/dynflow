@@ -21,6 +21,7 @@ module Dynflow
         def what_is_next(flow_step)
           execution_plan.steps[flow_step.id] = flow_step
           execution_plan.save
+          return [] if flow_step.state == :suspended
 
           success = flow_step.state != :error
           return cursor_index[flow_step.id].what_is_next(flow_step, success)

@@ -7,6 +7,8 @@ module Dynflow
     require 'dynflow/action/format'
     extend Format
 
+    require 'dynflow/action/suspended'
+
     require 'dynflow/action/plan_phase'
     require 'dynflow/action/flow_phase'
     require 'dynflow/action/run_phase'
@@ -55,7 +57,7 @@ module Dynflow
       hash[:class].constantize.send(phase).new_from_hash(hash, *args)
     end
 
-    attr_reader :world, :state, :id, :plan_step_id, :run_step_id, :finalize_step_id
+    attr_reader :world, :state, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id
     attr_indifferent_access_hash :error
 
     def initialize(attributes, world)
@@ -63,13 +65,14 @@ module Dynflow
 
       is_kind_of! attributes, Hash
 
-      @world            = is_kind_of! world, World
-      self.state        = attributes[:state] || raise(ArgumentError, 'missing state')
-      @id               = attributes[:id] || raise(ArgumentError, 'missing id')
-      @plan_step_id     = attributes[:plan_step_id]
-      @run_step_id      = attributes[:run_step_id]
-      @finalize_step_id = attributes[:finalize_step_id]
-      self.error        = attributes[:error] || {}
+      @world             = is_kind_of! world, World
+      self.state         = attributes[:state] || raise(ArgumentError, 'missing state')
+      @execution_plan_id = attributes[:execution_plan_id] || raise(ArgumentError, 'missing execution_plan_id')
+      @id                = attributes[:id] || raise(ArgumentError, 'missing id')
+      @plan_step_id      = attributes[:plan_step_id]
+      @run_step_id       = attributes[:run_step_id]
+      @finalize_step_id  = attributes[:finalize_step_id]
+      self.error         = attributes[:error] || {}
     end
 
     def self.action_class
@@ -86,13 +89,14 @@ module Dynflow
     end
 
     def to_hash
-      { class:            action_class.name,
-        id:               id,
-        state:            state,
-        error:            error,
-        plan_step_id:     plan_step_id,
-        run_step_id:      run_step_id,
-        finalize_step_id: finalize_step_id }
+      { class:             action_class.name,
+        execution_plan_id: execution_plan_id,
+        id:                id,
+        state:             state,
+        error:             error,
+        plan_step_id:      plan_step_id,
+        run_step_id:       run_step_id,
+        finalize_step_id:  finalize_step_id }
     end
 
     STATES = [:pending, :success, :suspended, :skipped, :error]
@@ -144,7 +148,7 @@ module Dynflow
     def with_error_handling(&block)
       begin
         block.call
-        self.state = :success
+        self.state = :success unless self.state == :suspended
       rescue => error
         # TODO log to a logger instead
         #$stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"

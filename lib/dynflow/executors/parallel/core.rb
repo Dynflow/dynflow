@@ -18,6 +18,9 @@ module Dynflow
                     start_executing(manager)
                   end
                 end,
+                ~Resumption.to_m >>-> resumption do
+                  resume(resumption)
+                end,
                 PoolDone.(~any) --> step do
                   update_manager(step)
                 end)
@@ -33,6 +36,14 @@ module Dynflow
 
         def start_executing(manager)
           manager.start.each { |work| @pool << work }
+        end
+
+        def resume(resumption)
+          if execution_plan_manager = @execution_plan_managers[resumption[:execution_plan_id]]
+            @pool << execution_plan_manager.resume(resumption)
+          else
+            raise "Trying to resume #{resumption[:execution_plan_id]}-#{resumption[:step_id]} failed"
+          end
         end
 
         def update_manager(finished_work)

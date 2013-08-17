@@ -29,7 +29,9 @@ module Dynflow
           is_kind_of! work, Work
 
           match(work,
-                Step.(~any, any) --> step do
+                (Step.(~any, any) | ResumedStep.(~any, any, any)) --> step, step2 do
+                  # TODO: how to do alternatives in Algebrick?
+                  step ||= step2
                   raise unless @run_manager
                   raise if @run_manager.done?
 
@@ -46,6 +48,13 @@ module Dynflow
                   @execution_plan = @finalize_manager.execution_plan
                   finish
                 end)
+        end
+
+        # @return [ResumedStep]
+        def resume(resumption)
+          is_kind_of! resumption, Resumption
+          step = @execution_plan.steps[resumption[:step_id]]
+          ResumedStep[step, @execution_plan.id, resumption]
         end
 
         def done?
