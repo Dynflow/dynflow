@@ -288,106 +288,105 @@ module Dynflow
         end
       end
 
-      describe 'Parallel' do
-        let :world do
-          SimpleWorld.new :executor_class => Executors::Parallel
+      describe 'FlowManager' do
+        let(:manager) { Executors::Parallel::FlowManager.new execution_plan, execution_plan.run_flow }
+
+        def assert_next_steps(expected_next_step_ids, finished_step_id = nil, success = true)
+          if finished_step_id
+            step = manager.execution_plan.steps[finished_step_id]
+            next_steps = manager.cursor_index[step.id].what_is_next(step, success)
+          else
+            next_steps = manager.start
+          end
+          next_step_ids = next_steps.map(&:id)
+          assert_equal Set.new(expected_next_step_ids), Set.new(next_step_ids)
         end
 
-        describe 'FlowManager' do
-          let(:manager) { Executors::Parallel::FlowManager.new execution_plan, execution_plan.run_flow }
-          let(:root) { manager.instance_variable_get(:@cursor) }
-
-          describe 'what_is_next' do
-            def assert_to_run(execute_ids, expected)
-              # TODO: we changed the way to compute the next steps
-              #execute_ids.each { |id| manager.cursor_index[id].flow_step_done(:success) }
-              #assert root.next_step_ids == Set.new(expected), root.to_hash.pretty_inspect
-            end
-
-            it { assert_to_run [], [4, 13] }
-            it { assert_to_run [4], [7, 13] }
-            it { assert_to_run [4, 7], [9, 13] }
-            it { assert_to_run [4, 13], [7, 16] }
-            it { assert_to_run [4, 13, 7], [9, 16] }
-            it { assert_to_run [4, 13, 7, 9], [16] }
-            it { assert_to_run [4, 13, 16, 7, 9], [18] }
-            it { assert_to_run [4, 13, 16, 18, 7, 9], [] }
-          end
-
-          describe 'waht_is_next_with_errors' do
-            def assert_to_run(expected, execution, done = false)
-              # TODO: we changed the way to compute the next steps
-              #execution.each { |id, state| manager.cursor_index[id].flow_step_done(state ? :success : :error) }
-              #assert root.next_step_ids == Set.new(expected), root.to_hash.pretty_inspect
-              #root.done?.must_equal done
-            end
-
-            it { assert_to_run [4, 13], {} }
-            it { assert_to_run [7, 13], 4 => true }
-            it { assert_to_run [13], 4 => true, 7 => false }
-            it { assert_to_run [16], 4 => true, 7 => false, 13 => true }
-            it { assert_to_run [], { 4 => true, 7 => false, 13 => true, 16 => false }, true }
-            it { assert_to_run [], { 4 => true, 7 => false, 13 => false }, true }
-            it { assert_to_run [], { 4 => false, 13 => false }, true }
-          end
-
-        end
-
-        describe 'Pool::RoundRobin' do
-          let(:rr) { Dynflow::Executors::Parallel::Pool::RoundRobin.new }
-          it do
-            rr.next.must_be_nil
-            rr.next.must_be_nil
-            rr.must_be_empty
-            rr.add 1
-            rr.next.must_equal 1
-            rr.next.must_equal 1
-            rr.add 2
-            rr.next.must_equal 2
-            rr.next.must_equal 1
-            rr.next.must_equal 2
-            rr.delete 1
-            rr.next.must_equal 2
-            rr.next.must_equal 2
-            rr.delete 2
-            rr.next.must_be_nil
-            rr.must_be_empty
+        describe 'what_is_next' do
+          it 'returns next steps after required steps were finished' do
+            assert_next_steps([4, 13])
+            assert_next_steps([7], 4)
+            assert_next_steps([9], 7)
+            assert_next_steps([], 9)
+            assert_next_steps([16], 13)
+            assert_next_steps([18], 16)
+            assert_next_steps([], 18)
+            assert manager.done?
           end
         end
 
-        describe 'Pool::JobStorage' do
-          FakeStep = Struct.new(:execution_plan_id)
+        describe 'what_is_next with errors' do
 
-          let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
-          it do
-            storage.must_be_empty
-            storage.pop.must_be_nil
-            storage.pop.must_be_nil
+          it "doesn't return next steps if requirements failed" do
+            assert_next_steps([4, 13])
+            assert_next_steps([], 4, false)
+          end
 
-            storage.add s = FakeStep.new(1)
-            storage.pop.must_equal s
-            storage.must_be_empty
-            storage.pop.must_be_nil
 
-            storage.add s11 = FakeStep.new(1)
-            storage.add s12 = FakeStep.new(1)
-            storage.add s13 = FakeStep.new(1)
-            storage.add s21 = FakeStep.new(2)
-            storage.add s22 = FakeStep.new(2)
-            storage.add s31 = FakeStep.new(3)
-
-            storage.pop.must_equal s21
-            storage.pop.must_equal s31
-            storage.pop.must_equal s11
-            storage.pop.must_equal s22
-            storage.pop.must_equal s12
-            storage.pop.must_equal s13
-
-            storage.must_be_empty
-            storage.pop.must_be_nil
+          it "is not done while other steps can be finished" do
+            assert_next_steps([4, 13])
+            assert_next_steps([], 4, false)
+            assert !manager.done?
+            assert_next_steps([], 13, false)
+            assert manager.done?
           end
         end
 
+      end
+
+      describe 'Pool::RoundRobin' do
+        let(:rr) { Dynflow::Executors::Parallel::Pool::RoundRobin.new }
+        it do
+          rr.next.must_be_nil
+          rr.next.must_be_nil
+          rr.must_be_empty
+          rr.add 1
+          rr.next.must_equal 1
+          rr.next.must_equal 1
+          rr.add 2
+          rr.next.must_equal 2
+          rr.next.must_equal 1
+          rr.next.must_equal 2
+          rr.delete 1
+          rr.next.must_equal 2
+          rr.next.must_equal 2
+          rr.delete 2
+          rr.next.must_be_nil
+          rr.must_be_empty
+        end
+      end
+
+      describe 'Pool::JobStorage' do
+        FakeStep = Struct.new(:execution_plan_id)
+
+        let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
+        it do
+          storage.must_be_empty
+          storage.pop.must_be_nil
+          storage.pop.must_be_nil
+
+          storage.add s = FakeStep.new(1)
+          storage.pop.must_equal s
+          storage.must_be_empty
+          storage.pop.must_be_nil
+
+          storage.add s11 = FakeStep.new(1)
+          storage.add s12 = FakeStep.new(1)
+          storage.add s13 = FakeStep.new(1)
+          storage.add s21 = FakeStep.new(2)
+          storage.add s22 = FakeStep.new(2)
+          storage.add s31 = FakeStep.new(3)
+
+          storage.pop.must_equal s21
+          storage.pop.must_equal s31
+          storage.pop.must_equal s11
+          storage.pop.must_equal s22
+          storage.pop.must_equal s12
+          storage.pop.must_equal s13
+
+          storage.must_be_empty
+          storage.pop.must_be_nil
+        end
       end
     end
   end
