@@ -4,14 +4,10 @@ module Dynflow
 
       # TODO add and store start_time, end_time and run_time duration
       def execute
-        action = persistence.load_action(self)
-        action.input = dereference(action.input)
-        action.execute
-
-        self.state = action.state
-        persistence.save_action(self, action)
-
-        return self
+        open_action do |action|
+          action.input = dereference(action.input)
+          action.execute
+        end
       end
 
       def clone
@@ -19,6 +15,18 @@ module Dynflow
       end
 
       private
+
+      def open_action
+        return self if [:skipped, :success].include? self.state
+        action = persistence.load_action(self)
+
+        yield action
+
+        self.state = action.state
+        persistence.save_action(self, action)
+
+        return self
+      end
 
       def dereference(input)
         case input

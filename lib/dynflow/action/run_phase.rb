@@ -6,30 +6,24 @@ module Dynflow
     end
 
     def execute
-      #with_suspend do
       with_error_handling do
         run
       end
-      #end
     end
 
     # DSL for run
 
-    #def suspend
-    #  throw :suspend_action
-    #end
-    #
-    #private
-    #
-    #def with_suspend(&block)
-    #  suspended = true
-    #  catch :suspend_action do
-    #    block.call
-    #    suspended = false
-    #  end
-    #  if suspended
-    #    # TODO suspend
-    #  end
-    #end
+    def suspend
+      self.state = :suspended
+      return Action::Suspended.new(self)
+    end
+
+    def __resume__(method, *args)
+      with_error_handling do
+        self.state = :pending
+        self.send(method, *args)
+      end
+    end
+
   end
 end

@@ -1,3 +1,5 @@
+require 'uuidtools'
+
 module Dynflow
   class ExecutionPlan < Serializable
     include Algebrick::TypeCheck
@@ -11,9 +13,8 @@ module Dynflow
     STATES = [:pending, :running, :paused, :stopped]
 
     # all params with default values are part of *private* api
-    # TODO replace id with uuid?
     def initialize(world,
-                   id             = rand(1e10).to_s(36),
+                   id             = UUIDTools::UUID.random_create.to_s,
                    state          = :pending,
                    root_plan_step = nil,
                    run_flow       = Flows::Concurrence.new([]),
@@ -43,6 +44,16 @@ module Dynflow
       else
         raise "unknown state #{state}"
       end
+    end
+
+    def set_state(state)
+      # TODO: this should be run in transaction if we wanted to be 100%
+      # sure one plan won't be running twice.
+      if state == :running && self.state == :running
+        raise "The execution plan #{self.id} is already running"
+      end
+      self.state = state
+      self.save
     end
 
     def result
@@ -90,6 +101,37 @@ module Dynflow
       save
     end
 
+    def skip(step)
+      raise "plan step can't be skipped" if step.is_a? Steps::PlanStep
+      steps_to_skip = steps_to_skip(step).each { |s| s.state = :skipped }
+      self.save
+      return steps_to_skip
+    end
+
+    # All the steps that need to get skipped when wanting to skip the step
+    # includes the step itself, all steps dependent on it (even transitively)
+    # @return [Array<Steps::Abstract>]
+    def steps_to_skip(step)
+      dependent_steps = @steps.values.find_all do |s|
+        next if s.is_a? Steps::PlanStep
+        action = persistence.load_action(s)
+        action.required_step_ids.include?(step.id)
+      end
+
+      steps_to_skip = dependent_steps.map do |dependent_step|
+        steps_to_skip(dependent_step)
+      end.flatten
+
+      steps_to_skip << step
+
+      if step.is_a? Steps::RunStep
+        finalize_step_id = persistence.load_action(step).finalize_step_id
+        steps_to_skip << steps[finalize_step_id] if finalize_step_id
+      end
+
+      return steps_to_skip.uniq
+    end
+
     # @api private
     def current_run_flow
       @run_flow_stack.last
@@ -122,7 +164,7 @@ module Dynflow
 
     def add_run_step(action)
       add_step(Steps::RunStep, action).tap do |step|
-        @dependency_graph.add_dependencies(step, action.input)
+        @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end

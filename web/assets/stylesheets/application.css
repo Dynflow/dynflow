@@ -65,6 +65,11 @@ table.flow td.error {
     background-color: #FF9D9D;
 }
 
+table.flow td.skipped, table.flow td.skipped span.step-label {
+    background-color: #FCF8E3;
+    color: #C09853;
+}
+
 table.flow span.step-label {
     cursor: pointer;
 }

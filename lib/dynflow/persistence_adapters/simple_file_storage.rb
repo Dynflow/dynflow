@@ -15,7 +15,7 @@ module Dynflow
       end
 
       def find_execution_plans
-        Dir["#{plans_dir}/*"].map do |path|
+        Dir["#{plans_dir}/*"].sort_by {|filename| File.mtime(filename) }.reverse.map do |path|
           load(plans_dir, File.basename(path))
         end
       end

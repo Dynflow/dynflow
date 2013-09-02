@@ -7,17 +7,9 @@ module Dynflow
     def initialize(options = {})
       options = self.default_options.merge(options)
 
-      default_executor = lambda do
-        if [nil, Executors::PooledSequential].include? options[:executor_class]
-          Executors::PooledSequential.new(self)
-        elsif options[:executor_class] == Executors::Parallel
-          Executors::Parallel.new(self, options[:pool_size])
-        else
-          raise ArgumentError, "options[:executor_class] = #{options[:executor_class]}"
-        end
-      end
+      @executor            = options[:executor] || Executors::Parallel.new(self, options[:pool_size])
+      is_kind_of! @executor, Executors::Abstract
 
-      @executor            = is_kind_of! options[:executor] || default_executor.call, Executors::Abstract
       persistence_adapter  = is_kind_of! options[:persistence_adapter], PersistenceAdapters::Abstract
       @persistence         = Persistence.new(self, persistence_adapter)
       @transaction_adapter = is_kind_of! options[:transaction_adapter], TransactionAdapters::Abstract

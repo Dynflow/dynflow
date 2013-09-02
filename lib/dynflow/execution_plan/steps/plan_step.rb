@@ -21,7 +21,10 @@ module Dynflow
       # @return [Action]
       def execute(execution_plan, trigger, *args)
         is_kind_of! execution_plan, ExecutionPlan
-        attributes = { id: action_id, state: :pending, plan_step_id: self.id }
+        attributes = { execution_plan_id: execution_plan.id,
+                       id: action_id,
+                       state: :pending,
+                       plan_step_id: self.id }
         action     = action_class.plan_phase.new(attributes, execution_plan, trigger)
 
         action.execute(*args)

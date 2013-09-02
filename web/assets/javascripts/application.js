@@ -17,7 +17,7 @@
         $('.postlink').postlink();
 
         $('table.flow span.step-label').click(function (e) {
-            var stepData = $(this).next('div.action');
+            var stepData = $(this).siblings('div.action');
             stepData.slideToggle();
         });
     });

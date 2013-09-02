@@ -61,6 +61,7 @@ module Dynflow
       end
 
       def run
+        TestExecutionLog.run << self
         TestPause.pause if input[:text].include? 'get a break'
         raise 'Trolling detected' if input[:text].include? "trolling"
         self.output[:classification] = { assignee: 'John Doe', severity: 'medium' }
@@ -183,6 +184,106 @@ module Dynflow
 
       def run
       end
+    end
+
+    class Dummy < Action
+    end
+
+    class DummyWithFinalize < Action
+
+      def finalize
+        TestExecutionLog.finalize << self
+      end
+    end
+
+    class PollingServiceImpl < Dynflow::Executors::Parallel::MicroActor
+
+      Task = Algebrick::Product.new(action:           Action::Suspended,
+                                    external_task_id: String)
+      Tick = Algebrick::Atom.new
+
+      def initialize
+        super
+        @tasks = Set.new
+        @clocks = Thread.new { loop { tick } }
+        @pending_tick = false
+        @progress = Hash.new { |h, k| h[k] = 0 }
+      end
+
+      def wait_for_task(action, external_task_id)
+        # simulate polling for the state of the external task
+        self << Task[action,
+                     external_task_id]
+      end
+
+      private
+
+      def interval
+        0.1
+      end
+
+      def on_message(message)
+        match(message,
+              ~Task.to_m >>-> task do
+                @tasks << task
+              end,
+              Tick >>-> do
+                @pending_tick = false
+                poll
+              end)
+      end
+
+      def tick
+        unless @pending_tick
+          @pending_tick = true
+          self << Tick
+        end
+        sleep interval
+      end
+
+      def poll
+        @tasks.delete_if do |task|
+          key = "#{task[:action].execution_plan_id}-#{task[:action].step_id}"
+          @progress[key] += 10
+
+          progress = @progress[key]
+          if progress == 100
+            task[:action].resume(:done, progress: 100)
+            true
+          elsif progress % 10 == 0
+            task[:action].resume(:update_progress, progress: progress)
+            true
+          else
+            false
+          end
+        end
+      end
+
+    end
+
+    PollingService = PollingServiceImpl.new
+
+    class DummySuspended < Action
+
+      def run
+        PollingService.wait_for_task(suspend, input[:external_task_id])
+      end
+
+      # called when there is some update about the progress of the task
+      def update_progress(data)
+        self.output = { progress: data[:progress] }
+        puts "------------- update_progress"
+        pp output
+        PollingService.wait_for_task(suspend, input[:external_task_id])
+      end
+
+      # called when the task is finished outside
+      def done(data)
+        puts "------------- done"
+        self.output[:progress] = 100
+        pp output
+      end
+
     end
 
   end

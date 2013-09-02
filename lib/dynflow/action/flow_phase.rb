@@ -9,7 +9,7 @@ module Dynflow
     def initialize(attributes, world)
       super attributes, world
 
-      self.input  = attributes[:input]
+      self.input  = deserialize_references(attributes[:input])
       self.output = attributes[:output] || {}
     end
 
@@ -17,6 +17,23 @@ module Dynflow
       super.merge input:  input,
                   output: output,
                   error:  error
+    end
+
+    def deserialize_references(value)
+      case value
+      when Hash
+        if value[:class] == "Dynflow::ExecutionPlan::OutputReference"
+          ExecutionPlan::OutputReference.new_from_hash(value)
+        else
+          value.reduce(HashWithIndifferentAccess.new) do |h, (key, val)|
+            h.update(key => deserialize_references(val))
+          end
+        end
+      when Array
+        value.map { |val| deserialize_references(val) }
+      else
+        value
+      end
     end
 
     module ClassMethods

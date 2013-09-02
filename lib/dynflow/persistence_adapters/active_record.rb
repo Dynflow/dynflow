@@ -1,4 +1,3 @@
-require 'sqlite3'
 require 'active_record'
 require 'multi_json'
 
@@ -6,6 +5,14 @@ module Dynflow
   module PersistenceAdapters
     class ActiveRecord < Abstract
       include Algebrick::TypeCheck
+
+      def self.migrations_path
+        File.expand_path('../active_record/migrations', __FILE__)
+      end
+
+      def self.bootstrap_migrations(app)
+        app.config.paths['db/migrate'] << self.migrations_path
+      end
 
       class ExecutionPlan < ::ActiveRecord::Base
         self.table_name = 'dynflow_execution_plans'
@@ -16,7 +23,7 @@ module Dynflow
       end
 
       def find_execution_plans
-        ExecutionPlan.all.map do |record|
+        ExecutionPlan.order('created_at DESC').all.map do |record|
           HashWithIndifferentAccess.new(MultiJson.load(record.data))
         end
       end
@@ -30,11 +37,11 @@ module Dynflow
       end
 
       def load_action(execution_plan_id, action_id)
-        load Action, execution_plan_id + action_id
+        load Action, execution_plan_id.to_s + action_id.to_s
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save Action, execution_plan_id + action_id, value
+        save Action, execution_plan_id.to_s + action_id.to_s, value
       end
 
       private

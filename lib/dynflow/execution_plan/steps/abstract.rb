@@ -32,7 +32,7 @@ module Dynflow
         world.persistence
       end
 
-      STATES = [:pending, :success, :suspended, :skipped, :error]
+      STATES = Action::STATES
 
       def state=(state)
         raise "unknown state #{state}" unless STATES.include? state

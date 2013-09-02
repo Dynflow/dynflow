@@ -12,29 +12,46 @@ module Dynflow
         private
 
         def on_message(message)
-          match message,
+          match(message,
                 Execute.(~any, ~any) --> execution_plan_id, future do
-                  manager = track_execution_plan execution_plan_id, future
-                  start_executing manager
+                  if manager = track_execution_plan(execution_plan_id, future)
+                    start_executing(manager)
+                  end
+                end,
+                ~Resumption.to_m >>-> resumption do
+                  resume(resumption)
                 end,
                 PoolDone.(~any) --> step do
-                  update_manager step
-                end
+                  update_manager(step)
+                end)
         end
 
         def track_execution_plan(execution_plan_id, future)
-          execution_plan                              = @world.persistence.load_execution_plan(execution_plan_id)
-          @execution_plan_managers[execution_plan_id] = ExecutionPlanManager.new(execution_plan, future)
+          execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
+          manager        = ExecutionPlanManager.new(@world, execution_plan, future)
+          unless future.ready?
+            @execution_plan_managers[execution_plan_id] = manager
+          end
         end
 
         def start_executing(manager)
-          manager.start.each { |step| @pool << Work[step] }
+          manager.start.each { |work| @pool << work }
         end
 
-        def update_manager(finished_step)
-          manager = @execution_plan_managers[finished_step.execution_plan_id]
-          manager.what_is_next(finished_step).each { |new_step| @pool << Work[new_step] }
-          @execution_plan_managers.delete(finished_step.execution_plan_id) if manager.done?
+        def resume(resumption)
+          if execution_plan_manager = @execution_plan_managers[resumption[:execution_plan_id]]
+            @pool << execution_plan_manager.resume(resumption)
+          else
+            raise "Trying to resume #{resumption[:execution_plan_id]}-#{resumption[:step_id]} failed"
+          end
+        end
+
+        def update_manager(finished_work)
+          manager   = @execution_plan_managers[finished_work.execution_plan_id]
+          next_work = manager.what_is_next(finished_work)
+          next_work.all? { |w| is_kind_of! w, Work }
+          next_work.each { |new_work| @pool << new_work }
+          @execution_plan_managers.delete(finished_work.execution_plan_id) if manager.done?
         end
       end
     end

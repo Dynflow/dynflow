@@ -1,5 +1,14 @@
 <p id="notice"><%= h(@notice) %></p>
 
+
+<p>
+  <b>Status:</b>
+  <%= h(@plan.state) %>
+  <% if @plan.state == :paused %>
+    <a href="<%= url("/#{@plan.id}/resume") %>" class="postlink">Resume</a>
+  <% end %>
+</p>
+
 <p>
   <b>Result:</b>
   <%= h(@plan.result) %>
