@@ -3,8 +3,6 @@ module Dynflow
     class Parallel < Abstract
       class SequenceCursor
 
-        attr_reader :continue
-
         def initialize(flow_manager, sequence, parent_cursor = nil)
           @flow_manager = flow_manager
           @sequence = sequence
