@@ -47,8 +47,6 @@ module Dynflow
     end
 
     def set_state(state)
-      # TODO: this should be run in transaction if we wanted to be 100%
-      # sure one plan won't be running twice.
       if state == :running && self.state == :running
         raise "The execution plan #{self.id} is already running"
       end
@@ -110,6 +108,7 @@ module Dynflow
 
     # All the steps that need to get skipped when wanting to skip the step
     # includes the step itself, all steps dependent on it (even transitively)
+    # TODO maybe move to persistence to let adapter to do it effectively?
     # @return [Array<Steps::Abstract>]
     def steps_to_skip(step)
       dependent_steps = @steps.values.find_all do |s|

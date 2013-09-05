@@ -1,12 +1,16 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
+
+      # TODO implement graceful shutdown
+      # TODO add dynflow error handling to avoid stucking and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
           super()
           @world                   = is_kind_of! world, World
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
+          # TODO load and start persisted execution plans in running state on core start
         end
 
         private
@@ -43,6 +47,7 @@ module Dynflow
             @pool << execution_plan_manager.resume(resumption)
           else
             raise "Trying to resume #{resumption[:execution_plan_id]}-#{resumption[:step_id]} failed"
+            # TODO should be fixed when EP execution is resumed after restart
           end
         end
 

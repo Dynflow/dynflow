@@ -23,6 +23,7 @@ module Dynflow
       end
       PoolDone   = Algebrick::Product.new work: Work
       WorkerDone = Algebrick::Product.new work: Work, worker: Worker
+      # TODO this definition is ugly :/ change to DSL after algebrick update
 
       def initialize(world, pool_size = 10)
         super(world)
@@ -34,6 +35,7 @@ module Dynflow
         return future
       end
 
+      # TODO replace with update_progress
       def resume(execution_plan_id, step_id, method, *args)
         @core << Resumption[execution_plan_id, step_id, method, args]
       end
