@@ -3,26 +3,25 @@ module Dynflow
     class Parallel < Abstract
       class SequenceCursor
 
-        attr_reader :continue
-
         def initialize(flow_manager, sequence, parent_cursor = nil)
-          @flow_manager = flow_manager
-          @sequence = sequence
-          @parent_cursor = parent_cursor
-          @todo = []
-          @index = -1
-          @success = true
+          @flow_manager    = flow_manager
+          @sequence        = sequence
+          @parent_cursor   = parent_cursor
+          @todo            = []
+          @index           = -1 # starts before first element
+          @no_error_so_far = true
         end
 
-        # @param work - step or sequence cursor that was done
-        # @param success [true|false] - was the work finished successfully
+        # @param [ExecutionPlan::Steps::Abstract, SequenceCursor] work
+        #   step or sequence cursor that was done
+        # @param [true, false] success was the work finished successfully
         # @return [Array<Integer>] new step_ids that can be done next
         def what_is_next(work = nil, success = true)
           unless work.nil? || @todo.delete(work)
             raise "marking as done work that was not expected: #{work.inspect}"
           end
 
-          @success &&= success
+          @no_error_so_far &&= success
 
           if done_here?
             return next_steps
@@ -36,7 +35,7 @@ module Dynflow
         # everyting is done in the sequence or there was some failure
         # that prevents us from moving
         def done?
-          (!@success && done_here?) || @index == @sequence.size
+          (!@no_error_so_far && done_here?) || @index == @sequence.size
         end
 
         protected
@@ -54,7 +53,7 @@ module Dynflow
         end
 
         def move
-          @index += 1
+          @index    += 1
           next_flow = @sequence.sub_flows[@index]
           add_todo(next_flow)
         end
@@ -66,10 +65,10 @@ module Dynflow
         end
 
         def next_steps
-          move if @success
+          move if @no_error_so_far
           if done?
             if @parent_cursor
-              return @parent_cursor.what_is_next(self, @success)
+              return @parent_cursor.what_is_next(self, @no_error_so_far)
             else
               return []
             end

@@ -53,10 +53,7 @@ module Dynflow
       executor.execute execution_plan_id
     end
 
-    ## world.wakeup(step_id, :finished, task)
-    ## world.wakeup(step_id, :update_progress, tasks['progress'])
-    #def wake_up(step_id, method, *args)
-    #  @suspended_actions[step_id] # TODO tell executor to weak up the action with method(*args)
-    #end
+    # TODO add update_process, do not ship it in Action::Suspended
+
   end
 end

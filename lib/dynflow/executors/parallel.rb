@@ -11,18 +11,23 @@ module Dynflow
       require 'dynflow/executors/parallel/worker'
 
       # actor messages
-      Execute     = Algebrick::Product.new execution_plan_id: String, future: Future
-      Resumption  = Algebrick::Product.new execution_plan_id: String, step_id: Fixnum, method: Symbol, args: Array
-      Finalize    = Algebrick::Product.new sequential_amanger: SequentialManager, execution_plan_id: String
-      Step        = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, execution_plan_id: String
-      ResumedStep = Algebrick::Product.new step: ExecutionPlan::Steps::AbstractFlowStep, execution_plan_id: String, resumption: Resumption
-      Work        = Algebrick::Variant.new Step, ResumedStep, Finalize do
-        def execution_plan_id
-          self[:execution_plan_id]
-        end
-      end
-      PoolDone   = Algebrick::Product.new work: Work
-      WorkerDone = Algebrick::Product.new work: Work, worker: Worker
+      Execution   = Algebrick::Product.new execution_plan_id: String, future: Future
+      Resumption  = Algebrick::Product.new execution_plan_id: String, step_id: Fixnum,
+                                           method:            Symbol, args: Array
+      Finalize    = Algebrick::Product.new sequential_manager: SequentialManager,
+                                           execution_plan_id:  String
+      Step        = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
+                                           execution_plan_id: String
+      ResumedStep = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
+                                           execution_plan_id: String, resumption: Resumption
+      Work        = Algebrick::Variant.new Step, ResumedStep, Finalize
+      PoolDone    = Algebrick::Product.new work: Work
+      WorkerDone  = Algebrick::Product.new work: Work, worker: Worker
+
+      [Step, ResumedStep, Finalize].
+          each { |t| t.add_field_method_accessor :execution_plan_id }
+
+      # TODO this definition is ugly :/ change to DSL after algebrick update
 
       def initialize(world, pool_size = 10)
         super(world)
@@ -30,10 +35,11 @@ module Dynflow
       end
 
       def execute(execution_plan_id)
-        @core << Execute[execution_plan_id, future = Future.new]
+        @core << Execution[execution_plan_id, future = Future.new]
         return future
       end
 
+      # TODO replace with update_progress
       def resume(execution_plan_id, step_id, method, *args)
         @core << Resumption[execution_plan_id, step_id, method, args]
       end

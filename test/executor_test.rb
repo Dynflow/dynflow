@@ -103,8 +103,12 @@ module Dynflow
 
         before do
           TestExecutionLog.setup
-          result = world.execute(execution_plan.id).value
-          raise result if result.is_a? Exception
+        end
+
+        let :result do
+          world.execute(execution_plan.id).value.tap do |result|
+            raise result if result.is_a? Exception
+          end
         end
 
         after do
@@ -112,37 +116,47 @@ module Dynflow
         end
 
         let :persisted_plan do
+          result
           world.persistence.load_execution_plan(execution_plan.id)
         end
 
         describe "action with empty flows" do
 
           let :execution_plan do
-            world.plan(CodeWorkflowExample::Dummy, {:text => "dummy"}).tap do |plan|
+            world.plan(CodeWorkflowExample::Dummy, { :text => "dummy" }).tap do |plan|
               assert_equal plan.run_flow.size, 0
               assert_equal plan.finalize_flow.size, 0
+            end.tap do |w|
+              w
             end
           end
 
           it "doesn't cause problems" do
-            world.execute(execution_plan.id).value.result.must_equal :success
-            world.execute(execution_plan.id).value.state.must_equal :stopped
+            result.result.must_equal :success
+            result.state.must_equal :stopped
+          end
+
+          it 'will not run again' do
+            world.execute(execution_plan.id).value
+            error = world.execute(execution_plan.id).value
+            error.must_be_kind_of Exception
+            error.message.must_match /it's stopped/
           end
 
         end
 
-        describe "action with empty run flow but some finalize flow" do
+        describe 'action with empty run flow but some finalize flow' do
 
           let :execution_plan do
-            world.plan(CodeWorkflowExample::DummyWithFinalize, {:text => "dummy"}).tap do |plan|
+            world.plan(CodeWorkflowExample::DummyWithFinalize, { :text => "dummy" }).tap do |plan|
               assert_equal plan.run_flow.size, 0
               assert_equal plan.finalize_flow.size, 1
             end
           end
 
           it "doesn't cause problems" do
-            world.execute(execution_plan.id).value.result.must_equal :success
-            world.execute(execution_plan.id).value.state.must_equal :stopped
+            result.result.must_equal :success
+            result.state.must_equal :stopped
           end
 
         end
@@ -179,9 +193,9 @@ module Dynflow
 
           it "runs all the steps in the finalize flow" do
             assert_finalized(Dynflow::CodeWorkflowExample::IncomingIssues,
-                             {"issues"=>[{"author"=>"Peter Smith", "text"=>"Failing test"}, {"author"=>"John Doe", "text"=>"Internal server error"}]})
+                             { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" }, { "author" => "John Doe", "text" => "Internal server error" }] })
             assert_finalized(Dynflow::CodeWorkflowExample::Triage,
-                             {"author"=>"Peter Smith", "text"=>"Failing test"})
+                             { "author" => "Peter Smith", "text" => "Failing test" })
           end
         end
 
@@ -293,7 +307,7 @@ module Dynflow
 
         def assert_next_steps(expected_next_step_ids, finished_step_id = nil, success = true)
           if finished_step_id
-            step = manager.execution_plan.steps[finished_step_id]
+            step       = manager.execution_plan.steps[finished_step_id]
             next_steps = manager.cursor_index[step.id].what_is_next(step, success)
           else
             next_steps = manager.start
