@@ -125,10 +125,40 @@ module Dynflow
         @plan.steps[step_id]
       end
 
+      def paginate?
+        world.persistence.adapter.pagination?
+      end
+
+      def paginated_url(delta)
+        h(url("?" + Rack::Utils.build_query(params.merge('page' => [0, page + delta].max))))
+      end
+
+      def pagination_options
+        if paginate?
+          { page: page, per_page: per_page }
+        else
+          if params[:page] || params[:per_page]
+            halt 400, "The persistence doesn't support pagination"
+          end
+          return {}
+        end
+      end
+
+      def page
+        (params[:page] || 0).to_i
+      end
+
+      def per_page
+        (params[:per_page] || 10).to_i
+      end
+
     end
 
     get('/') do
-      @plans = world.persistence.find_execution_plans
+      options = {}
+      options.merge!(pagination_options)
+
+      @plans = world.persistence.find_execution_plans(options)
       erb :index
     end
 

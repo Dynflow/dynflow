@@ -6,13 +6,29 @@ module PersistenceAdapterTest
     raise NotImplementedError
   end
 
+  def prepare_plans
+    [{ id: 'plan1' }, { id: 'plan2' }].tap do |plans|
+      plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
+    end
+  end
+
   def test_load_execution_plans
-    plans = [{ id: 'plan1' }, { id: 'plan2' }]
-    plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
+    plans = prepare_plans
     loaded_plans = storage.find_execution_plans
     loaded_plans.size.must_equal 2
     loaded_plans.must_include plans[0].with_indifferent_access
     loaded_plans.must_include plans[1].with_indifferent_access
+  end
+
+  def test_pagination
+    prepare_plans
+    if storage.pagination?
+      loaded_plans = storage.find_execution_plans(page: 0, per_page: 1)
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
+
+      loaded_plans = storage.find_execution_plans(page: 1, per_page: 1)
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
+    end
   end
 
   def test_save_execution_plan
@@ -40,6 +56,7 @@ module PersistenceAdapterTest
     storage.save_action('plan1', 1, nil)
     -> { storage.load_action('plan1', 1) }.must_raise KeyError
   end
+
 end
 
 class MemoryTest < MiniTest::Unit::TestCase

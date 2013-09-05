@@ -8,8 +8,14 @@ module Dynflow
         @actions         = {}
       end
 
-      def find_execution_plans
-        @execution_plans.values.map(&:with_indifferent_access)
+      def pagination?
+        true
+      end
+
+      def find_execution_plans(options = {})
+        values = @execution_plans.values
+        values = paginate(values, options[:page], options[:per_page])
+        values.map(&:with_indifferent_access)
       end
 
       def load_execution_plan(execution_plan_id)
@@ -36,6 +42,17 @@ module Dynflow
           is_kind_of! value, Hash
           @actions[[execution_plan_id, action_id]] = value
         end
+      end
+
+      private
+
+      def paginate(values, page, per_page)
+        return values unless page && per_page
+        start_index = page * per_page
+        end_index   = start_index + per_page
+        start_index = [0, [start_index, values.size].min].max
+        end_index   = [0, [end_index, values.size].min].max
+        values[start_index...end_index]
       end
     end
   end

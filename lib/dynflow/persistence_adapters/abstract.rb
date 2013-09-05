@@ -5,7 +5,11 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def find_execution_plans
+      def pagination?
+        false
+      end
+
+      def find_execution_plans(options = {})
         raise NotImplementedError
       end
 
