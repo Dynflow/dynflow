@@ -129,8 +129,12 @@ module Dynflow
         world.persistence.adapter.pagination?
       end
 
+      def updated_url(new_params)
+        url("?" + Rack::Utils.build_query(params.merge(new_params.stringify_keys)))
+      end
+
       def paginated_url(delta)
-        h(url("?" + Rack::Utils.build_query(params.merge('page' => [0, page + delta].max))))
+        h(updated_url(page: [0, page + delta].max))
       end
 
       def pagination_options
@@ -152,11 +156,48 @@ module Dynflow
         (params[:per_page] || 10).to_i
       end
 
+      def supported_ordering?(ord_attr)
+        world.persistence.adapter.ordering_by.any? do |attr|
+          attr.to_s == ord_attr.to_s
+        end
+      end
+
+      def ordering_options
+        return @ordering_options if @ordering_options
+
+        if params[:order_by]
+          unless supported_ordering?(params[:order_by])
+            halt 400, "Unsupported ordering"
+          end
+          @ordering_options = { order_by: params[:order_by],
+                                desc: (params[:desc] == 'true') }
+        elsif supported_ordering?('created_at')
+          @ordering_options = { order_by: 'created_at', desc: true }
+        else
+          @ordering_options = {}
+        end
+        return @ordering_options
+      end
+
+      def order_link(attr, label)
+        return h(label) unless supported_ordering?(attr)
+        new_ordering_options = { order_by: attr.to_s,
+                                 desc: false }
+        arrow = ""
+        if ordering_options[:order_by].to_s == attr.to_s
+          arrow = ordering_options[:desc] ? "&#9660;" : "&#9650;"
+          new_ordering_options[:desc] = !ordering_options[:desc]
+        end
+        url = updated_url(new_ordering_options)
+        return %{<a href="#{url}"> #{arrow} #{h(label)}</a>}
+      end
+
     end
 
     get('/') do
       options = {}
       options.merge!(pagination_options)
+      options.merge!(ordering_options)
 
       @plans = world.persistence.find_execution_plans(options)
       erb :index

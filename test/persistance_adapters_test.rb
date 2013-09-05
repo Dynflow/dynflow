@@ -7,7 +7,9 @@ module PersistenceAdapterTest
   end
 
   def prepare_plans
-    [{ id: 'plan1' }, { id: 'plan2' }].tap do |plans|
+    [{ id: 'plan1', state: 'paused' },
+     { id: 'plan2', state: 'stopped' },
+     { id: 'plan3', state: 'paused' }].tap do |plans|
       plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
     end
   end
@@ -15,7 +17,7 @@ module PersistenceAdapterTest
   def test_load_execution_plans
     plans = prepare_plans
     loaded_plans = storage.find_execution_plans
-    loaded_plans.size.must_equal 2
+    loaded_plans.size.must_equal 3
     loaded_plans.must_include plans[0].with_indifferent_access
     loaded_plans.must_include plans[1].with_indifferent_access
   end
@@ -28,6 +30,17 @@ module PersistenceAdapterTest
 
       loaded_plans = storage.find_execution_plans(page: 1, per_page: 1)
       loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
+    end
+  end
+
+  def test_ordering
+    prepare_plans
+    if storage.ordering_by.include?(:state)
+      loaded_plans = storage.find_execution_plans(order_by: 'state')
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3', 'plan2']
+
+      loaded_plans = storage.find_execution_plans(order_by: 'state', desc: true)
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan2', 'plan3', 'plan1']
     end
   end
 

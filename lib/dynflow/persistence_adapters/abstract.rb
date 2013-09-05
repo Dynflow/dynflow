@@ -9,6 +9,10 @@ module Dynflow
         false
       end
 
+      def ordering_by
+        []
+      end
+
       def find_execution_plans(options = {})
         raise NotImplementedError
       end

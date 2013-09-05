@@ -12,10 +12,15 @@ module Dynflow
         true
       end
 
+      def ordering_by
+        [:state]
+      end
+
       def find_execution_plans(options = {})
-        values = @execution_plans.values
+        values = @execution_plans.values.map(&:with_indifferent_access)
+        values = order(values, options[:order_by], options[:desc])
         values = paginate(values, options[:page], options[:per_page])
-        values.map(&:with_indifferent_access)
+        return values
       end
 
       def load_execution_plan(execution_plan_id)
@@ -53,6 +58,16 @@ module Dynflow
         start_index = [0, [start_index, values.size].min].max
         end_index   = [0, [end_index, values.size].min].max
         values[start_index...end_index]
+      end
+
+      def order(values, order_by, desc)
+        return values unless ordering_by.any? { |attr| attr.to_s == order_by.to_s }
+        values = values.sort_by { |value| value[order_by] }
+        if desc
+          return values.reverse
+        else
+          return values
+        end
       end
     end
   end
