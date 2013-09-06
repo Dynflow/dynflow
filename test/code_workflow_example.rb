@@ -204,9 +204,19 @@ module Dynflow
 
       def initialize
         super
-        @tasks    = Set.new
-        @clocks   = Thread.new { loop { tick } }
+        @tasks = Set.new
         @progress = Hash.new { |h, k| h[k] = 0 }
+
+        @start_ticker = Queue.new
+        @ticker       = Thread.new do
+          loop do
+            @start_ticker.pop
+            sleep interval
+            self << Tick
+          end
+        end
+
+        tick
       end
 
       def wait_for_task(action, external_task_id)
@@ -228,12 +238,12 @@ module Dynflow
               end,
               Tick >>-> do
                 poll
+                tick
               end)
       end
 
       def tick
-        self << Tick
-        sleep interval
+        @start_ticker << true
       end
 
       def poll
