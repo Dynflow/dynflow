@@ -34,7 +34,6 @@ module Dynflow
 
     # DSL for run
 
-    # example: suspend { |suspended_action| PollingService.wait_for_task(suspended_action, input[:external_task_id]) }
     def suspend
       throw SUSPENDING, SUSPENDING
     end

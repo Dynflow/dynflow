@@ -2,7 +2,6 @@ module Dynflow
   module ExecutionPlan::Steps
     class AbstractFlowStep < Abstract
 
-      # TODO add and store start_time, end_time and run_time duration
       def execute(*args)
         open_action do |action|
           action.input = dereference(action.input)

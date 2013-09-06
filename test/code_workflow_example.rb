@@ -262,8 +262,6 @@ module Dynflow
       # called when there is some update about the progress of the task
       def update_progress(done, progress)
         output.update progress: progress, done: done
-        puts '------------- update_progress'
-        pp output
       end
     end
 
