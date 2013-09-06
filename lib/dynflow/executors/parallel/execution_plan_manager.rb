@@ -77,9 +77,7 @@ module Dynflow
         def start_finalize
           unless execution_plan.finalize_flow.empty?
             raise 'finalize phase already started' if @finalize_manager
-            @finalize_manager = SequentialManager.new(@world, execution_plan.id)
-            # TODO do not let SequentialManager to create new instance of EP
-            @execution_plan   = @finalize_manager.execution_plan
+            @finalize_manager = SequentialManager.new(@world, execution_plan)
             [Finalize[@finalize_manager, execution_plan.id]]
           end
         end
