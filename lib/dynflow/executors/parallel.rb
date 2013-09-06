@@ -11,21 +11,27 @@ module Dynflow
       require 'dynflow/executors/parallel/worker'
 
       # actor messages
-      Execution   = Algebrick::Product.new execution_plan_id: String, future: Future
-      Resumption  = Algebrick::Product.new execution_plan_id: String, step_id: Fixnum,
-                                           method:            Symbol, args: Array
-      Finalize    = Algebrick::Product.new sequential_manager: SequentialManager,
-                                           execution_plan_id:  String
-      Step        = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
-                                           execution_plan_id: String
-      ResumedStep = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
-                                           execution_plan_id: String, resumption: Resumption
-      Work        = Algebrick::Variant.new Step, ResumedStep, Finalize
-      PoolDone    = Algebrick::Product.new work: Work
-      WorkerDone  = Algebrick::Product.new work: Work, worker: Worker
+      Boolean            = Algebrick::Variant.new TrueClass, FalseClass
+      Execution          = Algebrick::Product.new execution_plan_id: String,
+                                                  future:            Future
+      ProgressUpdate     = Algebrick::Product.new execution_plan_id: String,
+                                                  step_id:           Fixnum,
+                                                  done:              Boolean,
+                                                  args:              Array
+      Finalize           = Algebrick::Product.new sequential_manager: SequentialManager,
+                                                  execution_plan_id:  String
+      Step               = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
+                                                  execution_plan_id: String
+      ProgressUpdateStep = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
+                                                  execution_plan_id: String,
+                                                  resumption:        ProgressUpdate
+      Work               = Algebrick::Variant.new Step, ProgressUpdateStep, Finalize
+      PoolDone           = Algebrick::Product.new work: Work
+      WorkerDone         = Algebrick::Product.new work:   Work,
+                                                  worker: Worker
 
-      [Step, ResumedStep, Finalize].
-          each { |t| t.add_field_method_accessor :execution_plan_id }
+      [Execution, ProgressUpdate, Finalize, Step, ProgressUpdateStep, PoolDone, WorkerDone].
+          each &:add_all_field_method_accessors
 
       # TODO this definition is ugly :/ change to DSL after algebrick update
 
@@ -39,9 +45,9 @@ module Dynflow
         return future
       end
 
-      # TODO replace with update_progress
-      def resume(execution_plan_id, step_id, method, *args)
-        @core << Resumption[execution_plan_id, step_id, method, args]
+      def update_progress(suspended_action, done, *args)
+        @core << ProgressUpdate[
+            suspended_action.execution_plan_id, suspended_action.step_id, done, args]
       end
     end
   end

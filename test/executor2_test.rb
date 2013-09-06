@@ -43,8 +43,11 @@ module Dynflow
 
             before do
               TestExecutionLog.setup
-              result = world.execute(execution_plan.id).value
-              raise result if result.is_a? Exception
+            end
+
+            let :result do
+              world.execute(execution_plan.id).value.
+                  tap { |result| raise result if result.is_a? Exception }
             end
 
             after do
@@ -52,19 +55,19 @@ module Dynflow
             end
 
             let :persisted_plan do
+              result
               world.persistence.load_execution_plan(execution_plan.id)
             end
 
             describe "suspended action" do
 
               let :execution_plan do
-                world.plan(CodeWorkflowExample::DummySuspended, {:external_task_id => "123"})
+                world.plan(CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
               end
 
               it "doesn't cause problems" do
-                plan = world.execute(execution_plan.id).value
-                plan.result.must_equal :success
-                plan.state.must_equal :stopped
+                result.result.must_equal :success
+                result.state.must_equal :stopped
               end
 
             end

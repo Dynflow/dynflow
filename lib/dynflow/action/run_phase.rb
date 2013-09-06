@@ -5,32 +5,48 @@ module Dynflow
       base.send(:include, Action::FlowPhase)
     end
 
-    def execute
-      with_error_handling do
-        run
+    SUSPENDING = Object.new
+
+    def execute(done = nil, *args)
+      case state
+      when :suspended
+        self.state = :pending
+        with_error_handling do
+          update_progress done, *args
+        end
+        self.state = :suspended unless done
+
+      when :pending, :error
+        raise unless done.nil? && args.empty?
+        self.state = :pending
+        with_error_handling do
+          if catch(SUSPENDING) { run } == SUSPENDING
+            self.state       = :suspended
+            suspended_action = Action::Suspended.new(self)
+            setup_suspend suspended_action
+          end
+        end
+
+      else
+        raise "wrong state #{state}"
       end
     end
 
     # DSL for run
 
-    # TODO use throw/catch to unwind the stack, accept block
     # example: suspend { |suspended_action| PollingService.wait_for_task(suspended_action, input[:external_task_id]) }
     def suspend
-      self.state = :suspended
-      return Action::Suspended.new(self)
+      throw SUSPENDING, SUSPENDING
     end
 
-    # TODO unify under execute
-    # https://github.com/iNecas/dynflow/pull/27#discussion_r6149190
-    def __resume__(method, *args)
-      with_error_handling do
-        self.state = :pending
-        self.send(method, *args)
-      end
-    end
+    # TODO call suspend_setup after restart
+    # TODO how to handle after error
+    # override
+    # def suspend_setup(suspended_action)
+    # end
 
-    # TODO update_progress(done, *args)
-    # same api on world
-    # replaces #resume
+    # override
+    # def progress_update(done, *args)
+    # end
   end
 end

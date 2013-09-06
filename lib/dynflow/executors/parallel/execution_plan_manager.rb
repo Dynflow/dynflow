@@ -29,7 +29,7 @@ module Dynflow
 
           # TODO use case instead?
           match(work,
-                (Step.(~any, any) | ResumedStep.(~any, any, any)) --> step, step2 do
+                (Step.(~any, any) | ProgressUpdateStep.(~any, any, any)) --> step, step2 do
                   step ||= step2
                   raise unless @run_manager
                   raise if @run_manager.done?
@@ -48,11 +48,11 @@ module Dynflow
                 end)
         end
 
-        # @return [ResumedStep]
-        def resume(resumption)
-          is_kind_of! resumption, Resumption
-          step = @execution_plan.steps[resumption[:step_id]]
-          ResumedStep[step, @execution_plan.id, resumption]
+        # @return [ProgressUpdateStep]
+        def update_progress(progress_update)
+          is_kind_of! progress_update, ProgressUpdate
+          step = @execution_plan.steps[progress_update.step_id]
+          ProgressUpdateStep[step, @execution_plan.id, progress_update]
         end
 
         def done?

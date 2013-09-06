@@ -3,10 +3,10 @@ module Dynflow
     class AbstractFlowStep < Abstract
 
       # TODO add and store start_time, end_time and run_time duration
-      def execute
+      def execute(*args)
         open_action do |action|
           action.input = dereference(action.input)
-          action.execute
+          action.execute(*args)
         end
       end
 

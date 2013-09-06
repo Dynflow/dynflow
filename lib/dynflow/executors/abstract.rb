@@ -10,6 +10,10 @@ module Dynflow
       def execute(execution_plan_id)
         raise NotImplementedError
       end
+
+      def update_progress(suspended_action, done, *args)
+        raise NotImplementedError
+      end
     end
   end
 end
