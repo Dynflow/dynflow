@@ -24,7 +24,7 @@ module Dynflow
 
         subscribed_actions = world.subscribed_actions(self.action_class)
         if subscribed_actions.any?
-          # we ancapsulate the flow for this action into a concurrence and
+          # we encapsulate the flow for this action into a concurrence and
           # add the subscribed flows to it as well.
           trigger_flow = execution_plan.current_run_flow.sub_flows.pop
           execution_plan.switch_flow(Flows::Concurrence.new([trigger_flow].compact)) do

@@ -4,13 +4,13 @@ module Dynflow
     attr_reader :execution_plan_id, :step_id
 
     def initialize(action)
-      @world = action.world
+      @world             = action.world
       @execution_plan_id = action.execution_plan_id
-      @step_id = action.run_step_id
+      @step_id           = action.run_step_id
     end
 
-    def resume(method, *args)
-      @world.executor.resume(@execution_plan_id, @step_id, method, *args)
+    def update_progress(done, *args)
+      @world.update_progress(self, done, *args)
     end
 
   end

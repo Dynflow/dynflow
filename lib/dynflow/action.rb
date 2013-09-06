@@ -146,9 +146,10 @@ module Dynflow
     private
 
     def with_error_handling(&block)
+      raise "wrong state #{self.state}" unless self.state == :pending
+
       begin
         block.call
-        self.state = :success unless self.state == :suspended
       rescue => error
         # TODO log to a logger instead
         #$stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
@@ -156,6 +157,14 @@ module Dynflow
         self.error = { exception: error.class.name,
                        message:   error.message,
                        backtrace: error.backtrace }
+      end
+
+      case self.state
+      when :pending
+        self.state = :success
+      when :suspended, :error
+      else
+        raise "wrong state #{self.state}"
       end
     end
 

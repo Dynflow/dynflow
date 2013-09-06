@@ -204,10 +204,17 @@ module Dynflow
 
       def initialize
         super
-        @tasks = Set.new
-        @clocks = Thread.new { loop { tick } }
-        @pending_tick = false
+        @tasks    = Set.new
         @progress = Hash.new { |h, k| h[k] = 0 }
+
+        @start_ticker = Queue.new
+        @ticker       = Thread.new do
+          loop do
+            sleep interval
+            self << Tick
+            @start_ticker.pop
+          end
+        end
       end
 
       def wait_for_task(action, external_task_id)
@@ -224,41 +231,29 @@ module Dynflow
 
       def on_message(message)
         match(message,
-              ~Task.to_m >>-> task do
+              ~Task >>-> task do
                 @tasks << task
               end,
               Tick >>-> do
-                @pending_tick = false
                 poll
               end)
       end
 
       def tick
-        unless @pending_tick
-          @pending_tick = true
-          self << Tick
-        end
-        sleep interval
+        @start_ticker << true
       end
 
       def poll
         @tasks.delete_if do |task|
-          key = "#{task[:action].execution_plan_id}-#{task[:action].step_id}"
-          @progress[key] += 10
-
-          progress = @progress[key]
-          if progress == 100
-            task[:action].resume(:done, progress: 100)
-            true
-          elsif progress % 10 == 0
-            task[:action].resume(:update_progress, progress: progress)
-            true
-          else
-            false
-          end
+          key      = [task[:action].execution_plan_id, task[:action].step_id]
+          progress = @progress[key] += 10
+          done     = progress >= 100
+          task[:action].update_progress(done, progress)
+          done
         end
+      ensure
+        tick
       end
-
     end
 
     PollingService = PollingServiceImpl.new
@@ -266,24 +261,17 @@ module Dynflow
     class DummySuspended < Action
 
       def run
-        PollingService.wait_for_task(suspend, input[:external_task_id])
+        suspend
+      end
+
+      def setup_suspend(suspended_action)
+        PollingService.wait_for_task(suspended_action, input[:external_task_id])
       end
 
       # called when there is some update about the progress of the task
-      def update_progress(data)
-        self.output = { progress: data[:progress] }
-        puts "------------- update_progress"
-        pp output
-        PollingService.wait_for_task(suspend, input[:external_task_id])
+      def update_progress(done, progress)
+        output.update progress: progress, done: done
       end
-
-      # called when the task is finished outside
-      def done(data)
-        puts "------------- done"
-        self.output[:progress] = 100
-        pp output
-      end
-
     end
 
   end
