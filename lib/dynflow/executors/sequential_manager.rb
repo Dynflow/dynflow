@@ -4,9 +4,9 @@ module Dynflow
     class SequentialManager
       attr_reader :execution_plan, :world
 
-      def initialize(world, execution_plan_id)
+      def initialize(world, execution_plan)
         @world          = world
-        @execution_plan = world.persistence.load_execution_plan(execution_plan_id)
+        @execution_plan = execution_plan
         @done           = false
       end
 

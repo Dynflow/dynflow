@@ -1,6 +1,12 @@
 require 'dynflow/persistence_adapters'
 
 module Dynflow
+
+  # TODO add and store metadata for actions and execution_plan
+  # TODO filter/order by metadata
+  # TODO pagination
+  # e.g. start_time, end_time, run_time duration, statuses
+
   class Persistence
 
     attr_reader :adapter
