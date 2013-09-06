@@ -120,6 +120,19 @@ module Dynflow
           world.persistence.load_execution_plan(execution_plan.id)
         end
 
+        describe "suspended action" do
+
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
+          end
+
+          it "doesn't cause problems" do
+            result.result.must_equal :success
+            result.state.must_equal :stopped
+          end
+
+        end
+
         describe "action with empty flows" do
 
           let :execution_plan do
