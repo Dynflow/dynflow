@@ -44,6 +44,23 @@ module PersistenceAdapterTest
     end
   end
 
+  def test_filtering
+    prepare_plans
+    if storage.ordering_by.include?(:state)
+      loaded_plans = storage.find_execution_plans(filters: { state: ['paused'] })
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3']
+
+      loaded_plans = storage.find_execution_plans(filters: { state: ['stopped'] })
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
+
+      loaded_plans = storage.find_execution_plans(filters: { state: [] })
+      loaded_plans.map { |h| h[:id] }.must_equal []
+
+      loaded_plans = storage.find_execution_plans(filters: { state: ['stopped', 'paused'] })
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan2', 'plan3']
+    end
+  end
+
   def test_save_execution_plan
     plan = { id: 'plan1' }
     -> { storage.load_execution_plan('plan1') }.must_raise KeyError

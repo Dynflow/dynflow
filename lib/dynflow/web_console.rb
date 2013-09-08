@@ -192,10 +192,48 @@ module Dynflow
         return %{<a href="#{url}"> #{arrow} #{h(label)}</a>}
       end
 
+      def supported_filter?(filter_attr)
+        world.persistence.adapter.filtering_by.any? do |attr|
+          attr.to_s == filter_attr.to_s
+        end
+      end
+
+      def filtering_options
+        return @filtering_options if @filtering_options
+
+        if params[:filters]
+          params[:filters].map do |key, value|
+            unless supported_filter?(key)
+              halt 400, "Unsupported ordering"
+            end
+          end
+
+          filters = params[:filters]
+        elsif supported_filter?('state')
+          filters = { 'state' => ['pending', 'running', 'paused'] }
+        else
+          filters = {}
+        end
+        @filtering_options = { filters: filters }.with_indifferent_access
+        return @filtering_options
+      end
+
+      def filter_checkbox(field, values)
+        out = "<p>#{field}: %s</p>"
+        checkboxes = values.map do |value|
+          field_filter = filtering_options[:filters][field]
+          checked = field_filter && field_filter.include?(value)
+          %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{ "checked" if checked }/>#{value}}
+        end.join(' ')
+        out %= checkboxes
+        return out
+      end
+
     end
 
     get('/') do
-      options = {}
+      options = HashWithIndifferentAccess.new
+      options.merge!(filtering_options)
       options.merge!(pagination_options)
       options.merge!(ordering_options)
 

@@ -16,8 +16,12 @@ module Dynflow
         [:state]
       end
 
+      def filtering_by
+        [:state]
+      end
+
       def find_execution_plans(options = {})
-        values = @execution_plans.values.map(&:with_indifferent_access)
+        values = filter(options[:filters])
         values = order(values, options[:order_by], options[:desc])
         values = paginate(values, options[:page], options[:per_page])
         return values
@@ -50,6 +54,19 @@ module Dynflow
       end
 
       private
+
+      def filter(filters)
+        values = @execution_plans.values.map(&:with_indifferent_access)
+        return values unless filters
+
+        filters.each do |attr, attr_filters|
+          attr_filters = Array(attr_filters)
+          values = values.select do |value|
+            attr_filters.any? { |expected| expected.to_s == value[attr].to_s }
+          end
+        end
+        return values
+      end
 
       def paginate(values, page, per_page)
         return values unless page && per_page

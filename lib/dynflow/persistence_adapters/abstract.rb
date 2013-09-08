@@ -9,6 +9,10 @@ module Dynflow
         false
       end
 
+      def filtering_by
+        []
+      end
+
       def ordering_by
         []
       end
