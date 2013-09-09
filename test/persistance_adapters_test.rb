@@ -75,6 +75,9 @@ module PersistenceAdapterTest
   end
 
   def test_save_action
+    plan = { id: 'plan1' }
+    storage.save_execution_plan('plan1', plan)
+
     action = { id: 1 }
     -> { storage.load_action('plan1', 1) }.must_raise KeyError
 
@@ -85,6 +88,8 @@ module PersistenceAdapterTest
 
     storage.save_action('plan1', 1, nil)
     -> { storage.load_action('plan1', 1) }.must_raise KeyError
+
+    storage.save_execution_plan('plan1', nil)
   end
 
 end
@@ -94,6 +99,14 @@ class MemoryTest < MiniTest::Unit::TestCase
 
   def storage
     @storage ||= Dynflow::PersistenceAdapters::Memory.new
+  end
+end
+
+class SequelTest < MiniTest::Unit::TestCase
+  include PersistenceAdapterTest
+
+  def storage
+    @storage ||= Dynflow::PersistenceAdapters::Sequel.new 'sqlite:/'
   end
 end
 
