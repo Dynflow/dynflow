@@ -3,6 +3,7 @@ module Dynflow
 
     def self.included(base)
       base.send(:include, Action::FlowPhase)
+      base.send(:attr_reader, :output)
     end
 
     def execute

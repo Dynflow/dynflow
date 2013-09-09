@@ -2,7 +2,6 @@ require 'active_support/inflector'
 
 module Dynflow
 
-  # TODO ensure input set only in planning, out only in run, nothing is set in finalize
   class Action < Serializable
     include Algebrick::TypeCheck
 
@@ -46,11 +45,13 @@ module Dynflow
     def self.attr_indifferent_access_hash(*names)
       attr_reader(*names)
       names.each do |name|
-        define_method "#{name}=" do |v|
-          is_kind_of! v, Hash
-          instance_variable_set :"@#{name}", v.with_indifferent_access
-        end
+        define_method("#{name}=") { |v| indifferent_access_hash_variable_set name, v }
       end
+    end
+
+    def indifferent_access_hash_variable_set(name, value)
+      is_kind_of! value, Hash
+      instance_variable_set :"@#{name}", value.with_indifferent_access
     end
 
     def self.from_hash(hash, phase, *args)
