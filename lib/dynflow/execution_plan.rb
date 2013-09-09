@@ -10,6 +10,7 @@ module Dynflow
 
     attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow
 
+    # TODO ensure correct combination of state and result
     STATES = [:pending, :running, :paused, :stopped]
 
     # all params with default values are part of *private* api

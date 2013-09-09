@@ -11,6 +11,8 @@ module Dynflow
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
           # TODO load and start persisted execution plans in running state on core start
+          # TODO recalculate running EPs. They have calculated values form their steps, steps
+          #   and EP is saved in transaction, if it dies in the middle data are inconsistent
         end
 
         private

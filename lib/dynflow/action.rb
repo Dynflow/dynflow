@@ -1,6 +1,8 @@
 require 'active_support/inflector'
 
 module Dynflow
+
+  # TODO ensure input set only in planning, out only in run, nothing is set in finalize
   class Action < Serializable
     include Algebrick::TypeCheck
 
@@ -162,6 +164,7 @@ module Dynflow
       case self.state
       when :pending
         self.state = :success
+        # TODO clean-up error if present from previous failure
       when :suspended, :error
       else
         raise "wrong state #{self.state}"
