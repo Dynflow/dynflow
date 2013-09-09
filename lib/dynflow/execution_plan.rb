@@ -10,20 +10,23 @@ module Dynflow
 
     attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow
 
-    # TODO ensure correct combination of state and result
-    STATES = [:pending, :running, :paused, :stopped]
+    STATES            = [:pending, :running, :paused, :stopped]
+    STATE_TRANSITIONS = { pending: [:running],
+                          running: [:paused, :stopped],
+                          paused:  [:running],
+                          stopped: [] }
 
     # all params with default values are part of *private* api
     def initialize(world,
-                   id             = UUIDTools::UUID.random_create.to_s,
-                   state          = :pending,
-                   root_plan_step = nil,
-                   run_flow       = Flows::Concurrence.new([]),
-                   finalize_flow  = Flows::Sequence.new([]),
-                   steps          = {})
+        id = UUIDTools::UUID.random_create.to_s,
+        state = :pending,
+        root_plan_step = nil,
+        run_flow = Flows::Concurrence.new([]),
+        finalize_flow = Flows::Sequence.new([]),
+        steps = {})
 
-      @id    = is_kind_of! id, String
-      @world = is_kind_of! world, World
+      @id             = is_kind_of! id, String
+      @world          = is_kind_of! world, World
       self.state      = state
       @run_flow       = is_kind_of! run_flow, Flows::Abstract
       @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
@@ -37,19 +40,9 @@ module Dynflow
 
     end
 
-    def state=(state)
-      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-        @state = state.to_sym
-      elsif STATES.include? state
-        @state = state
-      else
-        raise "unknown state #{state}"
-      end
-    end
-
     def set_state(state)
-      if state == :running && self.state == :running
-        raise "The execution plan #{self.id} is already running"
+      unless STATE_TRANSITIONS[self.state].include?(state)
+        raise "invalid state transition #{self.state} >> #{state}"
       end
       self.state = state
       self.save
@@ -192,7 +185,7 @@ module Dynflow
     def self.new_from_hash(hash, world)
       check_class_matching hash
       execution_plan_id = hash[:id]
-      steps = steps_from_hash(hash[:steps], execution_plan_id, world)
+      steps             = steps_from_hash(hash[:steps], execution_plan_id, world)
       self.new(world,
                execution_plan_id,
                hash[:state],
@@ -203,6 +196,16 @@ module Dynflow
     end
 
     private
+
+    def state=(state)
+      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
+        @state = state.to_sym
+      elsif STATES.include? state
+        @state = state
+      else
+        raise "unknown state #{state}"
+      end
+    end
 
     def persistence
       world.persistence
