@@ -5,7 +5,9 @@ module Dynflow
       def execute(*args)
         open_action do |action|
           action.indifferent_access_hash_variable_set :input, dereference(action.input)
-          action.execute(*args)
+          with_time_calculation do
+            action.execute(*args)
+          end
         end
       end
 

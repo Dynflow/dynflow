@@ -131,6 +131,18 @@ module Dynflow
             result.state.must_equal :stopped
           end
 
+          it 'does set times' do
+            plan_step = result.steps[1]
+            plan_step.started_at.wont_be_nil
+            plan_step.ended_at.wont_be_nil
+            plan_step.execution_time.must_equal plan_step.real_time
+
+            run_step = result.steps[2]
+            run_step.started_at.wont_be_nil
+            run_step.ended_at.wont_be_nil
+            run_step.execution_time.must_be :<, run_step.real_time
+          end
+
         end
 
         describe "action with empty flows" do
