@@ -21,3 +21,6 @@ module Dynflow
   require 'dynflow/simple_world'
 
 end
+
+
+# FIND a state-machine gem? for state transitions in Step and EP

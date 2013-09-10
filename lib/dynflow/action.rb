@@ -102,6 +102,8 @@ module Dynflow
         finalize_step_id:  finalize_step_id }
     end
 
+    # TODO add :running state to be able to detect it dieing in the middle of execution
+    # TODO add STATE_TRANSITIONS an check it
     STATES = [:pending, :success, :suspended, :skipped, :error]
 
     # @api private

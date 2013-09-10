@@ -2,7 +2,9 @@ module Dynflow
   module Executors
     class Parallel < Abstract
 
-      # TODO implement graceful shutdown
+      # TODO implement shutdown
+      #   - soft: wait for all EPs to finish
+      #   - hard: wait only for steps
       # TODO add dynflow error handling to avoid stucking and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
@@ -10,9 +12,10 @@ module Dynflow
           @world                   = is_kind_of! world, World
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
-          # TODO load and start persisted execution plans in running state on core start
-          # TODO recalculate running EPs. They have calculated values form their steps, steps
-          #   and EP is saved in transaction, if it dies in the middle data are inconsistent
+          # TODO after restart procedure:
+          #   - TODO recalculate incrementally all running-EPs meta data
+          #   - TODO set all running EPs as paused for admin to resume manually
+          #   - TODO detect steps stuck in running phase
         end
 
         private
