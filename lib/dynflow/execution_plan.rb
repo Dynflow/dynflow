@@ -8,7 +8,8 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow
+    attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow,
+                :started_at, :ended_at, :execution_time, :real_time
 
     STATES            = [:pending, :running, :paused, :stopped]
     STATE_TRANSITIONS = { pending: [:running],
@@ -23,7 +24,11 @@ module Dynflow
         root_plan_step = nil,
         run_flow = Flows::Concurrence.new([]),
         finalize_flow = Flows::Sequence.new([]),
-        steps = {})
+        steps = {},
+        started_at = nil,
+        ended_at = nil,
+        execution_time = 0.0,
+        real_time = 0.0)
 
       @id             = is_kind_of! id, String
       @world          = is_kind_of! world, World
@@ -31,21 +36,36 @@ module Dynflow
       @run_flow       = is_kind_of! run_flow, Flows::Abstract
       @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
       @root_plan_step = root_plan_step
+      @started_at     = is_kind_of! started_at, Time, NilClass
+      @ended_at       = is_kind_of! ended_at, Time, NilClass
+      @execution_time = is_kind_of! execution_time, Float
+      @real_time      = is_kind_of! real_time, Float
 
       steps.all? do |k, v|
         is_kind_of! k, Integer
         is_kind_of! v, Steps::Abstract
       end
       @steps = steps
-
     end
 
     def set_state(state)
       unless STATE_TRANSITIONS[self.state].include?(state)
         raise "invalid state transition #{self.state} >> #{state}"
       end
+      case state
+      when :running
+        @started_at ||= Time.now
+      when :stopped
+        @ended_at  = Time.now
+        @real_time = @ended_at - @started_at
+      end
       self.state = state
       self.save
+    end
+
+    def update_meta_data(execution_time)
+      # TODO cleanup ? this method is called allover the place
+      @execution_time += execution_time
     end
 
     def result
@@ -175,7 +195,11 @@ module Dynflow
         root_plan_step_id: root_plan_step && root_plan_step.id,
         run_flow:          run_flow.to_hash,
         finalize_flow:     finalize_flow.to_hash,
-        steps:             steps.inject({}) { |h, (id, step)| h.update(id => step.to_hash) } }
+        steps:             steps.inject({}) { |h, (id, step)| h.update(id => step.to_hash) },
+        started_at:        started_at.to_s,
+        ended_at:          ended_at.to_s,
+        execution_time:    execution_time,
+        real_time:         real_time }
     end
 
     def save
@@ -192,7 +216,11 @@ module Dynflow
                steps[hash[:root_plan_step_id]],
                Flows::Abstract.from_hash(hash[:run_flow]),
                Flows::Abstract.from_hash(hash[:finalize_flow]),
-               steps)
+               steps,
+               (hash[:started_at].to_time rescue nil),
+               (hash[:ended_at].to_time rescue nil),
+               hash[:execution_time],
+               hash[:real_time])
     end
 
     private

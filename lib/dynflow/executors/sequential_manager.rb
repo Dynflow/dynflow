@@ -59,6 +59,7 @@ module Dynflow
 
       def run_step(step)
         step.execute
+        execution_plan.update_meta_data step.execution_time
         execution_plan.save
         return step.state != :error
       end

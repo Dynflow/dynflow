@@ -29,8 +29,10 @@ module Dynflow
 
           # TODO use case instead?
           match(work,
-                (Step.(~any, any) | ProgressUpdateStep.(~any, any, any)) --> step, step2 do
+                (Step.(~any, any) |
+                    ProgressUpdateStep.(~any, any, ProgressUpdate.(any, any, ~any, any))) --> step, step2, done do
                   step ||= step2
+                  execution_plan.update_meta_data step.execution_time if done.nil? ? step.state != :suspended : done
                   raise unless @run_manager
                   raise if @run_manager.done?
 
