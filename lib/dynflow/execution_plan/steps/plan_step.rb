@@ -27,7 +27,7 @@ module Dynflow
       end
 
       def to_hash
-        super.merge(:children => children)
+        super.merge recursive_to_hash(:children => children)
       end
 
       # @return [Action]
@@ -58,8 +58,8 @@ module Dynflow
             hash[:action_class].constantize,
             hash[:action_id],
             world,
-            (hash[:started_at].to_time rescue nil),
-            (hash[:ended_at].to_time rescue nil),
+            string_to_time(hash[:started_at]),
+            string_to_time(hash[:ended_at]),
             hash[:execution_time],
             hash[:real_time],
             hash[:children]

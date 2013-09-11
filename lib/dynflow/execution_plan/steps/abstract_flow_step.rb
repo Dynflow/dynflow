@@ -25,6 +25,7 @@ module Dynflow
 
         self.state = action.state
         persistence.save_action(self, action)
+        save
 
         return self
       end

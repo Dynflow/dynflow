@@ -6,10 +6,7 @@ module Dynflow
     describe ExecutionPlan do
 
       include PlanAssertions
-
-      let :world do
-        SimpleWorld.new
-      end
+      include WorldInstance
 
       let :issues_data do
         [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
@@ -68,7 +65,7 @@ module Dynflow
         describe 'for error in running phase' do
 
           before do
-            step_id = execution_plan.run_flow.all_step_ids[2]
+            step_id                             = execution_plan.run_flow.all_step_ids[2]
             execution_plan.steps[step_id].state = :error
           end
 
@@ -81,7 +78,7 @@ module Dynflow
         describe 'for pending step in running phase' do
 
           before do
-            step_id = execution_plan.run_flow.all_step_ids[2]
+            step_id                             = execution_plan.run_flow.all_step_ids[2]
             execution_plan.steps[step_id].state = :pending
           end
 

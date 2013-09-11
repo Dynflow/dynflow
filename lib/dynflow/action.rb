@@ -92,14 +92,14 @@ module Dynflow
     end
 
     def to_hash
-      { class:             action_class.name,
-        execution_plan_id: execution_plan_id,
-        id:                id,
-        state:             state,
-        error:             error,
-        plan_step_id:      plan_step_id,
-        run_step_id:       run_step_id,
-        finalize_step_id:  finalize_step_id }
+      recursive_to_hash class:             action_class.name,
+                        execution_plan_id: execution_plan_id,
+                        id:                id,
+                        state:             state,
+                        error:             error,
+                        plan_step_id:      plan_step_id,
+                        run_step_id:       run_step_id,
+                        finalize_step_id:  finalize_step_id
     end
 
     # TODO add :running state to be able to detect it dieing in the middle of execution
@@ -157,7 +157,7 @@ module Dynflow
         block.call
       rescue => error
         # TODO log to a logger instead
-        #$stderr.puts "ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+        $stderr.puts "ACTION ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         self.state = :error
         self.error = { exception: error.class.name,
                        message:   error.message,

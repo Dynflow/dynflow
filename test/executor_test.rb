@@ -6,6 +6,7 @@ module Dynflow
     describe "executor" do
 
       include PlanAssertions
+      include WorldInstance
 
       let :issues_data do
         [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
@@ -34,10 +35,6 @@ module Dynflow
 
       let :executor_class do
         Executors::Parallel
-      end
-
-      let :world do
-        SimpleWorld.new :executor_class => executor_class
       end
 
       describe "execution plan state" do

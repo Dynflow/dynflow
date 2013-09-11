@@ -86,6 +86,16 @@ class TestPause < Dynflow::Future
   end
 end
 
+module WorldInstance
+  def self.world
+    @world ||= Dynflow::SimpleWorld.new
+  end
+
+  def world
+    WorldInstance.world
+  end
+end
+
 module PlanAssertions
 
   def inspect_flow(execution_plan, flow)

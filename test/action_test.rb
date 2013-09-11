@@ -1,6 +1,7 @@
 require_relative 'test_helper'
 
 module Dynflow
+
   #class ActionTest < Action
   #
   #  output_format do
@@ -25,6 +26,8 @@ module Dynflow
 
 
   describe 'children' do
+    include WorldInstance
+
     smart_action_class   = Class.new(Dynflow::Action)
     smarter_action_class = Class.new(smart_action_class)
 
@@ -43,8 +46,6 @@ module Dynflow
       subscribed_action_class = Class.new(Dynflow::Action) do
         singleton_class.send(:define_method, :subscribe) { event_action_class }
       end
-
-      world = SimpleWorld.new
 
       it { subscribed_action_class.subscribe.must_equal event_action_class }
       it { world.subscribed_actions(event_action_class).must_include subscribed_action_class }

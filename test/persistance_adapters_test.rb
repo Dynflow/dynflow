@@ -94,14 +94,6 @@ module PersistenceAdapterTest
 
 end
 
-class MemoryTest < MiniTest::Unit::TestCase
-  include PersistenceAdapterTest
-
-  def storage
-    @storage ||= Dynflow::PersistenceAdapters::Memory.new
-  end
-end
-
 class SequelTest < MiniTest::Unit::TestCase
   include PersistenceAdapterTest
 
@@ -110,43 +102,51 @@ class SequelTest < MiniTest::Unit::TestCase
   end
 end
 
-class SimpleFileStorageTest < MiniTest::Unit::TestCase
-  include PersistenceAdapterTest
-
-  def storage_path
-    "#{File.dirname(__FILE__)}/simple_file_storage"
-  end
-
-  def setup
-    Dir.mkdir storage_path
-  end
-
-  def storage
-    @storage ||= begin
-      Dynflow::PersistenceAdapters::SimpleFileStorage.new storage_path
-    end
-  end
-
-  def teardown
-    FileUtils.rm_rf storage_path
-  end
-end
-
-require 'dynflow/persistence_adapters/active_record'
-
-class ActiveRecordTest < MiniTest::Unit::TestCase
-  include PersistenceAdapterTest
-
-  def setup
-    ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
-    ::ActiveRecord::Migrator.migrate Dynflow::PersistenceAdapters::ActiveRecord.migrations_path
-  end
-
-  def storage
-    @storage ||= begin
-      Dynflow::PersistenceAdapters::ActiveRecord.new
-    end
-  end
-end
+#class MemoryTest < MiniTest::Unit::TestCase
+#  include PersistenceAdapterTest
+#
+#  def storage
+#    @storage ||= Dynflow::PersistenceAdapters::Memory.new
+#  end
+#end
+#
+#class SimpleFileStorageTest < MiniTest::Unit::TestCase
+#  include PersistenceAdapterTest
+#
+#  def storage_path
+#    "#{File.dirname(__FILE__)}/simple_file_storage"
+#  end
+#
+#  def setup
+#    Dir.mkdir storage_path
+#  end
+#
+#  def storage
+#    @storage ||= begin
+#      Dynflow::PersistenceAdapters::SimpleFileStorage.new storage_path
+#    end
+#  end
+#
+#  def teardown
+#    FileUtils.rm_rf storage_path
+#  end
+#end
+#
+#require 'dynflow/persistence_adapters/active_record'
+#
+#class ActiveRecordTest < MiniTest::Unit::TestCase
+#  include PersistenceAdapterTest
+#
+#  def setup
+#    ActiveRecord::Base.establish_connection(adapter: 'sqlite3', database: ':memory:')
+#    ::ActiveRecord::Migrator.migrate Dynflow::PersistenceAdapters::ActiveRecord.migrations_path
+#  end
+#
+#  def storage
+#    @storage ||= begin
+#      Dynflow::PersistenceAdapters::ActiveRecord.new
+#    end
+#  end
+#end
 
 

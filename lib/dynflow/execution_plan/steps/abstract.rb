@@ -47,6 +47,11 @@ module Dynflow
         world.persistence
       end
 
+      # TODO this is called allover the place, it should be unified to be called automatically after each change
+      def save
+        persistence.save_step(self)
+      end
+
       STATES = Action::STATES
 
       def state=(state)
@@ -59,15 +64,15 @@ module Dynflow
       end
 
       def to_hash
-        { id:             id,
-          state:          state,
-          class:          self.class.to_s,
-          action_class:   action_class.to_s,
-          action_id:      action_id,
-          started_at:     started_at.to_s,
-          ended_at:       ended_at.to_s,
-          execution_time: execution_time,
-          real_time:      real_time }
+        recursive_to_hash id:             id,
+                          state:          state,
+                          class:          self.class.to_s,
+                          action_class:   action_class.to_s,
+                          action_id:      action_id,
+                          started_at:     (started_at.to_s if started_at),
+                          ended_at:       (ended_at.to_s if ended_at),
+                          execution_time: execution_time,
+                          real_time:      real_time
       end
 
       protected
@@ -80,8 +85,8 @@ module Dynflow
             hash[:action_class].constantize,
             hash[:action_id],
             world,
-            (hash[:started_at].to_time rescue nil),
-            (hash[:ended_at].to_time rescue nil),
+            string_to_time(hash[:started_at]),
+            string_to_time(hash[:ended_at]),
             hash[:execution_time],
             hash[:real_time]
       end

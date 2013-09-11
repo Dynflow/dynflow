@@ -11,7 +11,7 @@ module Dynflow
       end
 
       def to_hash
-        super.merge(:flows => flows.map(&:to_hash))
+        super.merge recursive_to_hash(:flows => flows)
       end
 
       def <<(v)

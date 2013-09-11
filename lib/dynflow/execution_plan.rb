@@ -95,7 +95,7 @@ module Dynflow
 
     def prepare(action_class)
       save
-      @root_plan_step = new_plan_step(generate_step_id, action_class, generate_action_id)
+      @root_plan_step = add_step(Steps::PlanStep, action_class, generate_action_id)
     end
 
     def plan(*args)
@@ -111,11 +111,15 @@ module Dynflow
         @run_flow = @run_flow.sub_flows.first
       end
       save
+      steps.values.each &:save
     end
 
     def skip(step)
       raise "plan step can't be skipped" if step.is_a? Steps::PlanStep
-      steps_to_skip = steps_to_skip(step).each { |s| s.state = :skipped }
+      steps_to_skip = steps_to_skip(step).each do |s|
+        s.state = :skipped
+        s.save
+      end
       self.save
       return steps_to_skip
     end
@@ -172,34 +176,34 @@ module Dynflow
     end
 
     def add_plan_step(action_class, planned_by)
-      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.plan_step_id)
+      add_step(Steps::PlanStep, action_class, generate_action_id, planned_by.plan_step_id)
     end
 
     def add_run_step(action)
-      add_step(Steps::RunStep, action).tap do |step|
+      add_step(Steps::RunStep, action.action_class, action.id).tap do |step|
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end
 
     def add_finalize_step(action)
-      add_step(Steps::FinalizeStep, action).tap do |step|
+      add_step(Steps::FinalizeStep, action.action_class, action.id).tap do |step|
         finalize_flow << Flows::Atom.new(step.id)
       end
     end
 
     def to_hash
-      { id:                self.id,
-        class:             self.class.to_s,
-        state:             self.state,
-        root_plan_step_id: root_plan_step && root_plan_step.id,
-        run_flow:          run_flow.to_hash,
-        finalize_flow:     finalize_flow.to_hash,
-        steps:             steps.inject({}) { |h, (id, step)| h.update(id => step.to_hash) },
-        started_at:        started_at.to_s,
-        ended_at:          ended_at.to_s,
-        execution_time:    execution_time,
-        real_time:         real_time }
+      recursive_to_hash id:                self.id,
+                        class:             self.class.to_s,
+                        state:             self.state,
+                        root_plan_step_id: root_plan_step && root_plan_step.id,
+                        run_flow:          run_flow,
+                        finalize_flow:     finalize_flow,
+                        steps:             steps.map { |id, _| id },
+                        started_at:        (started_at.to_s if started_at),
+                        ended_at:          (ended_at.to_s if ended_at),
+                        execution_time:    execution_time,
+                        real_time:         real_time
     end
 
     def save
@@ -209,6 +213,7 @@ module Dynflow
     def self.new_from_hash(hash, world)
       check_class_matching hash
       execution_plan_id = hash[:id]
+      # TODO do not load all steps with the EP, lazy load when needed
       steps             = steps_from_hash(hash[:steps], execution_plan_id, world)
       self.new(world,
                execution_plan_id,
@@ -217,8 +222,8 @@ module Dynflow
                Flows::Abstract.from_hash(hash[:run_flow]),
                Flows::Abstract.from_hash(hash[:finalize_flow]),
                steps,
-               (hash[:started_at].to_time rescue nil),
-               (hash[:ended_at].to_time rescue nil),
+               string_to_time(hash[:started_at]),
+               string_to_time(hash[:ended_at]),
                hash[:execution_time],
                hash[:real_time])
     end
@@ -239,27 +244,22 @@ module Dynflow
       world.persistence
     end
 
-    def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)
-      @steps[id] = step = Steps::PlanStep.new(self.id, id, :pending, action_class, action_id, world)
-      @steps[planned_by_step_id].children << step.id if planned_by_step_id
-      step
-    end
-
-    def add_step(step_class, action)
+    def add_step(step_class, action_class, action_id, planned_by_step_id = nil)
       step_class.new(self.id,
                      self.generate_step_id,
                      :pending,
-                     action.action_class,
-                     action.id,
+                     action_class,
+                     action_id,
                      world).tap do |new_step|
         @steps[new_step.id] = new_step
+        @steps[planned_by_step_id].children << new_step.id if planned_by_step_id
       end
     end
 
-    def self.steps_from_hash(hash, execution_plan_id, world)
-      hash.inject({}) do |h, (step_id, step_hash)|
-        step = Steps::Abstract.from_hash(step_hash, execution_plan_id, world)
-        h.update(step_id.to_i => step)
+    def self.steps_from_hash(step_ids, execution_plan_id, world)
+      step_ids.inject({}) do |hash, step_id|
+        step = world.persistence.load_step(execution_plan_id, step_id, world)
+        hash.update(step_id.to_i => step)
       end
     end
 

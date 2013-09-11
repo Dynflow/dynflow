@@ -44,5 +44,14 @@ module Dynflow
       adapter.save_execution_plan(execution_plan.id, execution_plan.to_hash)
     end
 
+    def load_step(execution_plan_id, step_id, world)
+      step_hash = adapter.load_step(execution_plan_id, step_id)
+      ExecutionPlan::Steps::Abstract.from_hash(step_hash, execution_plan_id, world)
+    end
+
+    def save_step(step)
+      adapter.save_step(step.execution_plan_id, step.id, step.to_hash)
+    end
+
   end
 end

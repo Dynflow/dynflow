@@ -16,8 +16,7 @@ module Dynflow
         migrate_db
       end
 
-      def find_execution_plans
-        # TODO order
+      def find_execution_plans(options = {})
         execution_plans_table.map do |record|
           HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
         end
@@ -31,12 +30,26 @@ module Dynflow
         save execution_plans_table, { uuid: execution_plan_id }, value
       end
 
+      def load_step(execution_plan_id, step_id)
+        load steps_table, execution_plan_uuid: execution_plan_id, id: step_id
+      end
+
+      def save_step(execution_plan_id, step_id, value)
+        save steps_table, { execution_plan_uuid: execution_plan_id, id: step_id }, value
+      end
+
       def load_action(execution_plan_id, action_id)
         load actions_table, execution_plan_uuid: execution_plan_id, id: action_id
       end
 
       def save_action(execution_plan_id, action_id, value)
         save actions_table, { execution_plan_uuid: execution_plan_id, id: action_id }, value
+      end
+
+      def to_hash
+        { execution_plans: execution_plans_table.all,
+          steps:           steps_table.all,
+          actions:         actions_table.all }
       end
 
       private
@@ -47,6 +60,10 @@ module Dynflow
 
       def actions_table
         db[:dynflow_actions]
+      end
+
+      def steps_table
+        db[:dynflow_steps]
       end
 
       def initialize_db(db_path)
@@ -67,7 +84,11 @@ module Dynflow
           record = existing_record || condition
           is_kind_of! value, Hash
           record[:data] = MultiJson.dump value
-          table.insert record
+          if existing_record
+            table.where(condition).update(record)
+          else
+            table.insert record
+          end
         else
           existing_record and table.where(condition).delete
         end

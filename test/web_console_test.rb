@@ -10,10 +10,7 @@ module Dynflow
   describe 'web console' do
 
     include Rack::Test::Methods
-
-    let :world do
-      SimpleWorld.new
-    end
+    include WorldInstance
 
     let :execution_plan_id do
       id, plan = world.trigger(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
