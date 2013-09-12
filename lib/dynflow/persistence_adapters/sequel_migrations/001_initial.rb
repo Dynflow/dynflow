@@ -11,7 +11,7 @@ Sequel.migration do
       column :started_at, Time
       column :ended_at, Time
       column :real_time, Float
-      column :process_time, Float
+      column :execution_time, Float
     end
 
     create_table(:dynflow_actions) do
@@ -40,7 +40,7 @@ Sequel.migration do
       column :started_at, Time
       column :ended_at, Time
       column :real_time, Float
-      column :process_time, Float
+      column :execution_time, Float
     end
   end
 

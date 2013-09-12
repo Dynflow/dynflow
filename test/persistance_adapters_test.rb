@@ -11,7 +11,8 @@ module PersistenceAdapterTest
                    { id: 'plan2', state: 'stopped' },
                    { id: 'plan3', state: 'paused' }]
     proto_plans.map do |h|
-      h.merge result: nil, started_at: nil, ended_at: nil, real_time: 0.0, execution_time: 0.0
+      h.merge result:    nil, started_at: (Time.now-20).to_s, ended_at: (Time.now-10).to_s,
+              real_time: 0.0, execution_time: 0.0
     end.tap do |plans|
       plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
     end
@@ -61,6 +62,9 @@ module PersistenceAdapterTest
 
       loaded_plans = storage.find_execution_plans(filters: { state: ['stopped', 'paused'] })
       loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan2', 'plan3']
+
+      loaded_plans = storage.find_execution_plans(filters: { 'state' => ['stopped', 'paused'] })
+      loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan2', 'plan3']
     end
   end
 
@@ -104,6 +108,18 @@ class SequelTest < MiniTest::Unit::TestCase
 
   def storage
     @storage ||= Dynflow::PersistenceAdapters::Sequel.new 'sqlite:/'
+  end
+
+  def test_stores_meta_data
+    plans = prepare_plans
+
+    plans.each do |original|
+      stored = storage.to_hash.fetch(:execution_plans).find { |ep| ep[:uuid] == original[:id] }
+      stored.each { |k, v| stored[k] = v.to_s if v.is_a? Time }
+      storage.class::META_DATA.fetch(:execution_plan).each do |name|
+        stored.fetch(name.to_sym).must_equal original.fetch(name.to_sym)
+      end
+    end
   end
 end
 

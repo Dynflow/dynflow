@@ -43,6 +43,8 @@ module Dynflow
       end
     end
 
+    # TODO use explicit format for time2str,
+    #   see https://github.com/iNecas/dynflow/pull/30#discussion_r6316719
     def self.string_to_time(string)
       return nil if string.nil?
       DateTime.parse(string).to_time

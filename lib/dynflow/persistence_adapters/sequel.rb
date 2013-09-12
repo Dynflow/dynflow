@@ -98,9 +98,11 @@ module Dynflow
 
         if value
           value         = value.with_indifferent_access
-          record        = (existing_record || condition).with_indifferent_access
+          record        = existing_record || condition
           record[:data] = MultiJson.dump is_kind_of!(value, Hash)
-          record.merge META_DATA.fetch(what).inject({}) { |h, k| h.update k => value.fetch(k) }
+          meta_data     = META_DATA.fetch(what).inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
+          record.merge! meta_data
+          record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
 
           if existing_record
             table.where(condition).update(record)
@@ -116,7 +118,7 @@ module Dynflow
 
       def load(what, condition)
         table = table(what)
-        if (record = table.first(condition))
+        if (record = table.first(condition.symbolize_keys))
           HashWithIndifferentAccess.new MultiJson.load(record[:data])
         else
           raise KeyError
@@ -150,7 +152,7 @@ module Dynflow
           raise ArgumentError, "unkown columns: #{unknown.inspect}"
         end
 
-        data_set.where filters
+        data_set.where filters.symbolize_keys
       end
     end
   end
