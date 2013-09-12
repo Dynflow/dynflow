@@ -2,6 +2,7 @@ module Dynflow
   module Executors
     class Parallel < Abstract
 
+      # TODO make sure there is only one core running (cross-process)
       # TODO implement shutdown
       #   - soft: wait for all EPs to finish
       #   - hard: wait only for steps

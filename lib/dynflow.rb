@@ -6,6 +6,7 @@ require 'active_support/core_ext/hash/indifferent_access'
 
 
 # TODO model locking in plan phase, releasing after run in finalize
+# TODO RemoteExecutor and Daemon process to pick the work up
 # TODO validate in/output, also validate unknown keys
 module Dynflow
 

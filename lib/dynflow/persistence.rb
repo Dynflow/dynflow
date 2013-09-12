@@ -2,11 +2,6 @@ require 'dynflow/persistence_adapters'
 
 module Dynflow
 
-  # TODO add and store metadata for actions and execution_plan
-  # TODO filter/order by metadata
-  # TODO pagination
-  # e.g. start_time, end_time, run_time duration, statuses
-
   class Persistence
 
     attr_reader :adapter
@@ -29,7 +24,6 @@ module Dynflow
     end
 
     def find_execution_plans(options)
-      # TODO: add filtering and pagination
       adapter.find_execution_plans(options).map do |execution_plan_hash|
         ExecutionPlan.new_from_hash(execution_plan_hash, @world)
       end
