@@ -6,6 +6,7 @@ module Dynflow
       require 'dynflow/executors/parallel/sequence_cursor'
       require 'dynflow/executors/parallel/flow_manager'
       require 'dynflow/executors/parallel/execution_plan_manager'
+      require 'dynflow/executors/parallel/sequential_manager'
       require 'dynflow/executors/parallel/core'
       require 'dynflow/executors/parallel/pool'
       require 'dynflow/executors/parallel/worker'

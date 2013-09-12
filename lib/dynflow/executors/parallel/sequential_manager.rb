@@ -1,7 +1,6 @@
 module Dynflow
   module Executors
-
-    class SequentialManager
+    class Parallel::SequentialManager
       attr_reader :execution_plan, :world
 
       def initialize(world, execution_plan)
@@ -59,6 +58,7 @@ module Dynflow
 
       def run_step(step)
         step.execute
+        execution_plan.update_meta_data step.execution_time
         execution_plan.save
         return step.state != :error
       end

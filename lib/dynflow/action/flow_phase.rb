@@ -3,20 +3,19 @@ module Dynflow
 
     def self.included(base)
       base.extend(ClassMethods)
-      base.attr_indifferent_access_hash :input, :output
+      base.send(:attr_reader, :input)
     end
 
     def initialize(attributes, world)
       super attributes, world
 
-      self.input  = deserialize_references(attributes[:input])
-      self.output = attributes[:output] || {}
+      indifferent_access_hash_variable_set :input, deserialize_references(attributes[:input])
+      indifferent_access_hash_variable_set :output, attributes[:output] || {}
     end
 
     def to_hash
-      super.merge input:  input,
-                  output: output,
-                  error:  error
+      super.merge recursive_to_hash(input:  input,
+                                    output: output)
     end
 
     def deserialize_references(value)

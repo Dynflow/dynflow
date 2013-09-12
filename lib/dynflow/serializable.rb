@@ -27,5 +27,37 @@ module Dynflow
     end
 
     private_class_method :check_class_matching, :check_class_key_present
+
+    private
+
+    def recursive_to_hash(value)
+      case value
+      when Numeric, String, Symbol, TrueClass, FalseClass, NilClass
+        value
+      when Array
+        value.map { |v| recursive_to_hash v }
+      when Hash
+        value.inject({}) { |h, (k, v)| h.update k => recursive_to_hash(v) }
+      else
+        value.to_hash
+      end
+    end
+
+    # TODO use explicit format for time2str,
+    #   see https://github.com/iNecas/dynflow/pull/30#discussion_r6316719
+    def self.string_to_time(string)
+      return nil if string.nil?
+      DateTime.parse(string).to_time
+    end
+
+    def self.hash_to_error(hash)
+      return nil if hash.nil?
+      hash[:exception].constantize.new(hash[:message]).tap do |e|
+        e.set_backtrace hash[:backtrace]
+      end
+    end
+
+    private_class_method :string_to_time, :hash_to_error
+
   end
 end

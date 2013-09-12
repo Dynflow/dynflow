@@ -38,7 +38,7 @@ module Dynflow
     end
 
     def to_hash
-      super.merge input: input
+      super.merge recursive_to_hash(input: input)
     end
 
     # DSL for plan method
