@@ -7,15 +7,18 @@ module PersistenceAdapterTest
   end
 
   def prepare_plans
-    [{ id: 'plan1', state: 'paused' },
-     { id: 'plan2', state: 'stopped' },
-     { id: 'plan3', state: 'paused' }].tap do |plans|
+    proto_plans = [{ id: 'plan1', state: 'paused' },
+                   { id: 'plan2', state: 'stopped' },
+                   { id: 'plan3', state: 'paused' }]
+    proto_plans.map do |h|
+      h.merge result: nil, started_at: nil, ended_at: nil, real_time: 0.0, execution_time: 0.0
+    end.tap do |plans|
       plans.each { |plan| storage.save_execution_plan(plan[:id], plan) }
     end
   end
 
   def test_load_execution_plans
-    plans = prepare_plans
+    plans        = prepare_plans
     loaded_plans = storage.find_execution_plans
     loaded_plans.size.must_equal 3
     loaded_plans.must_include plans[0].with_indifferent_access
@@ -62,20 +65,22 @@ module PersistenceAdapterTest
   end
 
   def test_save_execution_plan
-    plan = { id: 'plan1' }
+    plan = { id:        'plan1', state: :pending, result: nil, started_at: nil, ended_at: nil,
+             real_time: 0.0, execution_time: 0.0 }
     -> { storage.load_execution_plan('plan1') }.must_raise KeyError
 
     storage.save_execution_plan('plan1', plan)
     storage.load_execution_plan('plan1')[:id].must_equal 'plan1'
     storage.load_execution_plan('plan1')['id'].must_equal 'plan1'
-    storage.load_execution_plan('plan1').keys.size.must_equal 1
+    storage.load_execution_plan('plan1').keys.size.must_equal 7
 
     storage.save_execution_plan('plan1', nil)
     -> { storage.load_execution_plan('plan1') }.must_raise KeyError
   end
 
   def test_save_action
-    plan = { id: 'plan1' }
+    plan = { id:        'plan1', state: :pending, result: nil, started_at: nil, ended_at: nil,
+             real_time: 0.0, execution_time: 0.0 }
     storage.save_execution_plan('plan1', plan)
 
     action = { id: 1 }

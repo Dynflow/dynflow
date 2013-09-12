@@ -1,6 +1,8 @@
 require 'uuidtools'
 
 module Dynflow
+
+  # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
     include Algebrick::TypeCheck
 
@@ -196,6 +198,7 @@ module Dynflow
       recursive_to_hash id:                self.id,
                         class:             self.class.to_s,
                         state:             self.state,
+                        result:            result,
                         root_plan_step_id: root_plan_step && root_plan_step.id,
                         run_flow:          run_flow,
                         finalize_flow:     finalize_flow,

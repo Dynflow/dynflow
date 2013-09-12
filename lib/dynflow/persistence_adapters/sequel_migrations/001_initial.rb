@@ -5,6 +5,7 @@ Sequel.migration do
       index :uuid, :unique => true
 
       column :data, String, text: true
+
       column :state, String
       column :result, String
       column :started_at, Time
@@ -34,6 +35,7 @@ Sequel.migration do
       index [:action_id, :execution_plan_uuid], :unique => true
 
       column :data, String, text: true
+
       column :state, String
       column :started_at, Time
       column :ended_at, Time

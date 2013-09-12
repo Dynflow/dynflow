@@ -13,6 +13,12 @@ module Dynflow
         []
       end
 
+      # @option options [Integer] page index of the page (starting at 0)
+      # @option options [Integer] per_page the number of the items on page
+      # @option options [Symbol] order_by name of the column to use for ordering
+      # @option options [true, false] desc set to true if order should be descending
+      # @option options [Hash{ Symbol => Object,Array<object> }] filters hash represents
+      #   set of allowed values for a given key representing column
       def find_execution_plans(options = {})
         raise NotImplementedError
       end

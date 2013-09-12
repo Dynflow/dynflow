@@ -64,6 +64,7 @@ module Dynflow
       end
 
       def to_hash
+        # TODO store errors in steps instead of actions
         recursive_to_hash id:             id,
                           state:          state,
                           class:          self.class.to_s,
