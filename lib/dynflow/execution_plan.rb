@@ -1,6 +1,8 @@
 require 'uuidtools'
 
 module Dynflow
+
+  # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
     include Algebrick::TypeCheck
 
@@ -8,50 +10,64 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow
+    attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow,
+                :started_at, :ended_at, :execution_time, :real_time
 
-    STATES = [:pending, :running, :paused, :stopped]
+    STATES            = [:pending, :running, :paused, :stopped]
+    STATE_TRANSITIONS = { pending: [:running],
+                          running: [:paused, :stopped],
+                          paused:  [:running],
+                          stopped: [] }
 
     # all params with default values are part of *private* api
     def initialize(world,
-                   id             = UUIDTools::UUID.random_create.to_s,
-                   state          = :pending,
-                   root_plan_step = nil,
-                   run_flow       = Flows::Concurrence.new([]),
-                   finalize_flow  = Flows::Sequence.new([]),
-                   steps          = {})
+        id = UUIDTools::UUID.random_create.to_s,
+        state = :pending,
+        root_plan_step = nil,
+        run_flow = Flows::Concurrence.new([]),
+        finalize_flow = Flows::Sequence.new([]),
+        steps = {},
+        started_at = nil,
+        ended_at = nil,
+        execution_time = 0.0,
+        real_time = 0.0)
 
-      @id    = is_kind_of! id, String
-      @world = is_kind_of! world, World
+      @id             = is_kind_of! id, String
+      @world          = is_kind_of! world, World
       self.state      = state
       @run_flow       = is_kind_of! run_flow, Flows::Abstract
       @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
       @root_plan_step = root_plan_step
+      @started_at     = is_kind_of! started_at, Time, NilClass
+      @ended_at       = is_kind_of! ended_at, Time, NilClass
+      @execution_time = is_kind_of! execution_time, Float
+      @real_time      = is_kind_of! real_time, Float
 
       steps.all? do |k, v|
         is_kind_of! k, Integer
         is_kind_of! v, Steps::Abstract
       end
       @steps = steps
-
-    end
-
-    def state=(state)
-      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-        @state = state.to_sym
-      elsif STATES.include? state
-        @state = state
-      else
-        raise "unknown state #{state}"
-      end
     end
 
     def set_state(state)
-      if state == :running && self.state == :running
-        raise "The execution plan #{self.id} is already running"
+      unless STATE_TRANSITIONS[self.state].include?(state)
+        raise "invalid state transition #{self.state} >> #{state}"
+      end
+      case state
+      when :running
+        @started_at ||= Time.now
+      when :stopped
+        @ended_at  = Time.now
+        @real_time = @ended_at - @started_at
       end
       self.state = state
       self.save
+    end
+
+    def update_meta_data(execution_time)
+      # TODO cleanup ? this method is called allover the place
+      @execution_time += execution_time
     end
 
     def result
@@ -81,7 +97,7 @@ module Dynflow
 
     def prepare(action_class)
       save
-      @root_plan_step = new_plan_step(generate_step_id, action_class, generate_action_id)
+      @root_plan_step = add_step(Steps::PlanStep, action_class, generate_action_id)
     end
 
     def plan(*args)
@@ -97,11 +113,15 @@ module Dynflow
         @run_flow = @run_flow.sub_flows.first
       end
       save
+      steps.values.each &:save
     end
 
     def skip(step)
       raise "plan step can't be skipped" if step.is_a? Steps::PlanStep
-      steps_to_skip = steps_to_skip(step).each { |s| s.state = :skipped }
+      steps_to_skip = steps_to_skip(step).each do |s|
+        s.state = :skipped
+        s.save
+      end
       self.save
       return steps_to_skip
     end
@@ -158,30 +178,35 @@ module Dynflow
     end
 
     def add_plan_step(action_class, planned_by)
-      new_plan_step(generate_step_id, action_class, generate_action_id, planned_by.plan_step_id)
+      add_step(Steps::PlanStep, action_class, generate_action_id, planned_by.plan_step_id)
     end
 
     def add_run_step(action)
-      add_step(Steps::RunStep, action).tap do |step|
+      add_step(Steps::RunStep, action.action_class, action.id).tap do |step|
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end
 
     def add_finalize_step(action)
-      add_step(Steps::FinalizeStep, action).tap do |step|
+      add_step(Steps::FinalizeStep, action.action_class, action.id).tap do |step|
         finalize_flow << Flows::Atom.new(step.id)
       end
     end
 
     def to_hash
-      { id:                self.id,
-        class:             self.class.to_s,
-        state:             self.state,
-        root_plan_step_id: root_plan_step && root_plan_step.id,
-        run_flow:          run_flow.to_hash,
-        finalize_flow:     finalize_flow.to_hash,
-        steps:             steps.inject({}) { |h, (id, step)| h.update(id => step.to_hash) } }
+      recursive_to_hash id:                self.id,
+                        class:             self.class.to_s,
+                        state:             self.state,
+                        result:            result,
+                        root_plan_step_id: root_plan_step && root_plan_step.id,
+                        run_flow:          run_flow,
+                        finalize_flow:     finalize_flow,
+                        steps:             steps.map { |id, _| id },
+                        started_at:        (started_at.to_s if started_at),
+                        ended_at:          (ended_at.to_s if ended_at),
+                        execution_time:    execution_time,
+                        real_time:         real_time
     end
 
     def save
@@ -191,43 +216,54 @@ module Dynflow
     def self.new_from_hash(hash, world)
       check_class_matching hash
       execution_plan_id = hash[:id]
-      steps = steps_from_hash(hash[:steps], execution_plan_id, world)
+      # TODO do not load all steps with the EP, lazy load when needed
+      steps             = steps_from_hash(hash[:steps], execution_plan_id, world)
       self.new(world,
                execution_plan_id,
                hash[:state],
                steps[hash[:root_plan_step_id]],
                Flows::Abstract.from_hash(hash[:run_flow]),
                Flows::Abstract.from_hash(hash[:finalize_flow]),
-               steps)
+               steps,
+               string_to_time(hash[:started_at]),
+               string_to_time(hash[:ended_at]),
+               hash[:execution_time],
+               hash[:real_time])
     end
 
     private
+
+    def state=(state)
+      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
+        @state = state.to_sym
+      elsif STATES.include? state
+        @state = state
+      else
+        raise "unknown state #{state}"
+      end
+    end
 
     def persistence
       world.persistence
     end
 
-    def new_plan_step(id, action_class, action_id, planned_by_step_id = nil)
-      @steps[id] = step = Steps::PlanStep.new(self.id, id, :pending, action_class, action_id, world)
-      @steps[planned_by_step_id].children << step.id if planned_by_step_id
-      step
-    end
-
-    def add_step(step_class, action)
+    def add_step(step_class, action_class, action_id, planned_by_step_id = nil)
       step_class.new(self.id,
                      self.generate_step_id,
                      :pending,
-                     action.action_class,
-                     action.id,
+                     action_class,
+                     action_id,
+                     nil,
                      world).tap do |new_step|
         @steps[new_step.id] = new_step
+        @steps[planned_by_step_id].children << new_step.id if planned_by_step_id
       end
     end
 
-    def self.steps_from_hash(hash, execution_plan_id, world)
-      hash.inject({}) do |h, (step_id, step_hash)|
-        step = Steps::Abstract.from_hash(step_hash, execution_plan_id, world)
-        h.update(step_id.to_i => step)
+    def self.steps_from_hash(step_ids, execution_plan_id, world)
+      step_ids.inject({}) do |hash, step_id|
+        step = world.persistence.load_step(execution_plan_id, step_id, world)
+        hash.update(step_id.to_i => step)
       end
     end
 

@@ -4,8 +4,10 @@ module Dynflow
 
       def execute(*args)
         open_action do |action|
-          action.input = dereference(action.input)
-          action.execute(*args)
+          action.indifferent_access_hash_variable_set :input, dereference(action.input)
+          with_time_calculation do
+            action.execute(*args)
+          end
         end
       end
 
@@ -22,7 +24,9 @@ module Dynflow
         yield action
 
         self.state = action.state
+        self.error = action.error
         persistence.save_action(self, action)
+        save
 
         return self
       end

@@ -125,10 +125,119 @@ module Dynflow
         @plan.steps[step_id]
       end
 
+      def paginate?
+        world.persistence.adapter.pagination?
+      end
+
+      def updated_url(new_params)
+        url("?" + Rack::Utils.build_query(params.merge(new_params.stringify_keys)))
+      end
+
+      def paginated_url(delta)
+        h(updated_url(page: [0, page + delta].max))
+      end
+
+      def pagination_options
+        if paginate?
+          { page: page, per_page: per_page }
+        else
+          if params[:page] || params[:per_page]
+            halt 400, "The persistence doesn't support pagination"
+          end
+          return {}
+        end
+      end
+
+      def page
+        (params[:page] || 0).to_i
+      end
+
+      def per_page
+        (params[:per_page] || 10).to_i
+      end
+
+      def supported_ordering?(ord_attr)
+        world.persistence.adapter.ordering_by.any? do |attr|
+          attr.to_s == ord_attr.to_s
+        end
+      end
+
+      def ordering_options
+        return @ordering_options if @ordering_options
+
+        if params[:order_by]
+          unless supported_ordering?(params[:order_by])
+            halt 400, "Unsupported ordering"
+          end
+          @ordering_options = { order_by: params[:order_by],
+                                desc: (params[:desc] == 'true') }
+        elsif supported_ordering?('created_at')
+          @ordering_options = { order_by: 'created_at', desc: true }
+        else
+          @ordering_options = {}
+        end
+        return @ordering_options
+      end
+
+      def order_link(attr, label)
+        return h(label) unless supported_ordering?(attr)
+        new_ordering_options = { order_by: attr.to_s,
+                                 desc: false }
+        arrow = ""
+        if ordering_options[:order_by].to_s == attr.to_s
+          arrow = ordering_options[:desc] ? "&#9660;" : "&#9650;"
+          new_ordering_options[:desc] = !ordering_options[:desc]
+        end
+        url = updated_url(new_ordering_options)
+        return %{<a href="#{url}"> #{arrow} #{h(label)}</a>}
+      end
+
+      def supported_filter?(filter_attr)
+        world.persistence.adapter.filtering_by.any? do |attr|
+          attr.to_s == filter_attr.to_s
+        end
+      end
+
+      def filtering_options
+        return @filtering_options if @filtering_options
+
+        if params[:filters]
+          params[:filters].map do |key, value|
+            unless supported_filter?(key)
+              halt 400, "Unsupported ordering"
+            end
+          end
+
+          filters = params[:filters]
+        elsif supported_filter?('state')
+          filters = { 'state' => ['pending', 'running', 'paused'] }
+        else
+          filters = {}
+        end
+        @filtering_options = { filters: filters }.with_indifferent_access
+        return @filtering_options
+      end
+
+      def filter_checkbox(field, values)
+        out = "<p>#{field}: %s</p>"
+        checkboxes = values.map do |value|
+          field_filter = filtering_options[:filters][field]
+          checked = field_filter && field_filter.include?(value)
+          %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{ "checked" if checked }/>#{value}}
+        end.join(' ')
+        out %= checkboxes
+        return out
+      end
+
     end
 
     get('/') do
-      @plans = world.persistence.find_execution_plans
+      options = HashWithIndifferentAccess.new
+      options.merge!(filtering_options)
+      options.merge!(pagination_options)
+      options.merge!(ordering_options)
+
+      @plans = world.persistence.find_execution_plans(options)
       erb :index
     end
 

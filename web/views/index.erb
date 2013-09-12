@@ -1,12 +1,17 @@
 <h1>Listing execution plans</h1>
 
+<form action="<%= url %>" method="GET">
+  <%= filter_checkbox(:state, ["pending", "running", "paused", "stopped"]) if supported_filter?(:state) %>
+  <input type="submit" value="Filter" />
+</form>
+
 <table class="table">
   <thead>
     <tr>
-      <th>Id</th>
-      <th>Initiated by</th>
-      <th>State</th>
-      <th>Result</th>
+      <th><%= order_link(:id, "Id") %></th>
+      <th><%= order_link(:action, "Action") %></th>
+      <th><%= order_link(:state, "State") %></th>
+      <th><%= order_link(:result, "Result") %></th>
       <th></th>
     </tr>
   </thead>
@@ -22,3 +27,11 @@
 
 <% end %>
 </table>
+<% if paginate? %>
+  <div class="pagination">
+    <ul>
+      <li><a href="<%= paginated_url(-1) %>">Prev</a></li>
+      <li><a href="<%= paginated_url(+1) %>">Next</a></li>
+    </ul>
+  </div>
+<% end %>

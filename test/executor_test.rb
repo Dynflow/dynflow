@@ -6,6 +6,7 @@ module Dynflow
     describe "executor" do
 
       include PlanAssertions
+      include WorldInstance
 
       let :issues_data do
         [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
@@ -34,10 +35,6 @@ module Dynflow
 
       let :executor_class do
         Executors::Parallel
-      end
-
-      let :world do
-        SimpleWorld.new :executor_class => executor_class
       end
 
       describe "execution plan state" do
@@ -129,6 +126,24 @@ module Dynflow
           it "doesn't cause problems" do
             result.result.must_equal :success
             result.state.must_equal :stopped
+          end
+
+          it 'does set times' do
+            result.started_at.wont_be_nil
+            result.ended_at.wont_be_nil
+            result.execution_time.must_be :<, result.real_time
+            result.execution_time.must_equal(
+                result.steps.inject(0) { |sum, (_, step)| sum + step.execution_time })
+
+            plan_step = result.steps[1]
+            plan_step.started_at.wont_be_nil
+            plan_step.ended_at.wont_be_nil
+            plan_step.execution_time.must_equal plan_step.real_time
+
+            run_step = result.steps[2]
+            run_step.started_at.wont_be_nil
+            run_step.ended_at.wont_be_nil
+            run_step.execution_time.must_be :<, run_step.real_time
           end
 
         end

@@ -3,6 +3,7 @@ module Dynflow
 
     def self.included(base)
       base.send(:include, Action::FlowPhase)
+      base.attr_indifferent_access_hash :output
     end
 
     SUSPENDING = Object.new
