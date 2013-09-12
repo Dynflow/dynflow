@@ -15,8 +15,7 @@ module Dynflow
 
     def to_hash
       super.merge recursive_to_hash(input:  input,
-                                    output: output,
-                                    error:  error)
+                                    output: output)
     end
 
     def deserialize_references(value)

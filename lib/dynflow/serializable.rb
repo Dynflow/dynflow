@@ -47,5 +47,15 @@ module Dynflow
       return nil if string.nil?
       DateTime.parse(string).to_time
     end
+
+    def self.hash_to_error(hash)
+      return nil if hash.nil?
+      hash[:exception].constantize.new(hash[:message]).tap do |e|
+        e.set_backtrace hash[:backtrace]
+      end
+    end
+
+    private_class_method :string_to_time, :hash_to_error
+
   end
 end

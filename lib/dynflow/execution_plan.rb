@@ -253,6 +253,7 @@ module Dynflow
                      :pending,
                      action_class,
                      action_id,
+                     nil,
                      world).tap do |new_step|
         @steps[new_step.id] = new_step
         @steps[planned_by_step_id].children << new_step.id if planned_by_step_id

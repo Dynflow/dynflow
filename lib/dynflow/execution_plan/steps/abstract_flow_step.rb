@@ -24,6 +24,7 @@ module Dynflow
         yield action
 
         self.state = action.state
+        self.error = action.error
         persistence.save_action(self, action)
         save
 

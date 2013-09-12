@@ -60,8 +60,7 @@ module Dynflow
       hash[:class].constantize.send(phase).new_from_hash(hash, *args)
     end
 
-    attr_reader :world, :state, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id
-    attr_indifferent_access_hash :error
+    attr_reader :world, :state, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id, :error
 
     def initialize(attributes, world)
       raise "It's not expected to initialize this class directly, use phases." unless self.class.phase?
@@ -75,7 +74,7 @@ module Dynflow
       @plan_step_id      = attributes[:plan_step_id]
       @run_step_id       = attributes[:run_step_id]
       @finalize_step_id  = attributes[:finalize_step_id]
-      self.error         = attributes[:error] || {}
+      @error             = nil
     end
 
     def self.action_class
@@ -96,7 +95,6 @@ module Dynflow
                         execution_plan_id: execution_plan_id,
                         id:                id,
                         state:             state,
-                        error:             error,
                         plan_step_id:      plan_step_id,
                         run_step_id:       run_step_id,
                         finalize_step_id:  finalize_step_id
@@ -159,9 +157,7 @@ module Dynflow
         # TODO log to a logger instead
         $stderr.puts "ACTION ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         self.state = :error
-        self.error = { exception: error.class.name,
-                       message:   error.message,
-                       backtrace: error.backtrace }
+        @error     = error
       end
 
       case self.state
