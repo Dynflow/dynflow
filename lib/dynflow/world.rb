@@ -53,6 +53,7 @@ module Dynflow
       executor.execute execution_plan_id
     end
 
+    # FIND add a future to signal results?
     def update_progress(suspended_action, done, *args)
       executor.update_progress suspended_action, done, *args
     end

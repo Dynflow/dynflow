@@ -37,6 +37,8 @@ module Dynflow
           select { |ch| !ch.phase? }
     end
 
+    # FIND define subscriptions in world independent on action's classes,
+    #   limited only by in/output formats
     # @return [nil, Class] a child of Action
     def self.subscribe
       nil

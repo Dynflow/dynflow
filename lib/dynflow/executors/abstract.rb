@@ -7,6 +7,8 @@ module Dynflow
         @world = world
       end
 
+      # @return [Future]
+      # @raise when execution_plan_id is not accepted
       def execute(execution_plan_id)
         raise NotImplementedError
       end

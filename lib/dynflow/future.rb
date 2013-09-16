@@ -1,5 +1,6 @@
 module Dynflow
-  # FIXME copied over from actress gem https://github.com/pitr-ch/actress
+  # TODO copied over from actress gem https://github.com/pitr-ch/actress
+  # TODO update to queue-less version
   class Future
     class FutureHappen < StandardError
     end
