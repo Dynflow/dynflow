@@ -1,37 +1,51 @@
 module Dynflow
   # TODO copied over from actress gem https://github.com/pitr-ch/actress
-  # TODO update to queue-less version
   class Future
     class FutureHappen < StandardError
     end
 
     def initialize
-      @queue           = Queue.new
-      @value           = nil
-      @ready           = false
-      @write_semaphore = Mutex.new
-      @read_semaphore  = Mutex.new
-    end
-
-    def ready?
-      @ready
-    end
-
-    def set(result)
-      @write_semaphore.synchronize do
-        raise FutureHappen, 'future already happen, cannot set again' if ready?
-        @queue << result
-        @ready = true
-        self
-      end
+      @lock    = Mutex.new
+      @value   = nil
+      @waiting = []
     end
 
     def value
-      @read_semaphore.synchronize { @value ||= @queue.pop }
+      wait
+      @lock.synchronize { @value }
+    end
+
+    def set(result)
+      @lock.synchronize do
+        raise FutureHappen, 'future already happen, cannot set again' if _ready?
+        @value = result
+        @waiting.each do |t|
+          begin
+            t.wakeup
+          rescue ThreadError
+            retry
+          end
+        end
+      end
     end
 
     def wait
-      value
+      @lock.synchronize do
+        @waiting << Thread.current
+        @lock.sleep unless _ready?
+      end
+    end
+
+    def ready?
+      @lock.synchronize { _ready? }
+    end
+
+    private
+
+    def _ready?
+      !!@value
+    end
+  end
       self
     end
   end
