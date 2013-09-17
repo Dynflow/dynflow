@@ -203,8 +203,8 @@ module Dynflow
                         run_flow:          run_flow,
                         finalize_flow:     finalize_flow,
                         steps:             steps.map { |id, _| id },
-                        started_at:        (started_at.to_s if started_at),
-                        ended_at:          (ended_at.to_s if ended_at),
+                        started_at:        time_to_str(started_at),
+                        ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
                         real_time:         real_time
     end

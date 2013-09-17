@@ -97,12 +97,13 @@ module WorldInstance
   end
 
   def self.world
-    @world ||= Dynflow::SimpleWorld.new
+    @world ||= Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)
   end
 
   def self.remote_world
     @listener     ||= Dynflow::Executors::RemoteViaSocket::Listener.new world, Dir.tmpdir + '/dynflow_remote'
-    @remote_world ||= SimpleRemoteWorld.new(persistence_adapter: world.persistence.adapter)
+    @remote_world ||= SimpleRemoteWorld.new(persistence_adapter: world.persistence.adapter,
+                                            logger_adapter:      Dynflow::LoggerAdapters::Simple.new($stderr))
   end
 
   def world
