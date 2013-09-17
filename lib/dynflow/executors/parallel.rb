@@ -51,8 +51,6 @@ module Dynflow
       [Execution, ProgressUpdate, Finalize, Step, ProgressUpdateStep, PoolDone, WorkerDone].
           each &:add_all_field_method_accessors
 
-      # TODO this definition is ugly :/ change to DSL after algebrick update
-
       def initialize(world, pool_size = 10)
         super(world)
         @core = Core.new world, pool_size

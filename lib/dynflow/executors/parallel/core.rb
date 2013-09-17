@@ -3,9 +3,6 @@ module Dynflow
     class Parallel < Abstract
 
       # TODO make sure there is only one core running (cross-process)
-      # TODO implement shutdown
-      #   - soft: wait for all EPs to finish
-      #   - hard: wait only for steps
       # TODO add dynflow error handling to avoid stucking and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
@@ -15,7 +12,7 @@ module Dynflow
           @execution_plan_managers = {}
           @termination_future      = nil
 
-          # TODO after restart procedure:
+          # TODO after restart/kill procedure:
           #   - TODO recalculate incrementally all running-EPs meta data
           #   - TODO set all running EPs as paused for admin to resume manually
           #   - TODO detect steps stuck in running phase
