@@ -59,56 +59,57 @@ module Dynflow
           File.delete socket_path if File.exist? socket_path
           @server = UNIXServer.new socket_path
 
-          @clients                    = []
-          # TODO remove, write synchronosly directly to sockets in FutureTask
-          @notify_read, @notify_write = IO.pipe
-          @notify_barrier             = Mutex.new
-          @who_to_notify              = {}
-          @loop                       = Thread.new { loop { listen } }
+          @clients         = []
+          @client_barriers = {}
+          @loop            = Thread.new { loop { listen } }
         end
 
         private
 
         def listen
-          ios                   = [@server, @notify_read, *@clients]
+          ios                   = [@server, *@clients]
           reads, writes, errors = IO.select(ios, [], ios)
-          # TODO check for errors and closed connections
-          reads.each do |read|
+          reads.each do |readable|
 
-            case read
-            when @notify_read
-              match message = receive_message(@notify_read),
-                    ~Done >-> done do
-                      client = @who_to_notify.delete done[:request_id]
-                      send_message client, done
-                    end
-
-            when @server
-              @clients.push @server.accept
+            if readable == @server
+              add_client @server.accept
               logger.info 'Client connected.'
 
             else
-              match message = receive_message(read),
+              match message = receive_message(readable),
                     Execute.(~any, ~any) >-> id, uuid do
-                      @who_to_notify[id] = read
                       begin
                         @world.execute(uuid,
                                        FutureTask.new do |_|
-                                         send_message @notify_write, Done[id, uuid], @notify_barrier
+                                         send_message_to_client readable, Done[id, uuid]
                                        end)
-                        send_message read, Accepted[id]
+                        send_message_to_client readable, Accepted[id]
                       rescue => e
-                        send_message read, Failed[id, e.message]
+                        send_message_to_client readable, Failed[id, e.message]
                       end
                     end,
                     NilClass.to_m >-> do
-                      @clients.delete read
+                      remove_client readable
                       logger.info 'Client disconnected.'
                     end
             end
           end
         rescue => error
           logger.fatal error
+        end
+
+        def add_client(client)
+          @clients << client
+          @client_barriers[client] = Mutex.new
+        end
+
+        def remove_client(client)
+          @clients.delete client
+          @client_barriers.delete client
+        end
+
+        def send_message_to_client(client, message)
+          send_message client, message, @client_barriers[client]
         end
       end
 
