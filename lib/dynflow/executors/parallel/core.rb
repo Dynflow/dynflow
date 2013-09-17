@@ -9,7 +9,7 @@ module Dynflow
       # TODO add dynflow error handling to avoid stucking and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
-          super()
+          super(world.logger)
           @world                   = is_kind_of! world, World
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
@@ -41,8 +41,7 @@ module Dynflow
                   update_manager(step)
                 end,
                 Terminate.(~any) >-> future do
-                  # TODO log to a logger instead
-                  puts 'shutting down ...'
+                  logger.info 'shutting down Core ...'
                   @termination_future = future
                 end
         end

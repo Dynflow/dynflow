@@ -1,6 +1,5 @@
 module Dynflow
   module Listeners
-    class Abstract
-    end
+    require 'dynflow/listeners/abstract'
   end
 end

@@ -3,7 +3,7 @@ module Dynflow
     class Parallel < Abstract
       class Worker < MicroActor
         def initialize(pool)
-          super()
+          super(pool.logger)
           @pool = pool
         end
 

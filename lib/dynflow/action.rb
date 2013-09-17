@@ -88,6 +88,10 @@ module Dynflow
       end
     end
 
+    def action_logger
+      world.action_logger
+    end
+
     def action_class
       self.class.action_class
     end
@@ -156,8 +160,7 @@ module Dynflow
       begin
         block.call
       rescue => error
-        # TODO log to a logger instead
-        $stderr.puts "ACTION ERROR #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+        action_logger.error error
         self.state = :error
         @error     = error
       end

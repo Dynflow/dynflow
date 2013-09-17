@@ -1,3 +1,5 @@
+require 'logger'
+
 module Dynflow
   module CodeWorkflowExample
 
@@ -214,8 +216,8 @@ module Dynflow
       Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
       Tick = Algebrick.type
 
-      def initialize
-        super
+      def initialize(logger)
+        super(logger)
         @tasks    = Set.new
         @progress = Hash.new { |h, k| h[k] = 0 }
 
@@ -268,7 +270,7 @@ module Dynflow
       end
     end
 
-    PollingService = PollingServiceImpl.new
+    PollingService = PollingServiceImpl.new(Logger.new($stdout).tap { |l| l.progname = 'PollingService' })
 
     class DummySuspended < Action
 

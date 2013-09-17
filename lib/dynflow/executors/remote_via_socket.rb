@@ -53,13 +53,14 @@ module Dynflow
         include Algebrick::Matching
 
         def initialize(world, socket_path)
-          @world = world
+          super(world)
 
           # TODO set socket rights
           File.delete socket_path if File.exist? socket_path
           @server = UNIXServer.new socket_path
 
           @clients                    = []
+          # TODO remove, write synchronosly directly to sockets in FutureTask
           @notify_read, @notify_write = IO.pipe
           @notify_barrier             = Mutex.new
           @who_to_notify              = {}
@@ -84,8 +85,7 @@ module Dynflow
 
             when @server
               @clients.push @server.accept
-              # TODO log to a logger instead
-              $stderr.puts 'INFO client connected'
+              logger.info 'Client connected.'
 
             else
               match message = receive_message(read),
@@ -103,22 +103,20 @@ module Dynflow
                     end,
                     NilClass.to_m >-> do
                       @clients.delete read
-                      # TODO log to a logger instead
-                      $stderr.puts 'INFO client disconnected'
+                      logger.info 'Client disconnected.'
                     end
             end
           end
         rescue => error
-          # TODO log to a logger instead
-          $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+          logger.fatal error
         end
       end
 
       include Algebrick::Matching
-      include Algebrick::TypeCheck
 
       def initialize(world, socket_path)
         super world
+
         @socket           = nil
         @socket_path      = is_kind_of! socket_path, String
         @last_id          = 0
@@ -128,13 +126,18 @@ module Dynflow
       end
 
       def execute(execution_plan_id, future = Future.new)
-        id = @last_id += 1
+        id                    = @last_id += 1
+        @finished_futures[id] = future
+
         send_message @socket, Execute[id, execution_plan_id]
 
         @accepted_futures[id] = accepted = Future.new
-        raise accepted.value if accepted.value.is_a? Exception
+        if accepted.value.is_a? Exception
+          @finished_futures.delete id
+          raise accepted.value
+        end
 
-        @finished_futures[id] = future
+        return future
       end
 
       def update_progress(suspended_action, done, *args)
@@ -145,11 +148,9 @@ module Dynflow
 
       def connect
         @socket = UNIXSocket.new @socket_path
-        # TODO log to a logger instead
-        $stderr.puts 'INFO connected'
+        logger.info 'Connected.'
       rescue => error
-        # TODO log to a logger instead
-        $stderr.puts "WARN #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+        logger.warn error
         sleep 1
         retry
       end
@@ -169,12 +170,10 @@ module Dynflow
               end,
               NilClass.to_m >-> do
                 @socket = nil
-                # TODO log to a logger instead
-                $stderr.puts 'INFO disconnected'
+                logger.info 'Disconnected.'
               end
       rescue => error
-        # TODO log to a logger instead
-        $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+        logger.fatal error
       end
     end
   end

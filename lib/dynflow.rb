@@ -23,6 +23,7 @@ module Dynflow
   require 'dynflow/execution_plan'
   require 'dynflow/listeners'
   require 'dynflow/executors'
+  require 'dynflow/logger_adapters'
   require 'dynflow/world'
   require 'dynflow/simple_world'
   require 'dynflow/daemon'

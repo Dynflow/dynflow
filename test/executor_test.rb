@@ -8,7 +8,6 @@ module Dynflow
       include PlanAssertions
 
       [:world, :remote_world].each do |world_method|
-      #[:world].each do |world_method|
 
         describe world_method.to_s do
 

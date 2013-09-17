@@ -5,9 +5,12 @@ module Dynflow
         include Algebrick::TypeCheck
         include Algebrick::Matching
 
-        def initialize
+        attr_reader :logger
+
+        def initialize(logger)
           @mailbox = Queue.new
           @thread  = Thread.new { loop { receive } }
+          @logger  = logger
         end
 
         def <<(message)
@@ -21,10 +24,9 @@ module Dynflow
         end
 
         def receive
-          on_message @mailbox.pop
+          on_message @mailbox.pop #.tap { |m| puts "received: #{m}" }
         rescue => error
-          # TODO log to a logger instead
-          $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
+          logger.fatal error
         end
 
         def terminate!

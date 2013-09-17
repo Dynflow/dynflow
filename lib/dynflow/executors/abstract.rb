@@ -1,10 +1,12 @@
 module Dynflow
   module Executors
     class Abstract
-      attr_reader :world
+      include Algebrick::TypeCheck
+      attr_reader :world, :logger
 
       def initialize(world)
-        @world = world
+        @world  = is_kind_of! world, World
+        @logger = world.logger
       end
 
       # @return [Future]

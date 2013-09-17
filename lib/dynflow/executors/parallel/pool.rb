@@ -62,7 +62,7 @@ module Dynflow
         end
 
         def initialize(manager, pool_size)
-          super()
+          super(manager.logger)
           @manager      = manager
           @pool_size    = pool_size
           @free_workers = Array.new(pool_size) { Worker.new(self) }
