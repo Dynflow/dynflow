@@ -11,6 +11,9 @@ require 'active_support/core_ext/hash/indifferent_access'
 # FIND also execute planning phase in workers to be consistent, args serialization? :/
 module Dynflow
 
+  class Error < StandardError
+  end
+
   require 'dynflow/future'
   require 'dynflow/serializable'
   require 'dynflow/transaction_adapters'
@@ -18,9 +21,11 @@ module Dynflow
   require 'dynflow/action'
   require 'dynflow/flows'
   require 'dynflow/execution_plan'
+  require 'dynflow/listeners'
   require 'dynflow/executors'
   require 'dynflow/world'
   require 'dynflow/simple_world'
+  require 'dynflow/daemon'
 
 end
 

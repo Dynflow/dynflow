@@ -23,6 +23,19 @@ module Dynflow
 
     end
 
+    class Slow < Action
+      def plan(seconds)
+        plan_self interval: seconds
+      end
+
+      def run
+        sleep input[:interval]
+        p 'done with sleeping'
+        $slow_actions_done ||= 0
+        $slow_actions_done +=1
+      end
+    end
+
     class IncomingIssue < Action
 
       def plan(issue)

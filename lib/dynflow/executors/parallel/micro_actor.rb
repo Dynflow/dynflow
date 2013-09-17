@@ -27,6 +27,9 @@ module Dynflow
           $stderr.puts "FATAL #{error.message} (#{error.class})\n#{error.backtrace.join("\n")}"
         end
 
+        def terminate!
+          @thread.terminate
+        end
       end
     end
   end

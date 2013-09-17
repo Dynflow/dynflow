@@ -7,7 +7,7 @@ module Dynflow
     def initialize(options = {})
       options = self.default_options.merge(options)
 
-      @executor            = options[:executor] || Executors::Parallel.new(self, options[:pool_size])
+      @executor = options[:executor] || Executors::Parallel.new(self, options[:pool_size])
       is_kind_of! @executor, Executors::Abstract
 
       persistence_adapter  = is_kind_of! options[:persistence_adapter], PersistenceAdapters::Abstract
@@ -49,13 +49,18 @@ module Dynflow
       end
     end
 
-    def execute(execution_plan_id)
-      executor.execute execution_plan_id
+    # @return [Future] containing execution_plan when finished
+    def execute(execution_plan_id, finished = Future.new)
+      executor.execute execution_plan_id, finished
     end
 
     # FIND add a future to signal results?
     def update_progress(suspended_action, done, *args)
       executor.update_progress suspended_action, done, *args
+    end
+
+    def terminate!(future = Future.new)
+      executor.terminate! future
     end
   end
 end

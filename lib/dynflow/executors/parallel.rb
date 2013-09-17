@@ -58,14 +58,20 @@ module Dynflow
         @core = Core.new world, pool_size
       end
 
-      def execute(execution_plan_id)
-        @core << Execution[execution_plan_id, future = Future.new]
-        return future
+      def execute(execution_plan_id, finished = Future.new)
+        @core << Execution[execution_plan_id, accepted = Future.new, finished]
+        raise accepted.value if accepted.value.is_a? Exception
+        finished
       end
 
       def update_progress(suspended_action, done, *args)
         @core << ProgressUpdate[
             suspended_action.execution_plan_id, suspended_action.step_id, done, args]
+      end
+
+      def terminate!(future = Future.new)
+        @core << Terminate[future]
+        future
       end
     end
   end

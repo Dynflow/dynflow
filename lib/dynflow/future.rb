@@ -46,6 +46,16 @@ module Dynflow
       !!@value
     end
   end
+
+  class FutureTask < Future
+    def initialize(&task)
+      super()
+      @task = task
+    end
+
+    def set(result)
+      super result
+      @task.call result
       self
     end
   end
