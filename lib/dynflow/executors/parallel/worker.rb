@@ -11,13 +11,13 @@ module Dynflow
 
         def on_message(message)
           match message,
-                Step.(~any, any) --> step do
+                Step.(~any, any) >-> step do
                   step.execute
                 end,
-                ProgressUpdateStep.(~any, any, ~any) --> step, progress_update do
+                ProgressUpdateStep.(~any, any, ~any) >-> step, progress_update do
                   step.execute(progress_update.done, *progress_update.args)
                 end,
-                Finalize.(~any, any) --> sequential_manager do
+                Finalize.(~any, any) >-> sequential_manager do
                   sequential_manager.finalize
                 end
           @pool << WorkerDone[work: message, worker: self]

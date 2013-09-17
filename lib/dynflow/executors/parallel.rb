@@ -12,24 +12,41 @@ module Dynflow
       require 'dynflow/executors/parallel/worker'
 
       # actor messages
-      Boolean            = Algebrick::Variant.new TrueClass, FalseClass
-      Execution          = Algebrick::Product.new execution_plan_id: String,
-                                                  future:            Future
-      ProgressUpdate     = Algebrick::Product.new execution_plan_id: String,
-                                                  step_id:           Fixnum,
-                                                  done:              Boolean,
-                                                  args:              Array
-      Finalize           = Algebrick::Product.new sequential_manager: SequentialManager,
-                                                  execution_plan_id:  String
-      Step               = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
-                                                  execution_plan_id: String
-      ProgressUpdateStep = Algebrick::Product.new step:              ExecutionPlan::Steps::AbstractFlowStep,
-                                                  execution_plan_id: String,
-                                                  resumption:        ProgressUpdate
-      Work               = Algebrick::Variant.new Step, ProgressUpdateStep, Finalize
-      PoolDone           = Algebrick::Product.new work: Work
-      WorkerDone         = Algebrick::Product.new work:   Work,
-                                                  worker: Worker
+      Terminate = Algebrick.type { fields future: Future }
+      Boolean   = Algebrick.type { variants TrueClass, FalseClass }
+
+      Execution = Algebrick.type do
+        fields execution_plan_id: String,
+               accepted:          Future,
+               finished:          Future
+      end
+
+      ProgressUpdate = Algebrick.type do
+        fields execution_plan_id: String,
+               step_id:           Fixnum,
+               done:              Boolean,
+               args:              Array
+      end
+
+      Finalize = Algebrick.type do
+        fields sequential_manager: SequentialManager,
+               execution_plan_id:  String
+      end
+
+      Step = Algebrick.type do
+        fields step:              ExecutionPlan::Steps::AbstractFlowStep,
+               execution_plan_id: String
+      end
+
+      ProgressUpdateStep = Algebrick.type do
+        fields step:              ExecutionPlan::Steps::AbstractFlowStep,
+               execution_plan_id: String,
+               resumption:        ProgressUpdate
+      end
+
+      Work       = Algebrick.type { variants Step, ProgressUpdateStep, Finalize }
+      PoolDone   = Algebrick.type { fields work: Work }
+      WorkerDone = Algebrick.type { fields work: Work, worker: Worker }
 
       [Execution, ProgressUpdate, Finalize, Step, ProgressUpdateStep, PoolDone, WorkerDone].
           each &:add_all_field_method_accessors

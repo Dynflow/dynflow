@@ -28,10 +28,10 @@ module Dynflow
                     start_executing(manager)
                   end
                 end,
-                ~ProgressUpdate >>-> progress_update do
+                ~ProgressUpdate >-> progress_update do
                   update_progress(progress_update)
                 end,
-                PoolDone.(~any) >>-> step do
+                PoolDone.(~any) >-> step do
                   update_manager(step)
                 end
         end

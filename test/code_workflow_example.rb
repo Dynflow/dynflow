@@ -198,9 +198,8 @@ module Dynflow
 
     class PollingServiceImpl < Dynflow::Executors::Parallel::MicroActor
 
-      Task = Algebrick::Product.new(action:           Action::Suspended,
-                                    external_task_id: String)
-      Tick = Algebrick::Atom.new
+      Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
+      Tick = Algebrick.type
 
       def initialize
         super

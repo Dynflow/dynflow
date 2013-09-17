@@ -72,11 +72,11 @@ module Dynflow
 
         def on_message(message)
           match message,
-                ~Work.to_m >>-> work do
+                ~Work.to_m >-> work do
                   @jobs.add work
                   distribute_jobs
                 end,
-                WorkerDone.(~any, ~any) --> step, worker do
+                WorkerDone.(~any, ~any) >-> step, worker do
                   @manager << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
