@@ -1,5 +1,5 @@
 module Dynflow
-  # TODO copied over from actress gem https://github.com/pitr-ch/actress
+  # TODO use actress when released, copied over from actress gem https://github.com/pitr-ch/actress
   class Future
     class FutureHappen < StandardError
     end

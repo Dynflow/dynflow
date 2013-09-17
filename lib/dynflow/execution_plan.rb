@@ -128,7 +128,7 @@ module Dynflow
 
     # All the steps that need to get skipped when wanting to skip the step
     # includes the step itself, all steps dependent on it (even transitively)
-    # TODO maybe move to persistence to let adapter to do it effectively?
+    # FIND maybe move to persistence to let adapter to do it effectively?
     # @return [Array<Steps::Abstract>]
     def steps_to_skip(step)
       dependent_steps = @steps.values.find_all do |s|

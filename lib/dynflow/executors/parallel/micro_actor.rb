@@ -1,6 +1,7 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
+      # TODO use actress when released, copied over from actress gem https://github.com/pitr-ch/actress
       class MicroActor
         include Algebrick::TypeCheck
         include Algebrick::Matching

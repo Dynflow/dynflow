@@ -9,14 +9,14 @@ module Dynflow
     class RemoteViaSocket < Abstract
 
       Message = Algebrick.type do
-        Execute      = Algebrick.type { fields request_id: Integer, execution_plan_uuid: String }
-        Confirmation = Algebrick.type do
-          Accepted = Algebrick.type { fields request_id: Integer }
-          Failed   = Algebrick.type { fields request_id: Integer, error: String }
+        Execute      = type { fields request_id: Integer, execution_plan_uuid: String }
+        Confirmation = type do
+          Accepted = type { fields request_id: Integer }
+          Failed   = type { fields request_id: Integer, error: String }
 
           variants Accepted, Failed
         end
-        Done         = Algebrick.type { fields request_id: Integer, execution_plan_uuid: String }
+        Done         = type { fields request_id: Integer, execution_plan_uuid: String }
 
         variants Execute, Confirmation, Done
       end
