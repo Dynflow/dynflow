@@ -2,7 +2,6 @@ module Dynflow
   module Executors
     class Parallel < Abstract
 
-      # TODO make sure there is only one core running (cross-process)
       # TODO add dynflow error handling to avoid stucking and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
