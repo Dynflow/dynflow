@@ -27,11 +27,10 @@ module Dynflow
         def what_is_next(work)
           is_kind_of! work, Work
 
-          # TODO use case instead?
-          match(work,
-                Step.(~any, any) |
-                    ProgressUpdateStep.(~any, any, ProgressUpdate.(any, any, ~any, any)) >-> step, step2, done do
-                  step ||= step2
+          match work,
+                Step.(:step) ^
+                    ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(:done)) >-> step, done do
+
                   execution_plan.update_meta_data step.execution_time if done.nil? ? step.state != :suspended : done
                   raise unless @run_manager
                   raise if @run_manager.done?
@@ -47,7 +46,7 @@ module Dynflow
                 Finalize.(any, any) >-> do
                   raise unless @finalize_manager
                   finish
-                end)
+                end
         end
 
         # @return [ProgressUpdateStep]
