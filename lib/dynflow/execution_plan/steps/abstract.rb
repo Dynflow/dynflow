@@ -23,7 +23,7 @@ module Dynflow
         @id                = id || raise(ArgumentError, 'missing id')
         @execution_plan_id = is_kind_of! execution_plan_id, String
         @world             = is_kind_of! world, World
-        @error             = is_kind_of! error, Exception, NilClass
+        @error             = is_kind_of! error, ExecutionPlan::Steps::Error, NilClass
         @started_at        = is_kind_of! started_at, Time, NilClass
         @ended_at          = is_kind_of! ended_at, Time, NilClass
         @execution_time    = is_kind_of! execution_time, Float
@@ -73,9 +73,7 @@ module Dynflow
                           class:          self.class.to_s,
                           action_class:   action_class.to_s,
                           action_id:      action_id,
-                          error:          error ? { exception: error.class.name,
-                                                    message:   error.message,
-                                                    backtrace: error.backtrace } : nil,
+                          error:          error,
                           started_at:     time_to_str(started_at),
                           ended_at:       time_to_str(ended_at),
                           execution_time: execution_time,
