@@ -62,8 +62,9 @@ module Dynflow
         end
 
         def initialize(manager, pool_size)
-          super()
+          super(manager.logger)
           @manager      = manager
+          @pool_size    = pool_size
           @free_workers = Array.new(pool_size) { Worker.new(self) }
           @jobs         = JobStorage.new
         end
@@ -72,19 +73,34 @@ module Dynflow
 
         def on_message(message)
           match message,
-                ~Work.to_m >>-> work do
+                ~Work.to_m >-> work do
                   @jobs.add work
                   distribute_jobs
                 end,
-                WorkerDone.(~any, ~any) --> step, worker do
+                WorkerDone.(~any, ~any) >-> step, worker do
                   @manager << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
+                end,
+                Terminate.(~any) >-> future do
+                  terminate! future
                 end
         end
 
         def distribute_jobs
           @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
+        end
+
+        def terminate!(future)
+          raise unless @free_workers.size == @pool_size
+          @free_workers.map do |worker|
+            worker << Terminate[terminated = Future.new]
+            terminated
+          end.each do |terminated|
+            terminated.wait
+          end
+          future.set true
+          super()
         end
       end
     end

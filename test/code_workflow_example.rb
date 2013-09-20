@@ -1,3 +1,5 @@
+require 'logger'
+
 module Dynflow
   module CodeWorkflowExample
 
@@ -21,6 +23,19 @@ module Dynflow
         TestExecutionLog.finalize << self
       end
 
+    end
+
+    class Slow < Action
+      def plan(seconds)
+        plan_self interval: seconds
+      end
+
+      def run
+        sleep input[:interval]
+        p 'done with sleeping'
+        $slow_actions_done ||= 0
+        $slow_actions_done +=1
+      end
     end
 
     class IncomingIssue < Action
@@ -198,12 +213,11 @@ module Dynflow
 
     class PollingServiceImpl < Dynflow::Executors::Parallel::MicroActor
 
-      Task = Algebrick::Product.new(action:           Action::Suspended,
-                                    external_task_id: String)
-      Tick = Algebrick::Atom.new
+      Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
+      Tick = Algebrick.type
 
-      def initialize
-        super
+      def initialize(logger)
+        super(logger)
         @tasks    = Set.new
         @progress = Hash.new { |h, k| h[k] = 0 }
 
@@ -256,7 +270,7 @@ module Dynflow
       end
     end
 
-    PollingService = PollingServiceImpl.new
+    PollingService = PollingServiceImpl.new(Logger.new($stdout).tap { |l| l.progname = 'PollingService' })
 
     class DummySuspended < Action
 
