@@ -116,6 +116,7 @@ module Dynflow
         super world
 
         @socket           = nil
+        @socket_barrier   = Mutex.new
         @socket_path      = is_kind_of! socket_path, String
         @last_id          = 0
         @finished_futures = {}
@@ -127,7 +128,15 @@ module Dynflow
         id                    = @last_id += 1
         @finished_futures[id] = future
 
-        send_message @socket, Execute[id, execution_plan_id]
+        socket do |socket|
+          if socket
+            send_message socket, Execute[id, execution_plan_id]
+          else
+            # TODO store some limited number of EPs until it reconnects? it'll block
+            # Or give it a few seconds?
+            raise Dynflow::Error, 'Connection is gone.'
+          end
+        end
 
         @accepted_futures[id] = accepted = Future.new
         if accepted.value.is_a? Exception
@@ -144,8 +153,18 @@ module Dynflow
 
       private
 
+      def socket=(val)
+        @socket_barrier.synchronize { @socket = val }
+      end
+
+      def socket
+        @socket_barrier.synchronize do
+          yield @socket
+        end
+      end
+
       def connect
-        @socket = UNIXSocket.new @socket_path
+        self.socket = UNIXSocket.new @socket_path
         logger.info 'Connected.'
       rescue => error
         logger.warn error
@@ -167,7 +186,7 @@ module Dynflow
                 @finished_futures.delete(id).set execution_plan
               end,
               NilClass.to_m >-> do
-                @socket = nil
+                self.socket = nil
                 logger.info 'Disconnected.'
               end
       rescue => error
