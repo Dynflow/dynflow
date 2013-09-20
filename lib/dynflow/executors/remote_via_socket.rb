@@ -81,7 +81,7 @@ module Dynflow
                                          send_message_to_client readable, Done[id, uuid]
                                        end)
                         send_message_to_client readable, Accepted[id]
-                      rescue => e
+                      rescue Dynflow::Error => e
                         send_message_to_client readable, Failed[id, e.message]
                       end
                     end,
