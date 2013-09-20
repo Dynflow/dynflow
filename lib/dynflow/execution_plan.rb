@@ -101,16 +101,22 @@ module Dynflow
     end
 
     def plan(*args)
-      with_planning_scope do
-        root_plan_step.execute(self, nil, *args)
+      world.transaction_adapter.transaction do
+        with_planning_scope do
+          root_plan_step.execute(self, nil, *args)
 
-        if @dependency_graph.unresolved?
-          raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
+          if @dependency_graph.unresolved?
+            raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
+          end
         end
-      end
 
-      if @run_flow.size == 1
-        @run_flow = @run_flow.sub_flows.first
+        if @run_flow.size == 1
+          @run_flow = @run_flow.sub_flows.first
+        end
+
+        if result == :error
+          world.transaction_adapter.rollback
+        end
       end
       save
       steps.values.each &:save
