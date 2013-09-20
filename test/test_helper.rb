@@ -87,12 +87,31 @@ class TestPause < Dynflow::Future
 end
 
 module WorldInstance
+  class SimpleRemoteWorld < Dynflow::SimpleWorld
+    attr_reader :socket_path
+
+    def default_options
+      socket_path ||= Dir.tmpdir + '/dynflow_remote'
+      super.merge :executor => Dynflow::Executors::RemoteViaSocket.new(self, socket_path)
+    end
+  end
+
   def self.world
-    @world ||= Dynflow::SimpleWorld.new
+    @world ||= Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)
+  end
+
+  def self.remote_world
+    @listener     ||= Dynflow::Executors::RemoteViaSocket::Listener.new world, Dir.tmpdir + '/dynflow_remote'
+    @remote_world ||= SimpleRemoteWorld.new(persistence_adapter: world.persistence.adapter,
+                                            logger_adapter:      Dynflow::LoggerAdapters::Simple.new($stderr))
   end
 
   def world
     WorldInstance.world
+  end
+
+  def remote_world
+    WorldInstance.remote_world
   end
 end
 

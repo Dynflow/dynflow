@@ -43,11 +43,16 @@ module Dynflow
       end
     end
 
-    # TODO use explicit format for time2str,
-    #   see https://github.com/iNecas/dynflow/pull/30#discussion_r6316719
     def self.string_to_time(string)
-      return nil if string.nil?
-      DateTime.parse(string).to_time
+      return if string.nil?
+      _, year, month, day, hour, min, sec = */(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/.match(string)
+      Time.new(year.to_i, month.to_i, day.to_i, hour.to_i, min.to_i, sec.to_i)
+    end
+
+    def time_to_str(time)
+      return if time.nil?
+      is_kind_of! time, Time
+      time.strftime '%Y-%m-%d %H:%M:%S'
     end
 
     def self.hash_to_error(hash)
