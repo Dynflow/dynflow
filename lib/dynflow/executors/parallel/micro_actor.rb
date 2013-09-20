@@ -25,7 +25,7 @@ module Dynflow
         end
 
         def receive
-          on_message @mailbox.pop #.tap { |m| puts "received: #{m}" }
+          on_message @mailbox.pop
         rescue => error
           logger.fatal error
         end

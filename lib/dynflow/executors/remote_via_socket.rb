@@ -1,9 +1,6 @@
 require 'multi_json'
 require 'socket'
 
-#MultiJson.load
-#MultiJson.dump
-
 module Dynflow
   module Executors
     class RemoteViaSocket < Abstract
