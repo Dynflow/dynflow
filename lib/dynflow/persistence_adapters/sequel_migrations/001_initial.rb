@@ -18,8 +18,8 @@ Sequel.migration do
       foreign_key :execution_plan_uuid, :dynflow_execution_plans, type: String, size: 36, fixed: true
       index :execution_plan_uuid
       column :id, Fixnum
-      primary_key [:id, :execution_plan_uuid]
-      index [:id, :execution_plan_uuid], :unique => true
+      primary_key [:execution_plan_uuid, :id]
+      index [:execution_plan_uuid, :id], :unique => true
 
       column :data, String, text: true
     end
@@ -28,11 +28,11 @@ Sequel.migration do
       foreign_key :execution_plan_uuid, :dynflow_execution_plans, type: String, size: 36, fixed: true
       index :execution_plan_uuid
       column :id, Fixnum
-      primary_key [:id, :execution_plan_uuid]
-      index [:id, :execution_plan_uuid], :unique => true
+      primary_key [:execution_plan_uuid, :id]
+      index [:execution_plan_uuid, :id], :unique => true
       column :action_id, Fixnum
       foreign_key [:execution_plan_uuid, :action_id], :dynflow_actions
-      index [:action_id, :execution_plan_uuid], :unique => true
+      index [:execution_plan_uuid, :action_id], :unique => true
 
       column :data, String, text: true
 
