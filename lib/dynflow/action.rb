@@ -162,7 +162,7 @@ module Dynflow
       rescue => error
         action_logger.error error
         self.state = :error
-        @error     = error
+        @error     = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
       end
 
       case self.state
