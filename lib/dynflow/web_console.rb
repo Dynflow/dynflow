@@ -1,4 +1,5 @@
 require 'dynflow'
+require 'json'
 require 'sinatra'
 
 module Dynflow
@@ -29,9 +30,9 @@ module Dynflow
           pretty_value = if !value.is_a?(Hash) && !value.is_a?(Array)
                            value.inspect
                          elsif value.empty?
-                           MultiJson.dump(value, :pretty => false)
+                           JSON.generate(value)
                          else
-                           MultiJson.dump(value, :pretty => true)
+                           JSON.pretty_generate(value)
                          end
           <<-HTML
             <pre class="prettyprint">#{h(pretty_value)}</pre>
