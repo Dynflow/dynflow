@@ -172,8 +172,8 @@ module Dynflow
           end
           @ordering_options = { order_by: params[:order_by],
                                 desc: (params[:desc] == 'true') }
-        elsif supported_ordering?('created_at')
-          @ordering_options = { order_by: 'created_at', desc: true }
+        elsif supported_ordering?('started_at')
+          @ordering_options = { order_by: 'started_at', desc: true }
         else
           @ordering_options = {}
         end
