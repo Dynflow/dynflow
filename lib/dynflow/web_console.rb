@@ -62,10 +62,10 @@ module Dynflow
       end
 
       def step_error(step)
-        if step.state == :error
-          action = world.persistence.adapter.load_action(step.execution_plan_id,
-                                                         step.action_id)
-          return action[:error]
+        if step.error
+          ([step.error.message] + step.error.backtrace).map do |line|
+            "<p>#{h(line)}</p>"
+          end.join
         end
       end
 
