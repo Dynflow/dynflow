@@ -1,3 +1,4 @@
+
 require_relative 'test_helper'
 require_relative 'code_workflow_example'
 
@@ -24,12 +25,24 @@ module Dynflow
              { 'author' => 'John Doe', 'text' => 'trolling' }]
           end
 
+          let :finalize_failing_issues_data do
+            [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
+             { 'author' => 'John Doe', 'text' => 'trolling in finalize' }]
+          end
+
           let :execution_plan do
             world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
           end
 
           let :failed_execution_plan do
             plan = world.plan(CodeWorkflowExample::IncomingIssues, failing_issues_data)
+            plan = world.execute(plan.id).value
+            plan.state.must_equal :paused
+            plan
+          end
+
+          let :finalize_failed_execution_plan do
+            plan = world.plan(CodeWorkflowExample::IncomingIssues, finalize_failing_issues_data)
             plan = world.execute(plan.id).value
             plan.state.must_equal :paused
             plan
@@ -242,7 +255,7 @@ module Dynflow
 
           end
 
-          describe "re-execution of run flow after fix" do
+          describe "re-execution of run flow after fix in run phase" do
 
             after do
               TestExecutionLog.teardown
@@ -279,6 +292,44 @@ module Dynflow
                 13: Triage(success) {\"author\"=>\"John Doe\", \"text\"=>\"ok\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
                 16: UpdateIssue(success) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\", \"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"} --> {}
                 18: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
+              EXECUTED_RUN_FLOW
+            end
+
+          end
+          describe "re-execution of run flow after fix in finalize phase" do
+
+            after do
+              TestExecutionLog.teardown
+            end
+
+            let :resumed_execution_plan do
+              failed_step = finalize_failed_execution_plan.steps.values.find do |step|
+                step.state == :error
+              end
+              world.persistence.load_action(failed_step).tap do |action|
+                action.input[:text] = "ok"
+                world.persistence.save_action(failed_step, action)
+              end
+              TestExecutionLog.setup
+              world.execute(finalize_failed_execution_plan.id).value
+            end
+
+            it "runs all the steps in the finalize flow" do
+              resumed_execution_plan.state.must_equal :stopped
+              resumed_execution_plan.result.must_equal :success
+
+              run_triages = TestExecutionLog.finalize.find_all do |action_class, input|
+                action_class == CodeWorkflowExample::Triage
+              end
+              run_triages.size.must_equal 2
+
+              assert_finalize_flow <<-EXECUTED_RUN_FLOW, resumed_execution_plan
+                Dynflow::Flows::Sequence
+                  5: Triage(success) {\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
+                  10: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
+                  14: Triage(success) {\"author\"=>\"John Doe\", \"text\"=>\"ok\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
+                  19: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
+                  20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling in finalize\"}]} --> {}
               EXECUTED_RUN_FLOW
             end
 
