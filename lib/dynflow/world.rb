@@ -21,7 +21,9 @@ module Dynflow
       @suspended_actions  = {}
       @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
         next index unless klass.subscribe
-        index[klass.subscribe] << klass
+        Array(klass.subscribe).each do |subscribed_class|
+          index[subscribed_class] << klass
+        end
         index
       end.tap { |o| o.freeze }
     end

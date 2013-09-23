@@ -200,6 +200,21 @@ module Dynflow
           end
         end
 
+        describe 'subscribed action' do
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::DummyTrigger, {})
+          end
+
+          it 'constructs the plan of actions to be executed in run phase' do
+            assert_run_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Concurrence
+                3: DummySubscribe(pending) {}
+                5: DummyMultiSubscribe(pending) {}
+            RUN_FLOW
+          end
+        end
+
+
         describe 'finalize flow' do
 
           let :execution_plan do

@@ -206,10 +206,37 @@ module Dynflow
     end
 
     class DummyWithFinalize < Action
-
       def finalize
         TestExecutionLog.finalize << self
       end
+    end
+
+    class DummyTrigger < Action
+    end
+
+    class DummyAnotherTrigger < Action
+    end
+
+    class DummySubscribe < Action
+
+      def self.subscribe
+        DummyTrigger
+      end
+
+      def run
+      end
+
+    end
+
+    class DummyMultiSubscribe < Action
+
+      def self.subscribe
+        [DummyTrigger, DummyAnotherTrigger]
+      end
+
+      def run
+      end
+
     end
 
     class PollingServiceImpl < Dynflow::Executors::Parallel::MicroActor
