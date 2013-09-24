@@ -127,18 +127,22 @@ module Dynflow
       def execute(execution_plan_id, future = Future.new)
         id                    = @last_id += 1
         @finished_futures[id] = future
+        @accepted_futures[id] = accepted = Future.new
 
         socket do |socket|
-          if socket
-            send_message socket, Execute[id, execution_plan_id]
-          else
-            # TODO store some limited number of EPs until it reconnects? it'll block
-            # Or give it a few seconds?
+          catch :sent do
+            3.times do # TODO configurable
+              if socket
+                send_message socket, Execute[id, execution_plan_id]
+                throw :sent
+              else
+                sleep 1
+              end
+            end
             raise Dynflow::Error, 'Connection is gone.'
           end
         end
 
-        @accepted_futures[id] = accepted = Future.new
         if accepted.value.is_a? Exception
           @finished_futures.delete id
           raise accepted.value
