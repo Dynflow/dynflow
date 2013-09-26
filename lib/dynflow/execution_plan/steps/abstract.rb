@@ -43,6 +43,10 @@ module Dynflow
         @action_id = action_id || raise(ArgumentError, 'missing action_id')
       end
 
+      def action_logger
+        @world.action_logger
+      end
+
       def phase
         raise NotImplementedError
       end
@@ -68,16 +72,17 @@ module Dynflow
       end
 
       def to_hash
-        recursive_to_hash id:             id,
-                          state:          state,
-                          class:          self.class.to_s,
-                          action_class:   action_class.to_s,
-                          action_id:      action_id,
-                          error:          error,
-                          started_at:     time_to_str(started_at),
-                          ended_at:       time_to_str(ended_at),
-                          execution_time: execution_time,
-                          real_time:      real_time
+        recursive_to_hash execution_plan_id: execution_plan_id,
+                          id:                id,
+                          state:             state,
+                          class:             self.class.to_s,
+                          action_class:      action_class.to_s,
+                          action_id:         action_id,
+                          error:             error,
+                          started_at:        time_to_str(started_at),
+                          ended_at:          time_to_str(ended_at),
+                          execution_time:    execution_time,
+                          real_time:         real_time
       end
 
       protected
@@ -107,6 +112,11 @@ module Dynflow
         @ended_at       = Time.now
         @execution_time += @ended_at - start
         @real_time      = @ended_at - @started_at
+        # FIND configurable?
+        if @execution_time > 1
+          action_logger.warn "Step #{phase}:#{execution_plan_id}:#{id} #{action_class}##{action_id}" +
+                                 " took #{@execution_time}sec."
+        end
       end
     end
   end
