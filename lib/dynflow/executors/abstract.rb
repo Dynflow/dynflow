@@ -18,6 +18,10 @@ module Dynflow
       def update_progress(suspended_action, done, *args)
         raise NotImplementedError
       end
+
+      def terminate!(future = Future.new)
+        raise NotImplementedError
+      end
     end
   end
 end
