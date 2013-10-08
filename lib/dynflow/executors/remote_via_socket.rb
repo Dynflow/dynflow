@@ -8,10 +8,8 @@ module Dynflow
       Message = Algebrick.type do
         Execute      = type { fields request_id: Integer, execution_plan_uuid: String }
         Confirmation = type do
-          Accepted = type { fields request_id: Integer }
-          Failed   = type { fields request_id: Integer, error: String }
-
-          variants Accepted, Failed
+          variants Accepted = type { fields request_id: Integer },
+                   Failed   = type { fields request_id: Integer, error: String }
         end
         Done         = type { fields request_id: Integer, execution_plan_uuid: String }
 
@@ -121,7 +119,8 @@ module Dynflow
         @last_id          = 0
         @finished_futures = {}
         @accepted_futures = {}
-        @thread           = Thread.new { loop { listen } }
+        connect
+        @thread = Thread.new { loop { listen } }
       end
 
       def execute(execution_plan_id, future = Future.new)
@@ -130,16 +129,10 @@ module Dynflow
         @accepted_futures[id] = accepted = Future.new
 
         socket do |socket|
-          catch :sent do
-            3.times do # TODO configurable
-              if socket
-                send_message socket, Execute[id, execution_plan_id]
-                throw :sent
-              else
-                sleep 1
-              end
-            end
-            raise Dynflow::Error, 'Connection is gone.'
+          if socket
+            send_message socket, Execute[id, execution_plan_id]
+          else
+            raise Dynflow::Error, 'No connection to RemoteViaSocket::Listener'
           end
         end
 
@@ -162,8 +155,12 @@ module Dynflow
       end
 
       def socket
-        @socket_barrier.synchronize do
-          yield @socket
+        if block_given?
+          @socket_barrier.synchronize do
+            yield @socket
+          end
+        else
+          @socket
         end
       end
 
@@ -177,8 +174,8 @@ module Dynflow
       end
 
       def listen
-        connect unless @socket
-        match message = receive_message(@socket),
+        connect unless socket
+        match message = receive_message(socket),
               Accepted.(~any) >-> id do
                 @accepted_futures.delete(id).set true
               end,
