@@ -112,10 +112,10 @@ module Dynflow
         @ended_at       = Time.now
         @execution_time += @ended_at - start
         @real_time      = @ended_at - @started_at
-        # FIND configurable?
-        if @execution_time > 1
+        limit = world.options.fetch(:step_warning_time_limit)
+        if @execution_time > limit
           action_logger.warn "Step #{phase}:#{execution_plan_id}:#{id} #{action_class}##{action_id}" +
-                                 " took #{@execution_time}sec."
+                                 " should take under #{limit}s, it took #{@execution_time}s."
         end
       end
     end
