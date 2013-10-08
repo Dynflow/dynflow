@@ -78,11 +78,12 @@ module Dynflow
       def run
         TestExecutionLog.run << self
         TestPause.pause if input[:text].include? 'get a break'
-        raise 'Trolling detected' if input[:text].include? "trolling"
+        raise 'Trolling detected' if input[:text] == "trolling"
         self.output[:classification] = { assignee: 'John Doe', severity: 'medium' }
       end
 
       def finalize
+        raise 'Trolling detected' if input[:text] == "trolling in finalize"
         TestExecutionLog.finalize << self
       end
 
@@ -205,10 +206,37 @@ module Dynflow
     end
 
     class DummyWithFinalize < Action
-
       def finalize
         TestExecutionLog.finalize << self
       end
+    end
+
+    class DummyTrigger < Action
+    end
+
+    class DummyAnotherTrigger < Action
+    end
+
+    class DummySubscribe < Action
+
+      def self.subscribe
+        DummyTrigger
+      end
+
+      def run
+      end
+
+    end
+
+    class DummyMultiSubscribe < Action
+
+      def self.subscribe
+        [DummyTrigger, DummyAnotherTrigger]
+      end
+
+      def run
+      end
+
     end
 
     class PollingServiceImpl < Dynflow::Executors::Parallel::MicroActor

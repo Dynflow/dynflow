@@ -143,7 +143,7 @@ module Dynflow
           raise ArgumentError, "unknown column #{order_by.inspect}"
         end
         order_by = order_by.to_sym
-        data_set.order_by options[:desc] ? Sequel.desc(order_by) : order_by
+        data_set.order_by options[:desc] ? ::Sequel.desc(order_by) : order_by
       end
 
       def filter(data_set, options)

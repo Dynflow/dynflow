@@ -1,4 +1,5 @@
 require 'dynflow'
+require 'pp'
 require 'sinatra'
 
 module Dynflow
@@ -26,13 +27,7 @@ module Dynflow
       def prettyprint(value)
         value = prettyprint_references(value)
         if value
-          pretty_value = if !value.is_a?(Hash) && !value.is_a?(Array)
-                           value.inspect
-                         elsif value.empty?
-                           MultiJson.dump(value, :pretty => false)
-                         else
-                           MultiJson.dump(value, :pretty => true)
-                         end
+          pretty_value = value.pretty_inspect
           <<-HTML
             <pre class="prettyprint">#{h(pretty_value)}</pre>
           HTML
@@ -61,10 +56,10 @@ module Dynflow
       end
 
       def step_error(step)
-        if step.state == :error
-          action = world.persistence.adapter.load_action(step.execution_plan_id,
-                                                         step.action_id)
-          return action[:error]
+        if step.error
+          ([step.error.message] + step.error.backtrace).map do |line|
+            "<p>#{h(line)}</p>"
+          end.join
         end
       end
 
@@ -171,8 +166,8 @@ module Dynflow
           end
           @ordering_options = { order_by: params[:order_by],
                                 desc: (params[:desc] == 'true') }
-        elsif supported_ordering?('created_at')
-          @ordering_options = { order_by: 'created_at', desc: true }
+        elsif supported_ordering?('started_at')
+          @ordering_options = { order_by: 'started_at', desc: true }
         else
           @ordering_options = {}
         end

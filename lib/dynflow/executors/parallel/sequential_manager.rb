@@ -19,6 +19,7 @@ module Dynflow
       end
 
       def finalize
+        reset_finalize_steps
         unless execution_plan.error?
           world.transaction_adapter.transaction do
             unless dispatch(execution_plan.finalize_flow)
@@ -27,6 +28,13 @@ module Dynflow
           end
         end
         @done = true
+      end
+
+      def reset_finalize_steps
+        execution_plan.finalize_flow.all_step_ids.each do |step_id|
+          step = execution_plan.steps[step_id]
+          step.state = :pending if [:success, :error].include? step.state
+        end
       end
 
       def done?

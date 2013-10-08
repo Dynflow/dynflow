@@ -12,6 +12,7 @@
       <th><%= order_link(:action, "Action") %></th>
       <th><%= order_link(:state, "State") %></th>
       <th><%= order_link(:result, "Result") %></th>
+      <th><%= order_link(:started_at, "Started at") %></th>
       <th></th>
     </tr>
   </thead>
@@ -22,6 +23,7 @@
     <td><%= h(plan.root_plan_step.action_class.name) %></td>
     <th><%= h(plan.state) %></th>
     <th><%= h(plan.result) %></th>
+    <th><%= h(plan.started_at) %></th>
     <td><a href="<%= h(url("/#{plan.id}")) %>">Show</a></td>
   </tr>
 
