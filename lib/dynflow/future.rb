@@ -5,9 +5,10 @@ module Dynflow
     end
 
     def initialize
-      @lock    = Mutex.new
-      @value   = nil
-      @waiting = []
+      @lock     = Mutex.new
+      @value    = nil
+      @resolved = false
+      @waiting  = []
     end
 
     def value
@@ -18,10 +19,11 @@ module Dynflow
     def set(result)
       @lock.synchronize do
         raise FutureHappen, 'future already happen, cannot set again' if _ready?
-        @value = result
-        @waiting.each do |t|
+        @resolved = true
+        @value    = result
+        while (thread = @waiting.pop)
           begin
-            t.wakeup
+            thread.wakeup
           rescue ThreadError
             retry
           end
@@ -31,8 +33,10 @@ module Dynflow
 
     def wait
       @lock.synchronize do
-        @waiting << Thread.current
-        @lock.sleep unless _ready?
+        unless _ready?
+          @waiting << Thread.current
+          @lock.sleep
+        end
       end
     end
 
@@ -43,7 +47,7 @@ module Dynflow
     private
 
     def _ready?
-      !!@value
+      @resolved
     end
   end
 
