@@ -1,5 +1,5 @@
 require 'dynflow'
-require 'json'
+require 'pp'
 require 'sinatra'
 
 module Dynflow
@@ -27,13 +27,7 @@ module Dynflow
       def prettyprint(value)
         value = prettyprint_references(value)
         if value
-          pretty_value = if !value.is_a?(Hash) && !value.is_a?(Array)
-                           value.inspect
-                         elsif value.empty?
-                           JSON.generate(value)
-                         else
-                           JSON.pretty_generate(value)
-                         end
+          pretty_value = value.pretty_inspect
           <<-HTML
             <pre class="prettyprint">#{h(pretty_value)}</pre>
           HTML

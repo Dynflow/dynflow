@@ -17,7 +17,6 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency "activesupport"
-  s.add_dependency "json"
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
   s.add_dependency "algebrick", '~> 0.2.4'
