@@ -2,27 +2,25 @@ require_relative 'test_helper'
 
 module Dynflow
 
-  #class ActionTest < Action
-  #
-  #  output_format do
-  #    param :id, String
-  #  end
-  #
-  #  def run
-  #    output['id'] = input['name']
-  #  end
-  #
-  #end
-  #
-  #describe 'running an action' do
-  #
-  #  it 'executed the run method storing results to output attribute'do
-  #    action = ActionTest.new('name' => 'zoo')
-  #    action.run
-  #    action.output.must_equal('id' => "zoo")
-  #  end
-  #
-  #end
+
+  describe Action::Missing do
+    include WorldInstance
+
+    let :action_data do
+      { class: 'RenamedAction',
+        state: 'success',
+        id: 123,
+        input: {},
+        execution_plan_id: 123 }
+    end
+
+    subject do
+      Action.from_hash(action_data, :run_phase, :success, world)
+    end
+
+    specify { subject.action_class.name.must_equal 'RenamedAction' }
+    specify { assert subject.is_a? Action }
+  end
 
 
   describe 'children' do
