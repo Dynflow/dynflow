@@ -216,11 +216,11 @@ module Dynflow
 
       def initialize(world, socket_path)
         super world
-        @socket_handler = Core.new world, socket_path
+        @core = Core.new world, socket_path
       end
 
       def execute(execution_plan_id, future = Future.new)
-        accepted = (@socket_handler << Core::Execute[execution_plan_id, future]).value
+        accepted = (@core << Core::Execute[execution_plan_id, future]).value
         raise accepted.value if accepted.value.is_a? Exception
         return future
       end
