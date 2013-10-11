@@ -9,6 +9,7 @@ module Dynflow
     extend Format
 
     require 'dynflow/action/suspended'
+    require 'dynflow/action/missing'
 
     require 'dynflow/action/plan_phase'
     require 'dynflow/action/flow_phase'
@@ -59,7 +60,7 @@ module Dynflow
     def self.from_hash(hash, phase, *args)
       check_class_key_present hash
       raise ArgumentError, "unknown phase '#{phase}'" unless [:plan_phase, :run_phase, :finalize_phase].include? phase
-      hash[:class].constantize.send(phase).new_from_hash(hash, *args)
+      Action.constantize(hash[:class]).send(phase).new_from_hash(hash, *args)
     end
 
     attr_reader :world, :state, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id, :error
@@ -86,6 +87,12 @@ module Dynflow
       else
         self
       end
+    end
+
+    def self.constantize(action_name)
+      action_name.constantize
+    rescue NameError
+      Action::Missing.generate(action_name)
     end
 
     def action_logger

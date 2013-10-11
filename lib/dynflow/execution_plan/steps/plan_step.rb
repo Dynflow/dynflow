@@ -57,7 +57,7 @@ module Dynflow
         new execution_plan_id,
             hash[:id],
             hash[:state],
-            hash[:action_class].constantize,
+            Action.constantize(hash[:action_class]),
             hash[:action_id],
             hash_to_error(hash[:error]),
             world,
