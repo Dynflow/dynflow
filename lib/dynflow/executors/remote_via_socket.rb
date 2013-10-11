@@ -5,7 +5,7 @@ module Dynflow
   module Executors
     class RemoteViaSocket < Abstract
 
-      Message = Algebrick.type do
+      SocketMessage = Algebrick.type do
         Execute      = type { fields request_id: Integer, execution_plan_uuid: String }
         Confirmation = type do
           variants Accepted = type { fields request_id: Integer },
@@ -22,7 +22,7 @@ module Dynflow
         end
 
         def load(str)
-          Message.from_hash MultiJson.load(str)
+          SocketMessage.from_hash MultiJson.load(str)
         end
 
         def send_message(io, message, barrier = nil)
@@ -40,8 +40,6 @@ module Dynflow
           end
         end
       end
-
-      include Serialization
 
       class Listener < Dynflow::Listeners::Abstract
         include Serialization
@@ -108,90 +106,127 @@ module Dynflow
         end
       end
 
+      class Manager
+        include Algebrick::TypeCheck
+
+        def initialize(persistence)
+          @world            = is_kind_of! persistence, Dynflow::World
+          @last_id          = 0
+          @finished_futures = {}
+          @accepted_futures = {}
+        end
+
+        def add(future)
+          id                    = @last_id += 1
+          @finished_futures[id] = future
+          @accepted_futures[id] = accepted = Future.new
+          return id, accepted
+        end
+
+        def accepted(id)
+          @accepted_futures.delete(id).set true
+        end
+
+        def failed(id, error)
+          @finished_futures.delete id
+          @accepted_futures.delete(id).set Dynflow::Error.new(error)
+        end
+
+        def finished(id, uuid)
+          @finished_futures.delete(id).set @world.persistence.load_execution_plan(uuid)
+        end
+      end
+
+      class Core < MicroActorWithFutures
+        include Serialization
+
+        Message = Algebrick.type do
+          variants Closed   = atom,
+                   Received = type { fields message: SocketMessage },
+                   Execute  = type { fields execution_plan_uuid: String, future: Future }
+        end
+
+        def initialize(world, socket_path)
+          super(world.logger)
+          @socket_path = is_kind_of! socket_path, String
+          @manager     = Manager.new world
+          @socket      = nil
+          connect
+        end
+
+        private
+
+        def on_message(message)
+          match message,
+                Closed >-> do
+                  @socket = nil
+                  logger.info 'Disconnected.'
+                end,
+                Received.(Accepted.(~any)) >-> id { @manager.accepted id },
+                Received.(Failed.(~any, ~any)) >-> id, error { @manager.failed id, error },
+                Received.(Done.(~any, ~any)) >-> id, uuid { @manager.finished id, uuid },
+                Core::Execute.(~any, ~any) >-> execution_plan_uuid, future do
+                  id, accepted = @manager.add future
+                  success      = connect && begin
+                    send_message @socket, RemoteViaSocket::Execute[id, execution_plan_uuid]
+                    true
+                  rescue IOError => error
+                    logger.warn error
+                    false
+                  end
+                  @manager.failed id, 'No connection to RemoteViaSocket::Listener' unless success
+
+                  return accepted
+                end
+        end
+
+        def connect
+          return true if @socket
+          @socket = UNIXSocket.new @socket_path
+          logger.info 'Connected.'
+          read_socket_until_closed
+          true
+        rescue IOError => error
+          logger.warn error
+          false
+        end
+
+        def read_socket_until_closed
+          Thread.new do
+            catch(:stop_reading) do
+              loop { read_socket }
+            end
+          end
+        end
+
+        def read_socket
+          match message = receive_message(@socket),
+                SocketMessage >-> { self << Received[message] },
+                NilClass.to_m >-> do
+                  self << Closed
+                  throw :stop_reading
+                end
+        rescue => error
+          logger.fatal error
+        end
+      end
+
+      include Serialization
       include Algebrick::Matching
 
       def initialize(world, socket_path)
         super world
-
-        @socket           = nil
-        @socket_barrier   = Mutex.new
-        @socket_path      = is_kind_of! socket_path, String
-        @last_id          = 0
-        @finished_futures = {}
-        @accepted_futures = {}
-        connect
-        @thread = Thread.new { loop { listen } }
+        @socket_handler = Core.new world, socket_path
       end
 
       def execute(execution_plan_id, future = Future.new)
-        id                    = @last_id += 1
-        @finished_futures[id] = future
-        @accepted_futures[id] = accepted = Future.new
-
-        socket do |socket|
-          if socket
-            send_message socket, Execute[id, execution_plan_id]
-          else
-            raise Dynflow::Error, 'No connection to RemoteViaSocket::Listener'
-          end
-        end
-
-        if accepted.value.is_a? Exception
-          @finished_futures.delete id
-          raise accepted.value
-        end
-
+        accepted = (@socket_handler << Core::Execute[execution_plan_id, future]).value
+        raise accepted.value if accepted.value.is_a? Exception
         return future
       end
 
       def update_progress(suspended_action, done, *args)
-        raise NotImplementedError
-      end
-
-      private
-
-      def socket=(val)
-        @socket_barrier.synchronize { @socket = val }
-      end
-
-      def socket
-        if block_given?
-          @socket_barrier.synchronize do
-            yield @socket
-          end
-        else
-          @socket
-        end
-      end
-
-      def connect
-        self.socket = UNIXSocket.new @socket_path
-        logger.info 'Connected.'
-      rescue => error
-        logger.warn error
-        sleep 1
-        retry
-      end
-
-      def listen
-        connect unless socket
-        match message = receive_message(socket),
-              Accepted.(~any) >-> id do
-                @accepted_futures.delete(id).set true
-              end,
-              Failed.(~any, ~any) >-> id, error do
-                @accepted_futures.delete(id).set Dynflow::Error.new(error)
-              end,
-              Done.(~any, ~any) >-> id, uuid do
-                execution_plan = world.persistence.load_execution_plan(uuid)
-                @finished_futures.delete(id).set execution_plan
-              end,
-              NilClass.to_m >-> do
-                self.socket = nil
-                logger.info 'Disconnected.'
-              end
-      rescue => error
-        logger.fatal error
+        raise NotImplementedError # TODO
       end
     end
   end
