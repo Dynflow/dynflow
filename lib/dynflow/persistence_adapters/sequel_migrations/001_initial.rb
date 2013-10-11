@@ -32,7 +32,7 @@ Sequel.migration do
       index [:execution_plan_uuid, :id], :unique => true
       column :action_id, Fixnum
       foreign_key [:execution_plan_uuid, :action_id], :dynflow_actions
-      index [:execution_plan_uuid, :action_id], :unique => true
+      index [:execution_plan_uuid, :action_id]
 
       column :data, String, text: true
 

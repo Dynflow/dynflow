@@ -23,10 +23,9 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      # FIXME missing step action_id on DB
       META_DATA = { execution_plan: %w(state result started_at ended_at real_time execution_time),
                     action:         [],
-                    step:           %w(state started_at ended_at real_time execution_time) }
+                    step:           %w(state started_at ended_at real_time execution_time action_id) }
 
       def initialize(db_path)
         @db = initialize_db db_path

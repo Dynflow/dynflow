@@ -3,20 +3,20 @@ module Dynflow
     include Algebrick::TypeCheck
 
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter
+                :logger_adapter, :options
 
     def initialize(options = {})
-      @logger_adapter = is_kind_of!(options[:logger_adapter] || LoggerAdapters::Simple.new,
+      @logger_adapter = is_kind_of!(options.delete(:logger_adapter) || LoggerAdapters::Simple.new,
                                     LoggerAdapters::Abstract)
       options         = self.default_options.merge(options)
 
-      @executor = options[:executor] || Executors::Parallel.new(self, options[:pool_size])
+      @executor = options.delete(:executor) || Executors::Parallel.new(self, options[:pool_size])
       is_kind_of! @executor, Executors::Abstract
 
-      persistence_adapter  = is_kind_of! options[:persistence_adapter], PersistenceAdapters::Abstract
+      persistence_adapter  = is_kind_of! options.delete(:persistence_adapter), PersistenceAdapters::Abstract
       @persistence         = Persistence.new(self, persistence_adapter)
-      @transaction_adapter = is_kind_of! options[:transaction_adapter], TransactionAdapters::Abstract
-      @action_classes      = options[:action_classes]
+      @transaction_adapter = is_kind_of! options.delete(:transaction_adapter), TransactionAdapters::Abstract
+      @action_classes      = options.delete(:action_classes)
 
       @suspended_actions  = {}
       @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
@@ -26,10 +26,12 @@ module Dynflow
         end
         index
       end.tap { |o| o.freeze }
+
+      @options = options
     end
 
     def default_options
-      { action_classes: Action.all_children }
+      { action_classes: Action.all_children, step_warning_time_limit: 1 }
     end
 
     def logger
