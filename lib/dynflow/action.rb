@@ -175,7 +175,6 @@ module Dynflow
       case self.state
       when :pending
         self.state = :success
-        # TODO clean-up error if present from previous failure
       when :suspended, :error
       else
         raise "wrong state #{self.state}"
