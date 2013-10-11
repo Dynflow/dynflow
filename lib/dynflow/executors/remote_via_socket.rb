@@ -226,7 +226,7 @@ module Dynflow
       end
 
       def update_progress(suspended_action, done, *args)
-        raise NotImplementedError # TODO
+        raise 'updates are handled in a process with real executor'
       end
     end
   end
