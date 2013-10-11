@@ -239,7 +239,7 @@ module Dynflow
 
     end
 
-    class PollingServiceImpl < Dynflow::Executors::Parallel::MicroActor
+    class PollingServiceImpl < Dynflow::MicroActor
 
       Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
       Tick = Algebrick.type

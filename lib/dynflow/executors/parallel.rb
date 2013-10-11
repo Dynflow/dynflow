@@ -2,7 +2,6 @@ module Dynflow
   module Executors
     class Parallel < Abstract
 
-      require 'dynflow/executors/parallel/micro_actor'
       require 'dynflow/executors/parallel/sequence_cursor'
       require 'dynflow/executors/parallel/flow_manager'
       require 'dynflow/executors/parallel/execution_plan_manager'
