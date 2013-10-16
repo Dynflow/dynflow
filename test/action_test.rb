@@ -22,6 +22,34 @@ module Dynflow
     specify { assert subject.is_a? Action }
   end
 
+  describe "extending action phase" do
+
+    module TestExtending
+
+      module Extension
+        def new_method
+        end
+      end
+
+      class ExtendedAction < Dynflow::Action
+
+        def self.generate_phase(phase_module)
+          super.tap do |phase_class|
+            if phase_module == Dynflow::Action::RunPhase
+              phase_class.send(:include, Extension)
+            end
+          end
+        end
+
+      end
+    end
+
+    it "is possible to extend the action just for some phase" do
+      refute TestExtending::ExtendedAction.plan_phase.instance_methods.include?(:new_method)
+      assert TestExtending::ExtendedAction.run_phase.instance_methods.include?(:new_method)
+    end
+  end
+
 
   describe 'children' do
     include WorldInstance

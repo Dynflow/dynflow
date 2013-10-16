@@ -17,15 +17,20 @@ module Dynflow
     require 'dynflow/action/finalize_phase'
 
     def self.plan_phase
-      @planning ||= Class.new(self) { include PlanPhase }
+      @planning ||= self.generate_phase(PlanPhase)
     end
 
     def self.run_phase
-      @running ||= Class.new(self) { include RunPhase }
+      @running ||= self.generate_phase(RunPhase)
     end
 
     def self.finalize_phase
-      @finishing ||= Class.new(self) { include FinalizePhase }
+      @finishing ||= self.generate_phase(FinalizePhase)
+    end
+
+    # Override this to extend the phase classes
+    def self.generate_phase(phase_module)
+      Class.new(self) { include phase_module }
     end
 
     def self.phase?
