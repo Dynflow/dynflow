@@ -99,7 +99,7 @@ module Dynflow
         when Flows::Concurrence
           classes << "concurrence"
         when Flows::Atom
-          atom_css_classes(flow)
+          classes << atom_css_classes(flow)
         else
           raise "Unknown run plan #{run_plan.inspect}"
         end
@@ -113,6 +113,14 @@ module Dynflow
           "success"
         when :error
           "danger"
+        end
+      end
+
+      def progress_width(action)
+        if action.state == :error
+          100 # we want to show the red bar in full width
+        else
+          action.progress_done
         end
       end
 
