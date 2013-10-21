@@ -85,6 +85,13 @@ module Dynflow
                           real_time:         real_time
       end
 
+      # @return [Array<[0..100], Fixnum>] the percentage of the step progress
+      # and the weight - how time-consuming the task is comparing the others.
+      # @see [Action::Progress] for more details
+      def progress
+        raise NotImplementedError, "Expected to be implemented in RunStep and FinalizeStep"
+      end
+
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)

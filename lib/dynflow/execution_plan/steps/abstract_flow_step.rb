@@ -15,6 +15,12 @@ module Dynflow
         self.class.from_hash(to_hash, execution_plan_id, world)
       end
 
+
+      def progress
+        action = persistence.load_action(self)
+        [action.progress_done, action.progress_weight]
+      end
+
       private
 
       def open_action

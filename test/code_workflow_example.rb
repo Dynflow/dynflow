@@ -312,7 +312,38 @@ module Dynflow
 
       # called when there is some update about the progress of the task
       def update_progress(done, progress)
+        if input[:text] =~ /pause in progress (\d+)/
+          TestPause.pause if output[:progress] == $1.to_i
+        end
         output.update progress: progress, done: done
+      end
+
+      def run_progress_done
+        output[:progress]
+      end
+    end
+
+    class DummyHeavyProgress < Action
+
+      def plan(input)
+        sequence do
+          plan_self(input)
+          plan_action(DummySuspended, input)
+        end
+      end
+
+      def run
+      end
+
+      def finalize
+      end
+
+      def run_progress_weight
+        4
+      end
+
+      def finalize_progress_weight
+        5
       end
     end
 

@@ -8,6 +8,9 @@ module Dynflow
     require 'dynflow/action/format'
     extend Format
 
+    require 'dynflow/action/progress'
+    include Progress
+
     require 'dynflow/action/suspended'
     require 'dynflow/action/missing'
 
