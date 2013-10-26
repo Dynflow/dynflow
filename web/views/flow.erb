@@ -2,7 +2,7 @@
   <% if flow.is_a? Dynflow::Flows::Atom %>
     <tr>
       <td class="<%= h(flow_css_classes(flow)) %>">
-        <%= erb :flow_step, locals: { step: step(flow.step_id) } %>
+        <%= erb :flow_step, locals: { flow: flow, step: step(flow.step_id) } %>
       </td>
     </tr>
   <% else %>

@@ -32,7 +32,6 @@ table.flow td.flow.concurrence,
 table.flow-hint td.border {
     border-style: solid;
     border-width: 4px;
-    padding: 8px;
 }
 
 table.flow-hint td {
@@ -52,31 +51,52 @@ table.flow td.concurrence, table.flow-hint td.concurrence {
     border-color: #005CE6;
 }
 
+td.atom {
+    padding: 0;
+}
+
+table.flow div.atom {
+    margin-bottom: -1.6em;
+    position: relative;
+    height: 2.1em;
+    top: 0;
+    left: 0;
+    z-index:-1;
+}
+
 table.flow table {
     width: 100%;
 }
 
-table.flow td.success, table.flow td.success span.step-label {
-    background-color: #DFF0D8;
+table.flow td.success span.step-label {
     color: #468847;
 }
 
-table.flow td.error {
+table.flow div.success {
+    background-color: #DFF0D8;
+}
+
+table.flow div.error {
     background-color: #FF9D9D;
 }
 
-table.flow td.skipped, table.flow td.skipped span.step-label {
-    background-color: #FCF8E3;
+table.flow td.skipped span.step-label {
     color: #C09853;
+}
+
+table.flow div.skipped {
+    background-color: #FCF8E3;
 }
 
 table.flow span.step-label {
     cursor: pointer;
+    margin-left: 4px;
+    display: inline-block;
+    height: 1.5em;
 }
 
 table.flow div.action {
     background-color: white;
-    margin: 5px -4px -4px -4px;
     padding: 10px;
     display: none;
 }

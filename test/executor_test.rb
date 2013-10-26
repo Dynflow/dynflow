@@ -163,6 +163,48 @@ module Dynflow
                 run_step.execution_time.must_be :<, run_step.real_time
               end
 
+              describe 'progress' do
+                before do
+                  TestPause.setup
+                  @running_plan = world.execute(execution_plan.id)
+                end
+
+                after do
+                  @running_plan.wait
+                  TestPause.teardown
+                end
+
+                describe 'plan with one action' do
+                  let :execution_plan do
+                    world.plan(CodeWorkflowExample::DummySuspended,
+                               { external_task_id: '123',
+                                 text:             'pause in progress 20%' })
+                  end
+
+                  it 'determines the progress of the execution plan in percents' do
+                    TestPause.when_paused do
+                      plan = world.persistence.load_execution_plan(execution_plan.id)
+                      plan.progress.round(2).must_equal 0.2
+                    end
+                  end
+                end
+
+                describe 'plan with more action' do
+                  let :execution_plan do
+                    world.plan(CodeWorkflowExample::DummyHeavyProgress,
+                               { external_task_id: '123',
+                                 text:             'pause in progress 20%' })
+                  end
+
+                  it 'takes the steps weight in account' do
+                    TestPause.when_paused do
+                      plan = world.persistence.load_execution_plan(execution_plan.id)
+                      plan.progress.round(2).must_equal 0.42
+                    end
+                  end
+                end
+              end
+
             end
 
             describe "action with empty flows" do

@@ -31,7 +31,7 @@ module Dynflow
     end
 
     def default_options
-      { action_classes: Action.all_children, step_warning_time_limit: 1 }
+      { action_classes: Action.all_children }
     end
 
     def logger

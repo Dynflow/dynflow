@@ -237,6 +237,18 @@ module Dynflow
                hash[:real_time])
     end
 
+    # @return [0..1] the percentage of the progress. See Action::Progress for more
+    # info
+    def progress
+      flow_step_ids = run_flow.all_step_ids + finalize_flow.all_step_ids
+      plan_done, plan_total = flow_step_ids.reduce([0.0 ,0]) do |(done, total), step_id|
+        step_progress_done, step_progress_weight = self.steps[step_id].progress
+        [done + (step_progress_done * step_progress_weight),
+         total + step_progress_weight]
+      end
+      plan_total > 0 ? (plan_done / plan_total) : 1
+    end
+
     private
 
     def state=(state)
