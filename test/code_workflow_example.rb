@@ -318,8 +318,8 @@ module Dynflow
         output.update progress: progress, done: done
       end
 
-      def run_progress_done
-        output[:progress]
+      def run_progress
+        output[:progress].to_f / 100
       end
     end
 
