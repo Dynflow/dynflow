@@ -58,10 +58,28 @@ module Dynflow
 
           describe "execution plan state" do
 
-            describe "after planning" do
+            describe "after successful planning" do
 
               it "is pending" do
                 execution_plan.state.must_equal :pending
+              end
+
+            end
+
+            describe "after error in planning" do
+
+              class FailingAction < Dynflow::Action
+                def plan
+                  raise "I failed"
+                end
+              end
+
+              let :execution_plan do
+                world.plan(FailingAction)
+              end
+
+              it "is stopped" do
+                execution_plan.state.must_equal :stopped
               end
 
             end
