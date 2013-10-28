@@ -14,7 +14,7 @@ module Dynflow
                 :started_at, :ended_at, :execution_time, :real_time
 
     STATES            = [:pending, :running, :paused, :stopped]
-    STATE_TRANSITIONS = { pending: [:running],
+    STATE_TRANSITIONS = { pending: [:running, :stopped],
                           running: [:paused, :stopped],
                           paused:  [:running],
                           stopped: [] }
@@ -55,8 +55,6 @@ module Dynflow
         raise "invalid state transition #{self.state} >> #{state}"
       end
       case state
-      when :running
-        @started_at ||= Time.now
       when :stopped
         @ended_at  = Time.now
         @real_time = @ended_at - @started_at
@@ -101,6 +99,7 @@ module Dynflow
     end
 
     def plan(*args)
+      @started_at = Time.now
       world.transaction_adapter.transaction do
         with_planning_scope do
           root_plan_step.execute(self, nil, *args)
@@ -114,10 +113,9 @@ module Dynflow
           @run_flow = @run_flow.sub_flows.first
         end
 
-        if result == :error
-          world.transaction_adapter.rollback
-        end
+        world.transaction_adapter.rollback if error?
       end
+      set_state(:stopped) if error?
       save
       steps.values.each &:save
     end
