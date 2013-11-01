@@ -29,9 +29,7 @@ module Dynflow
 
         yield action
 
-        self.state = action.state
-        self.error = action.error
-        persistence.save_action(self, action)
+        persistence.save_action(execution_plan_id, action)
         save
 
         return self

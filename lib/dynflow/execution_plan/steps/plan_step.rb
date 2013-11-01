@@ -36,19 +36,18 @@ module Dynflow
         is_kind_of! execution_plan, ExecutionPlan
         attributes = { execution_plan_id: execution_plan.id,
                        id:                action_id,
-                       state:             :pending,
+                       state_holder:      self,
                        plan_step_id:      self.id }
         action     = action_class.plan_phase.new(attributes, execution_plan, trigger)
+        persistence.save_action(execution_plan_id, action)
 
         with_time_calculation do
           action.execute(*args)
         end
 
         execution_plan.update_meta_data execution_time
-        self.state = action.state
-        self.error = action.error
 
-        persistence.save_action(self, action)
+        persistence.save_action(execution_plan_id, action)
         return action
       end
 

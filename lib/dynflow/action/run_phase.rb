@@ -11,15 +11,20 @@ module Dynflow
     def execute(done = nil, *args)
       case state
       when :suspended
-        self.state = :pending
+        self.state = :running
+        save_state
         with_error_handling do
           update_progress done, *args
         end
         self.state = :suspended unless done
 
+      when :running
+        raise NotImplementedError, 'recovery after restart is not implemented'
+
       when :pending, :error
         raise unless done.nil? && args.empty?
-        self.state = :pending
+        self.state = :running
+        save_state
         with_error_handling do
           if catch(SUSPENDING) { run } == SUSPENDING
             self.state       = :suspended

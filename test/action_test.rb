@@ -8,14 +8,15 @@ module Dynflow
 
     let :action_data do
       { class: 'RenamedAction',
-        state: 'success',
         id: 123,
         input: {},
         execution_plan_id: 123 }
     end
 
     subject do
-      Action.from_hash(action_data, :run_phase, :success, world)
+      state_holder = ExecutionPlan::Steps::Abstract.allocate
+      state_holder.set_state :success, true
+      Action.from_hash(action_data, :run_phase, state_holder, world)
     end
 
     specify { subject.action_class.name.must_equal 'RenamedAction' }

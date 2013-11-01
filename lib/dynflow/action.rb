@@ -41,6 +41,7 @@ module Dynflow
     end
 
     def self.all_children
+      #noinspection RubyArgCount
       children.
           inject(children) { |children, child| children + child.all_children }.
           select { |ch| !ch.phase? }
@@ -71,7 +72,7 @@ module Dynflow
       Action.constantize(hash[:class]).send(phase).new_from_hash(hash, *args)
     end
 
-    attr_reader :world, :state, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id, :error
+    attr_reader :world, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id
 
     def initialize(attributes, world)
       raise "It's not expected to initialize this class directly, use phases." unless self.class.phase?
@@ -79,13 +80,12 @@ module Dynflow
       is_kind_of! attributes, Hash
 
       @world             = is_kind_of! world, World
-      self.state         = attributes[:state] || raise(ArgumentError, 'missing state')
+      @state_holder      = is_kind_of! attributes[:state_holder], ExecutionPlan::Steps::Abstract
       @execution_plan_id = attributes[:execution_plan_id] || raise(ArgumentError, 'missing execution_plan_id')
       @id                = attributes[:id] || raise(ArgumentError, 'missing id')
       @plan_step_id      = attributes[:plan_step_id]
       @run_step_id       = attributes[:run_step_id]
       @finalize_step_id  = attributes[:finalize_step_id]
-      @error             = nil
     end
 
     def self.action_class
@@ -115,15 +115,10 @@ module Dynflow
       recursive_to_hash class:             action_class.name,
                         execution_plan_id: execution_plan_id,
                         id:                id,
-                        state:             state,
                         plan_step_id:      plan_step_id,
                         run_step_id:       run_step_id,
                         finalize_step_id:  finalize_step_id
     end
-
-    # TODO add :running state to be able to detect it dieing in the middle of execution
-    # TODO add STATE_TRANSITIONS an check it
-    STATES = [:pending, :success, :suspended, :skipped, :error]
 
     # @api private
     # @return [Array<Fixnum>] - ids of steps referenced from action
@@ -141,11 +136,22 @@ module Dynflow
       return Array(ret).flatten.compact
     end
 
+    def state
+      @state_holder.state
+    end
+
+    def error
+      @state_holder.error
+    end
+
     protected
 
     def state=(state)
-      raise "unknown state #{state}" unless STATES.include? state
-      @state = state
+      @state_holder.state = state
+    end
+
+    def save_state
+      @state_holder.save
     end
 
     # @override
@@ -170,18 +176,18 @@ module Dynflow
     private
 
     def with_error_handling(&block)
-      raise "wrong state #{self.state}" unless self.state == :pending
+      raise "wrong state #{self.state}" unless self.state == :running
 
       begin
         block.call
       rescue => error
         action_logger.error error
-        self.state = :error
-        @error     = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
+        self.state          = :error
+        @state_holder.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
       end
 
       case self.state
-      when :pending
+      when :running
         self.state = :success
       when :suspended, :error
       else

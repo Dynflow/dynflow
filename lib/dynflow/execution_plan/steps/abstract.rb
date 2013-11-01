@@ -6,7 +6,6 @@ module Dynflow
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
                   :ended_at, :execution_time, :real_time
       attr_accessor :error
-      private :error=
 
       def initialize(execution_plan_id,
           id,
@@ -30,9 +29,9 @@ module Dynflow
         @real_time         = is_kind_of! real_time, Float
 
         if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-          self.state = state.to_sym
+          self.set_state state.to_sym, true
         else
-          self.state = state
+          self.set_state state, true
         end
 
         is_kind_of! action_class, Class
@@ -60,10 +59,30 @@ module Dynflow
         persistence.save_step(self)
       end
 
-      STATES = Action::STATES
+      STATES = [:pending, :running, :success, :suspended, :skipped, :error]
+
+      def self.state_transitions
+        @state_transitions ||= { pending:   [:running],
+                                 running:   [:success, :error],
+                                 success:   [],
+                                 suspended: [],
+                                 skipped:   [],
+                                 error:     [] }
+      end
+
+      def state_transitions
+        self.class.state_transitions
+      end
 
       def state=(state)
+        set_state state, false
+      end
+
+      def set_state(state, skip_transition_check)
         raise "unknown state #{state}" unless STATES.include? state
+        unless skip_transition_check || state_transitions.fetch(self.state).include?(state)
+          raise "invalid state transition #{self.state} >> #{state} in #{self}"
+        end
         @state = state
       end
 

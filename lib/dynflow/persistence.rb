@@ -12,15 +12,17 @@ module Dynflow
     end
 
     def load_action(step)
-      attributes = adapter.load_action(step.execution_plan_id, step.action_id)
+      attributes = adapter.
+          load_action(step.execution_plan_id, step.action_id).
+          update state_holder: step
       return Action.from_hash(attributes,
                               step.phase,
-                              step.state,
+                              step,
                               step.world)
     end
 
-    def save_action(step, action)
-      adapter.save_action(step.execution_plan_id, step.action_id, action.to_hash)
+    def save_action(execution_plan_id, action)
+      adapter.save_action(execution_plan_id, action.id, action.to_hash)
     end
 
     def find_execution_plans(options)

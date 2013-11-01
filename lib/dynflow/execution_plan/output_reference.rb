@@ -30,10 +30,6 @@ module Dynflow
 
     def dereference(persistence, execution_plan_id)
       action_data = persistence.adapter.load_action(execution_plan_id, action_id)
-      if action_data[:state].to_s != 'success'
-        raise "Referenced action #{action_id} is in #{action_data.inspect} state." +
-                  "We can dereference only actions that finished successfully"
-      end
       deref = action_data[:output]
       @subkeys.each do |subkey|
         if deref.respond_to?(:[])

@@ -1,4 +1,3 @@
-
 require_relative 'test_helper'
 require_relative 'code_workflow_example'
 
@@ -103,6 +102,14 @@ module Dynflow
                 TestPause.when_paused do
                   plan = world.persistence.load_execution_plan(execution_plan.id)
                   plan.state.must_equal :running
+                  triage = plan.steps.values.find do |s|
+                    s.is_a?(Dynflow::ExecutionPlan::Steps::RunStep) &&
+                        s.action_class == Dynflow::CodeWorkflowExample::Triage
+                  end
+                  triage.state.must_equal :running
+                  world.persistence.
+                      load_step(triage.execution_plan_id, triage.id, world).
+                      state.must_equal :running
                 end
               end
 
@@ -327,7 +334,7 @@ module Dynflow
               end
               world.persistence.load_action(failed_step).tap do |action|
                 action.input[:text] = "ok"
-                world.persistence.save_action(failed_step, action)
+                world.persistence.save_action(failed_step.execution_plan_id, action)
               end
               TestExecutionLog.setup
               world.execute(failed_execution_plan.id).value
@@ -368,7 +375,7 @@ module Dynflow
               end
               world.persistence.load_action(failed_step).tap do |action|
                 action.input[:text] = "ok"
-                world.persistence.save_action(failed_step, action)
+                world.persistence.save_action(failed_step.execution_plan_id, action)
               end
               TestExecutionLog.setup
               world.execute(finalize_failed_execution_plan.id).value
