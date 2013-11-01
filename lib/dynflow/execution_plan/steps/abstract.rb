@@ -2,6 +2,7 @@ module Dynflow
   module ExecutionPlan::Steps
     class Abstract < Serializable
       include Algebrick::TypeCheck
+      include Stateful
 
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
                   :ended_at, :execution_time, :real_time
@@ -28,11 +29,7 @@ module Dynflow
         @execution_time    = is_kind_of! execution_time, Float
         @real_time         = is_kind_of! real_time, Float
 
-        if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-          self.set_state state.to_sym, true
-        else
-          self.set_state state, true
-        end
+        self.state = state.to_sym
 
         is_kind_of! action_class, Class
         raise ArgumentError, 'action_class is not an child of Action' unless action_class < Action
@@ -59,7 +56,9 @@ module Dynflow
         persistence.save_step(self)
       end
 
-      STATES = [:pending, :running, :success, :suspended, :skipped, :error]
+      def self.states
+        @states ||= [:pending, :running, :success, :suspended, :skipped, :error]
+      end
 
       def self.state_transitions
         @state_transitions ||= { pending:   [:running],
@@ -68,22 +67,6 @@ module Dynflow
                                  suspended: [],
                                  skipped:   [],
                                  error:     [] }
-      end
-
-      def state_transitions
-        self.class.state_transitions
-      end
-
-      def state=(state)
-        set_state state, false
-      end
-
-      def set_state(state, skip_transition_check)
-        raise "unknown state #{state}" unless STATES.include? state
-        unless skip_transition_check || state_transitions.fetch(self.state).include?(state)
-          raise "invalid state transition #{self.state} >> #{state} in #{self}"
-        end
-        @state = state
       end
 
       def execute(*args)

@@ -15,7 +15,7 @@ module Dynflow
           unless [:pending, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
           end
-          execution_plan.set_state(:running)
+          execution_plan.update_state(:running)
         end
 
         def start
@@ -84,7 +84,7 @@ module Dynflow
         end
 
         def finish
-          @execution_plan.set_state(execution_plan.error? ? :paused : :stopped)
+          @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
           return no_work
         end
 

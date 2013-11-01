@@ -5,6 +5,7 @@ module Dynflow
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
     include Algebrick::TypeCheck
+    include Stateful
 
     require 'dynflow/execution_plan/steps'
     require 'dynflow/execution_plan/output_reference'
@@ -13,11 +14,16 @@ module Dynflow
     attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time
 
-    STATES            = [:pending, :running, :paused, :stopped]
-    STATE_TRANSITIONS = { pending: [:running, :stopped],
-                          running: [:paused, :stopped],
-                          paused:  [:running],
-                          stopped: [] }
+    def self.states
+      @states ||= [:pending, :running, :paused, :stopped]
+    end
+
+    def self.state_transitions
+      @state_transitions ||= { pending: [:running, :stopped],
+                               running: [:paused, :stopped],
+                               paused:  [:running],
+                               stopped: [] }
+    end
 
     # all params with default values are part of *private* api
     def initialize(world,
@@ -50,16 +56,15 @@ module Dynflow
       @steps = steps
     end
 
-    def set_state(state)
-      unless STATE_TRANSITIONS[self.state].include?(state)
-        raise "invalid state transition #{self.state} >> #{state}"
-      end
-      case state
+    def update_state(state)
+      case self.state = state
+        # TODO add :planning state and move start_time setting here
       when :stopped
         @ended_at  = Time.now
         @real_time = @ended_at - @started_at
+      else
+        # ignore
       end
-      self.state = state
       self.save
     end
 
@@ -115,7 +120,7 @@ module Dynflow
 
         world.transaction_adapter.rollback if error?
       end
-      set_state(:stopped) if error?
+      update_state(:stopped) if error?
       save
       steps.values.each &:save
     end
@@ -238,8 +243,8 @@ module Dynflow
     # @return [0..1] the percentage of the progress. See Action::Progress for more
     # info
     def progress
-      flow_step_ids = run_flow.all_step_ids + finalize_flow.all_step_ids
-      plan_done, plan_total = flow_step_ids.reduce([0.0 ,0]) do |(done, total), step_id|
+      flow_step_ids         = run_flow.all_step_ids + finalize_flow.all_step_ids
+      plan_done, plan_total = flow_step_ids.reduce([0.0, 0]) do |(done, total), step_id|
         step_progress_done, step_progress_weight = self.steps[step_id].progress
         [done + (step_progress_done * step_progress_weight),
          total + step_progress_weight]
@@ -248,16 +253,6 @@ module Dynflow
     end
 
     private
-
-    def state=(state)
-      if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-        @state = state.to_sym
-      elsif STATES.include? state
-        @state = state
-      else
-        raise "unknown state #{state}"
-      end
-    end
 
     def persistence
       world.persistence
