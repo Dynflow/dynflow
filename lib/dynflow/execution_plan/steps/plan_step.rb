@@ -51,6 +51,16 @@ module Dynflow
         return action
       end
 
+      def self.state_transitions
+        @state_transitions ||= { pending:   [:running],
+                                 running:   [:success, :error],
+                                 success:   [],
+                                 suspended: [],
+                                 skipped:   [],
+                                 error:     [] }
+      end
+
+
       def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash
         new execution_plan_id,

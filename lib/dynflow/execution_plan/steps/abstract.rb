@@ -60,15 +60,6 @@ module Dynflow
         @states ||= [:pending, :running, :success, :suspended, :skipped, :error]
       end
 
-      def self.state_transitions
-        @state_transitions ||= { pending:   [:running],
-                                 running:   [:success, :error],
-                                 success:   [],
-                                 suspended: [],
-                                 skipped:   [],
-                                 error:     [] }
-      end
-
       def execute(*args)
         raise NotImplementedError
       end
