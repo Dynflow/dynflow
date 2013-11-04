@@ -52,7 +52,7 @@ module Dynflow
 
         describe 'for error in planning phase' do
 
-          before { execution_plan.steps[2].state = :error }
+          before { execution_plan.steps[2].set_state :error, true }
 
           it 'should be :error' do
             execution_plan.result.must_equal :error
@@ -66,7 +66,7 @@ module Dynflow
 
           before do
             step_id                             = execution_plan.run_flow.all_step_ids[2]
-            execution_plan.steps[step_id].state = :error
+            execution_plan.steps[step_id].set_state :error, true
           end
 
           it 'should be :error' do
@@ -79,7 +79,7 @@ module Dynflow
 
           before do
             step_id                             = execution_plan.run_flow.all_step_ids[2]
-            execution_plan.steps[step_id].state = :pending
+            execution_plan.steps[step_id].set_state :pending, true
           end
 
           it 'should be :pending' do
@@ -92,8 +92,8 @@ module Dynflow
 
           before do
             execution_plan.run_flow.all_step_ids.each_with_index do |step_id, index|
-              step       = execution_plan.steps[step_id]
-              step.state = (index == 2) ? :skipped : :success
+              step = execution_plan.steps[step_id]
+              step.set_state (index == 2) ? :skipped : :success, true
             end
           end
 

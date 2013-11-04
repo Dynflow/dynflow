@@ -2,11 +2,11 @@ module Dynflow
   module ExecutionPlan::Steps
     class Abstract < Serializable
       include Algebrick::TypeCheck
+      include Stateful
 
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
                   :ended_at, :execution_time, :real_time
       attr_accessor :error
-      private :error=
 
       def initialize(execution_plan_id,
           id,
@@ -29,11 +29,7 @@ module Dynflow
         @execution_time    = is_kind_of! execution_time, Float
         @real_time         = is_kind_of! real_time, Float
 
-        if state.is_a?(String) && STATES.map(&:to_s).include?(state)
-          self.state = state.to_sym
-        else
-          self.state = state
-        end
+        self.state = state.to_sym
 
         is_kind_of! action_class, Class
         raise ArgumentError, 'action_class is not an child of Action' unless action_class < Action
@@ -60,11 +56,8 @@ module Dynflow
         persistence.save_step(self)
       end
 
-      STATES = Action::STATES
-
-      def state=(state)
-        raise "unknown state #{state}" unless STATES.include? state
-        @state = state
+      def self.states
+        @states ||= [:pending, :running, :success, :suspended, :skipped, :error]
       end
 
       def execute(*args)

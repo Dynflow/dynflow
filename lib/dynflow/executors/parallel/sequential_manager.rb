@@ -72,9 +72,9 @@ module Dynflow
       end
 
       def with_state_updates(&block)
-        execution_plan.set_state(:running)
+        execution_plan.update_state(:running)
         block.call
-        execution_plan.set_state(execution_plan.error? ? :paused : :stopped)
+        execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
       end
     end
   end

@@ -7,6 +7,8 @@ module Dynflow
     end
 
     def execute
+      self.state = :running
+      save_state
       with_error_handling do
         finalize
       end

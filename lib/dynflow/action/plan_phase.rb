@@ -17,6 +17,8 @@ module Dynflow
     end
 
     def execute(*args)
+      self.state = :running
+      save_state
       with_error_handling do
         execution_plan.switch_flow(Flows::Concurrence.new([])) do
           plan(*args)

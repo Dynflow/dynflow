@@ -36,8 +36,8 @@ module Dynflow
     end
 
     module ClassMethods
-      def new_from_hash(hash, state, world)
-        new(hash.merge(state: state), world)
+      def new_from_hash(hash, state_holder, world)
+        new(hash.merge(state_holder: state_holder), world)
       end
     end
   end
