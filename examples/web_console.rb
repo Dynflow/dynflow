@@ -13,8 +13,12 @@ dynflow_console = Dynflow::WebConsole.setup do
   set :world, world
 end
 
-11.times do
-  world.trigger(Orchestrate::CreateInfrastructure)
+3.times do
+  Thread.new do
+    3.times do
+      world.trigger(Orchestrate::CreateInfrastructure)
+    end
+  end
 end
 
 puts <<MESSAGE

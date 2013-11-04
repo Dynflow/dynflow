@@ -2,7 +2,7 @@ module Dynflow
   module Executors
     class Parallel < Abstract
 
-      # TODO add dynflow error handling to avoid stucking and report errors to the future
+      # TODO add dynflow error handling to avoid getting stuck and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
           super(world.logger)

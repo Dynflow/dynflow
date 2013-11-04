@@ -15,14 +15,16 @@ module Dynflow
                 :started_at, :ended_at, :execution_time, :real_time
 
     def self.states
-      @states ||= [:pending, :running, :paused, :stopped]
+      @states ||= [:pending, :planning, :planed, :running, :paused, :stopped]
     end
 
     def self.state_transitions
-      @state_transitions ||= { pending: [:running, :stopped],
-                               running: [:paused, :stopped],
-                               paused:  [:running],
-                               stopped: [] }
+      @state_transitions ||= { pending:  [:planning],
+                               planning: [:planed, :stopped],
+                               planed:   [:running],
+                               running:  [:paused, :stopped],
+                               paused:   [:running],
+                               stopped:  [] }
     end
 
     # all params with default values are part of *private* api
@@ -58,7 +60,8 @@ module Dynflow
 
     def update_state(state)
       case self.state = state
-        # TODO add :planning state and move start_time setting here
+      when :planning
+        @started_at = Time.now
       when :stopped
         @ended_at  = Time.now
         @real_time = @ended_at - @started_at
@@ -104,7 +107,7 @@ module Dynflow
     end
 
     def plan(*args)
-      @started_at = Time.now
+      update_state(:planning)
       world.transaction_adapter.transaction do
         with_planning_scope do
           root_plan_step.execute(self, nil, *args)
@@ -120,8 +123,7 @@ module Dynflow
 
         world.transaction_adapter.rollback if error?
       end
-      update_state(:stopped) if error?
-      save
+      update_state(error? ? :stopped : :planed)
       steps.values.each &:save
     end
 

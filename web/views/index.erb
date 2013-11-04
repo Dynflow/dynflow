@@ -1,8 +1,8 @@
 <h1>Listing execution plans</h1>
 
 <form action="<%= url %>" method="GET">
-  <%= filter_checkbox(:state, ["pending", "running", "paused", "stopped"]) if supported_filter?(:state) %>
-  <input type="submit" value="Filter" />
+  <%= filter_checkbox(:state, Dynflow::ExecutionPlan.states.map(&:to_s)) if supported_filter?(:state) %>
+  <input type="submit" value="Filter"/>
 </form>
 
 <table class="table">

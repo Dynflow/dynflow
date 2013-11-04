@@ -16,6 +16,7 @@ module Orchestrate
                     :db_machine => 'host1',
                     :storage_machine => 'host2')
       end
+      sleep 2
     end
   end
 
