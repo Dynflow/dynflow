@@ -12,7 +12,7 @@ module Dynflow
           @execution_plan = is_kind_of! execution_plan, ExecutionPlan
           @future         = is_kind_of! future, Future
 
-          unless [:pending, :paused].include? execution_plan.state
+          unless [:planed, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
           end
           execution_plan.update_state(:running)
@@ -31,7 +31,7 @@ module Dynflow
                 Step.(:step) ^
                     ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(:done)) >-> step, done do
 
-                  execution_plan.update_meta_data step.execution_time if done.nil? ? step.state != :suspended : done
+                  execution_plan.update_execution_time step.execution_time if done.nil? ? step.state != :suspended : done
                   raise unless @run_manager
                   raise if @run_manager.done?
 

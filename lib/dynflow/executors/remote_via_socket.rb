@@ -48,9 +48,9 @@ module Dynflow
         def initialize(world, socket_path)
           super(world)
 
-          # TODO set socket rights
           File.delete socket_path if File.exist? socket_path
           @server = UNIXServer.new socket_path
+          File.chmod(0600, socket_path)
 
           @clients         = []
           @client_barriers = {}
