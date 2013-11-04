@@ -71,8 +71,7 @@ module Dynflow
       self.save
     end
 
-    def update_meta_data(execution_time)
-      # TODO cleanup ? this method is called allover the place
+    def update_execution_time(execution_time)
       @execution_time += execution_time
     end
 

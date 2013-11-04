@@ -32,7 +32,7 @@ module Dynflow
 
       def reset_finalize_steps
         execution_plan.finalize_flow.all_step_ids.each do |step_id|
-          step = execution_plan.steps[step_id]
+          step       = execution_plan.steps[step_id]
           step.state = :pending if [:success, :error].include? step.state
         end
       end
@@ -66,7 +66,7 @@ module Dynflow
 
       def run_step(step)
         step.execute
-        execution_plan.update_meta_data step.execution_time
+        execution_plan.update_execution_time step.execution_time
         execution_plan.save
         return step.state != :error
       end

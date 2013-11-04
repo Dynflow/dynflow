@@ -31,7 +31,7 @@ module Dynflow
                 Step.(:step) ^
                     ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(:done)) >-> step, done do
 
-                  execution_plan.update_meta_data step.execution_time if done.nil? ? step.state != :suspended : done
+                  execution_plan.update_execution_time step.execution_time if done.nil? ? step.state != :suspended : done
                   raise unless @run_manager
                   raise if @run_manager.done?
 

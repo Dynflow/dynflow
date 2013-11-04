@@ -45,7 +45,7 @@ module Dynflow
           action.execute(*args)
         end
 
-        execution_plan.update_meta_data execution_time
+        execution_plan.update_execution_time execution_time
 
         persistence.save_action(execution_plan_id, action)
         return action
