@@ -213,7 +213,7 @@ module Dynflow
 
           filters = params[:filters]
         elsif supported_filter?('state')
-          filters = { 'state' => ExecutionPlan.states.map(&:to_s) }
+          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - ['stopped'] }
         else
           filters = {}
         end
