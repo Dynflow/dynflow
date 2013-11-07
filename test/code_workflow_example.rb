@@ -306,7 +306,7 @@ module Dynflow
         suspend
       end
 
-      def setup_suspend(suspended_action)
+      def setup_progress_updates(suspended_action)
         raise 'Trolling detected' if input[:text] == "trolling"
         PollingService.wait_for_task(suspended_action, input[:external_task_id])
       end

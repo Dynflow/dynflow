@@ -188,7 +188,7 @@ module Dynflow
                 run_step.execution_time.must_be :<, run_step.real_time
               end
 
-              describe 'handling errors in setup_suspend' do
+              describe 'handling errors in setup_progress_updates' do
                 let :execution_plan do
                   world.plan(CodeWorkflowExample::DummySuspended,
                              external_task_id: '123',

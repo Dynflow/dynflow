@@ -7,7 +7,7 @@ module Dynflow
             pending:   [:running, :skipped], # :skipped when it cannot be run because it depends on skipped step
             running:   [:success, :error, :suspended],
             success:   [:suspended], # after not-done process_update
-            suspended: [:running, :error], # process_update, e.g. error in setup_suspend
+            suspended: [:running, :error], # process_update, e.g. error in setup_progress_updates
             skipped:   [],
             error:     [:skipped, :running]
         }

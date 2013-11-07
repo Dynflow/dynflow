@@ -208,7 +208,7 @@ module PlanAssertions
     else
       out << prefix << flow.class.name << "\n"
       flow.sub_flows.each do |sub_flow|
-        inspect_subflow(out, execution_plan, sub_flow, prefix + "  ")
+        inspect_subflow(out, execution_plan, sub_flow, prefix + '  ')
       end
     end
     out
@@ -220,7 +220,7 @@ module PlanAssertions
     out << "\n"
     plan_step.children.each do |sub_step_id|
       sub_step = execution_plan.steps[sub_step_id]
-      inspect_plan_step(out, execution_plan, sub_step, prefix + "  ")
+      inspect_plan_step(out, execution_plan, sub_step, prefix + '  ')
     end
     out
   end
@@ -229,5 +229,4 @@ module PlanAssertions
     dedent = string.scan(/^ */).map { |spaces| spaces.size }.min
     string.lines.map { |line| line[dedent..-1] }.join
   end
-
 end

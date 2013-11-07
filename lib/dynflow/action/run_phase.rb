@@ -29,7 +29,7 @@ module Dynflow
           if catch(SUSPENDING) { run } == SUSPENDING
             self.state       = :suspended
             suspended_action = Action::Suspended.new(self)
-            setup_suspend suspended_action
+            setup_progress_updates suspended_action
           end
         end
 
