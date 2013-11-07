@@ -11,7 +11,7 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :state, :root_plan_step, :steps, :run_flow, :finalize_flow,
+    attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time
 
     def self.states
