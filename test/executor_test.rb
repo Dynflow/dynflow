@@ -188,6 +188,23 @@ module Dynflow
                 run_step.execution_time.must_be :<, run_step.real_time
               end
 
+              describe 'handling errors in setup_suspend' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::DummySuspended,
+                             external_task_id: '123',
+                             text:             'trolling')
+                end
+
+                it 'fails' do
+                  assert_equal :error, result.result
+                  assert_equal :paused, result.state
+                  assert_equal :error,
+                               result.steps.values.
+                                   find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.
+                                   state
+                end
+              end
+
               describe 'progress' do
                 before do
                   TestPause.setup

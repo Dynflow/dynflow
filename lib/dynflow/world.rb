@@ -3,11 +3,12 @@ module Dynflow
     include Algebrick::TypeCheck
 
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options
+                :logger_adapter, :options, :initialized
 
     def initialize(options = {})
       @logger_adapter = is_kind_of!(options.delete(:logger_adapter) || LoggerAdapters::Simple.new,
                                     LoggerAdapters::Abstract)
+      @initialized    = Future.new
       options         = self.default_options.merge(options)
 
       @executor = options.delete(:executor) || Executors::Parallel.new(self, options[:pool_size])
@@ -28,6 +29,7 @@ module Dynflow
       end.tap { |o| o.freeze }
 
       @options = options
+      @initialized.set true
     end
 
     def default_options
@@ -69,7 +71,6 @@ module Dynflow
       executor.execute execution_plan_id, finished
     end
 
-    # FIND add a future to signal results?
     def update_progress(suspended_action, done, *args)
       executor.update_progress suspended_action, done, *args
     end

@@ -8,9 +8,15 @@ module Dynflow
 
     def initialize(logger)
       @mailbox                   = Queue.new
-      @thread                    = Thread.new { loop { receive } }
-      @thread.abort_on_exception = true
       @logger                    = logger
+      start                      = Future.new
+      @thread                    = Thread.new do
+        start.wait
+        delayed_initialize
+        loop { receive }
+      end
+      @thread.abort_on_exception = true
+      start.set true
     end
 
     def <<(message)
@@ -18,6 +24,9 @@ module Dynflow
     end
 
     private
+
+    def delayed_initialize
+    end
 
     def on_message(message)
       raise NotImplementedError
