@@ -192,7 +192,7 @@ module Dynflow
                 let :execution_plan do
                   world.plan(CodeWorkflowExample::DummySuspended,
                              external_task_id: '123',
-                             text:             'trolling')
+                             text:             'troll setup_progress_updates')
                 end
 
                 it 'fails' do

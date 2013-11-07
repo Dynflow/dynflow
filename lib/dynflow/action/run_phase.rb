@@ -44,7 +44,7 @@ module Dynflow
       throw SUSPENDING, SUSPENDING
     end
 
-    # TODO call suspend_setup after kill
+    # TODO call setup_progress_updates after kill
     # FIXME handle after error
     # override
     # def suspend_setup(suspended_action)

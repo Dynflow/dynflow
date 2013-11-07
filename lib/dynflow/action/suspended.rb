@@ -1,6 +1,5 @@
 module Dynflow
   class Action::Suspended
-
     attr_reader :execution_plan_id, :step_id
 
     def initialize(action)
@@ -10,8 +9,7 @@ module Dynflow
     end
 
     def update_progress(done, *args)
-      @world.update_progress(self, done, *args)
+      @world.executor.update_progress self, done, *args
     end
-
   end
 end

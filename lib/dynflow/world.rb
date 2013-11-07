@@ -71,10 +71,6 @@ module Dynflow
       executor.execute execution_plan_id, finished
     end
 
-    def update_progress(suspended_action, done, *args)
-      executor.update_progress suspended_action, done, *args
-    end
-
     def terminate!(future = Future.new)
       executor.terminate! future
     end

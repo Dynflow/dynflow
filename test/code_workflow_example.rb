@@ -273,10 +273,10 @@ module Dynflow
 
       def on_message(message)
         match(message,
-              ~Task >>-> task do
+              ~Task >-> task do
                 @tasks << task
               end,
-              Tick >>-> do
+              Tick >-> do
                 poll
               end)
       end
@@ -307,7 +307,7 @@ module Dynflow
       end
 
       def setup_progress_updates(suspended_action)
-        raise 'Trolling detected' if input[:text] == "trolling"
+        raise 'Trolling detected' if input[:text] == 'troll setup_progress_updates'
         PollingService.wait_for_task(suspended_action, input[:external_task_id])
       end
 
