@@ -13,53 +13,45 @@ module Dynflow
       # actor messages
       Algebrick.types do
         Terminate = type do
-          fields future: Future
-          all_readers
+          fields! future: Future
         end
         Boolean   = type { variants TrueClass, FalseClass }
 
         Execution = type do
-          fields execution_plan_id: String,
-                 accepted:          Future,
-                 finished:          Future
-          all_readers
+          fields! execution_plan_id: String,
+                  accepted:          Future,
+                  finished:          Future
         end
 
         ProgressUpdate = type do
-          fields execution_plan_id: String,
-                 step_id:           Fixnum,
-                 done:              Boolean,
-                 args:              Array
-          all_readers
+          fields! execution_plan_id: String,
+                  step_id:           Fixnum,
+                  done:              Boolean,
+                  args:              Array
         end
 
         Finalize = type do
-          fields sequential_manager: SequentialManager,
-                 execution_plan_id:  String
-          all_readers
+          fields! sequential_manager: SequentialManager,
+                  execution_plan_id:  String
         end
 
         Step = type do
-          fields step:              ExecutionPlan::Steps::AbstractFlowStep,
-                 execution_plan_id: String
-          all_readers
+          fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
+                  execution_plan_id: String
         end
 
         ProgressUpdateStep = type do
-          fields step:              ExecutionPlan::Steps::AbstractFlowStep,
-                 execution_plan_id: String,
-                 progress_update:   ProgressUpdate
-          all_readers
+          fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
+                  execution_plan_id: String,
+                  progress_update:   ProgressUpdate
         end
 
         Work       = type { variants Step, ProgressUpdateStep, Finalize }
         PoolDone   = type do
-          fields work: Work
-          all_readers
+          fields! work: Work
         end
         WorkerDone = type do
-          fields work: Work, worker: Worker
-          all_readers
+          fields! work: Work, worker: Worker
         end
       end
 
