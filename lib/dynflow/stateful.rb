@@ -22,6 +22,8 @@ module Dynflow
       self.class.state_transitions
     end
 
+    attr_reader :state
+
     def state=(state)
       set_state state, false
     end

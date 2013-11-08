@@ -188,6 +188,23 @@ module Dynflow
                 run_step.execution_time.must_be :<, run_step.real_time
               end
 
+              describe 'handling errors in setup_progress_updates' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::DummySuspended,
+                             external_task_id: '123',
+                             text:             'troll setup_progress_updates')
+                end
+
+                it 'fails' do
+                  assert_equal :error, result.result
+                  assert_equal :paused, result.state
+                  assert_equal :error,
+                               result.steps.values.
+                                   find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.
+                                   state
+                end
+              end
+
               describe 'progress' do
                 before do
                   TestPause.setup
@@ -563,6 +580,11 @@ module Dynflow
           terminated.wait
           result.must_be :ready?
           $slow_actions_done.must_equal 1
+        end
+
+        it 'it terminates when no work' do
+          terminated = world.executor.terminate!
+          terminated.wait
         end
 
       end

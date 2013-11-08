@@ -29,7 +29,7 @@ module Dynflow
           if catch(SUSPENDING) { run } == SUSPENDING
             self.state       = :suspended
             suspended_action = Action::Suspended.new(self)
-            setup_suspend suspended_action
+            setup_progress_updates suspended_action
           end
         end
 
@@ -44,8 +44,8 @@ module Dynflow
       throw SUSPENDING, SUSPENDING
     end
 
-    # TODO call suspend_setup after restart
-    # TODO how to handle after error
+    # TODO call setup_progress_updates after kill
+    # FIXME handle after error
     # override
     # def suspend_setup(suspended_action)
     # end

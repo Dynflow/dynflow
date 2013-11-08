@@ -242,7 +242,7 @@ module Dynflow
     class PollingServiceImpl < Dynflow::MicroActor
 
       Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
-      Tick = Algebrick.type
+      Tick = Algebrick.atom
 
       def initialize(logger)
         super(logger)
@@ -273,10 +273,10 @@ module Dynflow
 
       def on_message(message)
         match(message,
-              ~Task >>-> task do
+              ~Task >-> task do
                 @tasks << task
               end,
-              Tick >>-> do
+              Tick >-> do
                 poll
               end)
       end
@@ -306,7 +306,8 @@ module Dynflow
         suspend
       end
 
-      def setup_suspend(suspended_action)
+      def setup_progress_updates(suspended_action)
+        raise 'Trolling detected' if input[:text] == 'troll setup_progress_updates'
         PollingService.wait_for_task(suspended_action, input[:external_task_id])
       end
 

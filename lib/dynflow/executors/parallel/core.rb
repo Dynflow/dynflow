@@ -10,11 +10,6 @@ module Dynflow
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
           @termination_future      = nil
-
-          # TODO after restart/kill procedure:
-          #   - TODO recalculate incrementally all running-EPs meta data
-          #   - TODO set all running EPs as paused for admin to resume manually
-          #   - TODO detect steps stuck in running phase
         end
 
         def terminating?
@@ -22,6 +17,38 @@ module Dynflow
         end
 
         private
+
+        def delayed_initialize
+          @world.initialized.wait
+
+          abnormal_execution_plans = @world.persistence.find_execution_plans filters: { 'state' => %w(running planning) }
+          if abnormal_execution_plans.empty?
+            logger.info 'Clean start.'
+          else
+            format_str = '%36s %10s %10s'
+            message    = ['Abnormal execution plans, process was probably killed.',
+                          'Following ExecutionPlans will be set to paused, admin has to fix them manually.',
+                          (format format_str, 'ExecutionPlan', 'state', 'result'),
+                          *(abnormal_execution_plans.map { |ep| format format_str, ep.id, ep.state, ep.result })]
+
+            logger.error message.join("\n")
+
+            abnormal_execution_plans.each do |ep|
+              ep.update_state case ep.state
+                              when :planning
+                                :stopped
+                              when :running
+                                :paused
+                              else
+                                raise
+                              end
+            end
+          end
+
+          # TODO after kill:
+          # - TODO recalculate incrementally all running-EPs meta data
+          # - TODO detect steps stuck in running phase, what to do?
+        end
 
         def on_message(message)
           match message,
@@ -39,6 +66,7 @@ module Dynflow
                 Terminate.(~any) >-> future do
                   logger.info 'shutting down Core ...'
                   @termination_future = future
+                  try_to_terminate
                 end
         end
 
@@ -87,7 +115,7 @@ module Dynflow
         def continue_manager(manager, next_work)
           if manager.done?
             loose_manager_and_set_future manager.execution_plan.id
-            terminate! if terminating? && @execution_plan_managers.empty?
+            try_to_terminate
           else
             feed_pool next_work
           end
@@ -118,6 +146,10 @@ module Dynflow
           pool_terminated.wait
           @termination_future.set true
           super()
+        end
+
+        def try_to_terminate
+          terminate! if terminating? && @execution_plan_managers.empty?
         end
       end
     end
