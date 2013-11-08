@@ -66,6 +66,7 @@ module Dynflow
                 Terminate.(~any) >-> future do
                   logger.info 'shutting down Core ...'
                   @termination_future = future
+                  try_to_terminate
                 end
         end
 
@@ -114,7 +115,7 @@ module Dynflow
         def continue_manager(manager, next_work)
           if manager.done?
             loose_manager_and_set_future manager.execution_plan.id
-            terminate! if terminating? && @execution_plan_managers.empty?
+            try_to_terminate
           else
             feed_pool next_work
           end
@@ -145,6 +146,10 @@ module Dynflow
           pool_terminated.wait
           @termination_future.set true
           super()
+        end
+
+        def try_to_terminate
+          terminate! if terminating? && @execution_plan_managers.empty?
         end
       end
     end

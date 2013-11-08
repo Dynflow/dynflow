@@ -582,6 +582,11 @@ module Dynflow
           $slow_actions_done.must_equal 1
         end
 
+        it 'it terminates when no work' do
+          terminated = world.executor.terminate!
+          terminated.wait
+        end
+
       end
     end
   end
