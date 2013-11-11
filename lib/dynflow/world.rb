@@ -18,15 +18,7 @@ module Dynflow
       @persistence         = Persistence.new(self, persistence_adapter)
       @transaction_adapter = is_kind_of! options.delete(:transaction_adapter), TransactionAdapters::Abstract
       @action_classes      = options.delete(:action_classes)
-
-      @suspended_actions  = {}
-      @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
-        next index unless klass.subscribe
-        Array(klass.subscribe).each do |subscribed_class|
-          index[subscribed_class] << klass
-        end
-        index
-      end.tap { |o| o.freeze }
+      calculate_subscription_index
 
       @options = options
       @initialized.set true
@@ -46,6 +38,12 @@ module Dynflow
 
     def subscribed_actions(action_class)
       @subscription_index.has_key?(action_class) ? @subscription_index[action_class] : []
+    end
+
+    # reload actions classes, intended only for devel
+    def reload!
+      @action_classes.map! { |klass| klass.to_s.constantize }
+      calculate_subscription_index
     end
 
     # @return [Future]
@@ -73,6 +71,18 @@ module Dynflow
 
     def terminate!(future = Future.new)
       executor.terminate! future
+    end
+
+    private
+
+    def calculate_subscription_index
+      @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
+        next index unless klass.subscribe
+        Array(klass.subscribe).each do |subscribed_class|
+          index[subscribed_class] << klass
+        end
+        index
+      end.tap { |o| o.freeze }
     end
   end
 end
