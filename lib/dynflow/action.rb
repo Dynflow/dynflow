@@ -1,218 +1,206 @@
+require 'active_support/inflector'
+
 module Dynflow
-  class Action
 
-    # Used for specifying dependencies in input_format
-    class Dependency < Apipie::Params::Descriptor::Base
+  class Action < Serializable
+    include Algebrick::TypeCheck
 
-      attr_reader :action_class, :field
+    require 'dynflow/action/format'
+    extend Format
 
-      extend Forwardable
+    require 'dynflow/action/progress'
+    include Progress
 
-      def_delegators :@descriptor, :description, :invalid_param_error, :json_schema, :param, :params
+    require 'dynflow/action/suspended'
+    require 'dynflow/action/missing'
 
-      def initialize(action_class, field)
-        @descriptor = case field
-                      when :input then action_class.input_format
-                      when :output then action_class.output_format
-                      else
-                        raise ArgumentError, 'field can be either :input of :output'
-                      end
+    require 'dynflow/action/plan_phase'
+    require 'dynflow/action/flow_phase'
+    require 'dynflow/action/run_phase'
+    require 'dynflow/action/finalize_phase'
 
-        @action_class = action_class
-        @field = field
-      end
-
-      def self.build(*args)
-        # we don't want this class to be buildable directly from the DSL
-      end
-
+    def self.plan_phase
+      @planning ||= self.generate_phase(PlanPhase)
     end
 
-    # used in case the action class does not exist (usually when
-    # deserializing old actions that were renamed)
-    class Unknown
-
-      attr_reader :name
-
-      def initialize(name)
-        @name = name
-      end
-
+    def self.run_phase
+      @running ||= self.generate_phase(RunPhase)
     end
 
-    # only for the planning phase: action that caused this action
-    # to be triggered. In other words, this action was subscribed to
-    # a class of the trigger.
-    # If trigger present, the implicit plan
-    # method uses the input of the trigger. Otherwise, the
-    # argument the plan_action is used as default.
-    attr_accessor :trigger
-
-    # for planning phase
-    attr_reader :execution_plan
-
-    extend Forwardable
-    def_delegators :@run_step, :input, :input=, :output=
-
-    def self.inherited(child)
-      self.actions << child
+    def self.finalize_phase
+      @finishing ||= self.generate_phase(FinalizePhase)
     end
 
-    def self.actions
-      @actions ||= []
+    # Override this to extend the phase classes
+    def self.generate_phase(phase_module)
+      Class.new(self) { include phase_module }
     end
 
+    def self.phase?
+      [PlanPhase, RunPhase, FinalizePhase].any? { |phase| self < phase }
+    end
+
+    def self.all_children
+      #noinspection RubyArgCount
+      children.
+          inject(children) { |children, child| children + child.all_children }.
+          select { |ch| !ch.phase? }
+    end
+
+    # FIND define subscriptions in world independent on action's classes,
+    #   limited only by in/output formats
+    # @return [nil, Class] a child of Action
     def self.subscribe
       nil
     end
 
-    def self.require
-      nil
-    end
-
-    def initialize(input, output = nil)
-      real_output = output
-      real_output = {} unless real_output.is_a? Hash
-      @run_step = Step::Run.new(self.class, input, real_output)
-      # for preparation phase
-      if output == :reference
-        # needed for steps initialization, quite hackish, fix!
-        @execution_plan = ExecutionPlan.new
-        @finalize_step = Step::Finalize.new(@run_step)
-        @output = Step::Reference.new(@run_step, :output)
+    def self.attr_indifferent_access_hash(*names)
+      attr_reader(*names)
+      names.each do |name|
+        define_method("#{name}=") { |v| indifferent_access_hash_variable_set name, v }
       end
     end
 
-    # provide the reference to the output if in planning phase
-    # TODO: get most of the planning outside of the action class as
-    # it's getting messy here
-    def output
-      return @output || @run_step.output
+    def indifferent_access_hash_variable_set(name, value)
+      is_kind_of! value, Hash
+      instance_variable_set :"@#{name}", value.with_indifferent_access
     end
 
-
-    def ==(other)
-      [self.class.name, self.input, self.output] ==
-        [other.class.name, other.input, other.output]
+    def self.from_hash(hash, phase, *args)
+      check_class_key_present hash
+      raise ArgumentError, "unknown phase '#{phase}'" unless [:plan_phase, :run_phase, :finalize_phase].include? phase
+      Action.constantize(hash[:class]).send(phase).new_from_hash(hash, *args)
     end
 
-    def inspect
-      "#{self.class.name}: #{input.inspect} ~> #{output.inspect}"
+    attr_reader :world, :execution_plan_id, :id, :plan_step_id, :run_step_id, :finalize_step_id
+
+    def initialize(attributes, world)
+      raise "It's not expected to initialize this class directly, use phases." unless self.class.phase?
+
+      is_kind_of! attributes, Hash
+
+      @world             = is_kind_of! world, World
+      @state_holder      = is_kind_of! attributes[:state_holder], ExecutionPlan::Steps::Abstract
+      @execution_plan_id = attributes[:execution_plan_id] || raise(ArgumentError, 'missing execution_plan_id')
+      @id                = attributes[:id] || raise(ArgumentError, 'missing id')
+      @plan_step_id      = attributes[:plan_step_id]
+      @run_step_id       = attributes[:run_step_id]
+      @finalize_step_id  = attributes[:finalize_step_id]
     end
 
-    # the block contains the expression in Apipie::Params::DSL
-    # describing the format of message
-    def self.input_format(&block)
-      if block
-        @input_format_block = block
-      elsif @input_format_block
-        @input_format ||= Apipie::Params::Description.define(&@input_format_block)
+    def self.action_class
+      # superclass because we run this from the phases of action class
+      if phase?
+        superclass
       else
-        nil
+        self
       end
     end
 
-    # the block contains the expression in Apipie::Params::DSL
-    # describing the format of message
-    def self.output_format(&block)
-      if block
-        @output_format_block = block
-      elsif @output_format_block
-        @output_format ||= Apipie::Params::Description.define(&@output_format_block)
-      else
-        nil
-      end
+    def self.constantize(action_name)
+      action_name.constantize
+    rescue NameError
+      Action::Missing.generate(action_name)
     end
 
-    # use when referencing output from another action's input_format
-    def self.input
-      Dependency.new(self, :input)
+    def action_logger
+      world.action_logger
     end
 
-    # use when referencing output from another action's input_format
-    def self.output
-      Dependency.new(self, :output)
+    def action_class
+      self.class.action_class
     end
 
-    def self.trigger(*args)
-      Dynflow::Bus.trigger(self, *args)
+    def to_hash
+      recursive_to_hash class:             action_class.name,
+                        execution_plan_id: execution_plan_id,
+                        id:                id,
+                        plan_step_id:      plan_step_id,
+                        run_step_id:       run_step_id,
+                        finalize_step_id:  finalize_step_id
     end
 
-    def self.plan(*args)
-      action = self.new({}, :reference)
-      yield action if block_given?
-
-      plan_step = Step::Plan.new(action)
-      action.execution_plan.plan_steps << plan_step
-      plan_step.catch_errors do
-        action.plan(*args)
-      end
-
-      if action.execution_plan.failed_steps.any?
-        action.execution_plan.status = 'error'
-      else
-        action.add_subscriptions(*args)
-      end
-
-      return action
+    # @api private
+    # @return [Array<Fixnum>] - ids of steps referenced from action
+    def required_step_ids(value = self.input)
+      ret = case value
+            when Hash
+              value.values.map { |val| required_step_ids(val) }
+            when Array
+              value.map { |val| required_step_ids(val) }
+            when ExecutionPlan::OutputReference
+              value.step_id
+            else
+              # no reference hidden in this arg
+            end
+      return Array(ret).flatten.compact
     end
 
-    # for subscribed actions: by default take the input of the
-    # subscribed action
+    def state
+      @state_holder.state
+    end
+
+    def error
+      @state_holder.error
+    end
+
+    protected
+
+    def state=(state)
+      @state_holder.state = state
+    end
+
+    def save_state
+      @state_holder.save
+    end
+
+    # @override
     def plan(*args)
       if trigger
         # if the action is triggered by subscription, by default use the
         # input of parent action.
         # should be replaced by referencing the input from input format
-        plan_self(self.input.merge(trigger.input))
+        plan_self(input.merge(trigger.input))
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
-        plan_self(args.first)
+        plan_self(*args)
+      end
+      self
+    end
+
+    def self.new_from_hash(hash, world)
+      new(hash, world)
+    end
+
+    private
+
+    def with_error_handling(&block)
+      raise "wrong state #{self.state}" unless self.state == :running
+
+      begin
+        block.call
+      rescue => error
+        action_logger.error error
+        self.state          = :error
+        @state_holder.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
+      end
+
+      case self.state
+      when :running
+        self.state = :success
+      when :suspended, :error
+      else
+        raise "wrong state #{self.state}"
       end
     end
 
-    def plan_self(input)
-      self.input = input
-      @run_step.input = self.input
-      @finalize_step.input = input
-      @execution_plan << @run_step if self.respond_to? :run
-      @execution_plan << @finalize_step if self.respond_to? :finalize
-      return self # to stay consistent with plan_action
+    def self.inherited(child)
+      children << child
     end
 
-    def plan_action(action_class, *args)
-      sub_action = action_class.plan(*args) do |action|
-        action.input = self.input.dup
-      end
-      @execution_plan.concat(sub_action.execution_plan)
-      return sub_action
+    def self.children
+      @children ||= []
     end
-
-    def add_subscriptions(*plan_args)
-      @execution_plan.concat(Dispatcher.execution_plan_for(self, *plan_args))
-    end
-
-    # If triggered with subscription, check if the trigger output is
-    # not reference in input_format. If so, make the reference in the input.
-    def add_trigger_reference
-      trigger_dependencies = self.class.input_format.params.find_all do |description|
-        descriptor = description.descriptor
-        descriptor.is_a?(Dependency) && descriptor.action_class == trigger.class
-      end.map { |description| [description.name, description.descriptor] }
-
-      trigger_dependencies.each do |name, dependency|
-        self.input[name.to_s] = case dependency.field
-                                when :input then trigger.input
-                                when :output then trigger.output
-                                else raise ArgumentError, "Unknown dependency field: #{dependency.field}"
-        end
-      end
-    end
-
-    def validate!
-      self.class.output_format.validate!(output)
-    end
-
   end
 end

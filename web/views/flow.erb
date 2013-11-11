@@ -1,0 +1,19 @@
+<table class="flow <%= h(flow_css_classes(flow)) %>">
+  <% if flow.is_a? Dynflow::Flows::Atom %>
+    <tr>
+      <td class="<%= h(flow_css_classes(flow)) %>">
+        <%= erb :flow_step, locals: { flow: flow, step: step(flow.step_id) } %>
+      </td>
+    </tr>
+  <% else %>
+    <% flow.sub_flows.each do |sub_flow| %>
+      <tr>
+        <td class="flow <%= h(flow_css_classes(flow, sub_flow)) %>">
+          <%= erb :flow, locals: { flow: sub_flow } %>
+        </td>
+      </tr>
+    <% end %>
+  <% end %>
+</table>
+
+

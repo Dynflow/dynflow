@@ -1,65 +1,239 @@
-require 'test_helper'
-require 'code_workflow_example'
+require_relative 'test_helper'
+require_relative 'code_workflow_example'
 
 module Dynflow
   module ExecutionPlanTest
     describe ExecutionPlan do
 
       include PlanAssertions
+      include WorldInstance
 
       let :issues_data do
-        [
-         { 'author' => 'Peter Smith', 'text' => 'Failing test' },
-         { 'author' => 'John Doe', 'text' => 'Internal server error' }
-        ]
+        [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
+         { 'author' => 'John Doe', 'text' => 'Internal server error' }]
       end
 
-      describe 'single dependencies' do
+      describe 'serialization' do
+
         let :execution_plan do
-          CodeWorkflowExample::IncommingIssues.plan(issues_data).execution_plan
+          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
-        it 'includes only actions with run method defined in run steps' do
-          actions_with_run = [CodeWorkflowExample::Triage,
-                              CodeWorkflowExample::UpdateIssue,
-                              CodeWorkflowExample::NotifyAssignee]
-          execution_plan.run_steps.map(&:action_class).uniq.must_equal(actions_with_run)
+        let :deserialized_execution_plan do
+          world.persistence.load_execution_plan(execution_plan.id)
         end
 
-        it 'constructs the plan of actions to be executed in run phase' do
-          assert_run_plan <<EXPECTED, execution_plan
-Dynflow::ExecutionPlan::Concurrence
-  Dynflow::ExecutionPlan::Sequence
-    Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})
-    UpdateIssue/Run({"triage_input"=>{"author"=>"Peter Smith", "text"=>"Failing test"}, "triage_output"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
-    NotifyAssignee/Run({"author"=>"Peter Smith", "text"=>"Failing test", "triage"=>Reference(Triage/Run({"author"=>"Peter Smith", "text"=>"Failing test"})/output)})
-  Dynflow::ExecutionPlan::Sequence
-    Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})
-    UpdateIssue/Run({"triage_input"=>{"author"=>"John Doe", "text"=>"Internal server error"}, "triage_output"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
-    NotifyAssignee/Run({"author"=>"John Doe", "text"=>"Internal server error", "triage"=>Reference(Triage/Run({"author"=>"John Doe", "text"=>"Internal server error"})/output)})
-EXPECTED
+        describe 'serialized execution plan' do
+
+          before { execution_plan.save }
+
+          it 'restores the plan properly' do
+            deserialized_execution_plan.id.must_equal execution_plan.id
+
+            assert_steps_equal execution_plan.root_plan_step, deserialized_execution_plan.root_plan_step
+            assert_equal execution_plan.steps.keys, deserialized_execution_plan.steps.keys
+
+            deserialized_execution_plan.steps.each do |id, step|
+              assert_steps_equal(step, execution_plan.steps[id])
+            end
+
+            assert_run_flow_equal execution_plan, deserialized_execution_plan
+          end
+
         end
 
       end
 
-      describe 'multi dependencies' do
+      describe '#result' do
+
         let :execution_plan do
-          CodeWorkflowExample::Commit.plan('sha' => 'abc123').execution_plan
+          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
-        it 'constructs the plan of actions to be executed in run phase' do
-          assert_run_plan <<EXPECTED, execution_plan
-Dynflow::ExecutionPlan::Concurrence
-  Dynflow::ExecutionPlan::Sequence
-    Ci/Run({"commit"=>{"sha"=>"abc123"}})
-    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})
-    Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})
-    Merge/Run({"commit"=>{"sha"=>"abc123"}, "ci_output"=>Reference(Ci/Run({"commit"=>{"sha"=>"abc123"}})/output), "review_outputs"=>[Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"})/output), Reference(Review/Run({"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"})/output)]})
-EXPECTED
+        describe 'for error in planning phase' do
+
+          before { execution_plan.steps[2].set_state :error, true }
+
+          it 'should be :error' do
+            execution_plan.result.must_equal :error
+            execution_plan.error?.must_equal true
+          end
+
+        end
+
+
+        describe 'for error in running phase' do
+
+          before do
+            step_id                             = execution_plan.run_flow.all_step_ids[2]
+            execution_plan.steps[step_id].set_state :error, true
+          end
+
+          it 'should be :error' do
+            execution_plan.result.must_equal :error
+          end
+
+        end
+
+        describe 'for pending step in running phase' do
+
+          before do
+            step_id                             = execution_plan.run_flow.all_step_ids[2]
+            execution_plan.steps[step_id].set_state :pending, true
+          end
+
+          it 'should be :pending' do
+            execution_plan.result.must_equal :pending
+          end
+
+        end
+
+        describe 'for all steps successful or skipped' do
+
+          before do
+            execution_plan.run_flow.all_step_ids.each_with_index do |step_id, index|
+              step = execution_plan.steps[step_id]
+              step.set_state (index == 2) ? :skipped : :success, true
+            end
+          end
+
+          it 'should be :success' do
+            execution_plan.result.must_equal :success
+          end
+
         end
 
       end
 
+      describe 'plan steps' do
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+        end
+
+        it 'stores the information about the sub actions' do
+          assert_plan_steps <<-PLAN_STEPS, execution_plan
+            IncomingIssues
+              IncomingIssue
+                Triage
+                  UpdateIssue
+                  NotifyAssignee
+              IncomingIssue
+                Triage
+                  UpdateIssue
+                  NotifyAssignee
+          PLAN_STEPS
+        end
+
+      end
+
+      describe 'persisted action' do
+
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+        end
+
+        let :action do
+          step = execution_plan.steps[4]
+          world.persistence.load_action(step)
+        end
+
+        it 'stores the ids for plan, run and finalize steps' do
+          action.plan_step_id.must_equal 3
+          action.run_step_id.must_equal 4
+          action.finalize_step_id.must_equal 5
+        end
+      end
+
+      describe 'planning algorithm' do
+
+        describe 'single dependencies' do
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+          end
+
+          it 'constructs the plan of actions to be executed in run phase' do
+            assert_run_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Concurrence
+                Dynflow::Flows::Sequence
+                  4: Triage(pending) {"author"=>"Peter Smith", "text"=>"Failing test"}
+                  7: UpdateIssue(pending) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>Step(4).output[:classification][:assignee], "severity"=>Step(4).output[:classification][:severity]}
+                  9: NotifyAssignee(pending) {"triage"=>Step(4).output}
+                Dynflow::Flows::Sequence
+                  13: Triage(pending) {"author"=>"John Doe", "text"=>"Internal server error"}
+                  16: UpdateIssue(pending) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>Step(13).output[:classification][:assignee], "severity"=>Step(13).output[:classification][:severity]}
+                  18: NotifyAssignee(pending) {"triage"=>Step(13).output}
+            RUN_FLOW
+          end
+
+        end
+
+        describe 'multi dependencies' do
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::Commit, 'sha' => 'abc123')
+          end
+
+          it 'constructs the plan of actions to be executed in run phase' do
+            assert_run_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Sequence
+                Dynflow::Flows::Concurrence
+                  3: Ci(pending) {"commit"=>{"sha"=>"abc123"}}
+                  5: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"}
+                  7: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"}
+                9: Merge(pending) {"commit"=>{"sha"=>"abc123"}, "ci_output"=>Step(3).output, "review_outputs"=>[Step(5).output, Step(7).output]}
+            RUN_FLOW
+          end
+        end
+
+        describe 'sequence and concurrence keyword used' do
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+          end
+
+          it 'constructs the plan of actions to be executed in run phase' do
+            assert_run_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Sequence
+                Dynflow::Flows::Concurrence
+                  3: Ci(pending) {"commit"=>{"sha"=>"abc123"}}
+                  5: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"}
+                7: Merge(pending) {"commit"=>{"sha"=>"abc123"}}
+            RUN_FLOW
+          end
+        end
+
+        describe 'subscribed action' do
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::DummyTrigger, {})
+          end
+
+          it 'constructs the plan of actions to be executed in run phase' do
+            assert_run_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Concurrence
+                3: DummySubscribe(pending) {}
+                5: DummyMultiSubscribe(pending) {}
+            RUN_FLOW
+          end
+        end
+
+
+        describe 'finalize flow' do
+
+          let :execution_plan do
+            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+          end
+
+          it 'plans the finalize steps in a sequence' do
+            assert_finalize_flow <<-RUN_FLOW, execution_plan
+              Dynflow::Flows::Sequence
+                5: Triage(pending) {\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}
+                10: NotifyAssignee(pending) {\"triage\"=>Step(4).output}
+                14: Triage(pending) {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}
+                19: NotifyAssignee(pending) {\"triage\"=>Step(13).output}
+                20: IncomingIssues(pending) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}]}
+            RUN_FLOW
+          end
+
+        end
+      end
     end
   end
 end

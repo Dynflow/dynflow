@@ -1,36 +1,54 @@
 <p id="notice"><%= h(@notice) %></p>
 
+
 <p>
   <b>Status:</b>
-  <%= @plan.status %>
+  <%= h(@plan.state) %>
+  <% if @plan.state == :paused %>
+    <a href="<%= url("/#{@plan.id}/resume") %>" class="postlink">Resume</a>
+  <% end %>
 </p>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Id</th>
-      <th>Phase</th>
-      <th>Action</th>
-      <th>Status</th>
-      <th>Input</th>
-      <th>Output</th>
-      <th>Error</th>
-      <th></th>
-    </tr>
-  </thead>
-<% @plan.steps.each do |step| %>
-  <tr>
-    <td><%= h(step.persistence.persistence_id) %></td>
-    <td><%= h(step.class.name.split('::').last) %></td>
-    <td><%= h(step.action_class.name) %></td>
-    <td><%= h(step.status) %></td>
-    <td><%= prettyprint(step.input) %></td>
-    <td><%= prettyprint(step.output) %></td>
-    <td><%= prettyprint(step.error) %></td>
-    <td><a href="<%= h(url("/#{@plan.persistence.persistence_id}/steps/#{step.persistence.persistence_id}/skip")) %>" class="postlink">Skip</a></td>
-  </tr>
-<% end %>
-</table>
+<p>
+  <b>Result:</b>
+  <%= h(@plan.result) %>
+</p>
 
-<a href="<%= h(url("/#{@plan.persistence.persistence_id}/resume")) %>" class="postlink">Resume</a>
+<ul class="phases nav nav-tabs" id="myTab">
+  <li><a href="#plan">Plan</a></li>
+  <li class="active"><a href="#run">Run</a></li>
+  <li><a href="#finalize">Finalize</a></li>
+</ul>
+
+<div class="tab-content">
+  <div class="tab-pane" id="plan">
+    <%= erb :plan_step, locals: { step: @plan.root_plan_step } %>
+  </div>
+  <div class="tab-pane active" id="run">
+
+    <table class="flow-hint">
+      <tr>
+        <td class="border sequence"> </td>
+        <td>sequence</td>
+        <td class="border concurrence"> </td>
+        <td>concurrence</td>
+      </tr>
+    </table>
+
+    <%= erb :flow, locals: { flow: @plan.run_flow } %>
+  </div>
+  <div class="tab-pane" id="finalize">
+    <%= erb :flow, locals: { flow: @plan.finalize_flow } %>
+  </div>
+</div>
+
+<script>
+$(function () {
+  $('.phases a').click(function (e) {
+    e.preventDefault();
+    $(this).tab('show');
+  });
+})
+</script>
+
 <a href="<%= url '/' %>">Back</a>

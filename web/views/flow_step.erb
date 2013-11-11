@@ -1,0 +1,31 @@
+<% action = load_action(step) %>
+
+<% if flow.is_a? Dynflow::Flows::Atom %>
+   <div class="<%= h(atom_css_classes(flow)) %>" style=" width: <%= progress_width(action) %>%;"></div>
+<% end %>
+
+<span class="step-label">
+  <%= h(step.id) %>: <%= h(step.action_class.name) %>
+</span>
+<% if @plan.state == :paused && step.state == :error %>
+  <a href="<%= url("/#{@plan.id}/skip/#{step.id}") %>" class="postlink">Skip</a>
+<% end %>
+<div class="action">
+  <%= show_action_data("Input:", action.input) %>
+  <%= show_action_data("Output:", action.output) %>
+  <% if step.error %>
+    <p>
+      Error:
+    </p>
+    <p>
+      <%= h(step.error.exception) %>
+    </p>
+    <p>
+      <%= h(step.error.message) %>
+    </p>
+    <p>
+      <%= prettyprint(step.error.backtrace) %>
+    </p>
+  <% end %>
+</div>
+
