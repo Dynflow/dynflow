@@ -144,6 +144,7 @@ module Dynflow
         def terminate!
           @pool << Terminate[pool_terminated = Future.new]
           pool_terminated.wait
+          logger.info '... Core terminated.'
           @termination_future.set true
           super()
         end
