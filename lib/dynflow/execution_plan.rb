@@ -212,7 +212,7 @@ module Dynflow
                         root_plan_step_id: root_plan_step && root_plan_step.id,
                         run_flow:          run_flow,
                         finalize_flow:     finalize_flow,
-                        steps:             steps.map { |id, _| id },
+                        step_ids:          steps.map { |id, _| id },
                         started_at:        time_to_str(started_at),
                         ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
@@ -227,7 +227,7 @@ module Dynflow
       check_class_matching hash
       execution_plan_id = hash[:id]
       # TODO do not load all steps with the EP, lazy load when needed
-      steps             = steps_from_hash(hash[:steps], execution_plan_id, world)
+      steps             = steps_from_hash(hash[:step_ids], execution_plan_id, world)
       self.new(world,
                execution_plan_id,
                hash[:state],
