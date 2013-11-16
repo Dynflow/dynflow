@@ -234,6 +234,19 @@ module Dynflow
 
         end
       end
+
+      describe 'accessing actions results' do
+        let :execution_plan do
+          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+        end
+
+        it 'provides the access to the actions data via Action::Presenter' do
+          execution_plan.actions.size.must_equal 9
+          execution_plan.actions.each do |action|
+            action.must_be_kind_of Action::Presenter
+          end
+        end
+      end
     end
   end
 end

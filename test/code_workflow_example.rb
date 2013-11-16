@@ -23,6 +23,17 @@ module Dynflow
         TestExecutionLog.finalize << self
       end
 
+      def summary
+        triages = all_actions.find_all do |action|
+          action.is_a? Dynflow::CodeWorkflowExample::Triage
+        end
+        assignees = triages.map do |triage|
+          triage.output[:classification] &&
+              triage.output[:classification][:assignee]
+        end.compact.uniq
+        { assignees: assignees }
+      end
+
     end
 
     class Slow < Action

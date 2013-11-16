@@ -1,4 +1,5 @@
 require_relative 'test_helper'
+require_relative 'code_workflow_example'
 
 module Dynflow
 
@@ -58,15 +59,15 @@ module Dynflow
     smart_action_class   = Class.new(Dynflow::Action)
     smarter_action_class = Class.new(smart_action_class)
 
-    it { refute smart_action_class.phase? }
-    it { refute smarter_action_class.phase? }
-    it { assert smarter_action_class.plan_phase.phase? }
+    specify { refute smart_action_class.phase? }
+    specify { refute smarter_action_class.phase? }
+    specify { assert smarter_action_class.plan_phase.phase? }
 
-    it { smart_action_class.all_children.must_include smarter_action_class }
-    it { smart_action_class.all_children.size.must_equal 1 }
-    it { smart_action_class.all_children.wont_include smarter_action_class.plan_phase }
-    it { smart_action_class.all_children.wont_include smarter_action_class.run_phase }
-    it { smart_action_class.all_children.wont_include smarter_action_class.finalize_phase }
+    specify { smart_action_class.all_children.must_include smarter_action_class }
+    specify { smart_action_class.all_children.size.must_equal 1 }
+    specify { smart_action_class.all_children.wont_include smarter_action_class.plan_phase }
+    specify { smart_action_class.all_children.wont_include smarter_action_class.run_phase }
+    specify { smart_action_class.all_children.wont_include smarter_action_class.finalize_phase }
 
     describe 'World#subscribed_actions' do
       event_action_class      = Class.new(Dynflow::Action)
@@ -74,9 +75,35 @@ module Dynflow
         singleton_class.send(:define_method, :subscribe) { event_action_class }
       end
 
-      it { subscribed_action_class.subscribe.must_equal event_action_class }
-      it { world.subscribed_actions(event_action_class).must_include subscribed_action_class }
-      it { world.subscribed_actions(event_action_class).size.must_equal 1 }
+      specify { subscribed_action_class.subscribe.must_equal event_action_class }
+      specify { world.subscribed_actions(event_action_class).must_include subscribed_action_class }
+      specify { world.subscribed_actions(event_action_class).size.must_equal 1 }
+    end
+  end
+
+  describe Action::Presenter do
+    include WorldInstance
+
+    let :execution_plan do
+      _, future = world.trigger(CodeWorkflowExample::IncomingIssues, issues_data)
+      future.value
+    end
+
+    let :issues_data do
+      [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
+       { 'author' => 'John Doe', 'text' => 'Internal server error' }]
+    end
+
+    let :presenter do
+      execution_plan.actions.find do |action|
+        action.is_a? CodeWorkflowExample::IncomingIssues
+      end
+    end
+
+    specify { presenter.action_class.must_equal CodeWorkflowExample::IncomingIssues }
+
+    it 'allows aggregating data from other actions' do
+      presenter.summary.must_equal(assignees: ["John Doe"])
     end
   end
 end
