@@ -253,6 +253,26 @@ module Dynflow
       plan_total > 0 ? (plan_done / plan_total) : 1
     end
 
+    # This method can be used to access result of the whole execution plan and detailed
+    # progress.
+    # @return [Array<Action::Presenter>] presenter of the actions
+    # involved in the plan
+    def actions
+      action_steps = Hash.new { |h, k| h[k] = [] }
+      all_actions = []
+      steps.values.each do |step|
+        action_steps[step.action_id] << step
+      end
+      action_steps.each do |action_id, involved_steps|
+        action = Action::Presenter.load(self,
+                                        action_id,
+                                        involved_steps,
+                                        all_actions)
+        all_actions << action
+      end
+      return all_actions
+    end
+
     private
 
     def persistence

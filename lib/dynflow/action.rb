@@ -19,6 +19,8 @@ module Dynflow
     require 'dynflow/action/run_phase'
     require 'dynflow/action/finalize_phase'
 
+    require 'dynflow/action/presenter'
+
     def self.plan_phase
       @planning ||= self.generate_phase(PlanPhase)
     end
@@ -31,13 +33,17 @@ module Dynflow
       @finishing ||= self.generate_phase(FinalizePhase)
     end
 
+    def self.presenter
+      @presenter ||= Class.new(self) { include Presenter }
+    end
+
     # Override this to extend the phase classes
     def self.generate_phase(phase_module)
       Class.new(self) { include phase_module }
     end
 
     def self.phase?
-      [PlanPhase, RunPhase, FinalizePhase].any? { |phase| self < phase }
+      [PlanPhase, RunPhase, FinalizePhase, Presenter].any? { |phase| self < phase }
     end
 
     def self.all_children
