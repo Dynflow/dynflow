@@ -6,26 +6,35 @@ module Dynflow
 
     attr_reader :logger
 
-    def initialize(logger)
-      @mailbox                   = Queue.new
-      @logger                    = logger
-      start                      = Future.new
-      @thread                    = Thread.new do
-        start.wait
-        delayed_initialize
-        loop { receive }
+    def initialize(logger, *args)
+      @logger = logger
+      @thread = Thread.new do
+        Thread.current.abort_on_exception = true
+        @mailbox                          = Queue.new
+        @stop                             = false
+        @stopped                          = Future.new
+        delayed_initialize(*args)
+        loop do
+          break if @stop
+          receive
+        end
+        @stop.set true
       end
-      @thread.abort_on_exception = true
-      start.set true
+      nil until @stopped
     end
 
     def <<(message)
       @mailbox << message
     end
 
+    def terminate!
+      @stop = true
+      @stopped.wait
+    end
+
     private
 
-    def delayed_initialize
+    def delayed_initialize(*args)
     end
 
     def on_message(message)
@@ -38,9 +47,6 @@ module Dynflow
       logger.fatal error
     end
 
-    def terminate!
-      @thread.terminate
-    end
   end
 
   class MicroActorWithFutures < MicroActor

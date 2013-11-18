@@ -3,11 +3,14 @@ module Dynflow
     class Parallel < Abstract
       class Worker < MicroActor
         def initialize(pool)
-          super(pool.logger)
-          @pool = pool
+          super(pool.logger, pool)
         end
 
         private
+
+        def delayed_initialize(pool)
+          @pool = pool
+        end
 
         def on_message(message)
           match message,

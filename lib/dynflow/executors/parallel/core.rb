@@ -5,11 +5,7 @@ module Dynflow
       # TODO add dynflow error handling to avoid getting stuck and report errors to the future
       class Core < MicroActor
         def initialize(world, pool_size)
-          super(world.logger)
-          @world                   = is_kind_of! world, World
-          @pool                    = Pool.new(self, pool_size)
-          @execution_plan_managers = {}
-          @termination_future      = nil
+          super(world.logger, world, pool_size)
         end
 
         def terminating?
@@ -18,7 +14,12 @@ module Dynflow
 
         private
 
-        def delayed_initialize
+        def delayed_initialize(world, pool_size)
+          @world                   = is_kind_of! world, World
+          @pool                    = Pool.new(self, pool_size)
+          @execution_plan_managers = {}
+          @termination_future      = nil
+
           @world.initialized.wait
 
           abnormal_execution_plans = @world.persistence.find_execution_plans filters: { 'state' => %w(running planning) }

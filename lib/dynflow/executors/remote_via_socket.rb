@@ -147,14 +147,17 @@ module Dynflow
         end
 
         def initialize(world, socket_path)
-          super(world.logger)
+          super(world.logger, world, socket_path)
+        end
+
+        private
+
+        def delayed_initialize(world, socket_path)
           @socket_path = is_kind_of! socket_path, String
           @manager     = Manager.new world
           @socket      = nil
           connect
         end
-
-        private
 
         def on_message(message)
           match message,

@@ -246,6 +246,17 @@ module Dynflow
 
       def initialize(logger)
         super(logger)
+      end
+
+      def wait_for_task(action, external_task_id)
+        # simulate polling for the state of the external task
+        self << Task[action,
+                     external_task_id]
+      end
+
+      private
+
+      def delayed_initialize
         @tasks    = Set.new
         @progress = Hash.new { |h, k| h[k] = 0 }
 
@@ -259,16 +270,8 @@ module Dynflow
         end
       end
 
-      def wait_for_task(action, external_task_id)
-        # simulate polling for the state of the external task
-        self << Task[action,
-                     external_task_id]
-      end
-
-      private
-
       def interval
-        0.02
+        0.01
       end
 
       def on_message(message)
@@ -281,7 +284,7 @@ module Dynflow
               end)
       end
 
-      def tick
+      def ticking
         @start_ticker << true
       end
 
@@ -294,7 +297,7 @@ module Dynflow
           done
         end
       ensure
-        tick
+        ticking
       end
     end
 
