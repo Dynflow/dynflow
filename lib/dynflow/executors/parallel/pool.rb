@@ -62,14 +62,17 @@ module Dynflow
         end
 
         def initialize(manager, pool_size)
-          super(manager.logger)
+          super(manager.logger, manager, pool_size)
+        end
+
+        private
+
+        def delayed_initialize(manager, pool_size)
           @manager      = manager
           @pool_size    = pool_size
           @free_workers = Array.new(pool_size) { Worker.new(self) }
           @jobs         = JobStorage.new
         end
-
-        private
 
         def on_message(message)
           match message,

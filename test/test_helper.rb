@@ -7,6 +7,8 @@ end
 require 'dynflow'
 require 'pry'
 
+MiniTest::Unit.after_tests { Dynflow::CodeWorkflowExample::PollingService.terminate! }
+
 class TestExecutionLog
 
   include Enumerable
