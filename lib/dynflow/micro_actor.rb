@@ -20,7 +20,7 @@ module Dynflow
         end
         @stop.set true
       end
-      nil until @stopped
+      Thread.pass while @stopped.nil?
     end
 
     def <<(message)
