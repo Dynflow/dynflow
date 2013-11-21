@@ -99,7 +99,7 @@ module Dynflow
         if value
           value         = value.with_indifferent_access
           record        = existing_record || condition
-          record[:data] = MultiJson.dump is_kind_of!(value, Hash)
+          record[:data] = MultiJson.dump Type!(value, Hash)
           meta_data     = META_DATA.fetch(what).inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
           record.merge! meta_data
           record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
@@ -146,7 +146,7 @@ module Dynflow
       end
 
       def filter(data_set, options)
-        filters = is_kind_of! options[:filters], NilClass, Hash
+        filters = Type! options[:filters], NilClass, Hash
         return data_set if filters.nil?
 
         unless (unknown = filters.keys - META_DATA.fetch(:execution_plan)).empty?

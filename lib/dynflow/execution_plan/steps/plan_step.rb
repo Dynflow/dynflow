@@ -19,7 +19,7 @@ module Dynflow
 
         super execution_plan_id, id, state, action_class, action_id, error, world, started_at,
               ended_at, execution_time, real_time
-        children.all? { |child| is_kind_of! child, Integer }
+        children.all? { |child| Type! child, Integer }
         @children = children
       end
 
@@ -33,7 +33,7 @@ module Dynflow
 
       # @return [Action]
       def execute(execution_plan, trigger, *args)
-        is_kind_of! execution_plan, ExecutionPlan
+        Type! execution_plan, ExecutionPlan
         attributes = { execution_plan_id: execution_plan.id,
                        id:                action_id,
                        state_holder:      self,

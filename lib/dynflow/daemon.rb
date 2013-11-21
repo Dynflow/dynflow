@@ -3,9 +3,9 @@ module Dynflow
     include Algebrick::TypeCheck
 
     def initialize(listener, world, lock_file = nil)
-      @listener  = is_kind_of! listener, Listeners::Abstract
-      @world     = is_kind_of! world, World
-      @lock_file = is_kind_of! lock_file, String, NilClass
+      @listener  = Type! listener, Listeners::Abstract
+      @world     = Type! world, World
+      @lock_file = Type! lock_file, String, NilClass
     end
 
     def run

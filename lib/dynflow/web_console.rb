@@ -173,7 +173,7 @@ module Dynflow
             halt 400, "Unsupported ordering"
           end
           @ordering_options = { order_by: params[:order_by],
-                                desc: (params[:desc] == 'true') }
+                                desc:     (params[:desc] == 'true') }
         elsif supported_ordering?('started_at')
           @ordering_options = { order_by: 'started_at', desc: true }
         else
@@ -262,7 +262,7 @@ module Dynflow
     post('/:id/skip/:step_id') do |id, step_id|
       plan = world.persistence.load_execution_plan(id)
       step = plan.steps[step_id.to_i]
-      if plan.state != :paused 
+      if plan.state != :paused
         redirect(url "/#{plan.id}?notice=#{url_encode('The exeuction has to be paused to be able to skip')}")
       elsif step.state != :error
         redirect(url "/#{plan.id}?notice=#{url_encode('The step has to be failed to be able to skip')}")

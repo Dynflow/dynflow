@@ -15,7 +15,7 @@ module Dynflow
         private
 
         def delayed_initialize(world, pool_size)
-          @world                   = is_kind_of! world, World
+          @world                   = Type! world, World
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
           @termination_future      = nil
@@ -123,7 +123,7 @@ module Dynflow
         end
 
         def feed_pool(work_items)
-          work_items.all? { |w| is_kind_of! w, Work }
+          work_items.all? { |w| Type! w, Work }
           work_items.each { |new_work| @pool << new_work }
         end
 

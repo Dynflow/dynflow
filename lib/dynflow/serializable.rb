@@ -51,7 +51,7 @@ module Dynflow
 
     def time_to_str(time)
       return if time.nil?
-      is_kind_of! time, Time
+      Type! time, Time
       time.strftime '%Y-%m-%d %H:%M:%S'
     end
 

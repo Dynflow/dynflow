@@ -21,17 +21,17 @@ module Dynflow
           real_time = 0.0)
 
         @id                = id || raise(ArgumentError, 'missing id')
-        @execution_plan_id = is_kind_of! execution_plan_id, String
-        @world             = is_kind_of! world, World
-        @error             = is_kind_of! error, ExecutionPlan::Steps::Error, NilClass
-        @started_at        = is_kind_of! started_at, Time, NilClass
-        @ended_at          = is_kind_of! ended_at, Time, NilClass
-        @execution_time    = is_kind_of! execution_time, Float
-        @real_time         = is_kind_of! real_time, Float
+        @execution_plan_id = Type! execution_plan_id, String
+        @world             = Type! world, World
+        @error             = Type! error, ExecutionPlan::Steps::Error, NilClass
+        @started_at        = Type! started_at, Time, NilClass
+        @ended_at          = Type! ended_at, Time, NilClass
+        @execution_time    = Type! execution_time, Float
+        @real_time         = Type! real_time, Float
 
         self.state = state.to_sym
 
-        is_kind_of! action_class, Class
+        Type! action_class, Class
         raise ArgumentError, 'action_class is not an child of Action' unless action_class < Action
         raise ArgumentError, 'action_class must not be phase' if action_class.phase?
         @action_class = action_class

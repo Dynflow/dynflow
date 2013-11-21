@@ -40,20 +40,20 @@ module Dynflow
         execution_time = 0.0,
         real_time = 0.0)
 
-      @id             = is_kind_of! id, String
-      @world          = is_kind_of! world, World
+      @id             = Type! id, String
+      @world          = Type! world, World
       self.state      = state
-      @run_flow       = is_kind_of! run_flow, Flows::Abstract
-      @finalize_flow  = is_kind_of! finalize_flow, Flows::Abstract
+      @run_flow       = Type! run_flow, Flows::Abstract
+      @finalize_flow  = Type! finalize_flow, Flows::Abstract
       @root_plan_step = root_plan_step
-      @started_at     = is_kind_of! started_at, Time, NilClass
-      @ended_at       = is_kind_of! ended_at, Time, NilClass
-      @execution_time = is_kind_of! execution_time, Float
-      @real_time      = is_kind_of! real_time, Float
+      @started_at     = Type! started_at, Time, NilClass
+      @ended_at       = Type! ended_at, Time, NilClass
+      @execution_time = Type! execution_time, Float
+      @real_time      = Type! real_time, Float
 
       steps.all? do |k, v|
-        is_kind_of! k, Integer
-        is_kind_of! v, Steps::Abstract
+        Type! k, Integer
+        Type! v, Steps::Abstract
       end
       @steps = steps
     end
