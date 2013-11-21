@@ -5,19 +5,21 @@ module Dynflow
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
                 :logger_adapter, :options, :initialized
 
-    def initialize(options = {})
-      @logger_adapter = Type!(options.delete(:logger_adapter) || LoggerAdapters::Simple.new,
-                              LoggerAdapters::Abstract)
+    def initialize(options_hash = {}, &options_block)
       @initialized    = Future.new
-      options         = self.default_options.merge(options)
+      @logger_adapter = Type! options_hash.delete(:logger_adapter) || default_options[:logger_adapter],
+                              LoggerAdapters::Abstract
+      user_options    = options_hash.merge(if options_block
+                                             Type!(options_block.call(self), Hash)
+                                           else
+                                             {}
+                                           end)
+      raise ArgumentError, ':logger_adapter option can be specified only in options_hash' if user_options.key? :logger_adapter
+      options = self.default_options.merge(user_options)
 
-      @executor = Type!(options.delete(:executor) || Executors::Parallel.new(self, options[:pool_size]),
-                        Executors::Abstract)
-
-      persistence_adapter = Type! options.delete(:persistence_adapter), PersistenceAdapters::Abstract
-      @persistence        = Persistence.new(self, persistence_adapter)
-
-      @transaction_adapter = Type! options.delete(:transaction_adapter), TransactionAdapters::Abstract
+      initialize_executor(options)
+      initialize_persistence(options)
+      initialize_transaction_adapter(options)
 
       @action_classes = options.delete(:action_classes)
       calculate_subscription_index
@@ -27,7 +29,8 @@ module Dynflow
     end
 
     def default_options
-      { action_classes: Action.all_children }
+      @default_options ||= { action_classes: Action.all_children,
+                             logger_adapter: LoggerAdapters::Simple.new }
     end
 
     def logger
@@ -75,15 +78,29 @@ module Dynflow
       executor.terminate! future
     end
 
+    protected
+
+    def initialize_executor(options)
+      @executor =
+          Type! options.delete(:executor) || Executors::Parallel.new(self, options[:pool_size]),
+                Executors::Abstract
+    end
+
+    def initialize_persistence(options)
+      persistence_adapter = Type! options.delete(:persistence_adapter), PersistenceAdapters::Abstract
+      @persistence        = Persistence.new(self, persistence_adapter)
+    end
+
+    def initialize_transaction_adapter(options)
+      @transaction_adapter = Type! options.delete(:transaction_adapter), TransactionAdapters::Abstract
+    end
+
     private
 
     def calculate_subscription_index
-      @subscription_index = action_classes.inject(Hash.new { |h, k| h[k] = [] }) do |index, klass|
-        next index unless klass.subscribe
-        Array(klass.subscribe).each do |subscribed_class|
-          index[subscribed_class] << klass
-        end
-        index
+      @subscription_index = action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
+        next unless klass.subscribe
+        Array(klass.subscribe).each { |subscribed_class| index[subscribed_class] << klass }
       end.tap { |o| o.freeze }
     end
   end

@@ -10,15 +10,10 @@ require 'tmpdir'
 socket_path         = File.join(Dir.tmpdir, 'dynflow_socket')
 persistence_adapter = Dynflow::PersistenceAdapters::Sequel.new ARGV[0] || 'sqlite://db.sqlite'
 
-
-class RemoteWorld < Dynflow::SimpleWorld
-  def default_options
-    socket_path = Dir.tmpdir + '/dynflow_socket'
-    super.merge :executor => Dynflow::Executors::RemoteViaSocket.new(self, socket_path)
-  end
+world = Dynflow::SimpleWorld.new do |world|
+  { persistence_adapter: persistence_adapter,
+    executor:            Dynflow::Executors::RemoteViaSocket.new(world, socket_path) }
 end
-
-world = RemoteWorld.new persistence_adapter: persistence_adapter
 
 load File.join(root_path, 'test', 'code_workflow_example.rb')
 
