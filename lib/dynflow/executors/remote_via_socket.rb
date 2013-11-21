@@ -110,7 +110,7 @@ module Dynflow
         include Algebrick::TypeCheck
 
         def initialize(persistence)
-          @world            = is_kind_of! persistence, Dynflow::World
+          @world            = Type! persistence, Dynflow::World
           @last_id          = 0
           @finished_futures = {}
           @accepted_futures = {}
@@ -153,7 +153,7 @@ module Dynflow
         private
 
         def delayed_initialize(world, socket_path)
-          @socket_path = is_kind_of! socket_path, String
+          @socket_path = Type! socket_path, String
           @manager     = Manager.new world
           @socket      = nil
           connect

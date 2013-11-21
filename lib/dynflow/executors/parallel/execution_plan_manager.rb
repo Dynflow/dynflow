@@ -8,9 +8,9 @@ module Dynflow
         attr_reader :execution_plan, :future
 
         def initialize(world, execution_plan, future)
-          @world          = is_kind_of! world, World
-          @execution_plan = is_kind_of! execution_plan, ExecutionPlan
-          @future         = is_kind_of! future, Future
+          @world          = Type! world, World
+          @execution_plan = Type! execution_plan, ExecutionPlan
+          @future         = Type! future, Future
 
           unless [:planed, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -25,7 +25,7 @@ module Dynflow
 
         # @return [Array<Work>] of Work items to continue with
         def what_is_next(work)
-          is_kind_of! work, Work
+          Type! work, Work
 
           match work,
                 Step.(:step) ^
@@ -51,7 +51,7 @@ module Dynflow
 
         # @return [ProgressUpdateStep]
         def update_progress(progress_update)
-          is_kind_of! progress_update, ProgressUpdate
+          Type! progress_update, ProgressUpdate
           step = @execution_plan.steps[progress_update.step_id]
           ProgressUpdateStep[step, @execution_plan.id, progress_update]
         end

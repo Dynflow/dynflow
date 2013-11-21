@@ -7,10 +7,10 @@ module Dynflow
         attr_reader :execution_plan, :cursor_index
 
         def initialize(execution_plan, flow)
-          @execution_plan    = is_kind_of! execution_plan, ExecutionPlan
-          @flow              = flow
-          @cursor_index      = {}
-          @cursor            = build_root_cursor
+          @execution_plan = Type! execution_plan, ExecutionPlan
+          @flow           = flow
+          @cursor_index   = {}
+          @cursor         = build_root_cursor
         end
 
         def done?

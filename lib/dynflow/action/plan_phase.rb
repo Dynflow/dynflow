@@ -11,9 +11,9 @@ module Dynflow
       plan_step_id || raise(ArgumentError, 'missing plan_step_id')
 
       self.input      = attributes[:input] || {}
-      @execution_plan = is_kind_of! execution_plan, ExecutionPlan
+      @execution_plan = Type! execution_plan, ExecutionPlan
       @plan_step_id   = plan_step_id
-      @trigger        = is_kind_of! trigger, Action, NilClass
+      @trigger        = Type! trigger, Action, NilClass
     end
 
     def execute(*args)
@@ -62,7 +62,7 @@ module Dynflow
       end
 
       if self.respond_to?(:finalize)
-        finalize_step = execution_plan.add_finalize_step(self)
+        finalize_step     = execution_plan.add_finalize_step(self)
         @finalize_step_id = finalize_step.id
       end
 

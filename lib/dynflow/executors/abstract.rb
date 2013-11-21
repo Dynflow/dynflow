@@ -5,7 +5,7 @@ module Dynflow
       attr_reader :world, :logger
 
       def initialize(world)
-        @world  = is_kind_of! world, World
+        @world  = Type! world, World
         @logger = world.logger
       end
 

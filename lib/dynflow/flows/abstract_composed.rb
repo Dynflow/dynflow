@@ -5,8 +5,8 @@ module Dynflow
       attr_reader :flows
 
       def initialize(flows)
-        is_kind_of! flows, Array
-        flows.all? { |f| is_kind_of! f, Abstract }
+        Type! flows, Array
+        flows.all? { |f| Type! f, Abstract }
         @flows = flows
       end
 

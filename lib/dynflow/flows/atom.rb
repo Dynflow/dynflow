@@ -9,7 +9,7 @@ module Dynflow
       end
 
       def initialize(step_id)
-        @step_id = is_kind_of! step_id, Integer
+        @step_id = Type! step_id, Integer
       end
 
       def size

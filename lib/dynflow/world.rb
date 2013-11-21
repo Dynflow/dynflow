@@ -6,18 +6,20 @@ module Dynflow
                 :logger_adapter, :options, :initialized
 
     def initialize(options = {})
-      @logger_adapter = is_kind_of!(options.delete(:logger_adapter) || LoggerAdapters::Simple.new,
-                                    LoggerAdapters::Abstract)
+      @logger_adapter = Type!(options.delete(:logger_adapter) || LoggerAdapters::Simple.new,
+                              LoggerAdapters::Abstract)
       @initialized    = Future.new
       options         = self.default_options.merge(options)
 
-      @executor = options.delete(:executor) || Executors::Parallel.new(self, options[:pool_size])
-      is_kind_of! @executor, Executors::Abstract
+      @executor = Type!(options.delete(:executor) || Executors::Parallel.new(self, options[:pool_size]),
+                        Executors::Abstract)
 
-      persistence_adapter  = is_kind_of! options.delete(:persistence_adapter), PersistenceAdapters::Abstract
-      @persistence         = Persistence.new(self, persistence_adapter)
-      @transaction_adapter = is_kind_of! options.delete(:transaction_adapter), TransactionAdapters::Abstract
-      @action_classes      = options.delete(:action_classes)
+      persistence_adapter = Type! options.delete(:persistence_adapter), PersistenceAdapters::Abstract
+      @persistence        = Persistence.new(self, persistence_adapter)
+
+      @transaction_adapter = Type! options.delete(:transaction_adapter), TransactionAdapters::Abstract
+
+      @action_classes = options.delete(:action_classes)
       calculate_subscription_index
 
       @options = options

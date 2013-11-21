@@ -62,7 +62,7 @@ module Dynflow
     end
 
     def indifferent_access_hash_variable_set(name, value)
-      is_kind_of! value, Hash
+      Type! value, Hash
       instance_variable_set :"@#{name}", value.with_indifferent_access
     end
 
@@ -77,10 +77,10 @@ module Dynflow
     def initialize(attributes, world)
       raise "It's not expected to initialize this class directly, use phases." unless self.class.phase?
 
-      is_kind_of! attributes, Hash
+      Type! attributes, Hash
 
-      @world             = is_kind_of! world, World
-      @state_holder      = is_kind_of! attributes[:state_holder], ExecutionPlan::Steps::Abstract
+      @world             = Type! world, World
+      @state_holder      = Type! attributes[:state_holder], ExecutionPlan::Steps::Abstract
       @execution_plan_id = attributes[:execution_plan_id] || raise(ArgumentError, 'missing execution_plan_id')
       @id                = attributes[:id] || raise(ArgumentError, 'missing id')
       @plan_step_id      = attributes[:plan_step_id]

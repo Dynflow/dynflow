@@ -30,7 +30,7 @@ module Dynflow
 
     def dereference(persistence, execution_plan_id)
       action_data = persistence.adapter.load_action(execution_plan_id, action_id)
-      deref = action_data[:output]
+      deref       = action_data[:output]
       @subkeys.each do |subkey|
         if deref.respond_to?(:[])
           deref = deref[subkey]
