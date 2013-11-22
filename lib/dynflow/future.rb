@@ -29,6 +29,7 @@ module Dynflow
           end
         end
       end
+      self
     end
 
     def wait
@@ -38,6 +39,7 @@ module Dynflow
           @lock.sleep
         end
       end
+      self
     end
 
     def ready?

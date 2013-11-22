@@ -25,6 +25,7 @@ module Dynflow
 
     def <<(message)
       @mailbox << message
+      self
     end
 
     def terminate!
