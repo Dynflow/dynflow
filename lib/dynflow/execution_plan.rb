@@ -58,6 +58,10 @@ module Dynflow
       @steps = steps
     end
 
+    def logger
+      @world.logger
+    end
+
     def update_state(state)
       case self.state = state
       when :planning
@@ -69,6 +73,7 @@ module Dynflow
         # ignore
       end
       self.save
+      logger.debug "execution plan #{id} >> #{state}"
     end
 
     def update_execution_time(execution_time)
@@ -259,7 +264,7 @@ module Dynflow
     # involved in the plan
     def actions
       action_steps = Hash.new { |h, k| h[k] = [] }
-      all_actions = []
+      all_actions  = []
       steps.values.each do |step|
         action_steps[step.action_id] << step
       end
