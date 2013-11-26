@@ -9,7 +9,7 @@ module Dynflow
             success:   [:pending], # when restarting finalize phase
             suspended: [],
             skipped:   [],
-            error:     [:pending] # when restarting finalize phase
+            error:     [:pending, :skipped] # pending when restarting finalize phase
         }
       end
 

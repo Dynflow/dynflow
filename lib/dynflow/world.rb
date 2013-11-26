@@ -100,7 +100,7 @@ module Dynflow
     def calculate_subscription_index
       @subscription_index = action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
         next unless klass.subscribe
-        Array(klass.subscribe).each { |subscribed_class| index[subscribed_class] << klass }
+        Array(klass.subscribe).each { |subscribed_class| index[subscribed_class.to_s.constantize] << klass }
       end.tap { |o| o.freeze }
     end
   end
