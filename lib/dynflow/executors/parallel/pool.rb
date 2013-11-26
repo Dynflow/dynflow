@@ -102,7 +102,7 @@ module Dynflow
           end.each do |terminated|
             terminated.wait
           end
-          future.set true
+          future.resolve true
           super()
         end
       end

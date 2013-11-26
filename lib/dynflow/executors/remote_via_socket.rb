@@ -73,7 +73,7 @@ module Dynflow
                     Execute.(~any, ~any) >-> id, uuid do
                       begin
                         @world.execute(uuid,
-                                       FutureTask.new do |_|
+                                       Future.new do |_|
                                          send_message_to_client readable, Done[id, uuid]
                                        end)
                         send_message_to_client readable, Accepted[id]
@@ -124,16 +124,16 @@ module Dynflow
         end
 
         def accepted(id)
-          @accepted_futures.delete(id).set true
+          @accepted_futures.delete(id).resolve true
         end
 
         def failed(id, error)
           @finished_futures.delete id
-          @accepted_futures.delete(id).set Dynflow::Error.new(error)
+          @accepted_futures.delete(id).resolve Dynflow::Error.new(error)
         end
 
         def finished(id, uuid)
-          @finished_futures.delete(id).set @world.persistence.load_execution_plan(uuid)
+          @finished_futures.delete(id).resolve @world.persistence.load_execution_plan(uuid)
         end
       end
 
@@ -141,9 +141,10 @@ module Dynflow
         include Serialization
 
         Message = Algebrick.type do
-          variants Closed   = atom,
-                   Received = type { fields message: SocketMessage },
-                   Execute  = type { fields execution_plan_uuid: String, future: Future }
+          variants Closed    = atom,
+                   Terminate = atom,
+                   Received  = type { fields message: SocketMessage },
+                   Execute   = type { fields execution_plan_uuid: String, future: Future }
         end
 
         def initialize(world, socket_path)

@@ -18,7 +18,7 @@ module Dynflow
           break if @stop
           receive
         end
-        @stop.set true
+        @stopped.resolve true
       end
       Thread.pass while @stopped.nil?
     end
@@ -58,10 +58,10 @@ module Dynflow
 
     def receive
       message, future = @mailbox.pop
-      future.set on_message(message)
+      future.evaluate_to { on_message(message) }
     rescue => error
       logger.fatal error
-      future.set error
+      future.fail error
     end
   end
 end

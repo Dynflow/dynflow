@@ -30,7 +30,7 @@ module Dynflow
         end
 
         def terminate!(future)
-          future.set true
+          future.resolve true
           super()
         end
 

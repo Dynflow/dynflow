@@ -25,7 +25,7 @@ module Dynflow
       calculate_subscription_index
 
       @options = options
-      @initialized.set true
+      @initialized.resolve true
     end
 
     def default_options
@@ -56,7 +56,7 @@ module Dynflow
       execution_plan = plan(action_class, *args)
 
       return execution_plan.id, if execution_plan.state == :stopped
-                                  Future.new.set(execution_plan)
+                                  Future.new.resolve(execution_plan)
                                 else
                                   execute execution_plan.id
                                 end

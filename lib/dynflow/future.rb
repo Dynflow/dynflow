@@ -1,14 +1,20 @@
 module Dynflow
   # TODO use actress when released, copied over from actress gem https://github.com/pitr-ch/actress
-  class Future
-    class FutureHappen < StandardError
-    end
+  # TODO check that all Futures are resolved at some point, socket disconnecting
+  # TODO wrapper for trigger responce
 
-    def initialize
+  class FutureAlreadySet < StandardError
+  end
+
+  class Future
+    def initialize(&task)
       @lock     = Mutex.new
       @value    = nil
       @resolved = false
+      @failed   = false
       @waiting  = []
+      @tasks    = []
+      do_then &task if task
     end
 
     def value
@@ -16,11 +22,42 @@ module Dynflow
       @lock.synchronize { @value }
     end
 
-    def set(result)
-      @lock.synchronize do
-        raise FutureHappen, 'future already happen, cannot set again' if _ready?
-        @resolved = true
-        @value    = result
+    def value!
+      value.tap { raise value if failed? }
+    end
+
+    def resolve(result)
+      set result, false
+    end
+
+    def fail(exception)
+      set exception, true
+    end
+
+    def evaluate_to(&block)
+      set block.call, false
+    rescue => error
+      set error, true
+    end
+
+    def do_then(&task)
+      call_task = @lock.synchronize do
+        @tasks << task unless _ready?
+        @resolved
+      end
+      task.call value if call_task
+      self
+    end
+
+    def set(value, failed)
+      call_tasks = @lock.synchronize do
+        raise FutureAlreadySet, "future already set to #{@value} cannot use #{value}" if _ready?
+        if failed
+          @failed = true
+        else
+          @resolved = true
+        end
+        @value = value
         while (thread = @waiting.pop)
           begin
             thread.wakeup
@@ -28,7 +65,9 @@ module Dynflow
             retry
           end
         end
+        !failed
       end
+      @tasks.each { |t| t.call value } if call_tasks
       self
     end
 
@@ -46,23 +85,18 @@ module Dynflow
       @lock.synchronize { _ready? }
     end
 
+    def resolved?
+      @lock.synchronize { @resolved }
+    end
+
+    def failed?
+      @lock.synchronize { @failed }
+    end
+
     private
 
     def _ready?
-      @resolved
-    end
-  end
-
-  class FutureTask < Future
-    def initialize(&task)
-      super()
-      @task = task
-    end
-
-    def set(result)
-      super result
-      @task.call result
-      self
+      @resolved || @failed
     end
   end
 end
