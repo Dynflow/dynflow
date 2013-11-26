@@ -70,10 +70,8 @@ module Dynflow
     specify { smart_action_class.all_children.wont_include smarter_action_class.finalize_phase }
 
     describe 'World#subscribed_actions' do
-      event_action_class      = Class.new(Dynflow::Action)
-      subscribed_action_class = Class.new(Dynflow::Action) do
-        singleton_class.send(:define_method, :subscribe) { event_action_class }
-      end
+      event_action_class      = CodeWorkflowExample::Triage
+      subscribed_action_class = CodeWorkflowExample::NotifyAssignee
 
       specify { subscribed_action_class.subscribe.must_equal event_action_class }
       specify { world.subscribed_actions(event_action_class).must_include subscribed_action_class }
