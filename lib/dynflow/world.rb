@@ -51,22 +51,32 @@ module Dynflow
       calculate_subscription_index
     end
 
-    TriggerResult = Algebrick.type do
-      Boolean = type { variants TrueClass, FalseClass }
-      fields! execution_plan_id: String, planned: Boolean, finished: Future
-    end
+    class TriggerResult
+      include Algebrick::TypeCheck
 
-    module TriggerResult
+      attr_reader :execution_plan_id, :planned, :finished
       alias_method :id, :execution_plan_id
+      alias_method :planned?, :planned
+
+      def initialize(execution_plan_id, planned, finished)
+        @execution_plan_id = Type! execution_plan_id, String
+        @planned           = Type! planned, TrueClass, FalseClass
+        @finished          = Type! finished, Future
+      end
+
+      def to_a
+        [execution_plan_id, planned, finished]
+      end
     end
 
     # @return [TriggerResult]
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
       planned        = execution_plan.state == :planned
-      return TriggerResult[execution_plan.id,
-                           planned,
-                           planned ? execute(execution_plan.id) : Future.new.resolve(execution_plan)]
+      return TriggerResult.new(
+          execution_plan.id,
+          planned,
+          planned ? execute(execution_plan.id) : Future.new.resolve(execution_plan))
     end
 
     def plan(action_class, *args)

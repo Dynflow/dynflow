@@ -572,19 +572,26 @@ module Dynflow
       end
 
       describe 'termination' do
-        let(:world) { Dynflow::SimpleWorld.new }
+        let(:normal_world) { WorldInstance.create_world }
+        let(:remote_world) { WorldInstance.create_remote_world(normal_world).last }
 
-        it 'executes until its done when terminating' do
-          id, result = world.trigger(CodeWorkflowExample::Slow, 0.2)
-          terminated = world.executor.terminate!
-          terminated.wait
-          result.must_be :ready?
-          $slow_actions_done.must_equal 1
-        end
+        [:normal_world].each do |which| # FIXME test also :remote_world
+          describe which do
+            let(:world) { self.send which }
 
-        it 'it terminates when no work' do
-          terminated = world.executor.terminate!
-          terminated.wait
+            it 'executes until its done when terminating' do
+              result = world.trigger(CodeWorkflowExample::Slow, 0.2).finished
+              terminated = world.executor.terminate!
+              terminated.wait
+              result.must_be :ready?
+              $slow_actions_done.must_equal 1
+            end
+
+            it 'it terminates when no work' do
+              terminated = world.executor.terminate!
+              terminated.wait
+            end
+          end
         end
 
       end
