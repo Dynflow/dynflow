@@ -73,10 +73,12 @@ module Dynflow
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
       planned        = execution_plan.state == :planned
-      return TriggerResult.new(
-          execution_plan.id,
-          planned,
-          planned ? execute(execution_plan.id) : Future.new.resolve(execution_plan))
+      finished       = if planned
+                         execute(execution_plan.id)
+                       else
+                         Future.new.resolve(execution_plan)
+                       end
+      return TriggerResult.new(execution_plan.id, planned, finished)
     end
 
     def plan(action_class, *args)
