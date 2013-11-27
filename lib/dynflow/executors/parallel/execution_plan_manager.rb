@@ -51,6 +51,7 @@ module Dynflow
 
         # @return [ProgressUpdateStep]
         def update_progress(progress_update)
+          # FIXME: allow only one update_progress run on a given action
           Type! progress_update, ProgressUpdate
           step = @execution_plan.steps[progress_update.step_id]
           ProgressUpdateStep[step, @execution_plan.id, progress_update]

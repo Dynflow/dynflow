@@ -282,7 +282,7 @@ module Dynflow
       end
 
       def interval
-        0.01
+        0.03
       end
 
       def on_message(message)

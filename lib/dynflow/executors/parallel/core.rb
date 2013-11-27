@@ -8,8 +8,13 @@ module Dynflow
           super(world.logger, world, pool_size)
         end
 
-        def terminating?
-          !!@termination_future
+        def terminate!
+          logger.info 'shutting down Core ...'
+          self << Finish[future = Future.new]
+          future.wait
+          @pool.terminate!
+          super()
+          logger.info '... Core terminated.'
         end
 
         private
@@ -18,7 +23,7 @@ module Dynflow
           @world                   = Type! world, World
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
-          @termination_future      = nil
+          @finishing_work          = nil
 
           @world.initialized.wait
 
@@ -64,10 +69,9 @@ module Dynflow
                 PoolDone.(~any) >-> step do
                   update_manager(step)
                 end,
-                Terminate.(~any) >-> future do
-                  logger.info 'shutting down Core ...'
-                  @termination_future = future
-                  try_to_terminate
+                Finish.(~any) >-> future do
+                  @finishing_work = future
+                  try_to_finish
                 end
         end
 
@@ -75,21 +79,21 @@ module Dynflow
         def track_execution_plan(execution_plan_id, accepted, finished)
           execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
 
-          if terminating?
+          if finishing_work?
             accepted.resolve error("cannot accept execution_plan_id:#{execution_plan_id} " +
-                                   'core is terminating')
+                                       'core is terminating')
             return false
           end
 
           if @execution_plan_managers[execution_plan_id]
             accepted.resolve error("cannot execute execution_plan_id:#{execution_plan_id} " +
-                                   "it's already running")
+                                       "it's already running")
             return false
           end
 
           if execution_plan.state == :stopped
             accepted.resolve error("cannot execute execution_plan_id:#{execution_plan_id} " +
-                                   "it's stopped")
+                                       "it's stopped")
             return false
           end
 
@@ -116,7 +120,7 @@ module Dynflow
         def continue_manager(manager, next_work)
           if manager.done?
             loose_manager_and_set_future manager.execution_plan.id
-            try_to_terminate
+            try_to_finish
           else
             feed_pool next_work
           end
@@ -142,16 +146,12 @@ module Dynflow
           end
         end
 
-        def terminate!
-          @pool << Terminate[pool_terminated = Future.new]
-          pool_terminated.wait
-          logger.info '... Core terminated.'
-          @termination_future.resolve true
-          super()
+        def finishing_work?
+          !!@finishing_work
         end
 
-        def try_to_terminate
-          terminate! if terminating? && @execution_plan_managers.empty?
+        def try_to_finish
+          @finishing_work.resolve true if finishing_work? && @execution_plan_managers.empty?
         end
       end
     end

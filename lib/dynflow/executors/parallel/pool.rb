@@ -65,6 +65,13 @@ module Dynflow
           super(manager.logger, manager, pool_size)
         end
 
+        def terminate!
+          Thread.pass until @free_workers && @pool_size # run after initialization
+          raise unless @free_workers.size == @pool_size
+          @free_workers.map { |worker| worker.terminate! }
+          super
+        end
+
         private
 
         def delayed_initialize(manager, pool_size)
@@ -84,26 +91,11 @@ module Dynflow
                   @manager << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
-                end,
-                Terminate.(~any) >-> future do
-                  terminate! future
                 end
         end
 
         def distribute_jobs
           @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
-        end
-
-        def terminate!(future)
-          raise unless @free_workers.size == @pool_size
-          @free_workers.map do |worker|
-            worker << Terminate[terminated = Future.new]
-            terminated
-          end.each do |terminated|
-            terminated.wait
-          end
-          future.resolve true
-          super()
         end
       end
     end

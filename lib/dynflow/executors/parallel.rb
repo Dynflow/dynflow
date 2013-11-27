@@ -12,10 +12,10 @@ module Dynflow
 
       # actor messages
       Algebrick.types do
-        Terminate = type do
+        Finish  = type do
           fields! future: Future
         end
-        Boolean   = type { variants TrueClass, FalseClass }
+        Boolean = type { variants TrueClass, FalseClass }
 
         Execution = type do
           fields! execution_plan_id: String,
@@ -71,9 +71,8 @@ module Dynflow
             suspended_action.execution_plan_id, suspended_action.step_id, done, args]
       end
 
-      def terminate!(future = Future.new)
-        @core << Terminate[future]
-        future
+      def terminate!
+        @core.terminate!
       end
     end
   end

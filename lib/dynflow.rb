@@ -33,5 +33,30 @@ module Dynflow
 
 end
 
+class Logger
+  class LogDevice
+    def write(message)
+      begin
+        @mutex.synchronize do
+          if @shift_age and @dev.respond_to?(:stat)
+            begin
+              check_shift_log
+            rescue
+              warn("log shifting failed. #{$!}")
+            end
+          end
+          begin
+            @dev.write(message)
+          rescue => ignored
+            warn "#{ignored.message} (#{ignored.class})\n#{ignored.backtrace.join("\n")}"
+            warn("log writing failed. #{$!}")
+          end
+        end
+      rescue Exception => ignored
+        warn "#{ignored.message} (#{ignored.class})\n#{ignored.backtrace.join("\n")}"
+        warn("log writing failed. #{ignored}")
+      end
+    end
 
-# FIND a state-machine gem? for state transitions in Step and EP
+  end
+end

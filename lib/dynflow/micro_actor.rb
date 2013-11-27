@@ -6,6 +6,8 @@ module Dynflow
 
     attr_reader :logger
 
+    Terminate = Algebrick.atom
+
     def initialize(logger, *args)
       @logger = logger
       @thread = Thread.new do
@@ -14,10 +16,8 @@ module Dynflow
         @stop                             = false
         @stopped                          = Future.new
         delayed_initialize(*args)
-        loop do
-          break if @stop
-          receive
-        end
+        @initialized
+        catch(Terminate) { loop { receive } }
         @stopped.resolve true
       end
       Thread.pass while @stopped.nil?
@@ -29,7 +29,8 @@ module Dynflow
     end
 
     def terminate!
-      @stop = true
+      raise if Thread.current == @thread
+      @mailbox << Terminate
       @stopped.wait
     end
 
@@ -43,7 +44,9 @@ module Dynflow
     end
 
     def receive
-      on_message @mailbox.pop
+      message = @mailbox.pop
+      throw Terminate if message == Terminate
+      on_message message
     rescue => error
       logger.fatal error
     end
@@ -58,10 +61,10 @@ module Dynflow
 
     def receive
       message, future = @mailbox.pop
-      future.evaluate_to { on_message(message) }
+      throw Terminate if message == Terminate
+      future.resolve on_message(message)
     rescue => error
       logger.fatal error
-      future.fail error
     end
   end
 end
