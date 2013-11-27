@@ -60,7 +60,7 @@ module Dynflow
             describe "after successful planning" do
 
               it "is pending" do
-                execution_plan.state.must_equal :planed
+                execution_plan.state.must_equal :planned
               end
 
             end

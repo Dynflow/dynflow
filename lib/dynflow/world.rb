@@ -51,15 +51,22 @@ module Dynflow
       calculate_subscription_index
     end
 
-    # @return [Future]
+    TriggerResult = Algebrick.type do
+      Boolean = type { variants TrueClass, FalseClass }
+      fields! execution_plan_id: String, planned: Boolean, finished: Future
+    end
+
+    module TriggerResult
+      alias_method :id, :execution_plan_id
+    end
+
+    # @return [TriggerResult]
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
-
-      return execution_plan.id, if execution_plan.state == :stopped
-                                  Future.new.resolve(execution_plan)
-                                else
-                                  execute execution_plan.id
-                                end
+      planned        = execution_plan.state == :planned
+      return TriggerResult[execution_plan.id,
+                           planned,
+                           planned ? execute(execution_plan.id) : Future.new.resolve(execution_plan)]
     end
 
     def plan(action_class, *args)

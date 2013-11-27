@@ -12,7 +12,7 @@ module Dynflow
           @execution_plan = Type! execution_plan, ExecutionPlan
           @future         = Type! future, Future
 
-          unless [:planed, :paused].include? execution_plan.state
+          unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
           end
           execution_plan.update_state(:running)

@@ -85,8 +85,9 @@ module Dynflow
     include WorldInstance
 
     let :execution_plan do
-      _, future = world.trigger(CodeWorkflowExample::IncomingIssues, issues_data)
-      future.value
+      id, planned, finished = *world.trigger(CodeWorkflowExample::IncomingIssues, issues_data)
+      raise unless planned
+      finished.value
     end
 
     let :issues_data do

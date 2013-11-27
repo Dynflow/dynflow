@@ -191,6 +191,7 @@ module Dynflow
         self.state          = :error
         @state_holder.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
       end
+      # FIXME catch also Exceptions
 
       case self.state
       when :running
