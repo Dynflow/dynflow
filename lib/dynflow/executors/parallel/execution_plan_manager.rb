@@ -8,9 +8,10 @@ module Dynflow
         attr_reader :execution_plan, :future
 
         def initialize(world, execution_plan, future)
-          @world          = Type! world, World
-          @execution_plan = Type! execution_plan, ExecutionPlan
-          @future         = Type! future, Future
+          @world            = Type! world, World
+          @execution_plan   = Type! execution_plan, ExecutionPlan
+          @future           = Type! future, Future
+          @progress_updates = WorkQueue.new
 
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -27,21 +28,32 @@ module Dynflow
         def what_is_next(work)
           Type! work, Work
 
+          compute_next_from_step =-> step do
+            raise unless @run_manager
+            raise if @run_manager.done?
+
+            next_steps = @run_manager.what_is_next(step)
+            if @run_manager.done?
+              start_finalize or finish
+            else
+              next_steps.map { |s| Step[s, execution_plan.id] }
+            end
+          end
+
           match work,
-                Step.(:step) ^
-                    ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(:done)) >-> step, done do
-
-                  execution_plan.update_execution_time step.execution_time if done.nil? ? step.state != :suspended : done
-                  raise unless @run_manager
-                  raise if @run_manager.done?
-
-                  next_steps = @run_manager.what_is_next(step)
-
-                  if @run_manager.done?
-                    start_finalize or finish
-                  else
-                    next_steps.map { |s| Step[s, execution_plan.id] }
-                  end
+                Step.(:step) >-> step do
+                  execution_plan.update_execution_time step.execution_time if step.state != :suspended
+                  compute_next_from_step.call step
+                end,
+                ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(done: false)) >-> step do
+                  @progress_updates.shift(step.id)
+                  @progress_updates.first(step.id)
+                end,
+                ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(done: true)) >-> step do
+                  @progress_updates.shift(step.id)
+                  raise 'assert' unless @progress_updates.empty?(step.id)
+                  execution_plan.update_execution_time step.execution_time
+                  compute_next_from_step.call step
                 end,
                 Finalize.(any, any) >-> do
                   raise unless @finalize_manager
@@ -51,10 +63,14 @@ module Dynflow
 
         # @return [ProgressUpdateStep]
         def update_progress(progress_update)
-          # FIXME: allow only one update_progress run on a given action
           Type! progress_update, ProgressUpdate
-          step = @execution_plan.steps[progress_update.step_id]
-          ProgressUpdateStep[step, @execution_plan.id, progress_update]
+
+          step                    = @execution_plan.steps[progress_update.step_id]
+          can_run_progress_update = @progress_updates.empty?(step.id)
+          @progress_updates.push(step.id,
+                                 ProgressUpdateStep[step, @execution_plan.id, progress_update])
+
+          ProgressUpdateStep[step, @execution_plan.id, progress_update] if can_run_progress_update
         end
 
         def done?

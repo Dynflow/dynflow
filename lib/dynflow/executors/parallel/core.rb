@@ -127,7 +127,10 @@ module Dynflow
         end
 
         def feed_pool(work_items)
-          work_items.all? { |w| Type! w, Work }
+          Type! work_items, Array, Work, NilClass
+          return if work_items.nil?
+          work_items = [work_items] if work_items.is_a? Work
+          work_items.all? { |i| Type! i, Work }
           work_items.each { |new_work| @pool << new_work }
         end
 
@@ -138,7 +141,7 @@ module Dynflow
 
         def update_progress(progress_update)
           if execution_plan_manager = @execution_plan_managers[progress_update.execution_plan_id]
-            feed_pool [execution_plan_manager.update_progress(progress_update)]
+            feed_pool execution_plan_manager.update_progress(progress_update)
           else
             # TODO should be fixed when EP execution is resumed after restart
             raise "Trying to resume execution_plan:#{progress_update.execution_plan_id} step:#{progress_update.step_id} failed, " +

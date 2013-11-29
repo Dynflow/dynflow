@@ -589,20 +589,18 @@ module Dynflow
             end
 
             it 'does not accept new work' do
-              skip "FIXME: it's blocking"
-              world.terminate!
+              skip # FIXME it's blocking"
+              assert world.terminate!
               refute world.trigger(CodeWorkflowExample::Slow, 0.2).planned
             end
 
             it 'it terminates when no work' do
               world.trigger(CodeWorkflowExample::Slow, 0.02).finished.wait
-              world.terminate!
-              assert true
+              assert world.terminate!
             end
 
             it 'it terminates when no work right after initialization' do
-              world.terminate!
-              assert true
+              assert world.terminate!
             end
           end
         end

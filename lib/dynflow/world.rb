@@ -95,6 +95,7 @@ module Dynflow
 
     def terminate!
       executor.terminate!
+      true
     end
 
     protected

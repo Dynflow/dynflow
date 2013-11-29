@@ -282,7 +282,7 @@ module Dynflow
       end
 
       def interval
-        0.03
+        0.005
       end
 
       def on_message(message)
@@ -312,7 +312,7 @@ module Dynflow
       end
     end
 
-    PollingService = PollingServiceImpl.new(Logger.new($stdout).tap { |l| l.progname = 'PollingService' })
+    PollingService = PollingServiceImpl.new(Logger.new($stderr).tap { |l| l.progname = 'PollingService' })
 
     class DummySuspended < Action
 

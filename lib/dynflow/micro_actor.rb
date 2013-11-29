@@ -16,7 +16,6 @@ module Dynflow
         @stop                             = false
         @stopped                          = Future.new
         delayed_initialize(*args)
-        @initialized
         catch(Terminate) { loop { receive } }
         @stopped.resolve true
       end
@@ -29,6 +28,7 @@ module Dynflow
     end
 
     def terminate!
+      # FIXME wait after initialized
       raise if Thread.current == @thread
       @mailbox << Terminate
       @stopped.wait
