@@ -26,6 +26,7 @@ module Dynflow
 
       @options = options
       @initialized.resolve true
+      executor.initialized.wait
     end
 
     def default_options

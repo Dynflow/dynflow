@@ -121,7 +121,7 @@ module Dynflow
         if (record = table.first(condition.symbolize_keys))
           HashWithIndifferentAccess.new MultiJson.load(record[:data])
         else
-          raise KeyError
+          raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
       end
 

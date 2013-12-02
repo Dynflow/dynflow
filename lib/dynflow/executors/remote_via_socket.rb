@@ -265,6 +265,10 @@ module Dynflow
       def terminate!
         @core.terminate!
       end
+
+      def initialized
+        @core.initialized
+      end
     end
   end
 end

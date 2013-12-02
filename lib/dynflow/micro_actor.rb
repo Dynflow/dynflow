@@ -4,22 +4,24 @@ module Dynflow
     include Algebrick::TypeCheck
     include Algebrick::Matching
 
-    attr_reader :logger
+    attr_reader :logger, :initialized
 
     Terminate = Algebrick.atom
 
     def initialize(logger, *args)
-      @logger = logger
-      @thread = Thread.new do
+      @logger      = logger
+      @initialized = Future.new
+      @thread      = Thread.new do
         Thread.current.abort_on_exception = true
         @mailbox                          = Queue.new
-        @stop                             = false
         @stopped                          = Future.new
         delayed_initialize(*args)
+        Thread.pass until @initialized
+        @initialized.resolve true
         catch(Terminate) { loop { receive } }
         @stopped.resolve true
       end
-      Thread.pass while @stopped.nil?
+      Thread.pass until @stopped && @mailbox
     end
 
     def <<(message)
@@ -28,7 +30,7 @@ module Dynflow
     end
 
     def terminate!
-      # FIXME wait after initialized
+      @initialized.wait
       raise if Thread.current == @thread
       @mailbox << Terminate
       @stopped.wait

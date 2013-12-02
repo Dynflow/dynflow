@@ -22,6 +22,11 @@ module Dynflow
       def terminate!
         raise NotImplementedError
       end
+
+      # @return [Future]
+      def initialized
+        raise NotImplementedError
+      end
     end
   end
 end

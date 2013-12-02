@@ -43,7 +43,7 @@ module Dynflow
 
       def run
         sleep input[:interval]
-        p 'done with sleeping'
+        action_logger.debug 'done with sleeping'
         $slow_actions_done ||= 0
         $slow_actions_done +=1
       end
