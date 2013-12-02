@@ -25,7 +25,8 @@ module Dynflow
       calculate_subscription_index
 
       @options = options
-      @initialized.set true
+      @initialized.resolve true
+      executor.initialized.wait
     end
 
     def default_options
@@ -51,15 +52,34 @@ module Dynflow
       calculate_subscription_index
     end
 
-    # @return [Future]
+    class TriggerResult
+      include Algebrick::TypeCheck
+
+      attr_reader :execution_plan_id, :planned, :finished
+      alias_method :id, :execution_plan_id
+      alias_method :planned?, :planned
+
+      def initialize(execution_plan_id, planned, finished)
+        @execution_plan_id = Type! execution_plan_id, String
+        @planned           = Type! planned, TrueClass, FalseClass
+        @finished          = Type! finished, Future
+      end
+
+      def to_a
+        [execution_plan_id, planned, finished]
+      end
+    end
+
+    # @return [TriggerResult]
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
-
-      return execution_plan.id, if execution_plan.state == :stopped
-                                  Future.new.set(execution_plan)
-                                else
-                                  execute execution_plan.id
-                                end
+      planned        = execution_plan.state == :planned
+      finished       = if planned
+                         execute(execution_plan.id)
+                       else
+                         Future.new.resolve(execution_plan)
+                       end
+      return TriggerResult.new(execution_plan.id, planned, finished)
     end
 
     def plan(action_class, *args)
@@ -74,8 +94,9 @@ module Dynflow
       executor.execute execution_plan_id, finished
     end
 
-    def terminate!(future = Future.new)
-      executor.terminate! future
+    def terminate!
+      executor.terminate!
+      true
     end
 
     protected

@@ -52,11 +52,11 @@ class TestExecutionLog
 end
 
 # To be able to stop a process in some step and perform assertions while paused
-class TestPause < Dynflow::Future
+class TestPause
 
   def self.setup
-    @pause = self.new
-    @ready = self.new
+    @pause = Dynflow::Future.new
+    @ready = Dynflow::Future.new
   end
 
   def self.teardown
@@ -71,7 +71,7 @@ class TestPause < Dynflow::Future
     elsif @ready.ready?
       raise 'you can pause only once'
     else
-      @ready.set(true)
+      @ready.resolve(true)
       @pause.wait
     end
   end
@@ -81,7 +81,7 @@ class TestPause < Dynflow::Future
     if @pause
       @ready.wait # wait till we are paused
       yield
-      @pause.set(true) # resume the run
+      @pause.resolve(true) # resume the run
     else
       raise 'the TestPause class was not setup'
     end
@@ -90,17 +90,28 @@ end
 
 module WorldInstance
   def self.world
-    @world ||= Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)
+    @world ||= create_world
   end
 
   def self.remote_world
-    socket_path   = Dir.tmpdir + '/dynflow_remote'
-    @listener     ||= Dynflow::Executors::RemoteViaSocket::Listener.new world, socket_path
-    @remote_world ||=
-        Dynflow::SimpleWorld.new(logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)) do |world|
-          { persistence_adapter: self.world.persistence.adapter,
-            executor:            Dynflow::Executors::RemoteViaSocket.new(world, socket_path) }
-        end
+    return @remote_world if @remote_world
+    @listener, @remote_world = create_remote_world world
+    @remote_world
+  end
+
+  def self.create_world
+    Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)
+  end
+
+  def self.create_remote_world(world)
+    @counter    ||= 0
+    socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
+    listener    = Dynflow::Executors::RemoteViaSocket::Listener.new world, socket_path
+    world       = Dynflow::SimpleWorld.new(logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)) do |remote_world|
+      { persistence_adapter: world.persistence.adapter,
+        executor:            Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path) }
+    end
+    return listener, world
   end
 
   def world

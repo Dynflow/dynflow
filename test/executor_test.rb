@@ -60,7 +60,7 @@ module Dynflow
             describe "after successful planning" do
 
               it "is pending" do
-                execution_plan.state.must_equal :planed
+                execution_plan.state.must_equal :planned
               end
 
             end
@@ -572,19 +572,37 @@ module Dynflow
       end
 
       describe 'termination' do
-        let(:world) { Dynflow::SimpleWorld.new }
+        let(:normal_world) { WorldInstance.create_world }
+        let(:remote_world) { WorldInstance.create_remote_world(normal_world).last }
 
-        it 'executes until its done when terminating' do
-          id, result = world.trigger(CodeWorkflowExample::Slow, 0.2)
-          terminated = world.executor.terminate!
-          terminated.wait
-          result.must_be :ready?
-          $slow_actions_done.must_equal 1
-        end
+        [:normal_world, :remote_world].each do |which|
+          describe which do
+            let(:world) { self.send which }
 
-        it 'it terminates when no work' do
-          terminated = world.executor.terminate!
-          terminated.wait
+            if which == :normal_world
+              it 'executes until its done when terminating' do
+                $slow_actions_done = 0
+                result             = world.trigger(CodeWorkflowExample::Slow, 0.2).finished
+                world.terminate!
+                $slow_actions_done.must_equal 1
+              end
+            end
+
+            it 'does not accept new work' do
+              skip # FIXME it's blocking"
+              assert world.terminate!
+              refute world.trigger(CodeWorkflowExample::Slow, 0.2).planned
+            end
+
+            it 'it terminates when no work' do
+              world.trigger(CodeWorkflowExample::Slow, 0.02).finished.wait
+              assert world.terminate!
+            end
+
+            it 'it terminates when no work right after initialization' do
+              assert world.terminate!
+            end
+          end
         end
 
       end

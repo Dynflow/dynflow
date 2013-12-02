@@ -11,7 +11,10 @@ module Dynflow
     def run
       with_lock_file do
         terminated = Future.new
-        trap('SIGINT') { @world.terminate! terminated }
+        trap('SIGINT') do
+          @world.terminate!
+          terminated.resolve true
+        end
         terminated.wait
       end
     end

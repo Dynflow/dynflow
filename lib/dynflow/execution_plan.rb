@@ -15,13 +15,13 @@ module Dynflow
                 :started_at, :ended_at, :execution_time, :real_time
 
     def self.states
-      @states ||= [:pending, :planning, :planed, :running, :paused, :stopped]
+      @states ||= [:pending, :planning, :planned, :running, :paused, :stopped]
     end
 
     def self.state_transitions
       @state_transitions ||= { pending:  [:planning],
-                               planning: [:planed, :stopped],
-                               planed:   [:running],
+                               planning: [:planned, :stopped],
+                               planned:   [:running],
                                running:  [:paused, :stopped],
                                paused:   [:running],
                                stopped:  [] }
@@ -127,7 +127,7 @@ module Dynflow
 
         world.transaction_adapter.rollback if error?
       end
-      update_state(error? ? :stopped : :planed)
+      update_state(error? ? :stopped : :planned)
       steps.values.each &:save
     end
 

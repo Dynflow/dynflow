@@ -186,10 +186,12 @@ module Dynflow
 
       begin
         block.call
-      rescue => error
+      rescue Exception => error
         action_logger.error error
         self.state          = :error
         @state_holder.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
+        # reraise low-level exceptions
+        raise error unless Type? error, StandardError, ScriptError
       end
 
       case self.state

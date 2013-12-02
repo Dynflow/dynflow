@@ -22,18 +22,9 @@ module Dynflow
                 end,
                 Finalize.(~any, any) >-> sequential_manager do
                   sequential_manager.finalize
-                end,
-                Terminate.(~any) >-> future do
-                  terminate! future
                 end
           @pool << WorkerDone[work: message, worker: self]
         end
-
-        def terminate!(future)
-          future.set true
-          super()
-        end
-
       end
     end
   end

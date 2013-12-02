@@ -43,7 +43,7 @@ module Dynflow
 
       def run
         sleep input[:interval]
-        p 'done with sleeping'
+        action_logger.debug 'done with sleeping'
         $slow_actions_done ||= 0
         $slow_actions_done +=1
       end
@@ -282,7 +282,7 @@ module Dynflow
       end
 
       def interval
-        0.01
+        0.005
       end
 
       def on_message(message)
@@ -312,7 +312,7 @@ module Dynflow
       end
     end
 
-    PollingService = PollingServiceImpl.new(Logger.new($stdout).tap { |l| l.progname = 'PollingService' })
+    PollingService = PollingServiceImpl.new(Logger.new($stderr).tap { |l| l.progname = 'PollingService' })
 
     class DummySuspended < Action
 

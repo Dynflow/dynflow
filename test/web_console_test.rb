@@ -13,9 +13,9 @@ module Dynflow
     include WorldInstance
 
     let :execution_plan_id do
-      id, plan = world.trigger(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
-      plan.wait
-      id
+      world.trigger(CodeWorkflowExample::FastCommit, 'sha' => 'abc123').
+          tap { |o| o.finished.wait }.
+          id
     end
 
     let :app do

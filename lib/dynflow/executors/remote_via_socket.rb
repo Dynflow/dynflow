@@ -38,10 +38,12 @@ module Dynflow
           else
             nil
           end
+        rescue IOError
+          nil
         end
       end
 
-      class Listener < Dynflow::Listeners::Abstract
+      class Listener < Dynflow::Listeners::Abstract # TODO how to shutdown
         include Serialization
         include Algebrick::Matching
 
@@ -73,7 +75,7 @@ module Dynflow
                     Execute.(~any, ~any) >-> id, uuid do
                       begin
                         @world.execute(uuid,
-                                       FutureTask.new do |_|
+                                       Future.new do |_|
                                          send_message_to_client readable, Done[id, uuid]
                                        end)
                         send_message_to_client readable, Accepted[id]
@@ -124,16 +126,20 @@ module Dynflow
         end
 
         def accepted(id)
-          @accepted_futures.delete(id).set true
+          @accepted_futures.delete(id).resolve true
         end
 
         def failed(id, error)
           @finished_futures.delete id
-          @accepted_futures.delete(id).set Dynflow::Error.new(error)
+          @accepted_futures.delete(id).resolve Dynflow::Error.new(error)
         end
 
         def finished(id, uuid)
-          @finished_futures.delete(id).set @world.persistence.load_execution_plan(uuid)
+          @finished_futures.delete(id).resolve @world.persistence.load_execution_plan(uuid)
+        end
+
+        def empty?
+          @finished_futures.empty?
         end
       end
 
@@ -142,6 +148,7 @@ module Dynflow
 
         Message = Algebrick.type do
           variants Closed   = atom,
+                   Finish   = type { fields Future },
                    Received = type { fields message: SocketMessage },
                    Execute  = type { fields execution_plan_uuid: String, future: Future }
         end
@@ -150,25 +157,42 @@ module Dynflow
           super(world.logger, world, socket_path)
         end
 
+        def terminate!
+          self << Finish[future = Future.new]
+          future.wait
+          super
+        end
+
         private
 
         def delayed_initialize(world, socket_path)
-          @socket_path = Type! socket_path, String
-          @manager     = Manager.new world
-          @socket      = nil
+          @socket_path      = Type! socket_path, String
+          @manager          = Manager.new world
+          @socket           = nil
+          @finishing_future = nil
           connect
+        end
+
+        def finishing?
+          !!@finishing_future
         end
 
         def on_message(message)
           match message,
                 Closed >-> do
                   @socket = nil
-                  logger.info 'Disconnected.'
+                  logger.info 'Disconnected from server.'
+                  @finishing_future.resolve true if finishing?
+                end,
+                Finish.(~any) >-> future do
+                  @finishing_future = future
+                  disconnect
                 end,
                 Received.(Accepted.(~any)) >-> id { @manager.accepted id },
                 Received.(Failed.(~any, ~any)) >-> id, error { @manager.failed id, error },
                 Received.(Done.(~any, ~any)) >-> id, uuid { @manager.finished id, uuid },
                 Core::Execute.(~any, ~any) >-> execution_plan_uuid, future do
+                  raise 'terminating' if finishing?
                   id, accepted = @manager.add future
                   success      = connect && begin
                     send_message @socket, RemoteViaSocket::Execute[id, execution_plan_uuid]
@@ -186,12 +210,18 @@ module Dynflow
         def connect
           return true if @socket
           @socket = UNIXSocket.new @socket_path
-          logger.info 'Connected.'
+          logger.info 'Connected to server.'
           read_socket_until_closed
           true
         rescue IOError => error
           logger.warn error
           false
+        end
+
+        def disconnect
+          return true unless @socket
+          @socket.shutdown :RDWR
+          true
         end
 
         def read_socket_until_closed
@@ -230,6 +260,14 @@ module Dynflow
 
       def update_progress(suspended_action, done, *args)
         raise 'updates are handled in a process with real executor'
+      end
+
+      def terminate!
+        @core.terminate!
+      end
+
+      def initialized
+        @core.initialized
       end
     end
   end
