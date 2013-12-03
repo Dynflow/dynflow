@@ -73,7 +73,6 @@ module Dynflow
         # ignore
       end
       self.save
-      logger.debug "execution plan #{id} >> #{state}"
     end
 
     def update_execution_time(execution_time)
@@ -276,6 +275,11 @@ module Dynflow
         all_actions << action
       end
       return all_actions
+    end
+
+    def set_state(*args)
+      super
+      logger.debug "execution plan #{id} >> #{state}"
     end
 
     private
