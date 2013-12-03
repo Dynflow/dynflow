@@ -5,7 +5,7 @@
 <% end %>
 
 <span class="step-label">
-  <%= h(step.id) %>: <%= h(step.action_class.name) %>
+  <%= h(step.id) %>: <%= h(step.action_class.name) %> (<%= h(step.state) %>)
 </span>
 <% if @plan.state == :paused && step.state == :error %>
   <a href="<%= url("/#{@plan.id}/skip/#{step.id}") %>" class="postlink">Skip</a>
