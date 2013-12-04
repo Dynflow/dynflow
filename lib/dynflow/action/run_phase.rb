@@ -9,8 +9,14 @@ module Dynflow
     SUSPENDING = Object.new
 
     def execute(done = nil, *args)
-      case state
-      when :suspended
+      Match! done, true, false, nil
+      doing_progress_update = !done.nil?
+
+      case
+      when state == :running
+        raise NotImplementedError, 'recovery after restart is not implemented'
+
+      when state == :suspended && doing_progress_update
         self.state = :running
         save_state
         with_error_handling do
@@ -18,11 +24,7 @@ module Dynflow
         end
         self.state = :suspended unless done
 
-      when :running
-        raise NotImplementedError, 'recovery after restart is not implemented'
-
-      when :pending, :error
-        raise unless done.nil? && args.empty?
+      when [:pending, :error].include?(state) && !doing_progress_update
         self.state = :running
         save_state
         with_error_handling do
@@ -34,7 +36,7 @@ module Dynflow
         end
 
       else
-        raise "wrong state #{state}"
+        raise "wrong state #{state} when doing_progress_update:#{doing_progress_update}"
       end
     end
 

@@ -89,12 +89,12 @@ module Dynflow
       def run
         TestExecutionLog.run << self
         TestPause.pause if input[:text].include? 'get a break'
-        raise 'Trolling detected' if input[:text] == "trolling"
+        error! 'Trolling detected' if input[:text] == "trolling"
         self.output[:classification] = { assignee: 'John Doe', severity: 'medium' }
       end
 
       def finalize
-        raise 'Trolling detected' if input[:text] == "trolling in finalize"
+        error! 'Trolling detected' if input[:text] == "trolling in finalize"
         TestExecutionLog.finalize << self
       end
 

@@ -181,15 +181,22 @@ module Dynflow
 
     private
 
+    ERRORING = Object.new
+
+    # DSL to terminate action execution and set it to error
+    def error!(error)
+      set_error(error)
+      throw ERRORING
+    end
+
+
     def with_error_handling(&block)
       raise "wrong state #{self.state}" unless self.state == :running
 
       begin
-        block.call
+        catch(ERRORING) { block.call }
       rescue Exception => error
-        action_logger.error error
-        self.state          = :error
-        @state_holder.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
+        set_error(error)
         # reraise low-level exceptions
         raise error unless Type? error, StandardError, ScriptError
       end
@@ -201,6 +208,17 @@ module Dynflow
       else
         raise "wrong state #{self.state}"
       end
+    end
+
+    def set_error(error)
+      Type! error, Exception, String
+      action_logger.error error
+      self.state          = :error
+      @state_holder.error = if error.is_a?(String)
+                              ExecutionPlan::Steps::Error.new(nil, error, nil)
+                            else
+                              ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
+                            end
     end
 
     def self.inherited(child)
