@@ -31,9 +31,14 @@ module Dynflow
 
     def terminate!
       @initialized.wait
+      return true if stopped?
       raise if Thread.current == @thread
       @mailbox << Terminate
-      @stopped.wait
+      @stopped.value
+    end
+
+    def stopped?
+      @stopped.ready?
     end
 
     private

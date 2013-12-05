@@ -9,12 +9,14 @@ module Dynflow
         end
 
         def terminate!
+          return true if stopped?
           logger.info 'shutting down Core ...'
           self << Finish[future = Future.new]
           future.wait
           @pool.terminate!
           super()
           logger.info '... Core terminated.'
+          true
         end
 
         private

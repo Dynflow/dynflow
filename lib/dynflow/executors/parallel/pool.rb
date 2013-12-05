@@ -66,7 +66,7 @@ module Dynflow
         end
 
         def terminate!
-          Thread.pass until @free_workers && @pool_size # run after initialization
+          initialized.wait
           raise unless @free_workers.size == @pool_size
           @free_workers.map { |worker| worker.terminate! }
           super

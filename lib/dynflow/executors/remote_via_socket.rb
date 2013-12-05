@@ -158,6 +158,7 @@ module Dynflow
         end
 
         def terminate!
+          return true if stopped?
           self << Finish[future = Future.new]
           future.wait
           super

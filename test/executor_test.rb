@@ -610,6 +610,11 @@ module Dynflow
             it 'it terminates when no work right after initialization' do
               assert world.terminate!
             end
+
+            it 'second terminate! returns' do
+              assert world.terminate!
+              assert world.terminate!
+            end
           end
         end
 
