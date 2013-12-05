@@ -2,6 +2,7 @@ require 'active_support/inflector'
 
 module Dynflow
 
+  # TODO unify phases into one class, check what can be called in what phase at runtime
   class Action < Serializable
     include Algebrick::TypeCheck
 

@@ -42,11 +42,13 @@ module Dynflow
 
     # DSL for run
 
+    # TODO move everything to ProgressUpdater, including remote_task start
     def suspend
       throw SUSPENDING, SUSPENDING
     end
 
     # TODO call setup_progress_updates after kill
+    # TODO call setup_progress_updates after resume
     # FIXME handle after error
     # override
     # def suspend_setup(suspended_action)
