@@ -19,7 +19,7 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def terminate!
+      def terminate(future = Future.new)
         raise NotImplementedError
       end
 

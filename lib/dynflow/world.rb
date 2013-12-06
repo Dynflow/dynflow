@@ -94,9 +94,8 @@ module Dynflow
       executor.execute execution_plan_id, finished
     end
 
-    def terminate!
-      executor.terminate!
-      true
+    def terminate(future = Future.new)
+      executor.terminate future
     end
 
     protected

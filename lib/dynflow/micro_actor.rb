@@ -4,7 +4,7 @@ module Dynflow
     include Algebrick::TypeCheck
     include Algebrick::Matching
 
-    attr_reader :logger, :initialized, :terminated
+    attr_reader :logger, :initialized
 
     Terminate = Algebrick.atom
 
@@ -12,10 +12,11 @@ module Dynflow
       @logger      = logger
       @initialized = Future.new
       @thread      = Thread.new { run *args }
-      Thread.pass until @terminated && @mailbox
+      Thread.pass until @mailbox
     end
 
     def <<(message)
+      raise 'actor terminated' if terminated?
       @mailbox << [message, nil]
       self
     end
@@ -23,14 +24,6 @@ module Dynflow
     def ask(message, future = Future.new)
       @mailbox << [message, future]
       future
-    end
-
-    def terminate!
-      @initialized.wait
-      return true if stopped?
-      raise if Thread.current == @thread
-      @mailbox << Terminate
-      @terminated.value
     end
 
     def stopped?
@@ -43,6 +36,20 @@ module Dynflow
     end
 
     def termination
+      terminate!
+    end
+
+    def terminating?
+      @terminated
+    end
+
+    def terminated?
+      terminating? && @terminated.ready?
+    end
+
+    def terminate!
+      raise unless Thread.current == @thread
+      @terminated.resolve true
     end
 
     def on_message(message)
@@ -53,11 +60,16 @@ module Dynflow
       message, future = @mailbox.pop
       #logger.debug "#{self.class} received:\n  #{message}"
       if message == Terminate
-        termination
-        throw Terminate
+        if terminating?
+          @terminated.do_then { future.resolve true } if future
+        else
+          @terminated = (future || Future.new).do_then { throw Terminate }
+          termination
+        end
+      else
+        result = on_message message
+        future.resolve result if future
       end
-      result = on_message message
-      future.resolve result if future
     rescue => error
       logger.fatal error
     end
@@ -66,14 +78,13 @@ module Dynflow
       Thread.current.abort_on_exception = true
 
       @mailbox    = Queue.new
-      @terminated = Future.new
+      @terminated = nil
 
       delayed_initialize(*args)
       Thread.pass until @initialized
       @initialized.resolve true
 
       catch(Terminate) { loop { receive } }
-      @terminated.resolve true
     end
   end
 end

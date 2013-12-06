@@ -8,24 +8,12 @@ module Dynflow
           super(world.logger, world, pool_size)
         end
 
-        def terminate!
-          return true if stopped?
-          logger.info 'shutting down Core ...'
-          self << Finish[future = Future.new]
-          future.wait
-          @pool.terminate!
-          super()
-          logger.info '... Core terminated.'
-          true
-        end
-
         private
 
         def delayed_initialize(world, pool_size)
           @world                   = Type! world, World
           @pool                    = Pool.new(self, pool_size)
           @execution_plan_managers = {}
-          @finishing_work          = nil
 
           @world.initialized.wait
 
@@ -70,18 +58,19 @@ module Dynflow
                 end,
                 PoolDone.(~any) >-> step do
                   update_manager(step)
-                end,
-                Finish.(~any) >-> future do
-                  @finishing_work = future
-                  try_to_finish
                 end
+        end
+
+        def termination
+          logger.info 'shutting down Core ...'
+          try_to_terminate
         end
 
         # @return false on problem
         def track_execution_plan(execution_plan_id, accepted, finished)
           execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
 
-          if finishing_work?
+          if terminating?
             accepted.resolve error("cannot accept execution_plan_id:#{execution_plan_id} " +
                                        'core is terminating')
             return false
@@ -122,7 +111,7 @@ module Dynflow
         def continue_manager(manager, next_work)
           if manager.done?
             loose_manager_and_set_future manager.execution_plan.id
-            try_to_finish
+            try_to_terminate
           else
             feed_pool next_work
           end
@@ -151,12 +140,12 @@ module Dynflow
           end
         end
 
-        def finishing_work?
-          !!@finishing_work
-        end
-
-        def try_to_finish
-          @finishing_work.resolve true if finishing_work? && @execution_plan_managers.empty?
+        def try_to_terminate
+          if terminating? && @execution_plan_managers.empty?
+            @pool.ask(Terminate).wait
+            logger.info '... Core terminated.'
+            terminate!
+          end
         end
       end
     end

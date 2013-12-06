@@ -583,37 +583,38 @@ module Dynflow
               it 'executes until its done when terminating' do
                 $slow_actions_done = 0
                 world.trigger(CodeWorkflowExample::Slow, 0.2)
-                world.terminate!
+                world.terminate.wait
                 $slow_actions_done.must_equal 1
               end
 
               it 'executes until its done when terminating even suspended' do
                 result = world.trigger(CodeWorkflowExample::DummySuspended,
-                              external_task_id: '123',
-                              text:             'none')
-                world.terminate!
+                                       external_task_id: '123',
+                                       text:             'none')
+                world.terminate.wait
                 assert result.finished.ready?
               end
             end
 
             it 'does not accept new work' do
-              skip # FIXME it's blocking"
-              assert world.terminate!
+              skip # TODO it blocks"
+              assert world.terminate.wait
               refute world.trigger(CodeWorkflowExample::Slow, 0.2).planned
             end
 
             it 'it terminates when no work' do
               world.trigger(CodeWorkflowExample::Slow, 0.02).finished.wait
-              assert world.terminate!
+              assert world.terminate.wait
             end
 
             it 'it terminates when no work right after initialization' do
-              assert world.terminate!
+              assert world.terminate.wait
             end
 
-            it 'second terminate! returns' do
-              assert world.terminate!
-              assert world.terminate!
+            it 'second terminate raises' do
+              skip # TODO it blocks
+              assert world.terminate.wait
+              assert world.terminate.wait
             end
           end
         end

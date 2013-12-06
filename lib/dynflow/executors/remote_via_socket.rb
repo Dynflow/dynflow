@@ -25,8 +25,8 @@ module Dynflow
         raise 'updates are handled in a process with real executor'
       end
 
-      def terminate!
-        @core.terminate!
+      def terminate(future = Future.new)
+        @core.ask(MicroActor::Terminate, future)
       end
 
       def initialized

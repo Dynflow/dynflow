@@ -2,7 +2,7 @@ module Dynflow
   class SimpleWorld < World
     def initialize(options_hash = {}, &options_block)
       super options_hash, &options_block
-      at_exit { self.terminate! } if options[:auto_terminate]
+      at_exit { self.terminate.wait } if options[:auto_terminate]
     end
 
     def default_options

@@ -6,7 +6,6 @@ module Dynflow
 
         Message = Algebrick.type do
           variants Closed   = atom,
-                   Finish   = type { fields Future },
                    Received = type { fields message: SocketMessage },
                    Execute  = type { fields execution_plan_uuid: String, future: Future }
         end
@@ -15,25 +14,17 @@ module Dynflow
           super(world.logger, world, socket_path)
         end
 
-        def terminate!
-          return true if stopped?
-          self << Finish[future = Future.new]
-          future.wait
-          super
-        end
-
         private
 
         def delayed_initialize(world, socket_path)
           @socket_path      = Type! socket_path, String
           @manager          = Manager.new world
           @socket           = nil
-          @finishing_future = nil
           connect
         end
 
-        def finishing?
-          !!@finishing_future
+        def termination
+          disconnect
         end
 
         def on_message(message)
@@ -41,17 +32,13 @@ module Dynflow
                 Closed >-> do
                   @socket = nil
                   logger.info 'Disconnected from server.'
-                  @finishing_future.resolve true if finishing?
-                end,
-                Finish.(~any) >-> future do
-                  @finishing_future = future
-                  disconnect
+                  terminate! if terminating?
                 end,
                 Received.(Accepted.(~any)) >-> id { @manager.accepted id },
                 Received.(Failed.(~any, ~any)) >-> id, error { @manager.failed id, error },
                 Received.(Done.(~any, ~any)) >-> id, uuid { @manager.finished id, uuid },
                 Core::Execute.(~any, ~any) >-> execution_plan_uuid, future do
-                  raise 'terminating' if finishing?
+                  raise 'terminating' if terminating?
                   id, accepted = @manager.add future
                   success      = connect && begin
                     send_message @socket, RemoteViaSocket::Execute[id, execution_plan_uuid]
