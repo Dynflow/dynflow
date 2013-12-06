@@ -1,7 +1,7 @@
 module Dynflow
   module Executors
     class RemoteViaSocket < Abstract
-      class Core < MicroActorWithFutures
+      class Core < MicroActor
         include Listeners::Serialization
 
         Message = Algebrick.type do

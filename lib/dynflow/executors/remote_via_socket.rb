@@ -16,7 +16,7 @@ module Dynflow
       end
 
       def execute(execution_plan_id, future = Future.new)
-        accepted = (@core << Core::Execute[execution_plan_id, future]).value
+        accepted = @core.ask(Core::Execute[execution_plan_id, future]).value
         raise accepted.value if accepted.value.is_a? Exception
         return future
       end
