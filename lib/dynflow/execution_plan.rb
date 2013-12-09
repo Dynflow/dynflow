@@ -21,7 +21,7 @@ module Dynflow
     def self.state_transitions
       @state_transitions ||= { pending:  [:planning],
                                planning: [:planned, :stopped],
-                               planned:   [:running],
+                               planned:  [:running],
                                running:  [:paused, :stopped],
                                paused:   [:running],
                                stopped:  [] }
@@ -221,6 +221,7 @@ module Dynflow
                         ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
                         real_time:         real_time
+      # TODO also store progress
     end
 
     def save

@@ -4,9 +4,8 @@ require 'thread'
 require 'set'
 require 'active_support/core_ext/hash/indifferent_access'
 
-# TODO model locking in plan phase, releasing after run in finalize
 # TODO validate in/output, also validate unknown keys
-# FIND also execute planning phase in workers to be consistent, execute in remote executers to avoid serialization
+# FIND also execute planning phase in workers to be consistent, execute in remote executors to avoid serialization
 module Dynflow
 
   class Error < StandardError

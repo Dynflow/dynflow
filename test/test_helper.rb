@@ -100,16 +100,18 @@ module WorldInstance
   end
 
   def self.create_world
-    Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)
+    Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr),
+                             auto_terminate: false
   end
 
   def self.create_remote_world(world)
     @counter    ||= 0
     socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
-    listener    = Dynflow::Executors::RemoteViaSocket::Listener.new world, socket_path
+    listener    = Dynflow::Listeners::Socket.new world, socket_path
     world       = Dynflow::SimpleWorld.new(logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)) do |remote_world|
       { persistence_adapter: world.persistence.adapter,
-        executor:            Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path) }
+        executor:            Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path),
+        auto_terminate:      false }
     end
     return listener, world
   end
