@@ -126,8 +126,8 @@ module Dynflow
 
         world.transaction_adapter.rollback if error?
       end
+      steps.values.each(&:save)
       update_state(error? ? :stopped : :planned)
-      steps.values.each &:save
     end
 
     def skip(step)
