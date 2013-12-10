@@ -5,6 +5,7 @@ module Dynflow
   # TODO unify phases into one class, check what can be called in what phase at runtime
   class Action < Serializable
     include Algebrick::TypeCheck
+    include Algebrick::Matching
 
     require 'dynflow/action/format'
     extend Format

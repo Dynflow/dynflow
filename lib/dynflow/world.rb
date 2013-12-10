@@ -34,6 +34,10 @@ module Dynflow
                              logger_adapter: LoggerAdapters::Simple.new }
     end
 
+    def clock
+      @clock ||= Clock.new(logger)
+    end
+
     def logger
       logger_adapter.dynflow_logger
     end
@@ -96,6 +100,7 @@ module Dynflow
 
     def terminate(future = Future.new)
       executor.terminate future
+      # TODO terminate clock
     end
 
     protected

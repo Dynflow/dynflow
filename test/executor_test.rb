@@ -188,11 +188,11 @@ module Dynflow
                 run_step.execution_time.must_be :<, run_step.real_time
               end
 
-              describe 'handling errors in setup_progress_updates' do
+              describe 'handling errors in setup' do
                 let :execution_plan do
                   world.plan(CodeWorkflowExample::DummySuspended,
                              external_task_id: '123',
-                             text:             'troll setup_progress_updates')
+                             text:             'troll setup')
                 end
 
                 it 'fails' do
@@ -244,6 +244,28 @@ module Dynflow
                       plan.progress.round(2).must_equal 0.42
                     end
                   end
+                end
+              end
+
+              describe 'works when resumed after error' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::DummySuspended,
+                             { external_task_id: '123',
+                               text:             'troll progress' })
+                end
+
+                specify do
+                  skip # FIXME!!!!
+                  assert_equal :paused, result.state
+                  assert_equal :error, result.result
+                  assert_equal :error, result.steps.values.
+                      find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+                  ep = world.execute(result.id).value
+                  assert_equal :stopped, ep.state
+                  assert_equal :success, ep.result
+                  assert_equal :success, result.steps.values.
+                      find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+                  ep = world.execute(result.id).value
                 end
               end
 

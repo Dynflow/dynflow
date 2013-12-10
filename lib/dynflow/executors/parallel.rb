@@ -21,30 +21,32 @@ module Dynflow
                   finished:          Future
         end
 
-        ProgressUpdate = type do
+        Event = type do
           fields! execution_plan_id: String,
                   step_id:           Fixnum,
-                  done:              Boolean,
-                  args:              Array
+                  event:             Object
         end
 
-        Finalize = type do
-          fields! sequential_manager: SequentialManager,
-                  execution_plan_id:  String
+        Work = type do |work|
+          work::Finalize = type do
+            fields! sequential_manager: SequentialManager,
+                    execution_plan_id:  String
+          end
+
+          work::Step = type do
+            fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
+                    execution_plan_id: String
+          end
+
+          work::Event = type do
+            fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
+                    execution_plan_id: String,
+                    event:             Event
+          end
+
+          variants work::Step, work::Event, work::Finalize
         end
 
-        Step = type do
-          fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
-                  execution_plan_id: String
-        end
-
-        ProgressUpdateStep = type do
-          fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
-                  execution_plan_id: String,
-                  progress_update:   ProgressUpdate
-        end
-
-        Work       = type { variants Step, ProgressUpdateStep, Finalize }
         PoolDone   = type do
           fields! work: Work
         end
@@ -64,9 +66,8 @@ module Dynflow
         finished
       end
 
-      def update_progress(suspended_action, done, *args)
-        @core << ProgressUpdate[
-            suspended_action.execution_plan_id, suspended_action.step_id, done, args]
+      def event(suspended_action, event)
+        @core << Event[suspended_action.execution_plan_id, suspended_action.step_id, event]
       end
 
       def terminate(future = Future.new)

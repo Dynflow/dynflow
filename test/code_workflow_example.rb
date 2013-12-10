@@ -24,7 +24,7 @@ module Dynflow
       end
 
       def summary
-        triages = all_actions.find_all do |action|
+        triages   = all_actions.find_all do |action|
           action.is_a? Dynflow::CodeWorkflowExample::Triage
         end
         assignees = triages.map do |triage|
@@ -252,33 +252,15 @@ module Dynflow
 
     class PollingServiceImpl < Dynflow::MicroActor
 
-      Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
-      Tick = Algebrick.atom
-
-      def initialize(logger)
-        super(logger)
-      end
-
-      def wait_for_task(action, external_task_id)
-        # simulate polling for the state of the external task
-        self << Task[action,
-                     external_task_id]
-      end
+      Task         = Algebrick.type { fields! action: Action::Suspended, external_task_id: String }
+      ProgressTask = Algebrick.type { fields! task: Task, progress: Integer }
+      Progress     = Algebrick.type { fields! progress: Integer }
+      Done         = Algebrick.atom
 
       private
 
       def delayed_initialize
-        @tasks    = Set.new
-        @progress = Hash.new { |h, k| h[k] = 0 }
-
-        @start_ticker = Queue.new
-        @ticker       = Thread.new do
-          loop do
-            sleep interval
-            self << Tick
-            @start_ticker.pop
-          end
-        end
+        @clock = Dynflow::Clock.new logger
       end
 
       def interval
@@ -287,28 +269,18 @@ module Dynflow
 
       def on_message(message)
         match(message,
-              ~Task >-> task do
-                @tasks << task
+              on(~Task) do |task|
+                @clock.ping self, Time.now + interval, ProgressTask[task, 0]
               end,
-              Tick >-> do
-                poll
+              on(ProgressTask.(~any, ~any)) do |task, progress|
+                progress += 10
+                if progress >= 100
+                  task.action.event Done
+                else
+                  task.action.event Progress[progress]
+                  @clock.ping self, Time.now + interval, ProgressTask[task, progress]
+                end
               end)
-      end
-
-      def ticking
-        @start_ticker << true
-      end
-
-      def poll
-        @tasks.delete_if do |task|
-          key      = [task[:action].execution_plan_id, task[:action].step_id]
-          progress = @progress[key] += 10
-          done     = progress >= 100
-          task[:action].update_progress(done, progress)
-          done
-        end
-      ensure
-        ticking
       end
     end
 
@@ -316,21 +288,31 @@ module Dynflow
 
     class DummySuspended < Action
 
-      def run
-        suspend
-      end
+      def run(event = nil)
+        match(event,
+              on(nil) do
+                error! 'Trolling detected' if input[:text] == 'troll setup'
 
-      def setup_progress_updates(suspended_action)
-        raise 'Trolling detected' if input[:text] == 'troll setup_progress_updates'
-        PollingService.wait_for_task(suspended_action, input[:external_task_id])
-      end
+                suspend do |suspended_action|
+                  PollingService << PollingServiceImpl::Task[suspended_action, input[:external_task_id]]
+                end
+              end,
+              on(PollingServiceImpl::Progress.(~any)) do |progress|
+                if input[:text] =~ /pause in progress (\d+)/
+                  TestPause.pause if output[:progress] == $1.to_i
+                end
 
-      # called when there is some update about the progress of the task
-      def update_progress(done, progress)
-        if input[:text] =~ /pause in progress (\d+)/
-          TestPause.pause if output[:progress] == $1.to_i
-        end
-        output.update progress: progress, done: done
+                if input[:text] == 'troll progress' && !output[:trolled]
+                  output[:trolled] = true
+                  error! 'Trolling detected'
+                end
+
+                output.update progress: progress, done: false
+                suspend
+              end,
+              on(PollingServiceImpl::Done) do
+                output.update progress: 100, done: true
+              end)
       end
 
       def run_progress

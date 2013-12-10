@@ -8,8 +8,8 @@ module Dynflow
       @step_id           = action.run_step_id
     end
 
-    def update_progress(done, *args)
-      @world.executor.update_progress self, done, *args
+    def event(event)
+      @world.executor.event self, event
     end
   end
 end

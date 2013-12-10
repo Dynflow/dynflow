@@ -8,10 +8,10 @@ module Dynflow
         attr_reader :execution_plan, :future
 
         def initialize(world, execution_plan, future)
-          @world            = Type! world, World
-          @execution_plan   = Type! execution_plan, ExecutionPlan
-          @future           = Type! future, Future
-          @progress_updates = WorkQueue.new
+          @world          = Type! world, World
+          @execution_plan = Type! execution_plan, ExecutionPlan
+          @future         = Type! future, Future
+          @events         = WorkQueue.new
 
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -36,41 +36,46 @@ module Dynflow
             if @run_manager.done?
               start_finalize or finish
             else
-              next_steps.map { |s| Step[s, execution_plan.id] }
+              next_steps.map { |s| Work::Step[s, execution_plan.id] }
             end
           end
 
           match work,
-                Step.(:step) >-> step do
+                Work::Step.(:step) >-> step do
                   execution_plan.update_execution_time step.execution_time if step.state != :suspended
                   compute_next_from_step.call step
                 end,
-                ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(done: false)) >-> step do
-                  @progress_updates.shift(step.id)
-                  @progress_updates.first(step.id)
+                Work::Event.(:step) >-> step do
+                  @events.shift(step.id)
+
+                  if step.state == :suspended
+                    @events.first(step.id)
+                  else
+                    # TODO it can be probably ignored
+                    #while (event = @events.shift(step.id))
+                    #  @world.logger.warn "step #{step.execution_plan_id}:#{step.id} dropping event #{event.event}"
+                    #end
+                    raise 'assert' unless @events.empty?(step.id)
+
+                    execution_plan.update_execution_time step.execution_time
+                    compute_next_from_step.call step
+                  end
                 end,
-                ProgressUpdateStep.(step: ~any, progress_update: ProgressUpdate.(done: true)) >-> step do
-                  @progress_updates.shift(step.id)
-                  raise 'assert' unless @progress_updates.empty?(step.id)
-                  execution_plan.update_execution_time step.execution_time
-                  compute_next_from_step.call step
-                end,
-                Finalize.(any, any) >-> do
+                Work::Finalize.(any, any) >-> do
                   raise unless @finalize_manager
                   finish
                 end
         end
 
         # @return [ProgressUpdateStep]
-        def update_progress(progress_update)
-          Type! progress_update, ProgressUpdate
+        def event(event)
+          Type! event, Event
 
-          step                    = @execution_plan.steps[progress_update.step_id]
-          can_run_progress_update = @progress_updates.empty?(step.id)
-          @progress_updates.push(step.id,
-                                 ProgressUpdateStep[step, @execution_plan.id, progress_update])
-
-          ProgressUpdateStep[step, @execution_plan.id, progress_update] if can_run_progress_update
+          step          = @execution_plan.steps[event.step_id]
+          can_run_event = @events.empty?(step.id)
+          work          = Work::Event[step, @execution_plan.id, event]
+          @events.push(step.id, work)
+          work if can_run_event
         end
 
         def done?
@@ -88,7 +93,7 @@ module Dynflow
           unless execution_plan.run_flow.empty?
             raise 'run phase already started' if @run_manager
             @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow)
-            @run_manager.start.map { |s| Step[s, execution_plan.id] }.tap { |a| raise if a.empty? }
+            @run_manager.start.map { |s| Work::Step[s, execution_plan.id] }.tap { |a| raise if a.empty? }
           end
         end
 
@@ -96,7 +101,7 @@ module Dynflow
           unless execution_plan.finalize_flow.empty?
             raise 'finalize phase already started' if @finalize_manager
             @finalize_manager = SequentialManager.new(@world, execution_plan)
-            [Finalize[@finalize_manager, execution_plan.id]]
+            Work::Finalize[@finalize_manager, execution_plan.id]
           end
         end
 
