@@ -7,7 +7,7 @@ end
 require 'dynflow'
 require 'pry'
 
-MiniTest::Unit.after_tests { Dynflow::CodeWorkflowExample::PollingService.terminate! }
+MiniTest::Unit.after_tests { Dynflow::CodeWorkflowExample::PollingService.terminate.wait }
 
 class TestExecutionLog
 
