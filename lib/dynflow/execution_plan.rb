@@ -63,6 +63,7 @@ module Dynflow
     end
 
     def update_state(state)
+      original = self.state
       case self.state = state
       when :planning
         @started_at = Time.now
@@ -72,7 +73,7 @@ module Dynflow
       else
         # ignore
       end
-      logger.debug "execution plan #{id} >> #{state}"
+      logger.debug "execution plan #{id} #{original} >> #{state}"
       self.save
     end
 

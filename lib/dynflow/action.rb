@@ -154,7 +154,7 @@ module Dynflow
     protected
 
     def state=(state)
-      @world.logger.debug "step #{execution_plan_id}:#{@step.id} >> #{state}"
+      @world.logger.debug "step #{execution_plan_id}:#{@step.id} #{self.state} >> #{state}"
       @step.state = state
     end
 
@@ -190,7 +190,6 @@ module Dynflow
       set_error(error)
       throw ERRORING
     end
-
 
     def with_error_handling(&block)
       raise "wrong state #{self.state}" unless self.state == :running
