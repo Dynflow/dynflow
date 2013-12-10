@@ -72,6 +72,7 @@ module Dynflow
       else
         # ignore
       end
+      logger.debug "execution plan #{id} >> #{state}"
       self.save
     end
 
@@ -126,8 +127,8 @@ module Dynflow
 
         world.transaction_adapter.rollback if error?
       end
+      steps.values.each(&:save)
       update_state(error? ? :stopped : :planned)
-      steps.values.each &:save
     end
 
     def skip(step)
@@ -276,11 +277,6 @@ module Dynflow
         all_actions << action
       end
       return all_actions
-    end
-
-    def set_state(*args)
-      super
-      logger.debug "execution plan #{id} >> #{state}"
     end
 
     private

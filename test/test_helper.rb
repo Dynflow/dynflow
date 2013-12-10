@@ -99,8 +99,14 @@ module WorldInstance
     @remote_world
   end
 
+  def self.logger_adapter
+    action_logger  = Logger.new($stderr).tap { |logger| logger.level = Logger::FATAL }
+    dynflow_logger = Logger.new($stderr).tap { |logger| logger.level = Logger::WARN }
+    Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
+  end
+
   def self.create_world
-    Dynflow::SimpleWorld.new logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr),
+    Dynflow::SimpleWorld.new logger_adapter: logger_adapter,
                              auto_terminate: false
   end
 
@@ -108,7 +114,7 @@ module WorldInstance
     @counter    ||= 0
     socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
     listener    = Dynflow::Listeners::Socket.new world, socket_path
-    world       = Dynflow::SimpleWorld.new(logger_adapter: Dynflow::LoggerAdapters::Simple.new($stderr)) do |remote_world|
+    world       = Dynflow::SimpleWorld.new(logger_adapter: logger_adapter) do |remote_world|
       { persistence_adapter: world.persistence.adapter,
         executor:            Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path),
         auto_terminate:      false }

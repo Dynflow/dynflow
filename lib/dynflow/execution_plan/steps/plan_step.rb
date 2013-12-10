@@ -36,7 +36,7 @@ module Dynflow
         Type! execution_plan, ExecutionPlan
         attributes = { execution_plan_id: execution_plan.id,
                        id:                action_id,
-                       state_holder:      self,
+                       step:              self,
                        plan_step_id:      self.id }
         action     = action_class.plan_phase.new(attributes, execution_plan, trigger)
         persistence.save_action(execution_plan_id, action)
