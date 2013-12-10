@@ -86,7 +86,7 @@ module Dynflow
       Type! attributes, Hash
 
       @world             = Type! world, World
-      @state_holder      = Type! attributes[:state_holder], ExecutionPlan::Steps::Abstract
+      @step              = Type! attributes[:step], ExecutionPlan::Steps::Abstract
       @execution_plan_id = attributes[:execution_plan_id] || raise(ArgumentError, 'missing execution_plan_id')
       @id                = attributes[:id] || raise(ArgumentError, 'missing id')
       @plan_step_id      = attributes[:plan_step_id]
@@ -143,21 +143,22 @@ module Dynflow
     end
 
     def state
-      @state_holder.state
+      @step.state
     end
 
     def error
-      @state_holder.error
+      @step.error
     end
 
     protected
 
     def state=(state)
-      @state_holder.state = state
+      @world.logger.debug "step #{execution_plan_id}:#{@step.id} >> #{state}"
+      @step.state = state
     end
 
     def save_state
-      @state_holder.save
+      @step.save
     end
 
     # @override
@@ -189,7 +190,7 @@ module Dynflow
       rescue Exception => error
         action_logger.error error
         self.state          = :error
-        @state_holder.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
+        @step.error = ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
         # reraise low-level exceptions
         raise error unless Type? error, StandardError, ScriptError
       end

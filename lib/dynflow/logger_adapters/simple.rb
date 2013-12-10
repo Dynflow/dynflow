@@ -5,13 +5,14 @@ module Dynflow
     class Simple < Abstract
       require 'logger'
 
-      attr_reader :action_logger, :dynflow_logger
+      attr_reader :logger, :action_logger, :dynflow_logger
 
-      def initialize(output = $stdout)
-        @logger           = Logger.new output
+      def initialize(output = $stdout, level = Logger::DEBUG)
+        @logger           = Logger.new(output)
+        @logger.level     = level
         @logger.formatter = method(:formatter).to_proc
-        @action_logger    = ProgNameWrapper.new @logger, ' action'
-        @dynflow_logger   = ProgNameWrapper.new @logger, 'dynflow'
+        @action_logger    = ProgNameWrapper.new(@logger, ' action')
+        @dynflow_logger   = ProgNameWrapper.new(@logger, 'dynflow')
       end
 
       private

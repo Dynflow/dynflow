@@ -72,6 +72,7 @@ module Dynflow
       else
         # ignore
       end
+      logger.debug "execution plan #{id} >> #{state}"
       self.save
     end
 
@@ -275,11 +276,6 @@ module Dynflow
         all_actions << action
       end
       return all_actions
-    end
-
-    def set_state(*args)
-      super
-      logger.debug "execution plan #{id} >> #{state}"
     end
 
     private
