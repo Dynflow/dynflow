@@ -85,11 +85,6 @@ module Dynflow
         raise NotImplementedError, "Expected to be implemented in RunStep and FinalizeStep"
       end
 
-      def set_state(*args)
-        super
-        @world.logger.debug "step #{execution_plan_id}:#{id} >> #{state}" if @world
-      end
-
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)
