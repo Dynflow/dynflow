@@ -11,5 +11,7 @@ module Dynflow
     def event(event)
       @world.executor.event self, event
     end
+
+    alias_method :<<, :event
   end
 end

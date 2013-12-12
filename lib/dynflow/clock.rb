@@ -5,24 +5,28 @@ module Dynflow
 
     Tick  = Algebrick.atom
     Timer = Algebrick.type do
-      fields! who:  Who = type { variants MicroActor, Queue },
+      fields! who:  Object,
               when: Time,
               what: Object
     end
 
-    Pills = Algebrick.type do
-      variants None = atom,
-               Took = atom,
-               Pill = type { fields Float }
-    end
-
     module Timer
+      def self.[](*fields)
+        super(*fields).tap { |v| Match! v.who, -> v { v.respond_to? :<< } }
+      end
+
       include Comparable
 
       def <=>(other)
         Type! other, self.class
         self.when <=> other.when
       end
+    end
+
+    Pills = Algebrick.type do
+      variants None = atom,
+               Took = atom,
+               Pill = type { fields Float }
     end
 
     def ping(who, time, with_what = nil)
@@ -74,8 +78,12 @@ module Dynflow
     end
 
     def wakeup
-      Thread.pass while @sleep_barrier.synchronize { Pill === @sleeping_pill }
-      @sleep_barrier.synchronize { @sleeper.wakeup if Took === @sleeping_pill }
+      while @sleep_barrier.synchronize { Pill === @sleeping_pill }
+        Thread.pass
+      end
+      @sleep_barrier.synchronize do
+        @sleeper.wakeup if Took === @sleeping_pill
+      end
     end
 
     def sleep_to(timer)
