@@ -23,25 +23,27 @@ module Dynflow
 
     require 'dynflow/action/presenter'
 
-    def self.plan_phase
-      @planning ||= self.generate_phase(PlanPhase)
-    end
-
-    def self.run_phase
-      @running ||= self.generate_phase(RunPhase)
-    end
-
-    def self.finalize_phase
-      @finishing ||= self.generate_phase(FinalizePhase)
-    end
-
-    def self.presenter
-      @presenter ||= Class.new(self) { include Presenter }
-    end
-
     # Override this to extend the phase classes
-    def self.generate_phase(phase_module)
-      Class.new(self) { include phase_module }
+    def self.phase_modules
+      { plan_phase:     [PlanPhase],
+        run_phase:      [RunPhase],
+        finalize_phase: [FinalizePhase],
+        presenter:      [Presenter] }.freeze
+    end
+
+    phase_modules.each do |phase_name, _|
+      define_singleton_method phase_name do
+        instance_variable_get :"@#{phase_name}" or
+            instance_variable_set :"@#{phase_name}", __send__("create_#{phase_name}")
+      end
+
+      define_singleton_method "create_#{phase_name}" do
+        generate_phase(*phase_modules[phase_name])
+      end
+    end
+
+    def self.generate_phase(*modules)
+      Class.new(self) { modules.each { |m| include m } }
     end
 
     def self.phase?
