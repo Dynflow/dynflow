@@ -255,17 +255,16 @@ module Dynflow
                 end
 
                 specify do
-                  skip # FIXME!!!!
                   assert_equal :paused, result.state
                   assert_equal :error, result.result
                   assert_equal :error, result.steps.values.
                       find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+
                   ep = world.execute(result.id).value
                   assert_equal :stopped, ep.state
                   assert_equal :success, ep.result
-                  assert_equal :success, result.steps.values.
+                  assert_equal :success, ep.steps.values.
                       find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
-                  ep = world.execute(result.id).value
                 end
               end
 

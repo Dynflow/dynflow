@@ -22,6 +22,7 @@ module Dynflow
     require 'dynflow/action/finalize_phase'
 
     require 'dynflow/action/presenter'
+    require 'dynflow/action/polling'
 
     # Override this to extend the phase classes
     def self.phase_modules

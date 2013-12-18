@@ -250,69 +250,43 @@ module Dynflow
 
     end
 
-    class PollingServiceImpl < Dynflow::MicroActor
-
-      Task         = Algebrick.type { fields! action: Action::Suspended, external_task_id: String }
-      ProgressTask = Algebrick.type { fields! task: Task, progress: Integer }
-      Progress     = Algebrick.type { fields! progress: Integer }
-      Done         = Algebrick.atom
-
-      private
-
-      def delayed_initialize
-        @clock = Dynflow::Clock.new logger
-      end
-
-      def interval
-        0.005
-      end
-
-      def on_message(message)
-        match(message,
-              on(~Task) do |task|
-                @clock.ping self, Time.now + interval, ProgressTask[task, 0]
-              end,
-              on(ProgressTask.(~any, ~any)) do |task, progress|
-                progress += 10
-                if progress >= 100
-                  task.action.event Done
-                else
-                  task.action.event Progress[progress]
-                  @clock.ping self, Time.now + interval, ProgressTask[task, progress]
-                end
-              end)
-      end
-    end
-
-    PollingService = PollingServiceImpl.new(Logger.new($stderr).tap { |l| l.progname = 'PollingService' })
-
     class DummySuspended < Action
 
-      def run(event = nil)
-        match(event,
-              on(nil) do
-                error! 'Trolling detected' if input[:text] == 'troll setup'
+      include Action::Polling
 
-                suspend do |suspended_action|
-                  PollingService << PollingServiceImpl::Task[suspended_action, input[:external_task_id]]
-                end
-              end,
-              on(PollingServiceImpl::Progress.(~any)) do |progress|
-                if input[:text] =~ /pause in progress (\d+)/
-                  TestPause.pause if output[:progress] == $1.to_i
-                end
+      def invoke_external_task
+        error! 'Trolling detected' if input[:text] == 'troll setup'
+        { progress: 0, done: false }
+      end
 
-                if input[:text] == 'troll progress' && !output[:trolled]
-                  output[:trolled] = true
-                  error! 'Trolling detected'
-                end
+      def external_task=(external_task_data)
+        self.output.update external_task_data
+      end
 
-                output.update progress: progress, done: false
-                suspend
-              end,
-              on(PollingServiceImpl::Done) do
-                output.update progress: 100, done: true
-              end)
+      def external_task
+        output
+      end
+
+      def poll_external_task
+        if input[:text] == 'troll progress' && !output[:trolled]
+          output[:trolled] = true
+          error! 'Trolling detected'
+        end
+
+        if input[:text] =~ /pause in progress (\d+)/
+          TestPause.pause if output[:progress] == $1.to_i
+        end
+
+        progress = output[:progress] + 10
+        { progress: progress, done: progress >= 100 }
+      end
+
+      def done?
+        external_task[:progress] >= 100
+      end
+
+      def poll_interval
+        0.05
       end
 
       def run_progress
