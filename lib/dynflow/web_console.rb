@@ -57,9 +57,10 @@ module Dynflow
 
       def step_error(step)
         if step.error
-          ([step.error.message] + step.error.backtrace).map do |line|
-            "<p>#{h(line)}</p>"
-          end.join
+          ['<pre>',
+           "#{step.error.message} (#{step.error.exception_class})\n",
+           step.error.backtrace.join("\n"),
+           '</pre>'].join
         end
       end
 
@@ -69,7 +70,7 @@ module Dynflow
           <<-HTML
             <p>
               #{h(label)}
-              #{value_html}
+          #{value_html}
             </p>
           HTML
         else
@@ -112,7 +113,7 @@ module Dynflow
         when :success
           "success"
         when :error
-          "danger"
+          "important"
         end
       end
 
@@ -185,10 +186,10 @@ module Dynflow
       def order_link(attr, label)
         return h(label) unless supported_ordering?(attr)
         new_ordering_options = { order_by: attr.to_s,
-                                 desc: false }
-        arrow = ""
+                                 desc:     false }
+        arrow                = ""
         if ordering_options[:order_by].to_s == attr.to_s
-          arrow = ordering_options[:desc] ? "&#9660;" : "&#9650;"
+          arrow                       = ordering_options[:desc] ? "&#9660;" : "&#9650;"
           new_ordering_options[:desc] = !ordering_options[:desc]
         end
         url = updated_url(new_ordering_options)
@@ -222,13 +223,13 @@ module Dynflow
       end
 
       def filter_checkbox(field, values)
-        out = "<p>#{field}: %s</p>"
+        out        = "<p>#{field}: %s</p>"
         checkboxes = values.map do |value|
           field_filter = filtering_options[:filters][field]
-          checked = field_filter && field_filter.include?(value)
+          checked      = field_filter && field_filter.include?(value)
           %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{ "checked" if checked }/>#{value}}
         end.join(' ')
-        out %= checkboxes
+        out        %= checkboxes
         return out
       end
 
