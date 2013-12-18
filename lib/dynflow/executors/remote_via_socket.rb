@@ -21,7 +21,7 @@ module Dynflow
         return future
       end
 
-      def event(suspended_action, event)
+      def event(suspended_action, event, future = Future)
         raise 'events are handled in a process with real executor'
       end
 

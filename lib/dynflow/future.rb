@@ -6,6 +6,8 @@ module Dynflow
   end
 
   class Future
+    include Algebrick::TypeCheck
+
     def initialize(&task)
       @lock     = Mutex.new
       @value    = nil
@@ -30,6 +32,7 @@ module Dynflow
     end
 
     def fail(exception)
+      Type! exception, Exception
       set exception, true
     end
 

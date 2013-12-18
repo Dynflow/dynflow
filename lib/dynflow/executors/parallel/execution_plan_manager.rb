@@ -8,10 +8,11 @@ module Dynflow
         attr_reader :execution_plan, :future
 
         def initialize(world, execution_plan, future)
-          @world          = Type! world, World
-          @execution_plan = Type! execution_plan, ExecutionPlan
-          @future         = Type! future, Future
-          @events         = WorkQueue.new
+          @world                     = Type! world, World
+          @execution_plan            = Type! execution_plan, ExecutionPlan
+          @future                    = Type! future, Future
+          @events                    = WorkQueue.new
+          @suspended_actions_manager = SuspendedStepsManager.new(world)
 
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -41,41 +42,37 @@ module Dynflow
           end
 
           match work,
+
                 Work::Step.(:step) >-> step do
-                  execution_plan.update_execution_time step.execution_time if step.state != :suspended
+                  if step.state == :suspended
+                    @suspended_actions_manager.add step
+                  else
+                    execution_plan.update_execution_time step.execution_time
+                  end
                   compute_next_from_step.call step
                 end,
+
                 Work::Event.(:step) >-> step do
-                  @events.shift(step.id)
+                  suspended, work = @suspended_actions_manager.done(step)
 
-                  if step.state == :suspended
-                    @events.first(step.id)
+                  if suspended
+                    work
                   else
-                    # TODO it can be probably ignored
-                    #while (event = @events.shift(step.id))
-                    #  @world.logger.warn "step #{step.execution_plan_id}:#{step.id} dropping event #{event.event}"
-                    #end
-                    raise 'assert' unless @events.empty?(step.id)
-
                     execution_plan.update_execution_time step.execution_time
                     compute_next_from_step.call step
                   end
                 end,
+
                 Work::Finalize.(any, any) >-> do
                   raise unless @finalize_manager
                   finish
                 end
         end
 
-        # @return [ProgressUpdateStep]
         def event(event)
           Type! event, Event
-
-          step          = @execution_plan.steps[event.step_id]
-          can_run_event = @events.empty?(step.id)
-          work          = Work::Event[step, @execution_plan.id, event]
-          @events.push(step.id, work)
-          work if can_run_event
+          raise unless event.execution_plan_id == @execution_plan.id
+          @suspended_actions_manager.event(event)
         end
 
         def done?

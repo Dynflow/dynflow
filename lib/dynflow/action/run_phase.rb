@@ -15,6 +15,10 @@ module Dynflow
         raise NotImplementedError, 'recovery after restart is not implemented'
 
       when [:pending, :error, :suspended].include?(state)
+        if [:pending, :error].include?(state) && event
+          raise 'event can be processed only when in suspended state'
+        end
+
         self.state = :running
         save_state
         with_error_handling do

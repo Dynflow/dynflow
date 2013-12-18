@@ -135,11 +135,10 @@ module Dynflow
           execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
           if execution_plan_manager
             feed_pool execution_plan_manager.event(event)
+            true
           else
-            # TODO should be fixed when EP execution is resumed after restart
             logger.warn "dropping event #{event} - no manager for #{event.execution_plan_id}:#{event.step_id}"
-            raise "Trying to resume execution_plan:#{event.execution_plan_id} step:#{event.step_id} failed, " +
-                      'missing manager.'
+            event.result.fail UnprocessableEvent.new("no manager for #{event.execution_plan_id}:#{event.step_id}")
           end
         end
 

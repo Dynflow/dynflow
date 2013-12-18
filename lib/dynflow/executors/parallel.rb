@@ -7,9 +7,12 @@ module Dynflow
       require 'dynflow/executors/parallel/work_queue'
       require 'dynflow/executors/parallel/execution_plan_manager'
       require 'dynflow/executors/parallel/sequential_manager'
+      require 'dynflow/executors/parallel/suspended_steps_manager'
       require 'dynflow/executors/parallel/core'
       require 'dynflow/executors/parallel/pool'
       require 'dynflow/executors/parallel/worker'
+
+      UnprocessableEvent = Class.new(StandardError)
 
       # actor messages
       Algebrick.types do
@@ -24,7 +27,8 @@ module Dynflow
         Event = type do
           fields! execution_plan_id: String,
                   step_id:           Fixnum,
-                  event:             Object
+                  event:             Object,
+                  result:            Future
         end
 
         Work = type do |work|
@@ -66,8 +70,8 @@ module Dynflow
         finished
       end
 
-      def event(suspended_action, event)
-        @core << Event[suspended_action.execution_plan_id, suspended_action.step_id, event]
+      def event(suspended_action, event, future = Future)
+        @core << Event[suspended_action.execution_plan_id, suspended_action.step_id, event, future]
       end
 
       def terminate(future = Future.new)

@@ -8,10 +8,14 @@ module Dynflow
       @step_id           = action.run_step_id
     end
 
-    def event(event)
-      @world.executor.event self, event
+    def event(event, future = Future.new)
+      @world.executor.event self, event, future
     end
 
-    alias_method :<<, :event
+    def <<(event)
+      event event
+    end
+
+    alias_method :ask, :event
   end
 end
