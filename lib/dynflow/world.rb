@@ -99,8 +99,12 @@ module Dynflow
     end
 
     def terminate(future = Future.new)
-      executor.terminate future
-      # TODO terminate clock
+      executor_done = Future.new
+      clock_done    = Future.new
+      executor.
+          terminate(executor_done).
+          do_then { clock.ask(MicroActor::Terminate, clock_done) }
+      Future.join([executor_done, clock_done], future)
     end
 
     protected
