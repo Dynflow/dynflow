@@ -58,8 +58,8 @@ module Dynflow
       def step_error(step)
         if step.error
           ['<pre>',
-           "#{step.error.message} (#{step.error.exception_class})\n",
-           step.error.backtrace.join("\n"),
+           "#{h(step.error.message)} (#{h(step.error.exception_class)})\n",
+           h(step.error.backtrace.join("\n")),
            '</pre>'].join
         end
       end
