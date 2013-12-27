@@ -9,7 +9,7 @@ module Dynflow
     SUSPEND = Object.new
 
     def execute(event)
-      action_logger.debug "step #{execution_plan_id}:#{@step.id} got event #{event}" if event
+      @world.logger.debug "step #{execution_plan_id}:#{@step.id} got event #{event}" if event
       case
       when state == :running
         raise NotImplementedError, 'recovery after restart is not implemented'
