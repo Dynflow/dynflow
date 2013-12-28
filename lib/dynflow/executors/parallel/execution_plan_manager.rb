@@ -25,6 +25,11 @@ module Dynflow
           start_run or start_finalize or finish
         end
 
+        def prepare_next_step(step)
+          @suspended_actions_manager.add(step)
+          Work::Step[step, execution_plan.id]
+        end
+
         # @return [Array<Work>] of Work items to continue with
         def what_is_next(work)
           Type! work, Work
@@ -37,22 +42,23 @@ module Dynflow
             if @run_manager.done?
               start_finalize or finish
             else
-              next_steps.map { |s| Work::Step[s, execution_plan.id] }
+              next_steps.map { |s| prepare_next_step(s) }
             end
           end
 
           match work,
 
                 Work::Step.(:step) >-> step do
-                  if step.state == :suspended
-                    @suspended_actions_manager.add step
+                  suspended, work = @suspended_actions_manager.done(step)
+                  if suspended
+                    work
                   else
                     execution_plan.update_execution_time step.execution_time
+                    compute_next_from_step.call step
                   end
-                  compute_next_from_step.call step
                 end,
 
-                Work::Event.(:step) >-> step do
+                Work::Event.(:step, :event) >-> step, event do
                   suspended, work = @suspended_actions_manager.done(step)
 
                   if suspended
@@ -90,7 +96,7 @@ module Dynflow
           unless execution_plan.run_flow.empty?
             raise 'run phase already started' if @run_manager
             @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow)
-            @run_manager.start.map { |s| Work::Step[s, execution_plan.id] }.tap { |a| raise if a.empty? }
+            @run_manager.start.map { |s| prepare_next_step(s) }.tap { |a| raise if a.empty? }
           end
         end
 
