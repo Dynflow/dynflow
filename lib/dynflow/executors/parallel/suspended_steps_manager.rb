@@ -13,6 +13,8 @@ module Dynflow
         def add(step)
           Type! step, ExecutionPlan::Steps::RunStep
           @suspended_steps[step.id] = step
+          # we make sure not to run any event when the step is still being executed
+          @events.push(step.id, step)
         end
 
         def done(step)
