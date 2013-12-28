@@ -17,7 +17,7 @@ module Dynflow
           Type! step, ExecutionPlan::Steps::RunStep
           @running_steps[step.id] = step
           # we make sure not to run any event when the step is still being executed
-          @events.push(step.id, step)
+          @events.push(step.id, nil)
         end
 
         def done(step)
