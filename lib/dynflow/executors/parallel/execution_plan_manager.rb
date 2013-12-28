@@ -12,7 +12,7 @@ module Dynflow
           @execution_plan            = Type! execution_plan, ExecutionPlan
           @future                    = Type! future, Future
           @events                    = WorkQueue.new
-          @suspended_actions_manager = SuspendedStepsManager.new(world)
+          @running_steps_manager     = RunningStepsManager.new(world)
 
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -26,7 +26,7 @@ module Dynflow
         end
 
         def prepare_next_step(step)
-          @suspended_actions_manager.add(step)
+          @running_steps_manager.add(step)
           Work::Step[step, execution_plan.id]
         end
 
@@ -49,7 +49,7 @@ module Dynflow
           match work,
 
                 Work::Step.(:step) >-> step do
-                  suspended, work = @suspended_actions_manager.done(step)
+                  suspended, work = @running_steps_manager.done(step)
                   if suspended
                     work
                   else
@@ -59,7 +59,7 @@ module Dynflow
                 end,
 
                 Work::Event.(:step, :event) >-> step, event do
-                  suspended, work = @suspended_actions_manager.done(step)
+                  suspended, work = @running_steps_manager.done(step)
 
                   if suspended
                     work
@@ -78,7 +78,7 @@ module Dynflow
         def event(event)
           Type! event, Event
           raise unless event.execution_plan_id == @execution_plan.id
-          @suspended_actions_manager.event(event)
+          @running_steps_manager.event(event)
         end
 
         def done?

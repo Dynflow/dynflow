@@ -7,7 +7,7 @@ module Dynflow
       require 'dynflow/executors/parallel/work_queue'
       require 'dynflow/executors/parallel/execution_plan_manager'
       require 'dynflow/executors/parallel/sequential_manager'
-      require 'dynflow/executors/parallel/suspended_steps_manager'
+      require 'dynflow/executors/parallel/running_steps_manager'
       require 'dynflow/executors/parallel/core'
       require 'dynflow/executors/parallel/pool'
       require 'dynflow/executors/parallel/worker'

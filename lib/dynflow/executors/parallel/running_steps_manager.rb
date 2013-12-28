@@ -1,18 +1,21 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class SuspendedStepsManager
+
+      # Handles the events generated while running actions, makes sure
+      # the events are sent to the action only when in suspended state
+      class RunningStepsManager
         include Algebrick::TypeCheck
 
         def initialize(world)
-          @world           = Type! world, World
-          @suspended_steps = {}
-          @events          = WorkQueue.new
+          @world         = Type! world, World
+          @running_steps = {}
+          @events        = WorkQueue.new
         end
 
         def add(step)
           Type! step, ExecutionPlan::Steps::RunStep
-          @suspended_steps[step.id] = step
+          @running_steps[step.id] = step
           # we make sure not to run any event when the step is still being executed
           @events.push(step.id, step)
         end
@@ -30,7 +33,7 @@ module Dynflow
               event.event.result.fail UnprocessableEvent.new(message).tap { |e| e.set_backtrace(caller) }
             end
             raise 'assert' unless @events.empty?(step.id)
-            @suspended_steps.delete(step.id)
+            @running_steps.delete(step.id)
             return false, nil
           end
         end
@@ -38,7 +41,7 @@ module Dynflow
         def event(event)
           Type! event, Event
 
-          step = @suspended_steps[event.step_id]
+          step = @running_steps[event.step_id]
           unless step
             event.result.fail UnprocessableEvent.new('step is not suspended, it cannot process events')
             return nil
