@@ -1,25 +1,60 @@
-DYNamic workFLOW
-================
+Dynflow
+=======
+
+Dynflow [DYN(amic work)FLOW] is a workflow engine
+written in Ruby that allows to:
+
+* keep track of the progress of running process
+* run the code asynchronously
+* resume the process when something goes wrong, skip some steps when needed
+* detect independent parts and run them concurrently
+* compose simple actions into more complex scenarios
+* extend the workflows from third-party libraries
+* keep consistency between local transactional database and
+  external services
+* define the input/output interface between the building blocks (planned)
+* define rollback for the workflow (planned)
+* have multiple workers for distributing the load (planned)
+
+Dynflow doesn't try to choose the best tool for the jobs, as the right
+tool depends on the context. Instead, it provides interfaces for
+persistence, transaction layer or executor implementation, giving you
+the last word in choosing the right one (providing default
+implementations as well).
+
+* [Current status](#current-status)
+* [How it works](#how-it-works)
+* [Glossary](#glossary)
+* [Related projects](#related-projects)
+
+Current status
+-------------
+
+Dynflow has been under heavy development for several months to be able
+to support the services orchestration in the
+[Katello](http://katello.org) and [Foreman](http://theforeman.org/)
+projects, getting to production-ready state in couple of weeks.
+
+How it works
+------------
 
 In traditional workflow engines, you specify a static workflow and
 then run it with various inputs. Dynflow takes different approach.
-
 You specify the inputs and the workflow is generated on the fly. You
 can either specify the steps explicitly or subscribe one action to
 another. This is suitable for plugin architecture, where you can't
 write the whole process on one place.
 
 Dynflow doesn't differentiate between workflow and action. Instead,
-every action can populate another actions, effectively producing the
-resulting set of steps.
+every action can populate another actions. This allows composing
+more simpler workflows into a big one.
 
 The whole execution is done in three phases:
 
-1. *Planning phase*
+1. *Plan phase*
 
-  Construct the execution plan for the workflow. It's invoked by
-  calling `trigger` on an action. Two mechanisms are used to get the set
-  of actions to be executed:
+  Construct the execution plan for the workflow. Two mechanisms are
+  used to get the set of actions to be executed:
 
     a. explicit calls of `plan_action` methods in the `plan` method
 
@@ -29,7 +64,7 @@ The whole execution is done in three phases:
 
 The output of this phase is a set of actions and their inputs.
 
-2. *Execution phase*
+2. *Run phase*
 
   The plan is being executed step by step, calling the run method of
   an action with corresponding input. The results of every action are
@@ -41,7 +76,7 @@ The output of this phase is a set of actions and their inputs.
   serialized therefore the workflow itself can be persisted. This makes
   it easy to recover from failed actions by rerunning it.
 
-3. *Finalization phase*
+3. *Finalize phase*
 
   Take the results from the execution phase and perform some additional
   tasks. This is suitable for example for recording the results into
@@ -91,44 +126,25 @@ class Action < Dynflow::Action
     plan_action SubAction, object_1
     # we can specify, where in the workflow this action should be
     # placed, as well as prepare the input.
-    plan_self {'id' => object_2.id, 'name' => object_2.name}
+    plan_self { id: object_2.id, name: object_2.name}
   end
 
   # OPTIONAL: run the execution part of this action. Transform the
   # data from +input+ to +output+. When not specified, the action is
   # not used in the execution phase.
   def run
-    output['uuid'] = "#{input['name']}-#{input['id']}"
+    output[:uuid] = "#{input[:name]}-#{input[:id]}"
   end
 
   # OPTIONAL: finalize the action after the execution phase finishes.
   # in the +input+ and +output+ attributes are available the data from
   # execution phase. in the +outputs+ argument, all the execution
   # phase actions are available, each providing its input and output.
-  def finalize(outputs)
-    puts output['uuid']
+  def finalize
+    puts output[:uuid]
   end
 end
 ```
-
-One can generate the execution plan for an action without actually
-running it:
-
-```ruby
-pp Publish.plan(short_article).actions
-# the expanded workflow is:
-# [
-#  Publish: {"title"=>"Short", "body"=>"Short"} ~> {},
-#  Review:  {"title"=>"Short", "body"=>"Short"} ~> {},
-#  Print:   {"title"=>"Short", "body"=>"Short", "color"=>false} ~> {}
-# ]
-```
-
-Therefore it's suitable for the plan methods to not have any side
-effects (except of database writes that can be roll-backed)
-
-In the finalization phase, `finalize` method is called on every action
-if defined. The order is the same as in the execution plan.
 
 Every action should be as atomic as possible, providing better
 granularity when manipulating the process. Since every action can be
@@ -140,12 +156,58 @@ that other developers can use when extending the workflows.
 
 See the examples directory for more complete examples.
 
+Glossary
+--------
+
+* **action** - building block for the workflows: a Ruby class
+    inherited from `Dynflow::Action`. Defines code to be run in
+    plan/run/finalize phase. It has defined input and output data.
+* **execution plan** - definition of the workflow: product of the plan
+    phase
+* **trigger an action** - entering the plan phase, starting with the
+    `plan` method of the action. The execution follows immediately.
+* **plan_self** - converts the arguments of the `plan` method into
+    action input, that can be accessed from the `run`/`finalize`
+    phase.
+* **plan_action** - includes another action into the workflow, passing
+    the arguments into the `plan` method of the action
+* **step** - execution unit of the action. It represents the action in
+    specific phase (plan step, run step, finalize step).
+* **flow** - definition of the run/finalize phase, holding the
+    information about steps that can run concurrently/in sequence.
+    Part of execution plan.
+* **executor** - service that executes the run and finalize flows
+    based on the execution plan. It can run in the same process as the
+    plan phase or in different process (using the remote executor)
+* **world** - the universe where the Dynflow runs the code: it holds
+    all needed configuration.
+
+Related projects
+----------------
+
+* [Foreman](http://theforeman.org) - lifecycle management tool for
+  physical and virtual servers
+
+* [Katello](http://katello.org) - content management plugin for
+  Foreman: integrates couple of REST services for managing the
+  software updates in the infrastructure.
+
+* [Foreman-tasks](https://github.com/iNecas/foreman-tasks) - Foreman
+  plugin providing the tasks management with Dynflow on the back-end
+
+* [Dyntask](https://github.com/iNecas/dyntask) - generic Rails engine
+  providing the tasks management features with Dynflow on the back-end
+
+* [Sysflow](https://github.com/iNecas/sysflow) - set of reusable tools
+   for running system tasks with Dynflow, comes with simple Web-UI for
+   testing it
+
 License
 -------
 
 MIT
 
-Author
-------
+Authors
+-------
 
-Ivan Nečas
+Ivan Nečas, Petr Chalupa
