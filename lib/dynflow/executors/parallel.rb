@@ -12,7 +12,7 @@ module Dynflow
       require 'dynflow/executors/parallel/pool'
       require 'dynflow/executors/parallel/worker'
 
-      UnprocessableEvent = Class.new(StandardError)
+      UnprocessableEvent = Class.new(Dynflow::Error)
 
       # actor messages
       Algebrick.types do
