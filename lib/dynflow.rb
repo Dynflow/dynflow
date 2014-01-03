@@ -14,6 +14,7 @@ module Dynflow
   require 'dynflow/future'
   require 'dynflow/micro_actor'
   require 'dynflow/serializable'
+  require 'dynflow/clock'
   require 'dynflow/stateful'
   require 'dynflow/transaction_adapters'
   require 'dynflow/persistence'

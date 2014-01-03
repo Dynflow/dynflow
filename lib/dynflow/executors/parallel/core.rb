@@ -53,8 +53,8 @@ module Dynflow
                     start_executing(manager)
                   end
                 end,
-                ~ProgressUpdate >-> progress_update do
-                  update_progress(progress_update)
+                ~Event >-> event do
+                  event(event)
                 end,
                 PoolDone.(~any) >-> step do
                   update_manager(step)
@@ -130,13 +130,15 @@ module Dynflow
           manager.future.resolve manager.execution_plan
         end
 
-        def update_progress(progress_update)
-          if execution_plan_manager = @execution_plan_managers[progress_update.execution_plan_id]
-            feed_pool execution_plan_manager.update_progress(progress_update)
+        def event(event)
+          Type! event, Event
+          execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
+          if execution_plan_manager
+            feed_pool execution_plan_manager.event(event)
+            true
           else
-            # TODO should be fixed when EP execution is resumed after restart
-            raise "Trying to resume execution_plan:#{progress_update.execution_plan_id} step:#{progress_update.step_id} failed, " +
-                      'missing manager.'
+            logger.warn "dropping event #{event} - no manager for #{event.execution_plan_id}:#{event.step_id}"
+            event.result.fail UnprocessableEvent.new("no manager for #{event.execution_plan_id}:#{event.step_id}")
           end
         end
 

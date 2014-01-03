@@ -8,9 +8,9 @@ module Dynflow
     include WorldInstance
 
     let :action_data do
-      { class: 'RenamedAction',
-        id: 123,
-        input: {},
+      { class:             'RenamedAction',
+        id:                123,
+        input:             {},
         execution_plan_id: 123 }
     end
 
@@ -34,20 +34,15 @@ module Dynflow
       end
 
       class ExtendedAction < Dynflow::Action
-
-        def self.generate_phase(phase_module)
-          super.tap do |phase_class|
-            if phase_module == Dynflow::Action::RunPhase
-              phase_class.send(:include, Extension)
-            end
-          end
+        def self.phase_modules
+          super.merge(run_phase: [Extension]) { |key, old, new| old + new }.freeze
         end
-
       end
     end
 
     it "is possible to extend the action just for some phase" do
       refute TestExtending::ExtendedAction.plan_phase.instance_methods.include?(:new_method)
+      refute Dynflow::Action.run_phase.instance_methods.include?(:new_method)
       assert TestExtending::ExtendedAction.run_phase.instance_methods.include?(:new_method)
     end
   end

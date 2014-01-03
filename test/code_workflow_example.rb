@@ -24,7 +24,7 @@ module Dynflow
       end
 
       def summary
-        triages = all_actions.find_all do |action|
+        triages   = all_actions.find_all do |action|
           action.is_a? Dynflow::CodeWorkflowExample::Triage
         end
         assignees = triages.map do |triage|
@@ -250,87 +250,43 @@ module Dynflow
 
     end
 
-    class PollingServiceImpl < Dynflow::MicroActor
-
-      Task = Algebrick.type { fields action: Action::Suspended, external_task_id: String }
-      Tick = Algebrick.atom
-
-      def initialize(logger)
-        super(logger)
-      end
-
-      def wait_for_task(action, external_task_id)
-        # simulate polling for the state of the external task
-        self << Task[action,
-                     external_task_id]
-      end
-
-      private
-
-      def delayed_initialize
-        @tasks    = Set.new
-        @progress = Hash.new { |h, k| h[k] = 0 }
-
-        @start_ticker = Queue.new
-        @ticker       = Thread.new do
-          loop do
-            sleep interval
-            self << Tick
-            @start_ticker.pop
-          end
-        end
-      end
-
-      def interval
-        0.005
-      end
-
-      def on_message(message)
-        match(message,
-              ~Task >-> task do
-                @tasks << task
-              end,
-              Tick >-> do
-                poll
-              end)
-      end
-
-      def ticking
-        @start_ticker << true
-      end
-
-      def poll
-        @tasks.delete_if do |task|
-          key      = [task[:action].execution_plan_id, task[:action].step_id]
-          progress = @progress[key] += 10
-          done     = progress >= 100
-          task[:action].update_progress(done, progress)
-          done
-        end
-      ensure
-        ticking
-      end
-    end
-
-    PollingService = PollingServiceImpl.new(Logger.new($stderr).tap { |l| l.progname = 'PollingService' })
-
     class DummySuspended < Action
 
-      def run
-        suspend
+      include Action::Polling
+
+      def invoke_external_task
+        error! 'Trolling detected' if input[:text] == 'troll setup'
+        { progress: 0, done: false }
       end
 
-      def setup_progress_updates(suspended_action)
-        raise 'Trolling detected' if input[:text] == 'troll setup_progress_updates'
-        PollingService.wait_for_task(suspended_action, input[:external_task_id])
+      def external_task=(external_task_data)
+        self.output.update external_task_data
       end
 
-      # called when there is some update about the progress of the task
-      def update_progress(done, progress)
+      def external_task
+        output
+      end
+
+      def poll_external_task
+        if input[:text] == 'troll progress' && !output[:trolled]
+          output[:trolled] = true
+          error! 'Trolling detected'
+        end
+
         if input[:text] =~ /pause in progress (\d+)/
           TestPause.pause if output[:progress] == $1.to_i
         end
-        output.update progress: progress, done: done
+
+        progress = output[:progress] + 10
+        { progress: progress, done: progress >= 100 }
+      end
+
+      def done?
+        external_task[:progress] >= 100
+      end
+
+      def poll_interval
+        0.05
       end
 
       def run_progress
