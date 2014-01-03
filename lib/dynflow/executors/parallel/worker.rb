@@ -14,7 +14,7 @@ module Dynflow
 
         def on_message(message)
           match message,
-                Work::Step.(step: ~any) ^ Work::Event.(step: ~any, event: Event.(event: ~any)) >-> step, event do
+                Work::Step.(step: ~any) | Work::Event.(step: ~any, event: Event.(event: ~any)) >-> step, event do
                   step.execute event
                 end,
                 Work::Finalize.(~any, any) >-> sequential_manager do

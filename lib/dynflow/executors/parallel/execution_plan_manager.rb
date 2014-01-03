@@ -48,7 +48,7 @@ module Dynflow
 
           match work,
 
-                Work::Step.(:step) >-> step do
+                Work::Step.(step: ~any) >-> step do
                   suspended, work = @running_steps_manager.done(step)
                   if suspended
                     raise 'assert' unless compute_next_from_step.call(step).empty?
@@ -59,7 +59,7 @@ module Dynflow
                   end
                 end,
 
-                Work::Event.(:step, :event) >-> step, event do
+                Work::Event.(step: ~any) >-> step do
                   suspended, work = @running_steps_manager.done(step)
 
                   if suspended
@@ -70,7 +70,7 @@ module Dynflow
                   end
                 end,
 
-                Work::Finalize.(any, any) >-> do
+                Work::Finalize >-> do
                   raise unless @finalize_manager
                   finish
                 end
