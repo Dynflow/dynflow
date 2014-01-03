@@ -72,7 +72,6 @@ module Dynflow
       end
     rescue => error
       logger.fatal error
-      logger.fatal error.backtrace.join("\n")
     end
 
     def run(*args)

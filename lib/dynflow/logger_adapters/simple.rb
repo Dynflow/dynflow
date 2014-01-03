@@ -7,12 +7,12 @@ module Dynflow
 
       attr_reader :logger, :action_logger, :dynflow_logger
 
-      def initialize(output = $stdout, level = Logger::DEBUG)
+      def initialize(output = $stdout, level = Logger::DEBUG, formatters = [Formatters::Exception])
         @logger           = Logger.new(output)
         @logger.level     = level
         @logger.formatter = method(:formatter).to_proc
-        @action_logger    = ProgNameWrapper.new(@logger, ' action')
-        @dynflow_logger   = ProgNameWrapper.new(@logger, 'dynflow')
+        @action_logger    = apply_formatters ProgNameWrapper.new(@logger, ' action'), formatters
+        @dynflow_logger   = apply_formatters ProgNameWrapper.new(@logger, 'dynflow'), formatters
       end
 
       private
@@ -23,15 +23,7 @@ module Dynflow
                $PID,
                severity,
                (prog_name ? prog_name + ': ' : ''),
-               case msg
-               when ::String
-                 msg
-               when ::Exception
-                 "#{ msg.message } (#{ msg.class })\n" <<
-                     (msg.backtrace || []).join("\n")
-               else
-                 msg.inspect
-               end
+               msg.to_s
       end
 
       class ProgNameWrapper
