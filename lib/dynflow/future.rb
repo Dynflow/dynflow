@@ -1,7 +1,4 @@
 module Dynflow
-  # TODO use actress when released, copied over from actress gem https://github.com/pitr-ch/actress
-  # TODO check that all Futures are resolved at some point, socket disconnecting
-
   class FutureAlreadySet < StandardError
   end
 

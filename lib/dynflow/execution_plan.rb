@@ -223,7 +223,6 @@ module Dynflow
                         ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
                         real_time:         real_time
-      # TODO also store progress
     end
 
     def save
