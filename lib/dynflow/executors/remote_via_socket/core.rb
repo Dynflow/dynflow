@@ -32,6 +32,7 @@ module Dynflow
                 Closed >-> do
                   @socket = nil
                   logger.info 'Disconnected from server.'
+                  # FIXME set all pending futures to failed
                   terminate! if terminating?
                 end,
                 Received.(Accepted.(~any)) >-> id { @manager.accepted id },
