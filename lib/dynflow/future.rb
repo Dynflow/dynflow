@@ -1,11 +1,43 @@
 module Dynflow
-  # TODO use actress when released, copied over from actress gem https://github.com/pitr-ch/actress
-  # TODO check that all Futures are resolved at some point, socket disconnecting
-
   class FutureAlreadySet < StandardError
   end
 
   class Future
+    # `#future` will become resolved to `true` when ``#countdown!`` is called `count` times
+    class CountDownLatch
+      attr_reader :future
+
+      def initialize(count, future = Future.new)
+        raise ArgumentError if count < 0
+        @count  = count
+        @lock   = Mutex.new
+        @future = future
+      end
+
+      def countdown!
+        @lock.synchronize do
+          @count -= 1 if @count > 0
+          @future.resolve true if @count == 0 && !@future.ready?
+        end
+      end
+
+      def count
+        @lock.synchronize { @count }
+      end
+    end
+
+    include Algebrick::TypeCheck
+    extend Algebrick::TypeCheck
+
+    def self.join(futures, result = Future.new)
+      countdown = CountDownLatch.new(futures.size, result)
+      futures.each do |future|
+        Type! future, Future
+        future.do_then { |_| countdown.countdown! }
+      end
+      result
+    end
+
     def initialize(&task)
       @lock     = Mutex.new
       @value    = nil
@@ -30,6 +62,7 @@ module Dynflow
     end
 
     def fail(exception)
+      Type! exception, Exception
       set exception, true
     end
 
@@ -49,7 +82,7 @@ module Dynflow
     end
 
     def set(value, failed)
-      call_tasks = @lock.synchronize do
+      @lock.synchronize do
         raise FutureAlreadySet, "future already set to #{@value} cannot use #{value}" if _ready?
         if failed
           @failed = true
@@ -66,7 +99,7 @@ module Dynflow
         end
         !failed
       end
-      @tasks.each { |t| t.call value } if call_tasks
+      @tasks.each { |t| t.call value }
       self
     end
 
@@ -90,6 +123,10 @@ module Dynflow
 
     def failed?
       @lock.synchronize { @failed }
+    end
+
+    def tangle(future)
+      do_then { |v| future.set v, failed? }
     end
 
     private

@@ -6,56 +6,38 @@ module Dynflow
       base.attr_indifferent_access_hash :output
     end
 
-    SUSPENDING = Object.new
+    SUSPEND = Object.new
 
-    def execute(done = nil, *args)
-      Match! done, true, false, nil
-      doing_progress_update = !done.nil?
-
+    def execute(event)
+      @world.logger.debug "step #{execution_plan_id}:#{@step.id} got event #{event}" if event
       case
       when state == :running
         raise NotImplementedError, 'recovery after restart is not implemented'
 
-      when state == :suspended && doing_progress_update
-        self.state = :running
-        save_state
-        with_error_handling do
-          update_progress done, *args
+      when [:pending, :error, :suspended].include?(state)
+        if [:pending, :error].include?(state) && event
+          raise 'event can be processed only when in suspended state'
         end
-        self.state = :suspended unless done
 
-      when [:pending, :error].include?(state) && !doing_progress_update
         self.state = :running
         save_state
         with_error_handling do
-          if catch(SUSPENDING) { run } == SUSPENDING
-            self.state       = :suspended
-            suspended_action = Action::Suspended.new(self)
-            setup_progress_updates suspended_action
+          result = catch(SUSPEND) { event ? run(event) : run }
+          if result == SUSPEND
+            self.state = :suspended
           end
         end
 
       else
-        raise "wrong state #{state} when doing_progress_update:#{doing_progress_update}"
+        raise "wrong state #{state} when event:#{event}"
       end
     end
 
     # DSL for run
 
-    # TODO move everything to ProgressUpdater, including remote_task start
-    def suspend
-      throw SUSPENDING, SUSPENDING
+    def suspend(&block)
+      block.call Action::Suspended.new self if block
+      throw SUSPEND, SUSPEND
     end
-
-    # TODO call setup_progress_updates after kill
-    # TODO call setup_progress_updates after resume
-    # FIXME handle after error
-    # override
-    # def suspend_setup(suspended_action)
-    # end
-
-    # override
-    # def progress_update(done, *args)
-    # end
   end
 end

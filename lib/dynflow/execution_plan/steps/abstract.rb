@@ -64,6 +64,10 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def to_s
+        "[#{self.class.name}:#{execution_plan_id}:#{id}]"
+      end
+
       def to_hash
         recursive_to_hash execution_plan_id: execution_plan_id,
                           id:                id,

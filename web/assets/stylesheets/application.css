@@ -14,11 +14,6 @@ div#plan {
   padding-right: 10em;
 }
 
-ul.plan-step span {
-  display: inline-block;
-  width: 100%;
-}
-
 ul.plan-step span.success {
   color: #99FF66;
 }
