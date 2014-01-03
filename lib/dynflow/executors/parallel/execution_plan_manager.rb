@@ -8,11 +8,10 @@ module Dynflow
         attr_reader :execution_plan, :future
 
         def initialize(world, execution_plan, future)
-          @world                     = Type! world, World
-          @execution_plan            = Type! execution_plan, ExecutionPlan
-          @future                    = Type! future, Future
-          @events                    = WorkQueue.new
-          @running_steps_manager     = RunningStepsManager.new(world)
+          @world                 = Type! world, World
+          @execution_plan        = Type! execution_plan, ExecutionPlan
+          @future                = Type! future, Future
+          @running_steps_manager = RunningStepsManager.new(world)
 
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -26,8 +25,9 @@ module Dynflow
         end
 
         def prepare_next_step(step)
-          @running_steps_manager.add(step)
-          Work::Step[step, execution_plan.id]
+          Work::Step[step, execution_plan.id].tap do |work|
+            @running_steps_manager.add(step, work)
+          end
         end
 
         # @return [Array<Work>] of Work items to continue with
@@ -51,6 +51,7 @@ module Dynflow
                 Work::Step.(:step) >-> step do
                   suspended, work = @running_steps_manager.done(step)
                   if suspended
+                    raise 'assert' unless compute_next_from_step.call(step).empty?
                     work
                   else
                     execution_plan.update_execution_time step.execution_time

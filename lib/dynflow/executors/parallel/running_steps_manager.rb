@@ -10,14 +10,15 @@ module Dynflow
         def initialize(world)
           @world         = Type! world, World
           @running_steps = {}
-          @events        = WorkQueue.new
+          @events        = WorkQueue.new(Integer, Work)
         end
 
-        def add(step)
+        def add(step, work)
           Type! step, ExecutionPlan::Steps::RunStep
           @running_steps[step.id] = step
           # we make sure not to run any event when the step is still being executed
-          @events.push(step.id, nil)
+          @events.push(step.id, work)
+          self
         end
 
         def done(step)

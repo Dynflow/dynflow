@@ -36,7 +36,6 @@ module Dynflow
     # DSL for run
 
     def suspend(&block)
-      # TODO can Work::Event run before Work::Step is done? Check!
       block.call Action::Suspended.new self if block
       throw SUSPEND, SUSPEND
     end
