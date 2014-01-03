@@ -15,7 +15,7 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def update_progress(suspended_action, done, *args)
+      def event(suspended_action, event, future = Future)
         raise NotImplementedError
       end
 

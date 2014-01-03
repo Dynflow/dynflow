@@ -21,8 +21,8 @@ module Dynflow
         return future
       end
 
-      def update_progress(suspended_action, done, *args)
-        raise 'updates are handled in a process with real executor'
+      def event(suspended_action, event, future = Future)
+        raise 'events are handled in a process with real executor'
       end
 
       def terminate(future = Future.new)

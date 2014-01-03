@@ -25,7 +25,7 @@ module Dynflow
 
         def failed(id, error)
           @finished_futures.delete id
-          @accepted_futures.delete(id).resolve Dynflow::Error.new(error)
+          @accepted_futures.delete(id).fail Dynflow::Error.new(error)
         end
 
         def finished(id, uuid)

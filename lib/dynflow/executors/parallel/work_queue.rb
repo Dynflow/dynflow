@@ -2,16 +2,22 @@ module Dynflow
   module Executors
     class Parallel < Abstract
       class WorkQueue
+        include Algebrick::TypeCheck
 
-        def initialize
-          @stash = Hash.new { |hash, key| hash[key] = [] }
+        def initialize(key_type = Object, work_type = Object)
+          @key_type  = key_type
+          @work_type = work_type
+          @stash     = Hash.new { |hash, key| hash[key] = [] }
         end
 
         def push(key, work)
+          Type! key, @key_type
+          Type! work, @work_type
           @stash[key].push work
         end
 
         def shift(key)
+          return nil unless present? key
           @stash[key].shift.tap { |work| @stash.delete(key) if @stash[key].empty? }
         end
 
