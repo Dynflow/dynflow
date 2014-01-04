@@ -3,10 +3,9 @@ module Dynflow
     include Algebrick::TypeCheck
 
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options, :initialized
+                :logger_adapter, :options
 
     def initialize(options_hash = {}, &options_block)
-      @initialized    = Future.new
       @logger_adapter = Type! options_hash.delete(:logger_adapter) || default_options[:logger_adapter],
                               LoggerAdapters::Abstract
       user_options    = options_hash.merge(if options_block
@@ -25,7 +24,6 @@ module Dynflow
       calculate_subscription_index
 
       @options = options
-      @initialized.resolve true
       executor.initialized.wait
     end
 
@@ -105,6 +103,43 @@ module Dynflow
           terminate(executor_done).
           do_then { clock.ask(MicroActor::Terminate, clock_done) }
       Future.join([executor_done, clock_done], future)
+    end
+
+    # Detects execution plans that are marked as running but no executor
+    # handles them (probably result of non-standard executor termination)
+    #
+    # The current implementation expects no execution_plan being actually run
+    # by the executor.
+    #
+    # TODO: persist the running executors in the system, so that we can detect
+    # the orphaned execution plans. The register should be managable by the
+    # console, so that the administrator can unregister dead executors when needed.
+    # After the executor is unregistered, the consistency check should be performed
+    # to fix the orphaned plans as well.
+    def consistency_check
+      abnormal_execution_plans = self.persistence.find_execution_plans filters: { 'state' => %w(running planning) }
+      if abnormal_execution_plans.empty?
+        logger.info 'Clean start.'
+      else
+        format_str = '%36s %10s %10s'
+        message    = ['Abnormal execution plans, process was probably killed.',
+                      'Following ExecutionPlans will be set to paused, admin has to fix them manually.',
+                      (format format_str, 'ExecutionPlan', 'state', 'result'),
+                      *(abnormal_execution_plans.map { |ep| format format_str, ep.id, ep.state, ep.result })]
+
+        logger.error message.join("\n")
+
+        abnormal_execution_plans.each do |ep|
+          ep.update_state case ep.state
+                          when :planning
+                            :stopped
+                          when :running
+                            :paused
+                          else
+                            raise
+                          end
+        end
+      end
     end
 
     protected
