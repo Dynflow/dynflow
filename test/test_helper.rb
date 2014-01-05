@@ -1,13 +1,12 @@
 require 'test/unit'
 require 'minitest/spec'
+
 if ENV['RM_INFO']
   require 'minitest/reporters'
   MiniTest::Reporters.use!
 end
 require 'dynflow'
 require 'pry'
-
-MiniTest::Unit.after_tests { Dynflow::CodeWorkflowExample::PollingService.terminate.wait }
 
 class TestExecutionLog
 
