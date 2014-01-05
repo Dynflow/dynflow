@@ -25,6 +25,8 @@ module Dynflow
 
       @options = options
       executor.initialized.wait
+
+      @termination_barrier = Mutex.new
     end
 
     def default_options
@@ -97,12 +99,15 @@ module Dynflow
     end
 
     def terminate(future = Future.new)
-      executor_done = Future.new
-      clock_done    = Future.new
-      executor.
-          terminate(executor_done).
-          do_then { clock.ask(MicroActor::Terminate, clock_done) }
-      Future.join([executor_done, clock_done], future)
+      @termination_barrier.synchronize do
+        if @executor_terminated.nil?
+          @executor_terminated = Future.new
+          @clock_terminated    = Future.new
+          executor.terminate(@executor_terminated).
+              do_then { clock.ask(MicroActor::Terminate, @clock_terminated) }
+        end
+      end
+      Future.join([@executor_terminated, @clock_terminated], future)
     end
 
     # Detects execution plans that are marked as running but no executor
