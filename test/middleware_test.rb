@@ -94,6 +94,45 @@ module Dynflow
         end
 
       end
+
+      describe 'stack' do
+
+        class AlmostAction
+          attr_reader :input, :output
+
+          def plan(arg)
+            @input = arg
+            @output = []
+          end
+        end
+
+        class TestMiddleware < Dynflow::Middleware
+          def plan(arg)
+            stack.pass(arg << "IN: #{self.class.name}").tap do |ret|
+              action.output << "OUT: #{self.class.name}"
+            end
+          end
+        end
+
+        class Test1Middleware < TestMiddleware
+        end
+
+        class Test2Middleware < TestMiddleware
+        end
+
+        class Test3Middleware < Dynflow::Middleware
+        end
+
+        it 'calls the method recursively through the stack, skipping the middlewares without the method defined ' do
+          classes = [Test1Middleware, Test2Middleware, Test3Middleware]
+          action = AlmostAction.new
+          stack = Middleware::Stack.new(classes)
+          stack.evaluate(:plan, action, [])
+          action.input.must_equal ["IN: Dynflow::MiddlewareTest::Test1Middleware", "IN: Dynflow::MiddlewareTest::Test2Middleware"]
+          action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
+        end
+
+      end
     end
   end
 end
