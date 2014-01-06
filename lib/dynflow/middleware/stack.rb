@@ -9,11 +9,15 @@ module Dynflow
       end
     end
 
-    def evaluate(method, action, *args)
-      raise "Action doesn't respont to #{method}" unless action.respond_to?(method)
+    def evaluate(method, action, *args, &block)
+      if action
+        raise "Action doesn't respont to #{method}" unless action.respond_to?(method)
+      end
+      target = action || block
+      raise ArgumentError, "neither action nor block specified" unless target
       original_thread_data = thread_data
       begin
-        setup_thread_data(method, action)
+        setup_thread_data(method, target)
         pass(*args)
       ensure
         self.thread_data = original_thread_data
@@ -25,7 +29,9 @@ module Dynflow
       original_stack = thread_data[:stack]
       begin
         thread_data[:stack] = @rest
-        if top.respond_to?(thread_data[:method])
+        if top.is_a? Proc
+          top.call(*args)
+        elsif top.respond_to?(thread_data[:method])
           top.send(thread_data[:method], *args)
         else
           @rest.pass(*args)
@@ -36,12 +42,12 @@ module Dynflow
     end
 
     def top
-      @top || thread_data[:action]
+      @top || thread_data[:target]
     end
 
-    def setup_thread_data(method, action)
+    def setup_thread_data(method, target)
       self.thread_data = { method: method,
-                           action: action,
+                           target: target,
                            stack: self }
     end
 

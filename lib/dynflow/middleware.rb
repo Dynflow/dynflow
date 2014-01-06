@@ -11,7 +11,12 @@ module Dynflow
 
     # to get the action object
     def action
-      Thread.current[:dynflow_middleware][:action]
+      target = Thread.current[:dynflow_middleware][:target]
+      if target.is_a? Proc
+        raise "the action is not available"
+      else
+        target
+      end
     end
 
   end

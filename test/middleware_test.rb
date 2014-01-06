@@ -135,6 +135,9 @@ module Dynflow
         end
 
         class Test2Middleware < TestMiddleware
+          def plan_phase
+            stack.pass.upcase
+          end
         end
 
         class Test3Middleware < Dynflow::Middleware
@@ -157,6 +160,14 @@ module Dynflow
           action.stack.evaluate(:plan, action, [])
           action.input.must_equal ["IN: DYNFLOW::MIDDLEWARETEST::TEST1MIDDLEWARE", "IN: DYNFLOW::MIDDLEWARETEST::TEST2MIDDLEWARE"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
+        end
+
+        it 'allows calling the middleware with passing a block instead of action' do
+          action = AlmostActionNestedCall.new
+          output = action.stack.evaluate(:plan_phase, nil) do
+            "hello world"
+          end
+          output.must_equal "HELLO WORLD"
         end
 
       end
