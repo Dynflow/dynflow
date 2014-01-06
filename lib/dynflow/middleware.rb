@@ -6,12 +6,12 @@ module Dynflow
 
     # call `stack.pass` to get deeper with the call
     def stack
-      Thread.current[:dynflow_middleware][:stack]
+      Stack.thread_data[:stack]
     end
 
     # to get the action object
     def action
-      target = Thread.current[:dynflow_middleware][:target]
+      target = Stack.thread_data[:target]
       if target.is_a? Proc
         raise "the action is not available"
       else

@@ -45,6 +45,8 @@ module Dynflow
       @top || thread_data[:target]
     end
 
+    # There is no other way to share the data between middlewares then
+    # through the thread when we don't want to recreate the stack at every call
     def setup_thread_data(method, target)
       self.thread_data = { method: method,
                            target: target,
@@ -52,10 +54,18 @@ module Dynflow
     end
 
     def thread_data
+      self.class.thread_data
+    end
+
+    def self.thread_data
       Thread.current[:dynflow_middleware]
     end
 
     def thread_data=(value)
+      self.class.thread_data = value
+    end
+
+    def self.thread_data=(value)
       Thread.current[:dynflow_middleware] = value
     end
   end
