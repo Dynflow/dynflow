@@ -98,11 +98,28 @@ module Dynflow
       describe 'stack' do
 
         class AlmostAction
-          attr_reader :input, :output
+          attr_reader :input, :output, :stack
+
+          def initialize
+            classes = [Test1Middleware, Test2Middleware, Test3Middleware]
+            @stack = Middleware::Stack.new(classes)
+          end
 
           def plan(arg)
             @input = arg
             @output = []
+          end
+        end
+
+        class AlmostActionNestedCall < AlmostAction
+
+          def plan(arg)
+            stack.evaluate(:plan_self, self, arg)
+            @output = []
+          end
+
+          def plan_self(arg)
+            @input = arg
           end
         end
 
@@ -121,14 +138,24 @@ module Dynflow
         end
 
         class Test3Middleware < Dynflow::Middleware
+          def plan_self(arg)
+            stack.pass(arg).tap do
+              action.input.map!(&:upcase)
+            end
+          end
         end
 
         it 'calls the method recursively through the stack, skipping the middlewares without the method defined ' do
-          classes = [Test1Middleware, Test2Middleware, Test3Middleware]
           action = AlmostAction.new
-          stack = Middleware::Stack.new(classes)
-          stack.evaluate(:plan, action, [])
+          action.stack.evaluate(:plan, action, [])
           action.input.must_equal ["IN: Dynflow::MiddlewareTest::Test1Middleware", "IN: Dynflow::MiddlewareTest::Test2Middleware"]
+          action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
+        end
+
+        it 'allows nested calls on the same stack' do
+          action = AlmostActionNestedCall.new
+          action.stack.evaluate(:plan, action, [])
+          action.input.must_equal ["IN: DYNFLOW::MIDDLEWARETEST::TEST1MIDDLEWARE", "IN: DYNFLOW::MIDDLEWARETEST::TEST2MIDDLEWARE"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end
 

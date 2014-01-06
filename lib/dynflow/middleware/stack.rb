@@ -10,25 +10,29 @@ module Dynflow
     end
 
     def evaluate(method, action, *args)
-      raise "Middleware evaluation already in progress" if thread_data
       raise "Action doesn't respont to #{method}" unless action.respond_to?(method)
-      setup_thread_data(method, action)
-      pass(*args)
-    ensure
-      Thread.current[:dynflow_middleware] = nil
+      original_thread_data = thread_data
+      begin
+        setup_thread_data(method, action)
+        pass(*args)
+      ensure
+        self.thread_data = original_thread_data
+      end
     end
 
     def pass(*args)
       raise "Middleware evaluation not setup" unless thread_data[:stack]
       original_stack = thread_data[:stack]
-      thread_data[:stack] = @rest
-      if top.respond_to?(thread_data[:method])
-        top.send(thread_data[:method], *args)
-      else
-        @rest.pass(*args)
+      begin
+        thread_data[:stack] = @rest
+        if top.respond_to?(thread_data[:method])
+          top.send(thread_data[:method], *args)
+        else
+          @rest.pass(*args)
+        end
+      ensure
+        thread_data[:stack] = original_stack
       end
-    ensure
-      thread_data[:stack] = original_stack
     end
 
     def top
