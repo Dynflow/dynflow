@@ -1,4 +1,4 @@
-require 'sequel'
+require 'sequel/no_core_ext' # to avoid sequel ~> 3.0 coliding with ActiveRecord
 require 'multi_json'
 
 module Dynflow
@@ -89,7 +89,7 @@ module Dynflow
       end
 
       def migrate_db
-        ::Sequel::Migrator.apply(db, self.class.migrations_path)
+        ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
       def save(what, condition, value)
