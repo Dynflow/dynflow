@@ -6,4 +6,4 @@ rvm:
   - "2.0.0"
 
 script:
-  - rake test
+  - bundle exec rake test

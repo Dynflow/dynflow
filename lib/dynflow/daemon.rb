@@ -19,7 +19,7 @@ module Dynflow
     def with_lock_file(&block)
       if @lock_file
         raise "Lockfile #{@lock_file} is already present." if File.exist?(@lock_file)
-        File.write(@lock_file, "Locked at #{Time.now}")
+        File.write(@lock_file, "Locked at #{Time.now} by process #{$$}\n")
       end
       block.call
     ensure
