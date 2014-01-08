@@ -633,7 +633,6 @@ module Dynflow
             end
 
             it 'second terminate raises' do
-              skip # TODO it blocks
               assert world.terminate.wait
               assert world.terminate.wait
             end
