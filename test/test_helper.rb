@@ -1,10 +1,12 @@
-require 'test/unit'
+gem 'minitest'
+require 'minitest/autorun'
 require 'minitest/spec'
 
 if ENV['RM_INFO']
   require 'minitest/reporters'
   MiniTest::Reporters.use!
 end
+
 require 'dynflow'
 require 'pry'
 

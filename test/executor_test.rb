@@ -557,7 +557,7 @@ module Dynflow
           end
 
           describe 'Pool::JobStorage' do
-            FakeStep = Struct.new(:execution_plan_id)
+            FakeStep ||= Struct.new(:execution_plan_id)
 
             let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
             it do
