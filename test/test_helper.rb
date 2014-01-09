@@ -1,4 +1,4 @@
-gem 'minitest'
+require 'bundler/setup'
 require 'minitest/autorun'
 require 'minitest/spec'
 
@@ -146,7 +146,7 @@ module WorldInstance
 end
 
 # ensure there are no unresolved Futures at the end or being GCed
-futures_test =-> do
+future_tests =-> do
   gced_unresolved_futures = []
   future_creations        = {}
 
@@ -154,12 +154,12 @@ futures_test =-> do
     WorldInstance.terminate
     futures = ObjectSpace.each_object(Dynflow::Future).select { |f| !f.ready? }
     unless futures.empty?
-      raise 'there are unready futures:' +
+      raise "there are unready futures:\n" +
                 futures.map { |f| "#{f}\n#{future_creations[f.object_id]}" }.join("\n")
     end
   end
 
-  FINALIZER               = lambda do |future|
+  FINALIZER = lambda do |future|
     unless future.ready?
       gced_unresolved_futures << future
     end
@@ -179,6 +179,17 @@ futures_test =-> do
                     join("\n")
     end
   end
+
+  # time out all futures by default
+  default_timeout = 2
+  wait_method     = Dynflow::Future.instance_method(:wait)
+
+  Dynflow::Future.class_eval do
+    define_method :wait do |timeout = nil|
+      wait_method.bind(self).call(timeout || default_timeout)
+    end
+  end
+
 end.call
 
 module PlanAssertions
