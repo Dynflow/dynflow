@@ -602,7 +602,7 @@ module Dynflow
             if which == :normal_world
               it 'executes until its done when terminating' do
                 $slow_actions_done = 0
-                world.trigger(CodeWorkflowExample::Slow, 0.2)
+                world.trigger(CodeWorkflowExample::Slow, 0.02)
                 world.terminate.wait
                 $slow_actions_done.must_equal 1
               end
@@ -619,7 +619,7 @@ module Dynflow
             it 'does not accept new work' do
               skip "TODO it blocks" # TODO
               assert world.terminate.wait
-              refute world.trigger(CodeWorkflowExample::Slow, 0.2).planned
+              refute world.trigger(CodeWorkflowExample::Slow, 0.02).planned
             end
 
             it 'it terminates when no work' do

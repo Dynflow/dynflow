@@ -286,7 +286,7 @@ module Dynflow
       end
 
       def poll_interval
-        0.05
+        0.001
       end
 
       def run_progress
