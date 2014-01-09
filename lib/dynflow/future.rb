@@ -2,6 +2,9 @@ module Dynflow
   class FutureAlreadySet < StandardError
   end
 
+  class FutureFailed < StandardError
+  end
+
   class Future
     # `#future` will become resolved to `true` when ``#countdown!`` is called `count` times
     class CountDownLatch
@@ -62,7 +65,10 @@ module Dynflow
     end
 
     def fail(exception)
-      Type! exception, Exception
+      Type! exception, Exception, String
+      if exception.is_a? String
+        exception = FutureFailed.new(exception).tap { |e| e.set_backtrace caller }
+      end
       set exception, true
     end
 
