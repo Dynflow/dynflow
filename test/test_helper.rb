@@ -1,10 +1,12 @@
-require 'test/unit'
+require 'bundler/setup'
+require 'minitest/autorun'
 require 'minitest/spec'
 
 if ENV['RM_INFO']
   require 'minitest/reporters'
   MiniTest::Reporters.use!
 end
+
 require 'dynflow'
 require 'pry'
 
@@ -127,6 +129,13 @@ module WorldInstance
     return listener, world
   end
 
+  def self.terminate
+    remote_world.terminate.wait if @remote_world
+    world.terminate.wait if @world
+
+    @remote_world = @world = nil
+  end
+
   def world
     WorldInstance.world
   end
@@ -135,6 +144,53 @@ module WorldInstance
     WorldInstance.remote_world
   end
 end
+
+# ensure there are no unresolved Futures at the end or being GCed
+future_tests =-> do
+  gced_unresolved_futures = []
+  future_creations        = {}
+
+  MiniTest.after_run do
+    WorldInstance.terminate
+    futures = ObjectSpace.each_object(Dynflow::Future).select { |f| !f.ready? }
+    unless futures.empty?
+      raise "there are unready futures:\n" +
+                futures.map { |f| "#{f}\n#{future_creations[f.object_id]}" }.join("\n")
+    end
+  end
+
+  FINALIZER = lambda do |future|
+    unless future.ready?
+      gced_unresolved_futures << future
+    end
+  end
+
+  Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
+    super(*args, &block).tap do |f|
+      future_creations[f.object_id] = caller(1).join("\n")
+      ObjectSpace.define_finalizer(f, &FINALIZER)
+    end
+  end
+
+  MiniTest.after_run do
+    unless gced_unresolved_futures.empty?
+      raise 'there were GCed unresolved futures:' +
+                gced_unresolved_futures.map { |f| "#{f}\n#{future_creations[future.object_id]}" }.
+                    join("\n")
+    end
+  end
+
+  # time out all futures by default
+  default_timeout = 2
+  wait_method     = Dynflow::Future.instance_method(:wait)
+
+  Dynflow::Future.class_eval do
+    define_method :wait do |timeout = nil|
+      wait_method.bind(self).call(timeout || default_timeout)
+    end
+  end
+
+end.call
 
 module PlanAssertions
 

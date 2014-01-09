@@ -1,8 +1,10 @@
 module Dynflow
-  class FutureAlreadySet < StandardError
-  end
-
   class Future
+    Error            = Class.new StandardError
+    FutureAlreadySet = Class.new Error
+    FutureFailed     = Class.new Error
+    TimeOut          = Class.new Error
+
     # `#future` will become resolved to `true` when ``#countdown!`` is called `count` times
     class CountDownLatch
       attr_reader :future
@@ -48,8 +50,8 @@ module Dynflow
       do_then &task if task
     end
 
-    def value
-      wait
+    def value(timeout = nil)
+      wait timeout
       @lock.synchronize { @value }
     end
 
@@ -62,7 +64,10 @@ module Dynflow
     end
 
     def fail(exception)
-      Type! exception, Exception
+      Type! exception, Exception, String
+      if exception.is_a? String
+        exception = FutureFailed.new(exception).tap { |e| e.set_backtrace caller }
+      end
       set exception, true
     end
 
@@ -103,11 +108,13 @@ module Dynflow
       self
     end
 
-    def wait
+    def wait(timeout = nil)
       @lock.synchronize do
         unless _ready?
           @waiting << Thread.current
+          clock.ping self, timeout, Thread.current, :expired if timeout
           @lock.sleep
+          raise TimeOut unless _ready?
         end
       end
       self
@@ -129,10 +136,32 @@ module Dynflow
       do_then { |v| future.set v, failed? }
     end
 
+    # @api private
+    def expired(thread)
+      @lock.synchronize do
+        thread.wakeup if @waiting.delete(thread)
+      end
+    end
+
     private
 
     def _ready?
       @resolved || @failed
+    end
+
+    @clock_barrier = Mutex.new
+
+    # @api private
+    def self.clock
+      @clock_barrier.synchronize do
+        @clock ||= Clock.new(::Logger.new($stderr)).tap do |clock|
+          at_exit { clock.terminate.wait }
+        end
+      end
+    end
+
+    def clock
+      self.class.clock
     end
   end
 end

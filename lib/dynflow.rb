@@ -7,7 +7,6 @@ require 'active_support/core_ext/hash/indifferent_access'
 # TODO validate in/output, also validate unknown keys
 # TODO performance testing, how many actions will it handle?
 # TODO profiling, find bottlenecks
-# FIND also execute planning phase in workers to be consistent, execute in remote executors to avoid serialization
 module Dynflow
 
   class Error < StandardError

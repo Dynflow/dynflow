@@ -232,7 +232,6 @@ module Dynflow
     def self.new_from_hash(hash, world)
       check_class_matching hash
       execution_plan_id = hash[:id]
-      # TODO do not load all steps with the EP, lazy load when needed
       steps             = steps_from_hash(hash[:step_ids], execution_plan_id, world)
       self.new(world,
                execution_plan_id,

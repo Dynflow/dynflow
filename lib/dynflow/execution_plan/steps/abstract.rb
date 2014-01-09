@@ -51,7 +51,6 @@ module Dynflow
         world.persistence
       end
 
-      # TODO this is called allover the place, it should be unified to be called automatically after each change
       def save
         persistence.save_step(self)
       end

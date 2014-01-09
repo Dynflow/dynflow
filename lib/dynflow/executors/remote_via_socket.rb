@@ -4,7 +4,6 @@ require 'socket'
 module Dynflow
   module Executors
     class RemoteViaSocket < Abstract
-      require 'dynflow/executors/remote_via_socket/manager'
       require 'dynflow/executors/remote_via_socket/core'
 
       include Listeners::Serialization

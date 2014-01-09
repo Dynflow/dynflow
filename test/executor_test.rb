@@ -13,7 +13,6 @@ module Dynflow
 
           let(:world) { WorldInstance.send world_method }
 
-
           let :issues_data do
             [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
              { 'author' => 'John Doe', 'text' => 'Internal server error' }]
@@ -115,7 +114,7 @@ module Dynflow
 
               it "fails when trying to execute again" do
                 TestPause.when_paused do
-                  assert_raises(Dynflow::Error, /already running/) { world.execute(execution_plan.id) }
+                  assert_raises(Dynflow::Error) { world.execute(execution_plan.id) }
                 end
               end
             end
@@ -557,7 +556,7 @@ module Dynflow
           end
 
           describe 'Pool::JobStorage' do
-            FakeStep = Struct.new(:execution_plan_id)
+            FakeStep ||= Struct.new(:execution_plan_id)
 
             let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
             it do
@@ -603,7 +602,7 @@ module Dynflow
             if which == :normal_world
               it 'executes until its done when terminating' do
                 $slow_actions_done = 0
-                world.trigger(CodeWorkflowExample::Slow, 0.2)
+                world.trigger(CodeWorkflowExample::Slow, 0.02)
                 world.terminate.wait
                 $slow_actions_done.must_equal 1
               end
@@ -618,9 +617,9 @@ module Dynflow
             end
 
             it 'does not accept new work' do
-              skip "TODO it blocks"
+              skip "TODO it blocks" # TODO
               assert world.terminate.wait
-              refute world.trigger(CodeWorkflowExample::Slow, 0.2).planned
+              refute world.trigger(CodeWorkflowExample::Slow, 0.02).planned
             end
 
             it 'it terminates when no work' do

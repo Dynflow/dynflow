@@ -3,16 +3,19 @@ module Dynflow
 
   class Clock < MicroActor
 
+    include Algebrick::Types
+
     Tick  = Algebrick.atom
     Timer = Algebrick.type do
-      fields! who:  Object,
-              when: Time,
-              what: Object
+      fields! who:   Object, # to ping back
+              when:  Time, # to deliver
+              what:  Maybe[Object], # to send
+              where: Symbol # it should be delivered, which method
     end
 
     module Timer
       def self.[](*fields)
-        super(*fields).tap { |v| Match! v.who, -> v { v.respond_to? :<< } }
+        super(*fields).tap { |v| Match! v.who, -> who { who.respond_to? v.where } }
       end
 
       include Comparable
@@ -29,10 +32,10 @@ module Dynflow
                Pill = type { fields Float }
     end
 
-    def ping(who, time, with_what = nil)
-      Type! time, Time, Float
-      time = Time.now + time if time.is_a? Float
-      self << Timer[who, time, with_what]
+    def ping(who, time, with_what = nil, where = :<<)
+      Type! time, Time, Numeric
+      time = Time.now + time if time.is_a? Numeric
+      self << Timer[who, time, with_what.nil? ? None : Some[Object][with_what], where]
     end
 
     private
@@ -68,7 +71,11 @@ module Dynflow
 
     def run_ready_timers
       while first_timer && first_timer.when <= Time.now
-        first_timer.who << first_timer.what
+        if Some === first_timer.what
+          first_timer.who.send first_timer.where, first_timer.what.value
+        else
+          first_timer.who.send first_timer.where
+        end
         @timers.delete(first_timer)
       end
     end
