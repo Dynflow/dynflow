@@ -13,7 +13,6 @@ module Dynflow
 
           let(:world) { WorldInstance.send world_method }
 
-
           let :issues_data do
             [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
              { 'author' => 'John Doe', 'text' => 'Internal server error' }]
@@ -115,7 +114,7 @@ module Dynflow
 
               it "fails when trying to execute again" do
                 TestPause.when_paused do
-                  assert_raises(Dynflow::Error, /already running/) { world.execute(execution_plan.id) }
+                  assert_raises(Dynflow::Error) { world.execute(execution_plan.id) }
                 end
               end
             end

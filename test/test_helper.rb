@@ -129,6 +129,13 @@ module WorldInstance
     return listener, world
   end
 
+  def self.terminate
+    remote_world.terminate.wait if @remote_world
+    world.terminate.wait if @world
+
+    @remote_world = @world = nil
+  end
+
   def world
     WorldInstance.world
   end
@@ -137,6 +144,42 @@ module WorldInstance
     WorldInstance.remote_world
   end
 end
+
+# ensure there are no unresolved Futures at the end or being GCed
+futures_test =-> do
+  gced_unresolved_futures = []
+  future_creations        = {}
+
+  MiniTest.after_run do
+    WorldInstance.terminate
+    futures = ObjectSpace.each_object(Dynflow::Future).select { |f| !f.ready? }
+    unless futures.empty?
+      raise 'there are unready futures:' +
+                futures.map { |f| "#{f}\n#{future_creations[f.object_id]}" }.join("\n")
+    end
+  end
+
+  FINALIZER               = lambda do |future|
+    unless future.ready?
+      gced_unresolved_futures << future
+    end
+  end
+
+  Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
+    super(*args, &block).tap do |f|
+      future_creations[f.object_id] = caller(1).join("\n")
+      ObjectSpace.define_finalizer(f, &FINALIZER)
+    end
+  end
+
+  MiniTest.after_run do
+    unless gced_unresolved_futures.empty?
+      raise 'there were GCed unresolved futures:' +
+                gced_unresolved_futures.map { |f| "#{f}\n#{future_creations[future.object_id]}" }.
+                    join("\n")
+    end
+  end
+end.call
 
 module PlanAssertions
 
