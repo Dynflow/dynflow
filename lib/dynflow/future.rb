@@ -155,7 +155,7 @@ module Dynflow
     def self.clock
       @clock_barrier.synchronize do
         @clock ||= Clock.new(::Logger.new($stderr)).tap do |clock|
-          at_exit { clock.terminate.wait }
+          at_exit { clock.ask(Clock::Terminate).wait }
         end
       end
     end

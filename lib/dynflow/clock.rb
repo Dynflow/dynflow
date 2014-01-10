@@ -24,6 +24,14 @@ module Dynflow
         Type! other, self.class
         self.when <=> other.when
       end
+
+      def apply
+        if Algebrick::Some[Object] === what
+          who.send where, what.value
+        else
+          who.send where
+        end
+      end
     end
 
     Pills = Algebrick.type do
@@ -34,8 +42,16 @@ module Dynflow
 
     def ping(who, time, with_what = nil, where = :<<)
       Type! time, Time, Numeric
-      time = Time.now + time if time.is_a? Numeric
-      self << Timer[who, time, with_what.nil? ? None : Some[Object][with_what], where]
+      time  = Time.now + time if time.is_a? Numeric
+      timer = Timer[who, time, with_what.nil? ? None : Some[Object][with_what], where]
+      if terminated?
+        Thread.new do
+          sleep [timer.when - Time.now, 0].max
+          timer.apply
+        end
+      else
+        self << timer
+      end
     end
 
     private
@@ -71,11 +87,7 @@ module Dynflow
 
     def run_ready_timers
       while first_timer && first_timer.when <= Time.now
-        if Some === first_timer.what
-          first_timer.who.send first_timer.where, first_timer.what.value
-        else
-          first_timer.who.send first_timer.where
-        end
+        first_timer.apply
         @timers.delete(first_timer)
       end
     end
