@@ -181,7 +181,7 @@ future_tests =-> do
   end
 
   # time out all futures by default
-  default_timeout = 2
+  default_timeout = 8
   wait_method     = Dynflow::Future.instance_method(:wait)
 
   Dynflow::Future.class_eval do
