@@ -72,9 +72,14 @@ module Dynflow
     end
 
     def evaluate_to(&block)
-      set block.call, false
+      resolve block.call
     rescue => error
-      set error, true
+      self.fail error
+    end
+
+    def evaluate_to!(&block)
+      evaluate_to &block
+      raise value if self.failed?
     end
 
     def do_then(&task)
@@ -154,6 +159,7 @@ module Dynflow
     # @api private
     def self.clock
       @clock_barrier.synchronize do
+        # TODO remove global state and use world.clock, needs to be terminated in right order
         @clock ||= Clock.new(::Logger.new($stderr)).tap do |clock|
           at_exit { clock.ask(Clock::Terminate).wait }
         end
