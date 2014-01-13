@@ -39,7 +39,7 @@ module Dynflow
     end
 
     def suspend_and_ping
-      suspend { |suspended_action| world.clock.ping suspended_action, Time.now + poll_interval, Poll }
+      suspend { |suspended_action| world.clock.ping suspended_action, poll_interval, Poll }
     end
 
     def poll_interval
