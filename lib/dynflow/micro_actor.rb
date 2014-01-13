@@ -49,6 +49,7 @@ module Dynflow
     def terminate!
       raise unless Thread.current == @thread
       @terminated.resolve true
+      throw Terminate
     end
 
     def on_message(message)
@@ -59,10 +60,11 @@ module Dynflow
       message, future = @mailbox.pop
       #logger.debug "#{self.class} received:\n  #{message}"
       if message == Terminate
+        # TODO do not use this future to store in @terminated use one added to Terminate message
         if terminating?
           @terminated.do_then { future.resolve true } if future
         else
-          @terminated = (future || Future.new).do_then { throw Terminate }
+          @terminated = (future || Future.new)
           termination
         end
       else
