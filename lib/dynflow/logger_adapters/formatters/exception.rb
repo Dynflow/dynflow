@@ -3,7 +3,7 @@ module Dynflow
     module Formatters
       class Exception < Abstract
         def format(message)
-          if Exception === message
+          if ::Exception === message
             "#{message.message} (#{message.class})\n#{message.backtrace.join("\n")}"
           else
             message
