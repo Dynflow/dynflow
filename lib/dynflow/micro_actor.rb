@@ -68,11 +68,21 @@ module Dynflow
           termination
         end
       else
-        result = on_message message
-        future.resolve result if future
+        on_envelope message, future
       end
     rescue => error
       logger.fatal error
+    end
+
+    def on_envelope(message, future)
+      if future
+        future.evaluate_to { on_message message }
+      else
+        on_message message
+      end
+      if future && future.failed?
+        logger.error future.value
+      end
     end
 
     def run(*args)
