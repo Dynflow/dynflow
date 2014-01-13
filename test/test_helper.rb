@@ -101,15 +101,16 @@ module WorldInstance
   end
 
   def self.logger_adapter
-    action_logger  = Logger.new($stderr).tap do |logger|
-      logger.level = Logger::FATAL
-      logger.progname = 'action'
-    end
-    dynflow_logger = Logger.new($stderr).tap do |logger|
-      logger.level = Logger::WARN
-      logger.progname = 'dynflow'
-    end
-    Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
+    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr
+    #action_logger  = Logger.new($stderr).tap do |logger|
+    #  logger.level    = Logger::FATAL
+    #  logger.progname = 'action'
+    #end
+    #dynflow_logger = Logger.new($stderr).tap do |logger|
+    #  logger.level    = Logger::WARN
+    #  logger.progname = 'dynflow'
+    #end
+    #Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
   end
 
   def self.create_world
@@ -147,8 +148,8 @@ end
 
 # ensure there are no unresolved Futures at the end or being GCed
 future_tests =-> do
-  gced_unresolved_futures = []
   future_creations        = {}
+  non_ready_futures       = {}
 
   MiniTest.after_run do
     WorldInstance.terminate
@@ -159,24 +160,33 @@ future_tests =-> do
     end
   end
 
-  FINALIZER = lambda do |future|
-    unless future.ready?
-      gced_unresolved_futures << future
+  Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
+    super(*args, &block).tap do |f|
+      future_creations[f.object_id]  = caller(3)
+      non_ready_futures[f.object_id] = true
     end
   end
 
-  Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
-    super(*args, &block).tap do |f|
-      future_creations[f.object_id] = caller(1).join("\n")
-      ObjectSpace.define_finalizer(f, &FINALIZER)
+  set_method = Dynflow::Future.instance_method :set
+  Dynflow::Future.send :define_method, :set do |*args|
+    begin
+      set_method.bind(self).call *args
+    ensure
+      non_ready_futures.delete self.object_id
     end
   end
 
   MiniTest.after_run do
-    unless gced_unresolved_futures.empty?
-      raise 'there were GCed unresolved futures:' +
-                gced_unresolved_futures.map { |f| "#{f}\n#{future_creations[future.object_id]}" }.
-                    join("\n")
+    unless non_ready_futures.empty?
+      unified = non_ready_futures.each_with_object({}) do |(id, _), h|
+        backtrace_first    = future_creations[id][0]
+        h[backtrace_first] ||= []
+        h[backtrace_first] << id
+      end
+      raise("there were #{non_ready_futures.size} non_ready_futures:\n" +
+                unified.map do |backtrace, ids|
+                  "--- #{ids.size}: #{ids}\n#{future_creations[ids.first].join("\n")}"
+                end.join("\n"))
     end
   end
 

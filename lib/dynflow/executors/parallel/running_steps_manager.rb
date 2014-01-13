@@ -21,6 +21,7 @@ module Dynflow
           self
         end
 
+        # @returns [Work, nil]
         def done(step)
           Type! step, ExecutionPlan::Steps::RunStep
           @events.shift(step.id).tap do |work|
@@ -41,6 +42,7 @@ module Dynflow
           end
         end
 
+        # @returns [Work, nil]
         def event(event)
           Type! event, Event
 

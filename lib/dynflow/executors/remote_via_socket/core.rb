@@ -74,6 +74,7 @@ module Dynflow
                     logger.warn error
                     false
                   end
+
                   unless success
                     @executions[id].reject! Dynflow::Error.new(
                                                 'No connection to RemoteViaSocket::Listener')

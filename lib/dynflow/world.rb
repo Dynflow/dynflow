@@ -75,6 +75,7 @@ module Dynflow
     end
 
     # @return [TriggerResult]
+    # blocks until action_class is planned
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
       planned        = execution_plan.state == :planned
@@ -94,6 +95,7 @@ module Dynflow
     end
 
     # @return [Future] containing execution_plan when finished
+    # raises when ExecutionPlan is not accepted for execution
     def execute(execution_plan_id, finished = Future.new)
       executor.execute execution_plan_id, finished
     end

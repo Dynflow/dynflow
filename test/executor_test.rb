@@ -286,8 +286,8 @@ module Dynflow
               end
 
               it 'will not run again' do
-                world.execute(execution_plan.id).value
-                assert_raises(Dynflow::Error, /it's stopped/) { world.execute(execution_plan.id) }
+                world.execute(execution_plan.id)
+                assert_raises(Dynflow::Error) { world.execute(execution_plan.id).value! }
               end
 
             end
