@@ -18,17 +18,16 @@ module Dynflow
 
         def on_message(message)
           match message,
-                Execution.(~any, ~any, ~any) >-> execution_plan_id, accepted, finished do
-                  if (manager = track_execution_plan(execution_plan_id, accepted, finished))
-                    start_executing(manager)
-                  end
-                end,
-                ~Event >-> event do
+                (on ~Execution do |(execution_plan_id, finished)|
+                  start_executing track_execution_plan(execution_plan_id, finished)
+                  true
+                end),
+                (on ~Event do |event|
                   event(event)
-                end,
-                PoolDone.(~any) >-> step do
+                end),
+                (on PoolDone.(~any) do |step|
                   update_manager(step)
-                end
+                end)
         end
 
         def termination
@@ -37,37 +36,32 @@ module Dynflow
         end
 
         # @return false on problem
-        def track_execution_plan(execution_plan_id, accepted, finished)
+        def track_execution_plan(execution_plan_id, finished)
           execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
 
           if terminating?
-            accepted.resolve error("cannot accept execution_plan_id:#{execution_plan_id} " +
-                                       'core is terminating')
-            return false
+            raise Dynflow::Error, "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
           end
 
           if @execution_plan_managers[execution_plan_id]
-            accepted.resolve error("cannot execute execution_plan_id:#{execution_plan_id} " +
-                                       "it's already running")
-            return false
+            raise Dynflow::Error, "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
           end
 
           if execution_plan.state == :stopped
-            accepted.resolve error("cannot execute execution_plan_id:#{execution_plan_id} " +
-                                       "it's stopped")
-            return false
+            raise Dynflow::Error, "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
           end
 
-          accepted.resolve true
           @execution_plan_managers[execution_plan_id] =
               ExecutionPlanManager.new(@world, execution_plan, finished)
-        end
 
-        def error(message)
-          Dynflow::Error.new(message) #.tap { |e| e.set_backtrace caller(1) }
+        rescue Dynflow::Error => e
+          finished.fail e
+          raise e
         end
 
         def start_executing(manager)
+          Type! manager, ExecutionPlanManager
+
           next_work = manager.start
           continue_manager manager, next_work
         end

@@ -16,6 +16,14 @@ module Dynflow
           end
         end
 
+        def level=(v)
+          @base.level = v
+        end
+
+        def level
+          @base.level
+        end
+
         def format(message)
           raise NotImplementedError
         end

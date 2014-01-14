@@ -43,22 +43,31 @@ module Dynflow
       end
 
       def execute(readable, id, uuid)
-        accepted = false
-        accept   = -> do
-          unless accepted
-            accepted = true
-            send_message_to_client readable, Accepted[id]
+        responded = false
+        respond   = -> error = nil do
+          unless responded
+            responded = true
+            send_message_to_client(readable, if error
+                                               logger.error error
+                                               Failed[id, error.message]
+                                             else
+                                               Accepted[id]
+                                             end)
           end
         end
 
         @world.execute(uuid,
-                       Future.new do |_|
-                         accept.call
-                         send_message_to_client readable, Done[id, uuid]
+                       f = Future.new do |_|
+                         if f.resolved?
+                           respond.call
+                           send_message_to_client readable, Done[id, uuid]
+                         else
+                           respond.call f.value
+                         end
                        end)
-        accept.call
+        respond.call
       rescue Dynflow::Error => e
-        send_message_to_client readable, Failed[id, e.message]
+        respond.call e
       end
 
       def add_client(client)

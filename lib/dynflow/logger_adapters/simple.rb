@@ -37,6 +37,14 @@ module Dynflow
             @logger.add level, message, @prog_name, &block
           end
         end
+
+        def level=(v)
+          @logger.level = v
+        end
+
+        def level
+          @logger.level
+        end
       end
     end
   end

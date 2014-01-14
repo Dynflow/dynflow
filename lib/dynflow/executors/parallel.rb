@@ -20,7 +20,6 @@ module Dynflow
 
         Execution = type do
           fields! execution_plan_id: String,
-                  accepted:          Future,
                   finished:          Future
         end
 
@@ -65,8 +64,7 @@ module Dynflow
       end
 
       def execute(execution_plan_id, finished = Future.new)
-        @core << Execution[execution_plan_id, accepted = Future.new, finished]
-        raise accepted.value if accepted.value.is_a? Exception
+        @core.ask(Execution[execution_plan_id, finished]).value!
         finished
       end
 
