@@ -186,8 +186,7 @@ module Dynflow
     # Switches the flow type (Sequence, Concurrence) to be used within the block.
     def switch_flow(new_flow, &block)
       @run_flow_stack << new_flow
-      block.call
-      return new_flow
+      return block.call
     ensure
       @run_flow_stack.pop
       current_run_flow.add_and_resolve(@dependency_graph, new_flow) if current_run_flow
