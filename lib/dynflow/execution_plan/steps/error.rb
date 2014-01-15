@@ -21,6 +21,9 @@ module Dynflow
           backtrace:       backtrace }
       end
 
+      def to_s
+        "#{message} (#{exception_class})\n#{backtrace.join("\n")}"
+      end
     end
   end
 end
