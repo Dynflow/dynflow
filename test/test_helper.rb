@@ -8,6 +8,7 @@ if ENV['RM_INFO']
 end
 
 require 'dynflow'
+require 'dynflow/testing'
 require 'pry'
 
 class TestExecutionLog

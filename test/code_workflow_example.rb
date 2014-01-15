@@ -136,33 +136,40 @@ module Dynflow
     end
 
     class Commit < Action
-
-      def plan(commit)
-        ci      = plan_action(Ci, 'commit' => commit)
-        review1 = plan_action(Review, 'commit' => commit, 'reviewer' => 'Morfeus')
-        review2 = plan_action(Review, 'commit' => commit, 'reviewer' => 'Neo')
-        plan_action(Merge,
-                    'commit'         => commit,
-                    'ci_output'      => ci.output,
-                    'review_outputs' => [review1.output, review2.output])
-      end
-
       input_format do
         param :sha, String
       end
 
+      def plan(commit, reviews = { 'Morfeus' => true, 'Neo' => true })
+        sequence do
+          ci, review_actions = concurrence do
+            [plan_action(Ci, :commit => commit),
+             reviews.map do |name, result|
+               plan_action(Review, commit, name, result)
+             end]
+          end
+
+          plan_action(Merge,
+                      commit:         commit,
+                      ci_result:      ci.output[:passed],
+                      review_results: review_actions.map { |ra| ra.output[:passed] })
+        end
+      end
     end
 
     class FastCommit < Action
 
       def plan(commit)
         sequence do
-          concurrence do
-            plan_action(Ci, 'commit' => commit)
-            plan_action(Review, 'commit' => commit, 'reviewer' => 'Morfeus')
+          ci, review = concurrence do
+            [plan_action(Ci, commit: commit),
+             plan_action(Review, commit, 'Morfeus', true)]
           end
 
-          plan_action(Merge, 'commit' => commit)
+          plan_action(Merge,
+                      commit:         commit,
+                      ci_result:      ci.output[:passed],
+                      review_results: [review.output[:passed]])
         end
       end
 
@@ -183,6 +190,7 @@ module Dynflow
       end
 
       def run
+        output.update passed: true
       end
     end
 
@@ -197,7 +205,12 @@ module Dynflow
         param :passed, :boolean
       end
 
+      def plan(commit, reviewer, result = true)
+        plan_self commit: commit, reviewer: reviewer, result: result
+      end
+
       def run
+        output.update passed: input[:result]
       end
     end
 
@@ -205,11 +218,12 @@ module Dynflow
 
       input_format do
         param :commit, Commit.input_format
-        param :ci_output, Ci.output_format
-        param :review_outputs, array_of(Review.output_format)
+        param :ci_result, Ci.output_format
+        param :review_results, array_of(Review.output_format)
       end
 
       def run
+        output.update passed: (input.fetch(:ci_result) && input.fetch(:review_results).all?)
       end
     end
 
@@ -307,6 +321,7 @@ module Dynflow
       end
 
       def finalize
+        $dummy_heavy_progress = 'dummy_heavy_progress'
       end
 
       def run_progress_weight
