@@ -22,10 +22,6 @@ module Dynflow
       end
     end
 
-    def evaluate(*args)
-      pass(*args)
-    end
-
     def pass(*args)
       if @bottom
         if @block

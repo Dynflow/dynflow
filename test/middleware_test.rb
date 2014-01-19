@@ -24,7 +24,7 @@ module Dynflow
       def run
         3.times do |attempt|
           begin
-            middleware.pass
+            pass
             break
           rescue ActionException => e
             raise e if attempt == 2
@@ -117,7 +117,7 @@ module Dynflow
         class AlmostActionNestedCall < AlmostAction
 
           def plan(arg)
-            self.class.create_stack(:plan_self, self).evaluate(arg)
+            self.class.create_stack(:plan_self, self).pass(arg)
             @output = []
           end
 
@@ -128,7 +128,7 @@ module Dynflow
 
         class TestMiddleware < Dynflow::Middleware
           def plan(arg)
-            stack.pass(arg << "IN: #{self.class.name}").tap do |ret|
+            pass(arg << "IN: #{self.class.name}").tap do |ret|
               action.output << "OUT: #{self.class.name}"
             end
           end
@@ -139,13 +139,13 @@ module Dynflow
 
         class Test2Middleware < TestMiddleware
           def plan_phase
-            stack.pass.upcase
+            pass.upcase
           end
         end
 
         class Test3Middleware < Dynflow::Middleware
           def plan_self(arg)
-            stack.pass(arg).tap do
+            pass(arg).tap do
               action.input.map!(&:upcase)
             end
           end
@@ -154,7 +154,7 @@ module Dynflow
         it 'calls the method recursively through the stack, skipping the middlewares without the method defined ' do
           action = AlmostAction.new
           stack = AlmostAction.create_stack(:plan, action)
-          stack.evaluate([])
+          stack.pass([])
           action.input.must_equal ["IN: Dynflow::MiddlewareTest::Test1Middleware", "IN: Dynflow::MiddlewareTest::Test2Middleware"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end
@@ -162,7 +162,7 @@ module Dynflow
         it 'allows nested calls on the same stack' do
           action = AlmostActionNestedCall.new
           stack = AlmostAction.create_stack(:plan, action)
-          stack.evaluate([])
+          stack.pass([])
           action.input.must_equal ["IN: DYNFLOW::MIDDLEWARETEST::TEST1MIDDLEWARE", "IN: DYNFLOW::MIDDLEWARETEST::TEST2MIDDLEWARE"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end
@@ -171,7 +171,7 @@ module Dynflow
           stack = AlmostAction.create_stack(:plan_phase) do
             "hello world"
           end
-          output = stack.evaluate
+          output = stack.pass
           output.must_equal "HELLO WORLD"
         end
 

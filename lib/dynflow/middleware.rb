@@ -8,9 +8,9 @@ module Dynflow
       @stack = stack
     end
 
-    # call `stack.pass` to get deeper with the call
-    def stack
-      @stack.rest
+    # call `pass` to get deeper with the call
+    def pass(*args)
+      @stack.rest.pass(*args)
     end
 
     # to get the action object
