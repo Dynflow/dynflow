@@ -1,72 +1,45 @@
 module Dynflow
   class Middleware::Stack
 
-    def initialize(middleware_classes)
-      unless middleware_classes.empty?
+    attr_reader :action, :rest
+
+    def initialize(middleware_classes, method, action = nil, &block)
+      @action = action
+      @method = method
+      if middleware_classes.empty?
+        @bottom = true
+        @block = block
+        if @block && @action || @block.nil? && @action.nil?
+          raise ArgumentError, 'Either action or block has to be passed, but not both'
+        end
+        if @block.nil? && !@action.respond_to?(method)
+          raise ArgumentError, "The action #{action} doesn't repond to method #{method}"
+        end
+      else
         top_class, *rest = middleware_classes
-        @top  = top_class.new
-        @rest = Middleware::Stack.new(rest)
+        @top  = top_class.new(self)
+        @rest = Middleware::Stack.new(rest, method, action, &block)
       end
     end
 
-    def evaluate(method, action, *args, &block)
-      if action
-        raise "Action doesn't respont to #{method}" unless action.respond_to?(method)
-      end
-      target = action || block
-      raise ArgumentError, "neither action nor block specified" unless target
-      original_thread_data = thread_data
-      begin
-        setup_thread_data(method, target)
-        pass(*args)
-      ensure
-        self.thread_data = original_thread_data
-      end
+    def evaluate(*args)
+      pass(*args)
     end
 
     def pass(*args)
-      raise "Middleware evaluation not setup" unless thread_data[:stack]
-      original_stack = thread_data[:stack]
-      begin
-        thread_data[:stack] = @rest
-        if top.is_a? Proc
-          top.call(*args)
-        elsif top.respond_to?(thread_data[:method])
-          top.send(thread_data[:method], *args)
+      if @bottom
+        if @block
+          @block.call(*args)
+        else
+          @action.send(@method, *args)
+        end
+      else
+        if @top.respond_to?(@method)
+          @top.send(@method, *args)
         else
           @rest.pass(*args)
         end
-      ensure
-        thread_data[:stack] = original_stack
       end
-    end
-
-    def top
-      @top || thread_data[:target]
-    end
-
-    # There is no other way to share the data between middlewares then
-    # through the thread when we don't want to recreate the stack at every call
-    def setup_thread_data(method, target)
-      self.thread_data = { method: method,
-                           target: target,
-                           stack: self }
-    end
-
-    def thread_data
-      self.class.thread_data
-    end
-
-    def self.thread_data
-      Thread.current[:dynflow_middleware]
-    end
-
-    def thread_data=(value)
-      self.class.thread_data = value
-    end
-
-    def self.thread_data=(value)
-      Thread.current[:dynflow_middleware] = value
     end
   end
 end

@@ -4,19 +4,18 @@ module Dynflow
     require 'dynflow/middleware/resolver'
     require 'dynflow/middleware/stack'
 
+    def initialize(stack)
+      @stack = stack
+    end
+
     # call `stack.pass` to get deeper with the call
     def stack
-      Stack.thread_data[:stack]
+      @stack.rest
     end
 
     # to get the action object
     def action
-      target = Stack.thread_data[:target]
-      if target.is_a? Proc
-        raise "the action is not available"
-      else
-        target
-      end
+      @stack.action or raise "the action is not available"
     end
 
   end

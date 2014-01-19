@@ -98,11 +98,14 @@ module Dynflow
       describe 'stack' do
 
         class AlmostAction
-          attr_reader :input, :output, :stack
+          attr_reader :input, :output
+
+          def self.create_stack(method, action = nil, &block)
+            classes = [Test1Middleware, Test2Middleware, Test3Middleware]
+            Middleware::Stack.new(classes, method, action, &block)
+          end
 
           def initialize
-            classes = [Test1Middleware, Test2Middleware, Test3Middleware]
-            @stack = Middleware::Stack.new(classes)
           end
 
           def plan(arg)
@@ -114,7 +117,7 @@ module Dynflow
         class AlmostActionNestedCall < AlmostAction
 
           def plan(arg)
-            stack.evaluate(:plan_self, self, arg)
+            self.class.create_stack(:plan_self, self).evaluate(arg)
             @output = []
           end
 
@@ -150,23 +153,25 @@ module Dynflow
 
         it 'calls the method recursively through the stack, skipping the middlewares without the method defined ' do
           action = AlmostAction.new
-          action.stack.evaluate(:plan, action, [])
+          stack = AlmostAction.create_stack(:plan, action)
+          stack.evaluate([])
           action.input.must_equal ["IN: Dynflow::MiddlewareTest::Test1Middleware", "IN: Dynflow::MiddlewareTest::Test2Middleware"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end
 
         it 'allows nested calls on the same stack' do
           action = AlmostActionNestedCall.new
-          action.stack.evaluate(:plan, action, [])
+          stack = AlmostAction.create_stack(:plan, action)
+          stack.evaluate([])
           action.input.must_equal ["IN: DYNFLOW::MIDDLEWARETEST::TEST1MIDDLEWARE", "IN: DYNFLOW::MIDDLEWARETEST::TEST2MIDDLEWARE"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end
 
         it 'allows calling the middleware with passing a block instead of action' do
-          action = AlmostActionNestedCall.new
-          output = action.stack.evaluate(:plan_phase, nil) do
+          stack = AlmostAction.create_stack(:plan_phase) do
             "hello world"
           end
+          output = stack.evaluate
           output.must_equal "HELLO WORLD"
         end
 
