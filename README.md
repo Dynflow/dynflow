@@ -1,4 +1,4 @@
-Dynflow
+![Dynflow](doc/images/logo.png)
 =======
 
 Dynflow [DYN(amic work)FLOW] is a workflow engine
