@@ -1,5 +1,14 @@
 module Dynflow
   module Testing
+
+    # when extended into Class or an_object it makes all instances of the class or the object
+    # mimic the supplied types. It does so by hooking into kind_of? method.
+    # @example
+    #   m = mock('product')
+    #   m.is_a? ::Product # => false
+    #   m.extend Mimic
+    #   m.mimic! ::Product
+    #   m.is_a? ::Product # => true
     module Mimic
       class ::Module
         def ===(v)
