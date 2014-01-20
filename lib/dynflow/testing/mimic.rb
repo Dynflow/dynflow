@@ -10,7 +10,7 @@ module Dynflow
       def mimic!(*types)
         define =-> _ do
           define_method :kind_of? do |type|
-            types.include?(type) || super(type)
+            types.any? { |t| t <= type } || super(type)
           end
 
           alias_method :is_a?, :kind_of?
@@ -21,6 +21,8 @@ module Dynflow
         else
           self.singleton_class.class_eval &define
         end
+
+        self
       end
     end
   end

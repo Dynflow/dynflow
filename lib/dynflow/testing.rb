@@ -2,7 +2,7 @@ module Dynflow
   module Testing
 
     def self.logger_adapter
-      LoggerAdapters::Simple.new $stdout, 0
+      @logger_adapter ||= LoggerAdapters::Simple.new $stdout, 0
     end
 
     def self.get_id

@@ -12,7 +12,7 @@ module Dynflow
 
       it '#plan_action' do
         input  = { 'input' => 'input' }
-        action = plan_action CWE::DummyHeavyProgress, input
+        action = create_and_plan_action CWE::DummyHeavyProgress, input
 
         action.must_be_kind_of CWE::DummyHeavyProgress
         action.must_be_kind_of Action::PlanPhase
@@ -26,7 +26,7 @@ module Dynflow
 
       it '#run_action without suspend' do
         input  = { 'input' => 'input' }
-        plan   = plan_action CWE::DummyHeavyProgress, input
+        plan   = create_and_plan_action CWE::DummyHeavyProgress, input
         action = run_action plan
 
         action.must_be_kind_of CWE::DummyHeavyProgress
@@ -40,7 +40,7 @@ module Dynflow
 
       it '#run_action with suspend' do
         input  = { 'input' => 'input' }
-        plan   = plan_action CWE::DummySuspended, input
+        plan   = create_and_plan_action CWE::DummySuspended, input
         action = run_action plan
 
         action.output.must_equal 'progress' => 0, 'done' => false
@@ -62,7 +62,7 @@ module Dynflow
 
       it '#finalizes' do
         input                 = { 'input' => 'input' }
-        plan                  = plan_action CWE::DummyHeavyProgress, input
+        plan                  = create_and_plan_action CWE::DummyHeavyProgress, input
         run                   = run_action plan
         $dummy_heavy_progress = false
         action                = finalize_action run
@@ -84,7 +84,7 @@ module Dynflow
 
       describe CWE::Commit do
         it 'plans' do
-          action = plan_action CWE::Commit, sha = 'commit-sha'
+          action = create_and_plan_action CWE::Commit, sha = 'commit-sha'
 
           action.input.must_equal({})
           refute_action_run_planned action
@@ -101,7 +101,7 @@ module Dynflow
       describe CWE::Review do
         let(:plan_input) { ['sha', 'name', true] }
         let(:input) { { commit: 'sha', reviewer: 'name', result: true } }
-        let(:planned_action) { plan_action CWE::Review, *plan_input }
+        let(:planned_action) { create_and_plan_action CWE::Review, *plan_input }
         let(:runned_action) { run_action planned_action }
 
         it 'plans' do
@@ -120,7 +120,7 @@ module Dynflow
       describe CWE::Merge do
         let(:plan_input) { { commit: 'sha', ci_result: true, review_results: [true, true] } }
         let(:input) { plan_input }
-        let(:planned_action) { plan_action CWE::Merge, plan_input }
+        let(:planned_action) { create_and_plan_action CWE::Merge, plan_input }
         let(:runned_action) { run_action planned_action }
 
         it '#plans' do
