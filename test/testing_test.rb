@@ -19,9 +19,9 @@ module Dynflow
         action.input.must_equal input
         action.execution_plan.must_be_kind_of Testing::DummyExecutionPlan
         action.state.must_equal :success
-        assert_action_run_planned action
-        assert_action_finalize_planned action
-        assert_action_plan action, CWE::DummySuspended
+        assert_run_phase action
+        assert_finalize_phase action
+        assert_action_planed action, CWE::DummySuspended
       end
 
       it '#run_action without suspend' do
@@ -87,14 +87,14 @@ module Dynflow
           action = create_and_plan_action CWE::Commit, sha = 'commit-sha'
 
           action.input.must_equal({})
-          refute_action_run_planned action
-          refute_action_finalize_planned action
+          refute_run_phase action
+          refute_finalize_phase action
 
-          assert_action_plan action, CWE::Ci
-          assert_action_plan_with action, CWE::Review do |_, name, _|
+          assert_action_planed action, CWE::Ci
+          assert_action_planed_with action, CWE::Review do |_, name, _|
             name == 'Morfeus'
           end
-          assert_action_plan_with action, CWE::Review, sha, 'Neo', true
+          assert_action_planed_with action, CWE::Review, sha, 'Neo', true
         end
       end
 
@@ -106,8 +106,8 @@ module Dynflow
 
         it 'plans' do
           planned_action.input.must_equal input.stringify_keys
-          assert_action_run_planned planned_action
-          refute_action_finalize_planned planned_action
+          assert_run_phase planned_action
+          refute_finalize_phase planned_action
 
           planned_action.execution_plan.planned_plan_steps.must_be_empty
         end
@@ -124,8 +124,8 @@ module Dynflow
         let(:runned_action) { run_action planned_action }
 
         it '#plans' do
-          assert_action_run_planned planned_action
-          refute_action_finalize_planned planned_action
+          assert_run_phase planned_action
+          refute_finalize_phase planned_action
 
           planned_action.execution_plan.planned_plan_steps.must_be_empty
         end
