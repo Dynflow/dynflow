@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_dependency "algebrick", '~> 0.4.0'
   s.add_dependency "uuidtools"
 
+  s.add_development_dependency "rack-test"
   s.add_development_dependency "minitest"
   s.add_development_dependency "minitest-reporters"
   s.add_development_dependency "activerecord"
