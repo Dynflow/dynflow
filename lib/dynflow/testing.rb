@@ -1,8 +1,14 @@
 module Dynflow
   module Testing
+    extend Algebrick::TypeCheck
 
     def self.logger_adapter
       @logger_adapter ||= LoggerAdapters::Simple.new $stdout, 0
+    end
+
+    def self.logger_adapter=(adapter)
+      Type! adapter, LoggerAdapters::Abstract
+      @logger_adapter = adapter
     end
 
     def self.get_id
