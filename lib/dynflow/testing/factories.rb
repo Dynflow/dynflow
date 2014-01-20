@@ -29,7 +29,7 @@ module Dynflow
       end
 
       # @return [Action::RunPhase]
-      def run_action(plan_action, event = nil)
+      def run_action(plan_action, event = nil, &stubbing)
         Type! plan_action, Dynflow::Action::PlanPhase, Dynflow::Action::RunPhase
         step       = DummyStep.new
         run_action = if Dynflow::Action::PlanPhase === plan_action
@@ -48,13 +48,14 @@ module Dynflow
 
         run_action.world.action ||= run_action
         run_action.world.clock.clear
+        stubbing.call run_action if stubbing
         run_action.execute event
         raise run_action.error if run_action.error
         run_action
       end
 
       # @return [Action::FinalizePhase]
-      def finalize_action(run_action)
+      def finalize_action(run_action, &stubbing)
         Type! run_action, Dynflow::Action::RunPhase
         step            = DummyStep.new
         finalize_action = run_action.action_class.finalize_phase.new(
@@ -67,11 +68,13 @@ module Dynflow
               input:             run_action.input },
             run_action.world)
 
+        stubbing.call finalize_action if stubbing
         finalize_action.execute
         finalize_action
       end
 
       def clock_progress action
+        Type! action, Dynflow::Action::RunPhase
         action.world.clock.progress
       end
     end
