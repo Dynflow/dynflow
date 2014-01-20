@@ -1,8 +1,8 @@
 module Dynflow
   module Testing
    module Assertions
-      def assert_action_plan_planned_with(action, planned_action_class, *plan_input, &block)
-        found_classes = assert_action_plan_planned(action, planned_action_class)
+      def assert_action_plan_with(action, planned_action_class, *plan_input, &block)
+        found_classes = assert_action_plan(action, planned_action_class)
         found         = found_classes.select do |a|
           if plan_input.empty?
             block.call a.plan_input
@@ -16,7 +16,7 @@ module Dynflow
         found
       end
 
-      def assert_action_plan_planned(action, planned_action_class)
+      def assert_action_plan(action, planned_action_class)
         found = action.execution_plan.planned_plan_steps.
             select { |a| a.is_a?(planned_action_class) }
 

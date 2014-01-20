@@ -21,7 +21,7 @@ module Dynflow
         action.state.must_equal :success
         assert_action_run_planned action
         assert_action_finalize_planned action
-        assert_action_plan_planned action, CWE::DummySuspended
+        assert_action_plan action, CWE::DummySuspended
       end
 
       it '#run_action without suspend' do
@@ -90,11 +90,11 @@ module Dynflow
           refute_action_run_planned action
           refute_action_finalize_planned action
 
-          assert_action_plan_planned action, CWE::Ci
-          assert_action_plan_planned_with action, CWE::Review do |_, name, _|
+          assert_action_plan action, CWE::Ci
+          assert_action_plan_with action, CWE::Review do |_, name, _|
             name == 'Morfeus'
           end
-          assert_action_plan_planned_with action, CWE::Review, sha, 'Neo', true
+          assert_action_plan_with action, CWE::Review, sha, 'Neo', true
         end
       end
 
