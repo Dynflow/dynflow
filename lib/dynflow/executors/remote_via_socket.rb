@@ -14,9 +14,12 @@ module Dynflow
         @core = Core.new world, socket_path
       end
 
-      def execute(execution_plan_id, future = Future.new)
-        @core.ask(Core::Execute[execution_plan_id, future]).value.value!
-        return future
+      def execute(execution_plan_id, finished = Future.new)
+        @core.ask(Core::Execute[execution_plan_id, finished]).value!.value!
+        finished
+      rescue => e
+        finished.fail e unless finished.ready?
+        raise e
       end
 
       def event(suspended_action, event, future = Future)

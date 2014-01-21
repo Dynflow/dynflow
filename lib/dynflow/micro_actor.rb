@@ -21,6 +21,7 @@ module Dynflow
     end
 
     def ask(message, future = Future.new)
+      future.fail Dynflow::Error.new('actor terminated') if terminated?
       @mailbox << [message, future]
       future
     end

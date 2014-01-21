@@ -617,9 +617,8 @@ module Dynflow
             end
 
             it 'does not accept new work' do
-              skip "TODO it blocks" # TODO
               assert world.terminate.wait
-              refute world.trigger(CodeWorkflowExample::Slow, 0.02).planned
+              -> { world.trigger(CodeWorkflowExample::Slow, 0.02) }.must_raise Dynflow::Error
             end
 
             it 'it terminates when no work' do
