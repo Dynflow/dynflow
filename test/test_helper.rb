@@ -102,16 +102,15 @@ module WorldInstance
   end
 
   def self.logger_adapter
-    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr
-    #action_logger  = Logger.new($stderr).tap do |logger|
-    #  logger.level    = Logger::FATAL
-    #  logger.progname = 'action'
-    #end
-    #dynflow_logger = Logger.new($stderr).tap do |logger|
-    #  logger.level    = Logger::WARN
-    #  logger.progname = 'dynflow'
-    #end
-    #Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
+    action_logger  = Logger.new($stderr).tap do |logger|
+      logger.level = Logger::FATAL
+      logger.progname = 'action'
+    end
+    dynflow_logger = Logger.new($stderr).tap do |logger|
+      logger.level = Logger::WARN
+      logger.progname = 'dynflow'
+    end
+    Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
   end
 
   def self.create_world
