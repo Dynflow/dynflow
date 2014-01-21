@@ -12,7 +12,7 @@ module Dynflow
 
         def delayed_initialize(world, pool_size)
           @world                   = Type! world, World
-          @pool                    = Pool.new(self, pool_size)
+          @pool                    = Pool.new(self, pool_size, world.transaction_adapter)
           @execution_plan_managers = {}
         end
 
