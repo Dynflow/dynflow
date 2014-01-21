@@ -8,6 +8,7 @@ if ENV['RM_INFO']
 end
 
 require 'dynflow'
+require 'dynflow/testing'
 require 'pry'
 
 class TestExecutionLog
@@ -101,16 +102,15 @@ module WorldInstance
   end
 
   def self.logger_adapter
-    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr
-    #action_logger  = Logger.new($stderr).tap do |logger|
-    #  logger.level    = Logger::FATAL
-    #  logger.progname = 'action'
-    #end
-    #dynflow_logger = Logger.new($stderr).tap do |logger|
-    #  logger.level    = Logger::WARN
-    #  logger.progname = 'dynflow'
-    #end
-    #Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
+    action_logger  = Logger.new($stderr).tap do |logger|
+      logger.level = Logger::FATAL
+      logger.progname = 'action'
+    end
+    dynflow_logger = Logger.new($stderr).tap do |logger|
+      logger.level = Logger::WARN
+      logger.progname = 'dynflow'
+    end
+    Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
   end
 
   def self.create_world
@@ -220,7 +220,7 @@ module PlanAssertions
     plan_steps = execution_plan.steps.values.find_all do |step|
       step.is_a? Dynflow::ExecutionPlan::Steps::PlanStep
     end
-    plan_steps.all? { |plan_step| plan_step.state.must_equal :success }
+    plan_steps.all? { |plan_step| plan_step.state.must_equal :success, plan_step.error }
   end
 
   def assert_run_flow(expected, execution_plan)

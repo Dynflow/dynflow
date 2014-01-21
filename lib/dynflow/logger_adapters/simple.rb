@@ -15,6 +15,14 @@ module Dynflow
         @dynflow_logger   = apply_formatters ProgNameWrapper.new(@logger, 'dynflow'), formatters
       end
 
+      def level
+        @logger.level
+      end
+
+      def level=(v)
+        @logger.level = v
+      end
+
       private
 
       def formatter(severity, datetime, prog_name, msg)

@@ -16,9 +16,9 @@ module Dynflow
       raise ArgumentError, ':logger_adapter option can be specified only in options_hash' if user_options.key? :logger_adapter
       options = self.default_options.merge(user_options)
 
-      initialize_executor(options)
-      initialize_persistence(options)
       initialize_transaction_adapter(options)
+      initialize_persistence(options)
+      initialize_executor(options)
 
       @action_classes = options.delete(:action_classes)
       calculate_subscription_index
@@ -164,6 +164,7 @@ module Dynflow
 
     def initialize_transaction_adapter(options)
       @transaction_adapter = Type! options.delete(:transaction_adapter), TransactionAdapters::Abstract
+      @transaction_adapter.check self
     end
 
     private

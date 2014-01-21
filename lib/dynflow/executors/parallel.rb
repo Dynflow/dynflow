@@ -66,6 +66,9 @@ module Dynflow
       def execute(execution_plan_id, finished = Future.new)
         @core.ask(Execution[execution_plan_id, finished]).value!
         finished
+      rescue => e
+        finished.fail e unless finished.ready?
+        raise e
       end
 
       def event(suspended_action, event, future = Future)

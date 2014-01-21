@@ -1,0 +1,18 @@
+module Dynflow
+  module Testing
+    class DummyPlannedAction
+      attr_accessor :output, :plan_input
+      include Mimic
+
+      def initialize(klass)
+        mimic! klass
+        @output = ExecutionPlan::OutputReference.new(Testing.get_id, Testing.get_id)
+      end
+
+      def execute(execution_plan, event, *args)
+        @plan_input = args
+        self
+      end
+    end
+  end
+end

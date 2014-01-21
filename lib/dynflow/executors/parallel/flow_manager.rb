@@ -20,6 +20,7 @@ module Dynflow
         # @return [Set] of steps to continue with
         def what_is_next(flow_step)
           execution_plan.steps[flow_step.id] = flow_step
+          # TODO can be probably disabled to improve performance, execution time will not be updated, maybe more - check
           execution_plan.save
           return [] if flow_step.state == :suspended
 

@@ -177,9 +177,9 @@ module Dynflow
               Dynflow::Flows::Sequence
                 Dynflow::Flows::Concurrence
                   3: Ci(pending) {"commit"=>{"sha"=>"abc123"}}
-                  5: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"}
-                  7: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo"}
-                9: Merge(pending) {"commit"=>{"sha"=>"abc123"}, "ci_output"=>Step(3).output, "review_outputs"=>[Step(5).output, Step(7).output]}
+                  5: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus", "result"=>true}
+                  7: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Neo", "result"=>true}
+                9: Merge(pending) {"commit"=>{"sha"=>"abc123"}, "ci_result"=>Step(3).output[:passed], "review_results"=>[Step(5).output[:passed], Step(7).output[:passed]]}
             RUN_FLOW
           end
         end
@@ -194,8 +194,8 @@ module Dynflow
               Dynflow::Flows::Sequence
                 Dynflow::Flows::Concurrence
                   3: Ci(pending) {"commit"=>{"sha"=>"abc123"}}
-                  5: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus"}
-                7: Merge(pending) {"commit"=>{"sha"=>"abc123"}}
+                  5: Review(pending) {"commit"=>{"sha"=>"abc123"}, "reviewer"=>"Morfeus", "result"=>true}
+                7: Merge(pending) {"commit"=>{"sha"=>"abc123"}, "ci_result"=>Step(3).output[:passed], "review_results"=>[Step(5).output[:passed]]}
             RUN_FLOW
           end
         end

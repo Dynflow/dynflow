@@ -16,6 +16,14 @@ module Dynflow
       end
     end
 
+    def external_task
+      raise NotImplementedError
+    end
+
+    def done?
+      raise NotImplementedError
+    end
+
     private
 
     def invoke_external_task
@@ -26,15 +34,7 @@ module Dynflow
       raise NotImplementedError
     end
 
-    def external_task
-      raise NotImplementedError
-    end
-
     def poll_external_task
-      raise NotImplementedError
-    end
-
-    def done?
       raise NotImplementedError
     end
 

@@ -21,6 +21,13 @@ module Dynflow
           backtrace:       backtrace }
       end
 
+      def to_s
+        "#{message} (#{exception_class})\n#{backtrace.join("\n")}"
+      end
+
+      def exception
+        exception_class.constantize.exception(message).tap { |e| e.set_backtrace backtrace }
+      end
     end
   end
 end

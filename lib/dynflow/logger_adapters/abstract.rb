@@ -12,6 +12,14 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def level
+        raise NotImplementedError
+      end
+
+      def level=(v)
+        raise NotImplementedError
+      end
+
       private
 
       def apply_formatters(base, formatters)

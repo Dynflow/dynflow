@@ -61,16 +61,16 @@ module Dynflow
           end
         end
 
-        def initialize(core, pool_size)
-          super(core.logger, core, pool_size)
+        def initialize(core, pool_size, transaction_adapter)
+          super(core.logger, core, pool_size, transaction_adapter)
         end
 
         private
 
-        def delayed_initialize(core, pool_size)
+        def delayed_initialize(core, pool_size, transaction_adapter)
           @core         = core
           @pool_size    = pool_size
-          @free_workers = Array.new(pool_size) { Worker.new(self) }
+          @free_workers = Array.new(pool_size) { Worker.new(self, transaction_adapter) }
           @jobs         = JobStorage.new
         end
 
