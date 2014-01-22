@@ -1,6 +1,0 @@
-  /home/inecas/Projects/dynflow/dynflow/lib/dynflow/middleware:
-  total used in directory 16 available 108036364
-  drwxrwxr-x.  2 inecas inecas 4096 Jan  4 22:50 .
-  drwxrwxr-x. 11 inecas inecas 4096 Jan  4 22:44 ..
-  -rw-rw-r--.  1 inecas inecas  506 Jan  4 22:43 action.rb
-  -rw-rw-r--. 1 inecas inecas 186 Jan  4 22:50 resolver.rb

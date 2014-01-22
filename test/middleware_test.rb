@@ -64,8 +64,90 @@ module Dynflow
 
     DevopsAction.middleware.use CloseConnectionsMiddleware
 
+    class LogMiddleware < Dynflow::Middleware
+
+      def self.log
+        @log
+      end
+
+      def self.reset_log
+        @log = []
+      end
+
+      def log(message)
+        self.class.log << message
+      end
+
+      def plan(args)
+        log 'before plan'
+        pass(args)
+        log 'after plan'
+      end
+
+      def run
+        log 'before run'
+        pass
+        log 'after run'
+      end
+
+      def finalize
+        log 'before finalize'
+        pass
+        log 'after finalize'
+      end
+
+      def plan_phase
+        log 'before plan_phase'
+        pass
+        log 'after plan_phase'
+      end
+
+      def finalize_phase
+        log 'before finalize_phase'
+        pass
+        log 'after finalize_phase'
+      end
+
+    end
+
+    class TestingAction < Dynflow::Action
+
+      middleware.use LogMiddleware
+
+      def log(message)
+        LogMiddleware.log << message
+      end
+
+      def plan(input)
+        log 'plan'
+        plan_self(input)
+      end
+
+      def run
+        log 'run'
+      end
+
+      def finalize
+        log 'finalize'
+      end
+    end
+
     describe 'Middleware' do
       let(:world) { WorldInstance.world }
+
+      describe 'invocation' do
+
+        before do
+          LogMiddleware.reset_log
+        end
+
+        it 'calls the middleware methods when executing the plan' do
+          run = world.trigger(TestingAction, {})
+          run.finished.wait
+          LogMiddleware.log.must_equal []
+        end
+
+      end
 
       describe 'rules resolution' do
         it 'sorts the middleware based on the specified rules' do
