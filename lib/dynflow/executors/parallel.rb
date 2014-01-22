@@ -71,8 +71,8 @@ module Dynflow
         raise e
       end
 
-      def event(suspended_action, event, future = Future)
-        @core << Event[suspended_action.execution_plan_id, suspended_action.step_id, event, future]
+      def event(execution_plan_id, step_id, event, future = Future.new)
+        @core << Event[execution_plan_id, step_id, event, future]
       end
 
       def terminate(future = Future.new)

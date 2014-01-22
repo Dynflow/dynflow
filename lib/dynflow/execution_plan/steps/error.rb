@@ -22,7 +22,7 @@ module Dynflow
       end
 
       def to_s
-        "#{message} (#{exception_class})\n#{backtrace.join("\n")}"
+        "#{message} (#{exception_class})\n#{(backtrace || []).join("\n")}"
       end
 
       def exception

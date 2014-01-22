@@ -158,8 +158,51 @@ module Dynflow
               world.persistence.load_execution_plan(execution_plan.id)
             end
 
-            describe "suspended action" do
+            describe 'cancellable action' do
 
+              describe 'successful' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::CancelableSuspended, {})
+                end
+
+                it "doesn't cause problems" do
+                  result.result.must_equal :success
+                  result.state.must_equal :stopped
+                end
+              end
+
+              describe 'canceled' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel' })
+                end
+
+                it 'cancels' do
+                  result.result.must_equal :success
+                  result.state.must_equal :stopped
+                  action = world.persistence.load_action result.steps[2]
+                  action.output[:progress].must_equal 30
+                  action.output[:cancelled].must_equal true
+                end
+              end
+
+              describe 'canceled failed' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel fail' })
+                end
+
+                it 'fails' do
+                  result.result.must_equal :error
+                  result.state.must_equal :paused
+                  step = result.steps[2]
+                  step.error.message.must_equal 'action cancelled'
+                  action = world.persistence.load_action step
+                  action.output[:progress].must_equal 30
+                end
+              end
+            end
+
+
+            describe "suspended action" do
               let :execution_plan do
                 world.plan(CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
               end
@@ -622,7 +665,7 @@ module Dynflow
             end
 
             it 'it terminates when no work' do
-              skip "TODO blocks occasionally" if which == :remote_world
+              skip 'blocks occasionally' if which == :remote_world # FIXME
               world.trigger(CodeWorkflowExample::Slow, 0.02).finished.wait
               assert world.terminate.wait
             end

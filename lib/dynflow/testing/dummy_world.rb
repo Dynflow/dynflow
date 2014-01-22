@@ -24,6 +24,10 @@ module Dynflow
       def subscribed_actions(klass)
         []
       end
+
+      def event(execution_plan_id, step_id, event, future = Future.new)
+        executor.event execution_plan_id, step_id, event, future
+      end
     end
   end
 end

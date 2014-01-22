@@ -87,6 +87,10 @@ module Dynflow
       return TriggerResult.new(execution_plan.id, planned, finished)
     end
 
+    def event(execution_plan_id, step_id, event, future = Future.new)
+      executor.event execution_plan_id, step_id, event, future
+    end
+
     def plan(action_class, *args)
       ExecutionPlan.new(self).tap do |execution_plan|
         execution_plan.prepare(action_class)

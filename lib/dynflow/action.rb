@@ -23,6 +23,7 @@ module Dynflow
 
     require 'dynflow/action/presenter'
     require 'dynflow/action/polling'
+    require 'dynflow/action/cancellable_polling'
 
     # Override this to extend the phase classes
     def self.phase_modules
