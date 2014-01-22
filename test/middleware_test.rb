@@ -144,15 +144,29 @@ module Dynflow
         it 'calls the middleware methods when executing the plan' do
           run = world.trigger(TestingAction, {})
           run.finished.wait
-          LogMiddleware.log.must_equal []
+          LogMiddleware.log.must_equal ["before plan_phase",
+                                        "before plan",
+                                        "plan",
+                                        "after plan",
+                                        "after plan_phase",
+                                        "before run",
+                                        "run",
+                                        "after run",
+                                        "before finalize_phase",
+                                        "before finalize",
+                                        "finalize",
+                                        "after finalize",
+                                        "after finalize_phase"]
         end
 
       end
 
       describe 'rules resolution' do
         it 'sorts the middleware based on the specified rules' do
-          rules = DevopsAction.middleware.rules.merge(BuildImage.middleware.rules)
-          resolver = Dynflow::Middleware::Resolver.new(rules)
+          register = Dynflow::Middleware::Register.new
+          register.merge!(DevopsAction.middleware)
+          register.merge!(BuildImage.middleware)
+          resolver = Dynflow::Middleware::Resolver.new(register)
           resolver.result.must_equal [NoopMiddleware,
                                       AsUserMiddleware,
                                       RetryMiddleware,
@@ -160,15 +174,19 @@ module Dynflow
         end
 
         it 'replaces the middleware based on the specified rules' do
-          rules = DevopsAction.middleware.rules.merge(ProvisionHost.middleware.rules)
-          resolver = Dynflow::Middleware::Resolver.new(rules)
+          register = Dynflow::Middleware::Register.new
+          register.merge!(DevopsAction.middleware)
+          register.merge!(ProvisionHost.middleware)
+          resolver = Dynflow::Middleware::Resolver.new(register)
           resolver.result.must_equal [NoopMiddleware,
                                       CloseConnectionsMiddleware]
         end
 
         it "ignores the rules related to classes not presented in the action's stack" do
-          rules = DevopsAction.middleware.rules.merge(ConfigureHost.middleware.rules)
-          resolver = Dynflow::Middleware::Resolver.new(rules)
+          register = Dynflow::Middleware::Register.new
+          register.merge!(DevopsAction.middleware)
+          register.merge!(ConfigureHost.middleware)
+          resolver = Dynflow::Middleware::Resolver.new(register)
           resolver.result.must_equal [NoopMiddleware,
                                       RetryMiddleware,
                                       CloseConnectionsMiddleware,

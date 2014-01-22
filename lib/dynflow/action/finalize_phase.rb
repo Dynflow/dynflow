@@ -10,7 +10,9 @@ module Dynflow
       self.state = :running
       save_state
       with_error_handling do
-        finalize
+        world.middleware.execute(:finalize, self) do
+          finalize
+        end
       end
     end
 

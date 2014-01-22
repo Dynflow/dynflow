@@ -22,8 +22,12 @@ module Dynflow
         reset_finalize_steps
         unless execution_plan.error?
           world.transaction_adapter.transaction do
-            unless dispatch(execution_plan.finalize_flow)
-              world.transaction_adapter.rollback
+            step_id = execution_plan.finalize_flow.all_step_ids.first
+            action_class = execution_plan.steps[step_id].action_class
+            world.middleware.execute(:finalize_phase, action_class) do
+              unless dispatch(execution_plan.finalize_flow)
+                world.transaction_adapter.rollback
+              end
             end
           end
         end

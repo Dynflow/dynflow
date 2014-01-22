@@ -5,8 +5,8 @@ module Dynflow
 
     include TSort
 
-    def initialize(action_rules)
-      @deps = normalize_rules(action_rules)
+    def initialize(register)
+      @deps = normalize_rules(register.rules)
     end
 
     # Takes eliminate :replace and :before rules.
