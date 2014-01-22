@@ -184,7 +184,18 @@ module Dynflow
 
           def self.create_stack(method, action = nil, &block)
             classes = [Test1Middleware, Test2Middleware, Test3Middleware]
+            block ||= ->(*args) do
+              action.send(method, *args)
+            end
             Middleware::Stack.new(classes, method, action, &block)
+          end
+
+          def plan_with_middleware(*args)
+            self.class.create_stack(:plan, self).pass(*args)
+          end
+
+          def plan_self_with_middleware(input)
+            self.class.create_stack(:plan_self, self).pass(input)
           end
 
           def initialize
@@ -199,7 +210,7 @@ module Dynflow
         class AlmostActionNestedCall < AlmostAction
 
           def plan(arg)
-            self.class.create_stack(:plan_self, self).pass(arg)
+            plan_self_with_middleware(arg)
             @output = []
           end
 
@@ -235,16 +246,14 @@ module Dynflow
 
         it 'calls the method recursively through the stack, skipping the middlewares without the method defined ' do
           action = AlmostAction.new
-          stack = AlmostAction.create_stack(:plan, action)
-          stack.pass([])
+          action.plan_with_middleware([])
           action.input.must_equal ["IN: Dynflow::MiddlewareTest::Test1Middleware", "IN: Dynflow::MiddlewareTest::Test2Middleware"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end
 
         it 'allows nested calls on the same stack' do
           action = AlmostActionNestedCall.new
-          stack = AlmostAction.create_stack(:plan, action)
-          stack.pass([])
+          action.plan_with_middleware([])
           action.input.must_equal ["IN: DYNFLOW::MIDDLEWARETEST::TEST1MIDDLEWARE", "IN: DYNFLOW::MIDDLEWARETEST::TEST2MIDDLEWARE"]
           action.output.must_equal ["OUT: Dynflow::MiddlewareTest::Test2Middleware", "OUT: Dynflow::MiddlewareTest::Test1Middleware"]
         end

@@ -6,15 +6,10 @@ module Dynflow
     def initialize(middleware_classes, method, action = nil, &block)
       @action = action
       @method = method
+      raise ArgumentError, 'Block required' unless block
       if middleware_classes.empty?
         @bottom = true
         @block = block
-        if @block && @action || @block.nil? && @action.nil?
-          raise ArgumentError, 'Either action or block has to be passed, but not both'
-        end
-        if @block.nil? && !@action.respond_to?(method)
-          raise ArgumentError, "The action #{action} doesn't repond to method #{method}"
-        end
       else
         top_class, *rest = middleware_classes
         @top  = top_class.new(self)
@@ -24,11 +19,7 @@ module Dynflow
 
     def pass(*args)
       if @bottom
-        if @block
-          @block.call(*args)
-        else
-          @action.send(@method, *args)
-        end
+        @block.call(*args)
       else
         if @top.respond_to?(@method)
           @top.send(@method, *args)
