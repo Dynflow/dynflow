@@ -14,8 +14,6 @@ module Dynflow
       end
 
       def check(world)
-        # TODO: fix this
-        return
         # missing reader in ConnectionPool
         ar_pool_size = ::ActiveRecord::Base.connection_pool.instance_variable_get(:@size)
         if (world.options[:pool_size] / 2.0) > ar_pool_size
