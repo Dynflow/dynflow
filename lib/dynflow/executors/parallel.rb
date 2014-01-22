@@ -73,6 +73,7 @@ module Dynflow
 
       def event(execution_plan_id, step_id, event, future = Future.new)
         @core << Event[execution_plan_id, step_id, event, future]
+        future
       end
 
       def terminate(future = Future.new)

@@ -1,7 +1,7 @@
 module Dynflow
   class SimpleWorld < World
-    def initialize(options_hash = {}, &options_block)
-      super options_hash, &options_block
+    def initialize(options_hash = {})
+      super options_hash
       at_exit { self.terminate.wait } if options[:auto_terminate]
       # we can check consistency here because SimpleWorld doesn't expect
       # remote executor being in place.
