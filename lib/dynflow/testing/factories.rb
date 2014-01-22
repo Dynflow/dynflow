@@ -73,9 +73,10 @@ module Dynflow
         finalize_action
       end
 
-      def clock_progress action
+      def progress_action_time action
         Type! action, Dynflow::Action::RunPhase
         action.world.clock.progress
+        action.world.executor.progress
       end
     end
   end

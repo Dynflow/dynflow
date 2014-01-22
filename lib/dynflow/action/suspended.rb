@@ -9,7 +9,7 @@ module Dynflow
     end
 
     def event(event, future = Future.new)
-      @world.executor.event self, event, future
+      @world.event execution_plan_id, step_id, event, future
     end
 
     def <<(event)

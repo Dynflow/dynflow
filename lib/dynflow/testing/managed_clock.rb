@@ -2,21 +2,21 @@ module Dynflow
   module Testing
     class ManagedClock
       def initialize
-        @pings = []
+        @pings_to_process = []
       end
 
       def ping(who, time, with_what = nil, where = :<<)
-        @pings << [who, [where, with_what].compact]
+        @pings_to_process << [who, [where, with_what].compact]
       end
 
       def progress
-        copy = @pings.dup
+        copy = @pings_to_process.dup
         clear
         copy.each { |who, args| who.send *args }
       end
 
       def clear
-        @pings.clear
+        @pings_to_process.clear
       end
     end
   end

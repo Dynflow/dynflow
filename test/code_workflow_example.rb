@@ -264,8 +264,53 @@ module Dynflow
 
     end
 
-    class DummySuspended < Action
+    class CancelableSuspended < Action
+      include Dynflow::Action::CancellablePolling
 
+      Cancel = Dynflow::Action::CancellablePolling::Cancel
+
+      def invoke_external_task
+        { progress: 0 }
+      end
+
+      def poll_external_task
+        progress = external_task[:progress] + 10
+        if progress > 25 && input[:text] =~ /cancel/
+          world.event execution_plan_id, run_step_id, Cancel
+        end
+        { progress: progress }
+      end
+
+      def cancel_external_task
+        if input[:text] !~ /cancel fail/
+          { cancelled: true }
+        else
+          error! 'action cancelled'
+        end
+      end
+
+      def external_task=(external_task_data)
+        self.output.update external_task_data
+      end
+
+      def external_task
+        output
+      end
+
+      def done?
+        external_task[:progress] >= 100
+      end
+
+      def poll_interval
+        0.1
+      end
+
+      def run_progress
+        output[:progress].to_f / 100
+      end
+    end
+
+    class DummySuspended < Action
       include Action::Polling
 
       def invoke_external_task

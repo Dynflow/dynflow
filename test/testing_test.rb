@@ -46,7 +46,7 @@ module Dynflow
         action.output.must_equal 'progress' => 0, 'done' => false
         action.progress_done.must_equal 0
 
-        3.times { clock_progress action }
+        3.times { progress_action_time action }
         action.output.must_equal 'progress' => 30, 'done' => false
         action.progress_done.must_equal 0.3
 
@@ -55,7 +55,7 @@ module Dynflow
         action.output.must_equal 'progress' => 50, 'done' => false
         action.progress_done.must_equal 0.5
 
-        5.times { clock_progress action }
+        5.times { progress_action_time action }
         action.output.must_equal 'progress' => 100, 'done' => true
         action.progress_done.must_equal 1
       end

@@ -3,6 +3,7 @@ module Dynflow
     class AbstractFlowStep < Abstract
 
       def execute(*args)
+        return self if [:skipped, :success].include? self.state
         open_action do |action|
           action.indifferent_access_hash_variable_set :input, dereference(action.input)
           with_time_calculation do
@@ -24,11 +25,8 @@ module Dynflow
       private
 
       def open_action
-        return self if [:skipped, :success].include? self.state
         action = persistence.load_action(self)
-
         yield action
-
         persistence.save_action(execution_plan_id, action)
         save
 

@@ -22,7 +22,7 @@ describe clock_class do
     clock.ping q, 0.1, o = Object.new
     assert_equal o, q.pop
     finish = Time.now
-    assert_in_delta 0.1, finish - start, 0.01
+    assert_in_delta 0.1, finish - start, 0.02
   end
 
   it 'pongs on expected times' do
