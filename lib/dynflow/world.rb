@@ -8,6 +8,8 @@ module Dynflow
     def initialize(options_hash = {}, &options_block)
       @logger_adapter = Type! options_hash.delete(:logger_adapter) || default_options[:logger_adapter],
                               LoggerAdapters::Abstract
+      # TODO: fix this properly
+      initialize_transaction_adapter(default_options.merge(options_hash))
       user_options    = options_hash.merge(if options_block
                                              Type!(options_block.call(self), Hash)
                                            else
@@ -16,7 +18,6 @@ module Dynflow
       raise ArgumentError, ':logger_adapter option can be specified only in options_hash' if user_options.key? :logger_adapter
       options = self.default_options.merge(user_options)
 
-      initialize_transaction_adapter(options)
       initialize_persistence(options)
       initialize_executor(options)
 
