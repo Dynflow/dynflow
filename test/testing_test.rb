@@ -135,7 +135,9 @@ module Dynflow
         end
 
         describe 'when something fails' do
-          let(:plan_input) { { commit: 'sha', ci_result: true, review_results: [true, false] } }
+          def plan_input
+            super.update review_results: [true, false]
+          end
 
           it '#runs' do
             runned_action.output.fetch(:passed).must_equal false

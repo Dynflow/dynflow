@@ -28,10 +28,6 @@ module Dynflow
              { 'author' => 'John Doe', 'text' => 'trolling in finalize' }]
           end
 
-          let :execution_plan do
-            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
-          end
-
           let :failed_execution_plan do
             plan = world.plan(CodeWorkflowExample::IncomingIssues, failing_issues_data)
             plan = world.execute(plan.id).value
@@ -58,10 +54,29 @@ module Dynflow
 
             describe "after successful planning" do
 
+              let :execution_plan do
+                world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+              end
+
               it "is pending" do
                 execution_plan.state.must_equal :planned
               end
 
+              describe "when finished successfully" do
+                it "is stopped" do
+                  world.execute(execution_plan.id).value.tap do |plan|
+                    plan.state.must_equal :stopped
+                  end
+                end
+              end
+
+              describe "when finished with error" do
+                it "is paused" do
+                  world.execute(failed_execution_plan.id).value.tap do |plan|
+                    plan.state.must_equal :paused
+                  end
+                end
+              end
             end
 
             describe "after error in planning" do
@@ -118,23 +133,6 @@ module Dynflow
                 end
               end
             end
-
-            describe "when finished successfully" do
-
-              it "is stopped" do
-                world.execute(execution_plan.id).value.tap do |plan|
-                  plan.state.must_equal :stopped
-                end
-              end
-            end
-
-            describe "when finished with error" do
-              it "is paused" do
-                world.execute(failed_execution_plan.id).value.tap do |plan|
-                  plan.state.must_equal :paused
-                end
-              end
-            end
           end
 
           describe "execution of run flow" do
@@ -151,9 +149,9 @@ module Dynflow
               TestExecutionLog.teardown
             end
 
-            let :persisted_plan do
+            def persisted_plan
               result
-              world.persistence.load_execution_plan(execution_plan.id)
+              super
             end
 
             describe 'cancellable action' do
@@ -199,35 +197,7 @@ module Dynflow
               end
             end
 
-
-            describe "suspended action" do
-              let :execution_plan do
-                world.plan(CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
-              end
-
-              it "doesn't cause problems" do
-                result.result.must_equal :success
-                result.state.must_equal :stopped
-              end
-
-              it 'does set times' do
-                result.started_at.wont_be_nil
-                result.ended_at.wont_be_nil
-                result.execution_time.must_be :<, result.real_time
-                result.execution_time.must_equal(
-                    result.steps.inject(0) { |sum, (_, step)| sum + step.execution_time })
-
-                plan_step = result.steps[1]
-                plan_step.started_at.wont_be_nil
-                plan_step.ended_at.wont_be_nil
-                plan_step.execution_time.must_equal plan_step.real_time
-
-                run_step = result.steps[2]
-                run_step.started_at.wont_be_nil
-                run_step.ended_at.wont_be_nil
-                run_step.execution_time.must_be :<, run_step.real_time
-              end
-
+            describe 'suspended action' do
               describe 'handling errors in setup' do
                 let :execution_plan do
                   world.plan(CodeWorkflowExample::DummySuspended,
@@ -242,6 +212,35 @@ module Dynflow
                                result.steps.values.
                                    find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.
                                    state
+                end
+              end
+
+              describe 'running' do
+                let :execution_plan do
+                  world.plan(CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
+                end
+
+                it "doesn't cause problems" do
+                  result.result.must_equal :success
+                  result.state.must_equal :stopped
+                end
+
+                it 'does set times' do
+                  result.started_at.wont_be_nil
+                  result.ended_at.wont_be_nil
+                  result.execution_time.must_be :<, result.real_time
+                  result.execution_time.must_equal(
+                      result.steps.inject(0) { |sum, (_, step)| sum + step.execution_time })
+
+                  plan_step = result.steps[1]
+                  plan_step.started_at.wont_be_nil
+                  plan_step.ended_at.wont_be_nil
+                  plan_step.execution_time.must_equal plan_step.real_time
+
+                  run_step = result.steps[2]
+                  run_step.started_at.wont_be_nil
+                  run_step.ended_at.wont_be_nil
+                  run_step.execution_time.must_be :<, run_step.real_time
                 end
               end
 
@@ -349,24 +348,29 @@ module Dynflow
 
             end
 
-            it "runs all the steps in the run flow" do
-              assert_run_flow <<-EXECUTED_RUN_FLOW, persisted_plan
-            Dynflow::Flows::Concurrence
-              Dynflow::Flows::Sequence
-                4: Triage(success) {"author"=>"Peter Smith", "text"=>"Failing test"} --> {"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}
-                7: UpdateIssue(success) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>"John Doe", "severity"=>"medium"} --> {}
-                9: NotifyAssignee(success) {"triage"=>{"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}} --> {}
-              Dynflow::Flows::Sequence
-                13: Triage(success) {"author"=>"John Doe", "text"=>"Internal server error"} --> {"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}
-                16: UpdateIssue(success) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>"John Doe", "severity"=>"medium"} --> {}
-                18: NotifyAssignee(success) {"triage"=>{"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}} --> {}
-              EXECUTED_RUN_FLOW
+            describe 'running' do
+              let :execution_plan do
+                world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+              end
+
+              it "runs all the steps in the run flow" do
+                assert_run_flow <<-EXECUTED_RUN_FLOW, persisted_plan
+                  Dynflow::Flows::Concurrence
+                    Dynflow::Flows::Sequence
+                      4: Triage(success) {"author"=>"Peter Smith", "text"=>"Failing test"} --> {"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}
+                      7: UpdateIssue(success) {"author"=>"Peter Smith", "text"=>"Failing test", "assignee"=>"John Doe", "severity"=>"medium"} --> {}
+                      9: NotifyAssignee(success) {"triage"=>{"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}} --> {}
+                    Dynflow::Flows::Sequence
+                      13: Triage(success) {"author"=>"John Doe", "text"=>"Internal server error"} --> {"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}
+                      16: UpdateIssue(success) {"author"=>"John Doe", "text"=>"Internal server error", "assignee"=>"John Doe", "severity"=>"medium"} --> {}
+                      18: NotifyAssignee(success) {"triage"=>{"classification"=>{"assignee"=>"John Doe", "severity"=>"medium"}}} --> {}
+                EXECUTED_RUN_FLOW
+              end
             end
 
           end
 
           describe "execution of finalize flow" do
-
             before do
               TestExecutionLog.setup
               result = world.execute(execution_plan.id).value
@@ -378,6 +382,9 @@ module Dynflow
             end
 
             describe "when run flow successful" do
+              let :execution_plan do
+                world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+              end
 
               it "runs all the steps in the finalize flow" do
                 assert_finalized(Dynflow::CodeWorkflowExample::IncomingIssues,
@@ -388,7 +395,6 @@ module Dynflow
             end
 
             describe "when run flow failed" do
-
               let :execution_plan do
                 failed_execution_plan
               end
@@ -441,6 +447,7 @@ module Dynflow
             end
 
           end
+
           describe "re-execution of run flow after fix in finalize phase" do
 
             after do
@@ -529,6 +536,10 @@ module Dynflow
           end
 
           describe 'FlowManager' do
+            let :execution_plan do
+              world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+            end
+
             let(:manager) { Executors::Parallel::FlowManager.new execution_plan, execution_plan.run_flow }
 
             def assert_next_steps(expected_next_step_ids, finished_step_id = nil, success = true)
