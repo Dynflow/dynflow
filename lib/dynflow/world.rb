@@ -122,15 +122,19 @@ module Dynflow
     # After the executor is unregistered, the consistency check should be performed
     # to fix the orphaned plans as well.
     def consistency_check
-      abnormal_execution_plans = self.persistence.find_execution_plans filters: { 'state' => %w(running planning) }
+      abnormal_execution_plans =
+          self.persistence.find_execution_plans filters: { 'state' => %w(running planning) }
       if abnormal_execution_plans.empty?
         logger.info 'Clean start.'
       else
         format_str = '%36s %10s %10s'
         message    = ['Abnormal execution plans, process was probably killed.',
-                      'Following ExecutionPlans will be set to paused, admin has to fix them manually.',
+                      'Following ExecutionPlans will be set to paused, ',
+                      'it should be fixed manually by administrator.',
                       (format format_str, 'ExecutionPlan', 'state', 'result'),
-                      *(abnormal_execution_plans.map { |ep| format format_str, ep.id, ep.state, ep.result })]
+                      *(abnormal_execution_plans.map do |ep|
+                        format format_str, ep.id, ep.state, ep.result
+                      end)]
 
         logger.error message.join("\n")
 
@@ -150,10 +154,13 @@ module Dynflow
     private
 
     def calculate_subscription_index
-      @subscription_index = action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
-        next unless klass.subscribe
-        Array(klass.subscribe).each { |subscribed_class| index[subscribed_class.to_s.constantize] << klass }
-      end.tap { |o| o.freeze }
+      @subscription_index =
+          action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
+            next unless klass.subscribe
+            Array(klass.subscribe).each do |subscribed_class|
+              index[subscribed_class.to_s.constantize] << klass
+            end
+          end.tap { |o| o.freeze }
     end
 
     def option_val(key)

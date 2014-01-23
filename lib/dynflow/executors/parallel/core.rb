@@ -40,15 +40,18 @@ module Dynflow
           execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
 
           if terminating?
-            raise Dynflow::Error, "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
+            raise Dynflow::Error,
+                  "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
           end
 
           if @execution_plan_managers[execution_plan_id]
-            raise Dynflow::Error, "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
+            raise Dynflow::Error,
+                  "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
           end
 
           if execution_plan.state == :stopped
-            raise Dynflow::Error, "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
+            raise Dynflow::Error,
+                  "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
           end
 
           @execution_plan_managers[execution_plan_id] =
@@ -101,8 +104,10 @@ module Dynflow
             feed_pool execution_plan_manager.event(event)
             true
           else
-            logger.warn "dropping event #{event} - no manager for #{event.execution_plan_id}:#{event.step_id}"
-            event.result.fail UnprocessableEvent.new("no manager for #{event.execution_plan_id}:#{event.step_id}")
+            logger.warn format('dropping event %s - no manager for %s:%s',
+                               event, event.execution_plan_id, event.step_id)
+            event.result.fail UnprocessableEvent.new(
+                                  "no manager for #{event.execution_plan_id}:#{event.step_id}")
           end
         end
 
