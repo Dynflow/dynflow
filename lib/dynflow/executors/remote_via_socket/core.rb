@@ -5,10 +5,14 @@ module Dynflow
         include Listeners::Serialization
 
         Message = Algebrick.type do
-          variants Closed    = atom,
-                   Received  = type { fields message: Protocol::Response },
-                   Event     = Executors::Abstract::Event,
-                   Execution = Executors::Abstract::Execution
+          Job = Algebrick.type do
+            variants Event     = Executors::Abstract::Event,
+                     Execution = Executors::Abstract::Execution
+          end
+
+          variants Closed   = atom,
+                   Received = type { fields message: Protocol::Response },
+                   Job
         end
 
         TrackedJob = Algebrick.type do
@@ -31,11 +35,11 @@ module Dynflow
             raise unless accepted.ready?
             finished.resolve(
                 match job,
-                      (on Protocol::Execution.(execution_plan_id: ~any) do |uuid|
+                      (on Core::Protocol::Execution.(execution_plan_id: ~any) do |uuid|
                         world.persistence.load_execution_plan(uuid)
                       end),
-                      (on Protocol::Event do
-                        raise NotImplementedError
+                      (on Core::Protocol::Event do
+                        true
                       end))
             self
           end
@@ -72,12 +76,19 @@ module Dynflow
         def on_message(message)
           Type! message, Message
           match message,
-                (on Execution.(~any, ~any) do |execution_plan_uuid, future|
+                (on ~Job do |job|
                   raise 'terminating' if terminating?
-                  job          = Job::Execution[execution_plan_uuid]
+                  job, future  =
+                      match job,
+                            (on ~Execution do |(execution_plan_uuid, future)|
+                              [Protocol::Execution[execution_plan_uuid], future]
+                            end),
+                            (on ~Event do |(execution_plan_id, step_id, event, future)|
+                              [Protocol::Event[execution_plan_id, step_id, event], future]
+                            end)
                   id, accepted = add_tracked_job future, job
                   success      = connect && begin
-                    send_message @socket, Message::Do[id, job]
+                    send_message @socket, Protocol::Do[id, job]
                     true
                   rescue IOError => error
                     logger.warn error

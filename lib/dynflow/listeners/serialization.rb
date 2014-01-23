@@ -30,6 +30,16 @@ module Dynflow
 
           variants Request, Response
         end
+
+        module Event
+          def to_hash
+            super.update event: Marshal.dump(event)
+          end
+
+          def self.product_from_hash(hash)
+            super(hash.merge 'event' => Marshal.load(hash.fetch('event')))
+          end
+        end
       end
 
       def dump(obj)
@@ -37,7 +47,7 @@ module Dynflow
       end
 
       def load(str)
-        Message.from_hash MultiJson.load(str)
+        Protocol::Message.from_hash MultiJson.load(str)
       end
 
       def send_message(io, message, barrier = nil)

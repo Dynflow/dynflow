@@ -15,7 +15,7 @@ module Dynflow
       end
 
       def execute(execution_plan_id, finished = Future.new)
-        @core.ask(Core::Execute[execution_plan_id, finished]).value!.value!
+        @core.ask(Core::Execution[execution_plan_id, finished]).value!.value!
         finished
       rescue => e
         finished.fail e unless finished.ready?
@@ -23,7 +23,8 @@ module Dynflow
       end
 
       def event(execution_plan_id, step_id, event, future = Future)
-        raise 'events are handled in a process with real executor'
+        @core.ask(Core::Event[execution_plan_id, step_id, event, future]).value!
+        future
       end
 
       def terminate(future = Future.new)

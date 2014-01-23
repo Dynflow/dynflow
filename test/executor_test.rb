@@ -156,6 +156,32 @@ module Dynflow
 
             describe 'cancellable action' do
 
+              describe event_class = Listeners::Serialization::Protocol::Event do
+                it 'de/serializes' do
+                  Klass = Class.new do
+                    def initialize(v)
+                      @v = v
+                    end
+
+                    def to_s
+                      @v.to_s
+                    end
+
+                    def ==(other)
+                      @v == other.instance_variable_get(:@v)
+                    end
+                  end
+
+                  object      = Klass.new :value
+                  event       = event_class['uuid', 0, object]
+                  hash        = event.to_hash
+                  json        = MultiJson.dump(hash)
+                  hash_loaded = MultiJson.load(json)
+                  assert_equal event[:event], event_class.from_hash(hash_loaded)[:event]
+                  assert_equal event, event_class.from_hash(hash_loaded)
+                end
+              end
+
               describe 'successful' do
                 let :execution_plan do
                   world.plan(CodeWorkflowExample::CancelableSuspended, {})
@@ -195,6 +221,31 @@ module Dynflow
                   action.output[:progress].must_equal 30
                 end
               end
+
+              if world_method == :remote_world
+                describe 'canceled externally' do
+                  let :execution_plan do
+                    world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel-external' })
+                  end
+
+                  it 'cancels' do
+                    finished = world.execute(execution_plan.id)
+                    sleep 0.05
+                    world.
+                        event(execution_plan.id, 2,
+                              CodeWorkflowExample::CancelableSuspended::Cancel).
+                        value!.must_equal true
+                    result = finished.value!
+
+                    result.result.must_equal :success
+                    result.state.must_equal :stopped
+                    action = world.persistence.load_action result.steps[2]
+                    action.output[:progress].must_be :<=, 30
+                    action.output[:cancelled].must_equal true
+                  end
+                end
+              end
+
             end
 
             describe 'suspended action' do
