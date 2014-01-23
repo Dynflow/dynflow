@@ -122,11 +122,13 @@ module WorldInstance
     @counter    ||= 0
     socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
     listener    = Dynflow::Listeners::Socket.new world, socket_path
-    world       = Dynflow::SimpleWorld.new(logger_adapter: logger_adapter) do |remote_world|
-      { persistence_adapter: world.persistence.adapter,
-        executor:            Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path),
-        auto_terminate:      false }
-    end
+    world       = Dynflow::SimpleWorld.new(
+        logger_adapter:      logger_adapter,
+        auto_terminate:      false,
+        persistence_adapter: -> remote_world { world.persistence.adapter },
+        executor:            -> remote_world do
+          Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path)
+        end)
     return listener, world
   end
 
@@ -148,8 +150,8 @@ end
 
 # ensure there are no unresolved Futures at the end or being GCed
 future_tests =-> do
-  future_creations        = {}
-  non_ready_futures       = {}
+  future_creations  = {}
+  non_ready_futures = {}
 
   MiniTest.after_run do
     WorldInstance.terminate
