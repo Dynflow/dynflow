@@ -15,12 +15,13 @@ module Dynflow
 
         def on_message(message)
           match message,
-                Work::Step.(step: ~any) | Work::Event.(step: ~any, event: Event.(event: ~any)) >-> step, event do
+                (on Work::Step.(step: ~any) |
+                        Work::Event.(step: ~any, event: Parallel::Event.(event: ~any)) do |step, event|
                   step.execute event
-                end,
-                Work::Finalize.(~any, any) >-> sequential_manager do
+                end),
+                (on Work::Finalize.(~any, any) do |sequential_manager|
                   sequential_manager.finalize
-                end
+                end)
           @pool << WorkerDone[work: message, worker: self]
           @transaction_adapter.cleanup
         end

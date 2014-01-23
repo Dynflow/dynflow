@@ -34,7 +34,8 @@ module Dynflow
             while (event = @events.shift(step.id))
               message = "step #{step.execution_plan_id}:#{step.id} dropping event #{event.event}"
               @world.logger.warn message
-              event.event.result.fail UnprocessableEvent.new(message).tap { |e| e.set_backtrace(caller) }
+              event.event.result.fail UnprocessableEvent.new(message).
+                                          tap { |e| e.set_backtrace(caller) }
             end
             raise 'assert' unless @events.empty?(step.id)
             @running_steps.delete(step.id)
@@ -44,11 +45,12 @@ module Dynflow
 
         # @returns [Work, nil]
         def event(event)
-          Type! event, Event
+          Type! event, Parallel::Event
 
           step = @running_steps[event.step_id]
           unless step
-            event.result.fail UnprocessableEvent.new('step is not suspended, it cannot process events')
+            event.result.fail UnprocessableEvent.new(
+                                  'step is not suspended, it cannot process events')
             return nil
           end
 

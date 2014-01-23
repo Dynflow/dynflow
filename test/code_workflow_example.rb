@@ -274,15 +274,24 @@ module Dynflow
       end
 
       def poll_external_task
-        progress = external_task[:progress] + 10
-        if progress > 25 && input[:text] =~ /cancel/
-          world.event execution_plan_id, run_step_id, Cancel
-        end
-        { progress: progress }
+        progress     = external_task[:progress]
+        new_progress = if progress == 30
+                         if input[:text] =~ /cancel-external/
+                           progress
+                         elsif input[:text] =~ /cancel-self/
+                           world.event execution_plan_id, run_step_id, Cancel
+                           progress
+                         else
+                           progress + 10
+                         end
+                       else
+                         progress + 10
+                       end
+        { progress: new_progress }
       end
 
       def cancel_external_task
-        if input[:text] !~ /cancel fail/
+        if input[:text] !~ /cancel-fail/
           { cancelled: true }
         else
           error! 'action cancelled'

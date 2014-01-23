@@ -29,8 +29,8 @@ module Dynflow
 
           else
             match message = receive_message(readable),
-                  (on ~Execute do |(id, uuid)|
-                    execute(readable, id, uuid)
+                  (on ~Protocol::Do do |(id, job)|
+                    execute_job(readable, id, job)
                   end),
                   (on NilClass.to_m do
                     remove_client readable
@@ -42,32 +42,37 @@ module Dynflow
         logger.fatal error
       end
 
-      def execute(readable, id, uuid)
+      def execute(readable, id, job)
         responded = false
         respond   = -> error = nil do
           unless responded
             responded = true
             send_message_to_client(readable, if error
                                                logger.error error
-                                               Failed[id, error.message]
+                                               Protocol::Failed[id, error.message]
                                              else
-                                               Accepted[id]
+                                               Protocol::Accepted[id]
                                              end)
           end
         end
 
-        @world.execute(uuid,
-                       f = Future.new do |_|
-                         if f.resolved?
-                           respond.call
-                           send_message_to_client readable, Done[id, uuid]
-                         else
-                           respond.call f.value
-                         end
-                       end)
-        respond.call
-      rescue Dynflow::Error => e
-        respond.call e
+        match job,
+              (on ~Protocol::Execution do |(uuid)|
+                begin
+                  @world.execute(uuid,
+                                 f = Future.new do |_|
+                                   if f.resolved?
+                                     respond.call
+                                     send_message_to_client readable, Protocol::Done[id]
+                                   else
+                                     respond.call f.value
+                                   end
+                                 end)
+                  respond.call
+                rescue Dynflow::Error => e
+                  respond.call e
+                end
+              end)
       end
 
       def add_client(client)

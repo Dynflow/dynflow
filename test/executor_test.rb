@@ -144,9 +144,7 @@ module Dynflow
             end
 
             let :result do
-              world.execute(execution_plan.id).value.tap do |result|
-                raise result if result.is_a? Exception
-              end
+              world.execute(execution_plan.id).value!
             end
 
             after do
@@ -173,7 +171,7 @@ module Dynflow
 
               describe 'canceled' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel' })
+                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel-self' })
                 end
 
                 it 'cancels' do
@@ -187,7 +185,7 @@ module Dynflow
 
               describe 'canceled failed' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel fail' })
+                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel-fail cancel-self' })
                 end
 
                 it 'fails' do

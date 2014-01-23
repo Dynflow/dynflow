@@ -18,11 +18,11 @@ module Dynflow
 
         def on_message(message)
           match message,
-                (on ~Execution do |(execution_plan_id, finished)|
+                (on ~Parallel::Execution do |(execution_plan_id, finished)|
                   start_executing track_execution_plan(execution_plan_id, finished)
                   true
                 end),
-                (on ~Event do |event|
+                (on ~Parallel::Event do |event|
                   event(event)
                 end),
                 (on PoolDone.(~any) do |step|
@@ -98,7 +98,7 @@ module Dynflow
         end
 
         def event(event)
-          Type! event, Event
+          Type! event, Parallel::Event
           execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
           if execution_plan_manager
             feed_pool execution_plan_manager.event(event)
