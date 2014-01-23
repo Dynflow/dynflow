@@ -1,15 +1,45 @@
 module Dynflow
   module Listeners
     module Serialization
-      SocketMessage = Algebrick.type do
-        Execute      = type { fields request_id: Integer, execution_plan_uuid: String }
-        Confirmation = type do
-          variants Accepted = type { fields request_id: Integer },
-                   Failed   = type { fields request_id: Integer, error: String }
-        end
-        Done         = type { fields request_id: Integer, execution_plan_uuid: String }
+      module Protocol
 
-        variants Execute, Confirmation, Done
+        Job = Algebrick.type do
+          Event = type do
+            fields! execution_plan_id: String,
+                    step_id:           Fixnum,
+                    event:             Object
+          end
+
+          Execution = type do
+            fields! execution_plan_id: String
+          end
+
+          variants Event, Execution
+        end
+
+        Message = Algebrick.type do
+          Request = type do
+            variants Do = type { fields request_id: Integer, job: Job }
+          end
+
+          Response = type do
+            variants Accepted = type { fields request_id: Integer },
+                     Failed   = type { fields request_id: Integer, error: String },
+                     Done     = type { fields request_id: Integer }
+          end
+
+          variants Request, Response
+        end
+
+        module Event
+          def to_hash
+            super.update event: Marshal.dump(event)
+          end
+
+          def self.product_from_hash(hash)
+            super(hash.merge 'event' => Marshal.load(hash.fetch('event')))
+          end
+        end
       end
 
       def dump(obj)
@@ -17,7 +47,7 @@ module Dynflow
       end
 
       def load(str)
-        SocketMessage.from_hash MultiJson.load(str)
+        Protocol::Message.from_hash MultiJson.load(str)
       end
 
       def send_message(io, message, barrier = nil)

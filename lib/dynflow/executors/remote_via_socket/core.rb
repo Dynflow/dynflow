@@ -5,16 +5,21 @@ module Dynflow
         include Listeners::Serialization
 
         Message = Algebrick.type do
+          Job = Algebrick.type do
+            variants Event     = Executors::Abstract::Event,
+                     Execution = Executors::Abstract::Execution
+          end
+
           variants Closed   = atom,
-                   Received = type { fields message: SocketMessage },
-                   Execute  = type { fields execution_plan_uuid: String, future: Future }
+                   Received = type { fields message: Protocol::Response },
+                   Job
         end
 
-        Execution = Algebrick.type do
-          fields! id: Integer, accepted: Future, finished: Future
+        TrackedJob = Algebrick.type do
+          fields! id: Integer, job: Protocol::Job, accepted: Future, finished: Future
         end
 
-        module Execution
+        module TrackedJob
           def accept!
             accepted.resolve true
             self
@@ -26,9 +31,16 @@ module Dynflow
             self
           end
 
-          def success!(value)
+          def success!(world)
             raise unless accepted.ready?
-            finished.resolve value
+            finished.resolve(
+                match job,
+                      (on Core::Protocol::Execution.(execution_plan_id: ~any) do |uuid|
+                        world.persistence.load_execution_plan(uuid)
+                      end),
+                      (on Core::Protocol::Event do
+                        true
+                      end))
             self
           end
 
@@ -49,11 +61,11 @@ module Dynflow
         private
 
         def delayed_initialize(world, socket_path)
-          @socket_path = Type! socket_path, String
-          @world       = Type! world, World
-          @socket      = nil
-          @last_id     = 0
-          @executions  = {}
+          @socket_path  = Type! socket_path, String
+          @world        = Type! world, World
+          @socket       = nil
+          @last_id      = 0
+          @tracked_jobs = {}
           connect
         end
 
@@ -62,13 +74,21 @@ module Dynflow
         end
 
         def on_message(message)
+          Type! message, Message
           match message,
-
-                (on Core::Execute.(~any, ~any) do |execution_plan_uuid, future|
+                (on ~Job do |job|
                   raise 'terminating' if terminating?
-                  id, accepted = add_execution future
+                  job, future  =
+                      match job,
+                            (on ~Execution do |(execution_plan_uuid, future)|
+                              [Protocol::Execution[execution_plan_uuid], future]
+                            end),
+                            (on ~Event do |(execution_plan_id, step_id, event, future)|
+                              [Protocol::Event[execution_plan_id, step_id, event], future]
+                            end)
+                  id, accepted = add_tracked_job future, job
                   success      = connect && begin
-                    send_message @socket, RemoteViaSocket::Execute[id, execution_plan_uuid]
+                    send_message @socket, Protocol::Do[id, job]
                     true
                   rescue IOError => error
                     logger.warn error
@@ -76,36 +96,36 @@ module Dynflow
                   end
 
                   unless success
-                    @executions[id].reject! Dynflow::Error.new(
-                                                'No connection to RemoteViaSocket::Listener')
+                    @tracked_jobs[id].reject! Dynflow::Error.new(
+                                                  'No connection to RemoteViaSocket::Listener')
                   end
 
                   return accepted
                 end),
 
-                (on Received.(Accepted.(~any)) do |id|
-                  @executions[id].accept!
+                (on Received.(~Protocol::Accepted) do |(id)|
+                  @tracked_jobs[id].accept!
                 end),
 
-                (on Received.(Failed.(~any, ~any)) do |id, error|
-                  @executions.delete(id).reject! Dynflow::Error.new(error)
+                (on Received.(~Protocol::Failed) do |(id, error)|
+                  @tracked_jobs.delete(id).reject! Dynflow::Error.new(error)
                 end),
 
-                (on Received.(Done.(~any, ~any)) do |id, uuid|
-                  @executions.delete(id).success! @world.persistence.load_execution_plan(uuid)
+                (on Received.(~Protocol::Done) do |(id)|
+                  @tracked_jobs.delete(id).success! @world
                 end),
 
                 (on Closed do
                   @socket = nil
                   logger.info 'Disconnected from server.'
-                  @executions.each { |_, c| c.fail! 'No connection to RemoteViaSocket::Listener' }
-                  @executions.clear
+                  @tracked_jobs.each { |_, c| c.fail! 'No connection to RemoteViaSocket::Listener' }
+                  @tracked_jobs.clear
                   terminate! if terminating?
                 end)
         end
 
-        def add_execution(finished)
-          @executions[id = (@last_id += 1)] = Execution[id, accepted = Future.new, finished]
+        def add_tracked_job(finished, job)
+          @tracked_jobs[id = (@last_id += 1)] = TrackedJob[id, job, accepted = Future.new, finished]
           return id, accepted
         end
 
@@ -136,7 +156,7 @@ module Dynflow
 
         def read_socket
           match message = receive_message(@socket),
-                SocketMessage >-> { self << Received[message] },
+                Protocol::Message >-> { self << Received[message] },
                 NilClass.to_m >-> do
                   self << Closed
                   throw :stop_reading

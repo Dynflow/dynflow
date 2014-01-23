@@ -18,11 +18,11 @@ module Dynflow
 
         def on_message(message)
           match message,
-                (on ~Execution do |(execution_plan_id, finished)|
+                (on ~Parallel::Execution do |(execution_plan_id, finished)|
                   start_executing track_execution_plan(execution_plan_id, finished)
                   true
                 end),
-                (on ~Event do |event|
+                (on ~Parallel::Event do |event|
                   event(event)
                 end),
                 (on PoolDone.(~any) do |step|
@@ -40,15 +40,18 @@ module Dynflow
           execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
 
           if terminating?
-            raise Dynflow::Error, "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
+            raise Dynflow::Error,
+                  "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
           end
 
           if @execution_plan_managers[execution_plan_id]
-            raise Dynflow::Error, "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
+            raise Dynflow::Error,
+                  "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
           end
 
           if execution_plan.state == :stopped
-            raise Dynflow::Error, "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
+            raise Dynflow::Error,
+                  "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
           end
 
           @execution_plan_managers[execution_plan_id] =
@@ -95,14 +98,16 @@ module Dynflow
         end
 
         def event(event)
-          Type! event, Event
+          Type! event, Parallel::Event
           execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
           if execution_plan_manager
             feed_pool execution_plan_manager.event(event)
             true
           else
-            logger.warn "dropping event #{event} - no manager for #{event.execution_plan_id}:#{event.step_id}"
-            event.result.fail UnprocessableEvent.new("no manager for #{event.execution_plan_id}:#{event.step_id}")
+            logger.warn format('dropping event %s - no manager for %s:%s',
+                               event, event.execution_plan_id, event.step_id)
+            event.result.fail UnprocessableEvent.new(
+                                  "no manager for #{event.execution_plan_id}:#{event.step_id}")
           end
         end
 

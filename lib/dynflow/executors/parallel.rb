@@ -14,49 +14,30 @@ module Dynflow
 
       UnprocessableEvent = Class.new(Dynflow::Error)
 
-      # actor messages
-      Algebrick.types do
-        Boolean = type { variants TrueClass, FalseClass }
+      Algebrick.type do |work|
+        Work = work
 
-        Execution = type do
-          fields! execution_plan_id: String,
-                  finished:          Future
+        Work::Finalize = type do
+          fields! sequential_manager: SequentialManager,
+                  execution_plan_id:  String
         end
 
-        Event = type do
-          fields! execution_plan_id: String,
-                  step_id:           Fixnum,
-                  event:             Object,
-                  result:            Future
+        Work::Step = type do
+          fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
+                  execution_plan_id: String
         end
 
-        Work = type do |work|
-          work::Finalize = type do
-            fields! sequential_manager: SequentialManager,
-                    execution_plan_id:  String
-          end
-
-          work::Step = type do
-            fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
-                    execution_plan_id: String
-          end
-
-          work::Event = type do
-            fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
-                    execution_plan_id: String,
-                    event:             Event
-          end
-
-          variants work::Step, work::Event, work::Finalize
+        Work::Event = type do
+          fields! step:              ExecutionPlan::Steps::AbstractFlowStep,
+                  execution_plan_id: String,
+                  event:             Event
         end
 
-        PoolDone   = type do
-          fields! work: Work
-        end
-        WorkerDone = type do
-          fields! work: Work, worker: Worker
-        end
+        variants Work::Step, Work::Event, Work::Finalize
       end
+
+      PoolDone   = Algebrick.type { fields! work: Work }
+      WorkerDone = Algebrick.type { fields! work: Work, worker: Worker }
 
       def initialize(world, pool_size = 10)
         super(world)

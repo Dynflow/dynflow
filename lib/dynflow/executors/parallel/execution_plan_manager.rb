@@ -77,7 +77,7 @@ module Dynflow
         end
 
         def event(event)
-          Type! event, Event
+          Type! event, Parallel::Event
           raise unless event.execution_plan_id == @execution_plan.id
           @running_steps_manager.event(event)
         end
