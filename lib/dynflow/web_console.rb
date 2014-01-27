@@ -1,6 +1,7 @@
 require 'dynflow'
 require 'pp'
 require 'sinatra'
+require 'yaml'
 
 module Dynflow
   class WebConsole < Sinatra::Base
@@ -24,12 +25,16 @@ module Dynflow
         settings.world
       end
 
+      def prettify_value(value)
+        YAML.dump(value)
+      end
+
       def prettyprint(value)
         value = prettyprint_references(value)
         if value
-          pretty_value = value.pretty_inspect
+          pretty_value = prettify_value(value)
           <<-HTML
-            <pre class="prettyprint">#{h(pretty_value)}</pre>
+            <pre class="prettyprint lang-yaml">#{h(pretty_value)}</pre>
           HTML
         else
           ""
