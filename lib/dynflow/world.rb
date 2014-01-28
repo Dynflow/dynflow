@@ -74,7 +74,11 @@ module Dynflow
       execution_plan = plan(action_class, *args)
       planned        = execution_plan.state == :planned
       finished       = if planned
-                         execute(execution_plan.id)
+                         begin
+                           execute(execution_plan.id) # TODO fix the api not to raise
+                         rescue => exception
+                           Future.new.fail exception
+                         end
                        else
                          Future.new.resolve(execution_plan)
                        end

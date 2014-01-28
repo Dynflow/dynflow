@@ -13,6 +13,7 @@ module Dynflow
         terminated = Future.new
         trap('SIGINT') { @world.terminate terminated }
         terminated.wait
+        @listener.terminate.wait
       end
     end
 

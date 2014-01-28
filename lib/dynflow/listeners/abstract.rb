@@ -8,6 +8,10 @@ module Dynflow
         @world  = Type! world, World
         @logger = world.logger
       end
+
+      def terminate(future = Future.new)
+        raise NotImplementedError
+      end
     end
   end
 end

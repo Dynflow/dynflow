@@ -34,6 +34,10 @@ module Dynflow
       def initialized
         @core.initialized
       end
+
+      def connected?
+        @core.ask(Core::Connect).value!
+      end
     end
   end
 end

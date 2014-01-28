@@ -53,6 +53,10 @@ module Dynflow
       def send_message(io, message, barrier = nil)
         barrier.lock if barrier
         io.puts dump(message)
+        true
+      rescue SystemCallError => error
+        @logger.warn "message could not be sent #{message} because #{error}"
+        false
       ensure
         barrier.unlock if barrier
       end
