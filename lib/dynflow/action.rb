@@ -188,19 +188,19 @@ module Dynflow
 
     private
 
-    ERRORING = Object.new
+    ERROR = Object.new
 
     # DSL to terminate action execution and set it to error
     def error!(error)
       set_error(error)
-      throw ERRORING
+      throw ERROR
     end
 
     def with_error_handling(&block)
       raise "wrong state #{self.state}" unless self.state == :running
 
       begin
-        catch(ERRORING) { block.call }
+        catch(ERROR) { block.call }
       rescue Exception => error
         set_error(error)
         # reraise low-level exceptions
