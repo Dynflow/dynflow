@@ -3,6 +3,7 @@ module Dynflow
 
     def initialize
       @register = Middleware::Register.new
+      clear_cache!
     end
 
     def use(*args)
@@ -32,9 +33,16 @@ module Dynflow
     end
 
     def middleware_classes(action_class)
-      register = cumulate_register(action_class)
-      resolver = Dynflow::Middleware::Resolver.new(register)
-      resolver.result
+      unless @middleware_classes_cache.has_key?(action_class)
+        register = cumulate_register(action_class)
+        resolver = Dynflow::Middleware::Resolver.new(register)
+        @middleware_classes_cache[action_class] = resolver.result
+      end
+      return @middleware_classes_cache[action_class]
+    end
+
+    def clear_cache!
+      @middleware_classes_cache = {}
     end
 
   end

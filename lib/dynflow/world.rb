@@ -48,6 +48,7 @@ module Dynflow
     # reload actions classes, intended only for devel
     def reload!
       @action_classes.map! { |klass| klass.to_s.constantize }
+      middleware.clear_cache!
       calculate_subscription_index
     end
 
