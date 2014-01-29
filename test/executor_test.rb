@@ -179,6 +179,8 @@ module Dynflow
                   hash_loaded = MultiJson.load(json)
                   assert_equal event[:event], event_class.from_hash(hash_loaded)[:event]
                   assert_equal event, event_class.from_hash(hash_loaded)
+
+                  ExecutorTest.send :remove_const, :Klass
                 end
               end
 
