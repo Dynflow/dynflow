@@ -75,7 +75,7 @@ module Dynflow
       planned        = execution_plan.state == :planned
       finished       = if planned
                          begin
-                           execute(execution_plan.id) # TODO fix the api not to raise
+                           execute(execution_plan.id)
                          rescue => exception
                            Future.new.fail exception
                          end
@@ -153,6 +153,13 @@ module Dynflow
                           end
         end
       end
+    end
+
+    # should be called after World is initialized, SimpleWorld does it automatically
+    def execute_planned_execution_plans
+      planned_execution_plans =
+          self.persistence.find_execution_plans filters: { 'state' => %w(planned) }
+      planned_execution_plans.each { |ep| execute ep.id }
     end
 
     private

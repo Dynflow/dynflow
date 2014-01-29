@@ -42,13 +42,35 @@ describe 'remote communication' do
   include Helpers
 
   it 'raises when not connected' do
-    begin
+    remote_world = create_remote_world
+    result       = remote_world.trigger Dynflow::CodeWorkflowExample::Commit, 'sha'
+    result.planned.must_equal true
+    -> { result.finished.value! }.must_raise Dynflow::Error
+
+    terminate remote_world
+  end
+
+  describe 'execute_planned_execution_plans' do
+    specify do
       remote_world = create_remote_world
       result       = remote_world.trigger Dynflow::CodeWorkflowExample::Commit, 'sha'
       result.planned.must_equal true
       -> { result.finished.value! }.must_raise Dynflow::Error
-    ensure
-      terminate remote_world
+
+      remote_world.persistence.load_execution_plan(result.id).state.must_equal :planned
+
+      world    = create_world
+      listener = create_listener(world)
+
+      # waiting until it starts executing
+      assert(10.times do |i|
+        state = world.persistence.load_execution_plan(result.id).state
+        break :ok if [:running, :stopped].include? state
+        puts 'retry'
+        sleep 0.01 * i
+      end == :ok)
+
+      terminate remote_world, listener, world
     end
   end
 
