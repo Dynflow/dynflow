@@ -6,6 +6,7 @@ module Dynflow
       # we can check consistency here because SimpleWorld doesn't expect
       # remote executor being in place.
       self.consistency_check
+      self.execute_planned_execution_plans
     end
 
     def default_options

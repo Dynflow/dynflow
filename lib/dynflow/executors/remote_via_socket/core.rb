@@ -12,6 +12,7 @@ module Dynflow
 
           variants Closed   = atom,
                    Received = type { fields message: Protocol::Response },
+                   Connect  = atom,
                    Job
         end
 
@@ -70,7 +71,7 @@ module Dynflow
         end
 
         def termination
-          disconnect
+          terminate! if disconnect
         end
 
         def on_message(message)
@@ -96,8 +97,9 @@ module Dynflow
                   end
 
                   unless success
-                    @tracked_jobs[id].reject! Dynflow::Error.new(
-                                                  'No connection to RemoteViaSocket::Listener')
+                    @tracked_jobs[id].reject!(
+                        Dynflow::Error.new(
+                            "Cannot do #{message}, no connection to a Listener"))
                   end
 
                   return accepted
@@ -118,9 +120,15 @@ module Dynflow
                 (on Closed do
                   @socket = nil
                   logger.info 'Disconnected from server.'
-                  @tracked_jobs.each { |_, c| c.fail! 'No connection to RemoteViaSocket::Listener' }
+                  @tracked_jobs.each do |_, c|
+                    c.fail! 'Connection to a Listener lost.'
+                  end
                   @tracked_jobs.clear
                   terminate! if terminating?
+                end),
+
+                (on Connect do
+                  connect
                 end)
         end
 
@@ -135,14 +143,20 @@ module Dynflow
           logger.info 'Connected to server.'
           read_socket_until_closed
           true
-        rescue IOError => error
+        rescue SystemCallError, IOError => error
           logger.warn error
           false
+        rescue => error
+          logger.fatal error
+          raise error
         end
 
         def disconnect
           return true unless @socket
-          @socket.shutdown :RDWR
+
+          @socket.close
+          false
+        rescue Errno::ENOTCONN
           true
         end
 

@@ -1,6 +1,6 @@
 module Dynflow
   class Future
-    Error            = Class.new StandardError
+    Error            = Class.new Dynflow::Error
     FutureAlreadySet = Class.new Error
     FutureFailed     = Class.new Error
     TimeOut          = Class.new Error

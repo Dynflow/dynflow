@@ -5,7 +5,9 @@ module Dynflow
       include Listeners::Serialization
       include Algebrick::Matching
 
-      def initialize(world, socket_path)
+      Terminate = Algebrick.atom
+
+      def initialize(world, socket_path, interval = 1)
         super(world)
 
         File.delete socket_path if File.exist? socket_path
@@ -14,15 +16,27 @@ module Dynflow
 
         @clients         = []
         @client_barriers = {}
-        @loop            = Thread.new { loop { listen } }
+        @terminate       = false
+        @loop            = Thread.new do
+          Thread.current.abort_on_exception = true
+          catch(Terminate) { loop { listen(interval) } }
+          @terminate.resolve true
+        end
+      end
+
+      def terminate(future = Future.new)
+        raise 'multiple calls' if @terminate
+        @terminate = future
       end
 
       private
 
-      def listen
+      def listen(interval)
+        shutdown if @terminate
+
         ios                   = [@server, *@clients]
-        reads, writes, errors = IO.select(ios, [], ios)
-        reads.each do |readable|
+        reads, writes, errors = IO.select(ios, [], ios, interval)
+        Array(reads).each do |readable|
           if readable == @server
             add_client @server.accept
             logger.info 'Client connected.'
@@ -89,6 +103,15 @@ module Dynflow
 
       def send_message_to_client(client, message)
         send_message client, message, @client_barriers[client]
+      end
+
+      def shutdown
+        @clients.each { |c| c.shutdown :RDWR }
+        @server.close
+      rescue => e
+        @logger.error e
+      ensure
+        throw Terminate
       end
     end
   end

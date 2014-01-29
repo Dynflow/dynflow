@@ -179,6 +179,8 @@ module Dynflow
                   hash_loaded = MultiJson.load(json)
                   assert_equal event[:event], event_class.from_hash(hash_loaded)[:event]
                   assert_equal event, event_class.from_hash(hash_loaded)
+
+                  ExecutorTest.send :remove_const, :Klass
                 end
               end
 
@@ -721,7 +723,9 @@ module Dynflow
 
             it 'does not accept new work' do
               assert world.terminate.wait
-              -> { world.trigger(CodeWorkflowExample::Slow, 0.02) }.must_raise Dynflow::Error
+              result = world.trigger(CodeWorkflowExample::Slow, 0.02)
+              result.planned.must_equal true
+              -> { result.finished.value! }.must_raise Dynflow::Error
             end
 
             it 'it terminates when no work' do
