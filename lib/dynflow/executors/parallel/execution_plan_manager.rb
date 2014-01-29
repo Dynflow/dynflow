@@ -46,34 +46,26 @@ module Dynflow
             end
           end
 
-          match work,
-
-                Work::Step.(step: ~any) >-> step do
-                  suspended, work = @running_steps_manager.done(step)
-                  if suspended
-                    raise 'assert' unless compute_next_from_step.call(step).empty?
-                    work
-                  else
-                    execution_plan.update_execution_time step.execution_time
-                    compute_next_from_step.call step
-                  end
-                end,
-
-                Work::Event.(step: ~any) >-> step do
-                  suspended, work = @running_steps_manager.done(step)
-
-                  if suspended
-                    work
-                  else
-                    execution_plan.update_execution_time step.execution_time
-                    compute_next_from_step.call step
-                  end
-                end,
-
-                Work::Finalize >-> do
-                  raise unless @finalize_manager
-                  finish
-                end
+          match(work,
+                (on Work::Step.(step: ~any) | Work::Event.(step: ~any) do |step|
+                   execution_plan.steps[step.id] = step
+                   suspended, work = @running_steps_manager.done(step)
+                   unless suspended
+                     execution_plan.update_execution_time step.execution_time
+                     work = compute_next_from_step.call step
+                   end
+                   # TODO: can be probably disabled to improve
+                   # performance, execution time will not be updated,
+                   # maybe more - check on the other side, it allows
+                   # us to use persistence adapter for hooking into
+                   # the running process.
+                   execution_plan.save
+                   work
+                 end),
+                (on Work::Finalize do
+                   raise unless @finalize_manager
+                   finish
+                 end))
         end
 
         def event(event)
