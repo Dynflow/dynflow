@@ -11,6 +11,8 @@ require 'dynflow'
 require 'dynflow/testing'
 require 'pry'
 
+require 'support/middleware_example'
+
 Dynflow::Testing.logger_adapter.level = 1
 
 class TestExecutionLog
