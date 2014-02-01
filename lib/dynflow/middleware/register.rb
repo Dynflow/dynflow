@@ -11,6 +11,10 @@ module Dynflow
     end
 
     def use(middleware_class, options = {})
+      unknown_options = options.keys - [:before, :after, :replace]
+      if unknown_options.any?
+        raise ArgumentError, "Unexpected options: #{unknown_options}"
+      end
       @rules[middleware_class].merge!(options) do |key, old, new|
         old + Array(new)
       end
