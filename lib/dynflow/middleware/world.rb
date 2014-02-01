@@ -25,6 +25,7 @@ module Dynflow
     end
 
     def cumulate_register(action_class, register = Middleware::Register.new)
+      register.merge!(@register)
       unless action_class == Dynflow::Action
         cumulate_register(action_class.superclass, register)
       end
