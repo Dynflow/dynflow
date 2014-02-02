@@ -20,9 +20,10 @@ module Support
         log 'after_plan'
       end
 
-      def run
+      def run(*args)
         log 'before_run'
-        pass
+        pass(*args)
+      ensure
         log 'after_run'
       end
 
@@ -52,9 +53,10 @@ module Support
         LogMiddleware.log << "#{self.class.name[/\w+$/]}::#{message}"
       end
 
-      def run
+      def run(*args)
         log 'before_run'
-        pass
+        pass(*args)
+      ensure
         log 'after_run'
       end
     end
