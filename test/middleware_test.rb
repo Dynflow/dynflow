@@ -38,14 +38,14 @@ module Dynflow
       end
 
       describe "world.middleware" do
-        let(:world) do
+        let(:world_with_middleware) do
           WorldInstance.create_world.tap do |world|
             world.middleware.use(Support::MiddlewareExample::AnotherLogRunMiddleware)
           end
         end
 
         it "puts the middleware to the beginning of the stack" do
-            world.trigger(Support::MiddlewareExample::Action, {}).finished.wait
+            world_with_middleware.trigger(Support::MiddlewareExample::Action, {}).finished.wait
             log.must_equal %w[AnotherLogRunMiddleware::before_run
                               LogRunMiddleware::before_run
                               run
@@ -67,7 +67,7 @@ module Dynflow
         end
 
         describe "after" do
-          let(:world) do
+          let(:world_with_middleware) do
             WorldInstance.create_world.tap do |world|
               world.middleware.use(Support::MiddlewareExample::AnotherLogRunMiddleware,
                                    after: Support::MiddlewareExample::LogRunMiddleware)
@@ -76,7 +76,7 @@ module Dynflow
           end
 
           specify do
-            world.trigger(Support::MiddlewareExample::Action, {}).finished.wait
+            world_with_middleware.trigger(Support::MiddlewareExample::Action, {}).finished.wait
             log.must_equal %w[LogRunMiddleware::before_run
                               AnotherLogRunMiddleware::before_run
                               run
