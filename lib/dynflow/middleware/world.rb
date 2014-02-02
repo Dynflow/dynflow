@@ -7,6 +7,7 @@ module Dynflow
     end
 
     def use(*args)
+      clear_cache!
       @register.use(*args)
     end
 
