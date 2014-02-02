@@ -1,5 +1,4 @@
 require_relative 'test_helper'
-require_relative 'code_workflow_example'
 
 module Dynflow
 
@@ -65,8 +64,8 @@ module Dynflow
     specify { smart_action_class.all_children.wont_include smarter_action_class.finalize_phase }
 
     describe 'World#subscribed_actions' do
-      event_action_class      = CodeWorkflowExample::Triage
-      subscribed_action_class = CodeWorkflowExample::NotifyAssignee
+      event_action_class      = Support::CodeWorkflowExample::Triage
+      subscribed_action_class = Support::CodeWorkflowExample::NotifyAssignee
 
       specify { subscribed_action_class.subscribe.must_equal event_action_class }
       specify { world.subscribed_actions(event_action_class).must_include subscribed_action_class }
@@ -78,7 +77,7 @@ module Dynflow
     include WorldInstance
 
     let :execution_plan do
-      id, planned, finished = *world.trigger(CodeWorkflowExample::IncomingIssues, issues_data)
+      id, planned, finished = *world.trigger(Support::CodeWorkflowExample::IncomingIssues, issues_data)
       raise unless planned
       finished.value
     end
@@ -90,11 +89,11 @@ module Dynflow
 
     let :presenter do
       execution_plan.actions.find do |action|
-        action.is_a? CodeWorkflowExample::IncomingIssues
+        action.is_a? Support::CodeWorkflowExample::IncomingIssues
       end
     end
 
-    specify { presenter.action_class.must_equal CodeWorkflowExample::IncomingIssues }
+    specify { presenter.action_class.must_equal Support::CodeWorkflowExample::IncomingIssues }
 
     it 'allows aggregating data from other actions' do
       presenter.summary.must_equal(assignees: ["John Doe"])

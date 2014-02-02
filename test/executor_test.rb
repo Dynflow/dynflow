@@ -1,5 +1,4 @@
 require_relative 'test_helper'
-require_relative 'code_workflow_example'
 
 module Dynflow
   module ExecutorTest
@@ -29,14 +28,14 @@ module Dynflow
           end
 
           let :failed_execution_plan do
-            plan = world.plan(CodeWorkflowExample::IncomingIssues, failing_issues_data)
+            plan = world.plan(Support::CodeWorkflowExample::IncomingIssues, failing_issues_data)
             plan = world.execute(plan.id).value
             plan.state.must_equal :paused
             plan
           end
 
           let :finalize_failed_execution_plan do
-            plan = world.plan(CodeWorkflowExample::IncomingIssues, finalize_failing_issues_data)
+            plan = world.plan(Support::CodeWorkflowExample::IncomingIssues, finalize_failing_issues_data)
             plan = world.execute(plan.id).value
             plan.state.must_equal :paused
             plan
@@ -55,7 +54,7 @@ module Dynflow
             describe "after successful planning" do
 
               let :execution_plan do
-                world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+                world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
               end
 
               it "is pending" do
@@ -100,7 +99,7 @@ module Dynflow
             describe "when being executed" do
 
               let :execution_plan do
-                world.plan(CodeWorkflowExample::IncomingIssue, { 'text' => 'get a break' })
+                world.plan(Support::CodeWorkflowExample::IncomingIssue, { 'text' => 'get a break' })
               end
 
               before do
@@ -118,7 +117,7 @@ module Dynflow
                   plan.state.must_equal :running
                   triage = plan.steps.values.find do |s|
                     s.is_a?(Dynflow::ExecutionPlan::Steps::RunStep) &&
-                        s.action_class == Dynflow::CodeWorkflowExample::Triage
+                        s.action_class == Support::CodeWorkflowExample::Triage
                   end
                   triage.state.must_equal :running
                   world.persistence.
@@ -186,7 +185,7 @@ module Dynflow
 
               describe 'successful' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::CancelableSuspended, {})
+                  world.plan(Support::CodeWorkflowExample::CancelableSuspended, {})
                 end
 
                 it "doesn't cause problems" do
@@ -197,7 +196,7 @@ module Dynflow
 
               describe 'canceled' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel-self' })
+                  world.plan(Support::CodeWorkflowExample::CancelableSuspended, { text: 'cancel-self' })
                 end
 
                 it 'cancels' do
@@ -211,7 +210,7 @@ module Dynflow
 
               describe 'canceled failed' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel-fail cancel-self' })
+                  world.plan(Support::CodeWorkflowExample::CancelableSuspended, { text: 'cancel-fail cancel-self' })
                 end
 
                 it 'fails' do
@@ -227,7 +226,7 @@ module Dynflow
               if world_method == :remote_world
                 describe 'canceled externally' do
                   let :execution_plan do
-                    world.plan(CodeWorkflowExample::CancelableSuspended, { text: 'cancel-external' })
+                    world.plan(Support::CodeWorkflowExample::CancelableSuspended, { text: 'cancel-external' })
                   end
 
                   it 'cancels' do
@@ -235,7 +234,7 @@ module Dynflow
                     sleep 0.05
                     world.
                         event(execution_plan.id, 2,
-                              CodeWorkflowExample::CancelableSuspended::Cancel).
+                              Support::CodeWorkflowExample::CancelableSuspended::Cancel).
                         value!.must_equal true
                     result = finished.value!
 
@@ -253,7 +252,7 @@ module Dynflow
             describe 'suspended action' do
               describe 'handling errors in setup' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::DummySuspended,
+                  world.plan(Support::CodeWorkflowExample::DummySuspended,
                              external_task_id: '123',
                              text:             'troll setup')
                 end
@@ -270,7 +269,7 @@ module Dynflow
 
               describe 'running' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
+                  world.plan(Support::CodeWorkflowExample::DummySuspended, { :external_task_id => '123' })
                 end
 
                 it "doesn't cause problems" do
@@ -310,7 +309,7 @@ module Dynflow
 
                 describe 'plan with one action' do
                   let :execution_plan do
-                    world.plan(CodeWorkflowExample::DummySuspended,
+                    world.plan(Support::CodeWorkflowExample::DummySuspended,
                                { external_task_id: '123',
                                  text:             'pause in progress 20%' })
                   end
@@ -325,7 +324,7 @@ module Dynflow
 
                 describe 'plan with more action' do
                   let :execution_plan do
-                    world.plan(CodeWorkflowExample::DummyHeavyProgress,
+                    world.plan(Support::CodeWorkflowExample::DummyHeavyProgress,
                                { external_task_id: '123',
                                  text:             'pause in progress 20%' })
                   end
@@ -341,7 +340,7 @@ module Dynflow
 
               describe 'works when resumed after error' do
                 let :execution_plan do
-                  world.plan(CodeWorkflowExample::DummySuspended,
+                  world.plan(Support::CodeWorkflowExample::DummySuspended,
                              { external_task_id: '123',
                                text:             'troll progress' })
                 end
@@ -365,7 +364,7 @@ module Dynflow
             describe "action with empty flows" do
 
               let :execution_plan do
-                world.plan(CodeWorkflowExample::Dummy, { :text => "dummy" }).tap do |plan|
+                world.plan(Support::CodeWorkflowExample::Dummy, { :text => "dummy" }).tap do |plan|
                   assert_equal plan.run_flow.size, 0
                   assert_equal plan.finalize_flow.size, 0
                 end.tap do |w|
@@ -388,7 +387,7 @@ module Dynflow
             describe 'action with empty run flow but some finalize flow' do
 
               let :execution_plan do
-                world.plan(CodeWorkflowExample::DummyWithFinalize, { :text => "dummy" }).tap do |plan|
+                world.plan(Support::CodeWorkflowExample::DummyWithFinalize, { :text => "dummy" }).tap do |plan|
                   assert_equal plan.run_flow.size, 0
                   assert_equal plan.finalize_flow.size, 1
                 end
@@ -403,7 +402,7 @@ module Dynflow
 
             describe 'running' do
               let :execution_plan do
-                world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+                world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
               end
 
               it "runs all the steps in the run flow" do
@@ -436,13 +435,13 @@ module Dynflow
 
             describe "when run flow successful" do
               let :execution_plan do
-                world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+                world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
               end
 
               it "runs all the steps in the finalize flow" do
-                assert_finalized(Dynflow::CodeWorkflowExample::IncomingIssues,
+                assert_finalized(Support::CodeWorkflowExample::IncomingIssues,
                                  { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" }, { "author" => "John Doe", "text" => "Internal server error" }] })
-                assert_finalized(Dynflow::CodeWorkflowExample::Triage,
+                assert_finalized(Support::CodeWorkflowExample::Triage,
                                  { "author" => "Peter Smith", "text" => "Failing test" })
               end
             end
@@ -482,7 +481,7 @@ module Dynflow
               resumed_execution_plan.result.must_equal :success
 
               run_triages = TestExecutionLog.run.find_all do |action_class, input|
-                action_class == CodeWorkflowExample::Triage
+                action_class == Support::CodeWorkflowExample::Triage
               end
               run_triages.size.must_equal 1
 
@@ -524,7 +523,7 @@ module Dynflow
               resumed_execution_plan.result.must_equal :success
 
               run_triages = TestExecutionLog.finalize.find_all do |action_class, input|
-                action_class == CodeWorkflowExample::Triage
+                action_class == Support::CodeWorkflowExample::Triage
               end
               run_triages.size.must_equal 2
 
@@ -560,7 +559,7 @@ module Dynflow
               resumed_execution_plan.result.must_equal :success
 
               run_triages = TestExecutionLog.run.find_all do |action_class, input|
-                action_class == CodeWorkflowExample::Triage
+                action_class == Support::CodeWorkflowExample::Triage
               end
               run_triages.size.must_equal 0
 
@@ -590,7 +589,7 @@ module Dynflow
 
           describe 'FlowManager' do
             let :execution_plan do
-              world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+              world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
             end
 
             let(:manager) { Executors::Parallel::FlowManager.new execution_plan, execution_plan.run_flow }
@@ -707,13 +706,13 @@ module Dynflow
             if which == :normal_world
               it 'executes until its done when terminating' do
                 $slow_actions_done = 0
-                world.trigger(CodeWorkflowExample::Slow, 0.02)
+                world.trigger(Support::CodeWorkflowExample::Slow, 0.02)
                 world.terminate.wait
                 $slow_actions_done.must_equal 1
               end
 
               it 'executes until its done when terminating even suspended' do
-                result = world.trigger(CodeWorkflowExample::DummySuspended,
+                result = world.trigger(Support::CodeWorkflowExample::DummySuspended,
                                        external_task_id: '123',
                                        text:             'none')
                 world.terminate.wait
@@ -723,14 +722,14 @@ module Dynflow
 
             it 'does not accept new work' do
               assert world.terminate.wait
-              result = world.trigger(CodeWorkflowExample::Slow, 0.02)
+              result = world.trigger(Support::CodeWorkflowExample::Slow, 0.02)
               result.planned.must_equal true
               -> { result.finished.value! }.must_raise Dynflow::Error
             end
 
             it 'it terminates when no work' do
               skip 'blocks occasionally' if which == :remote_world # FIXME
-              world.trigger(CodeWorkflowExample::Slow, 0.02).finished.wait
+              world.trigger(Support::CodeWorkflowExample::Slow, 0.02).finished.wait
               assert world.terminate.wait
             end
 

@@ -1,5 +1,4 @@
 require_relative 'test_helper'
-require_relative 'code_workflow_example'
 
 describe 'remote communication' do
 
@@ -43,7 +42,7 @@ describe 'remote communication' do
 
   it 'raises when not connected' do
     remote_world = create_remote_world
-    result       = remote_world.trigger Dynflow::CodeWorkflowExample::Commit, 'sha'
+    result       = remote_world.trigger Support::CodeWorkflowExample::Commit, 'sha'
     result.planned.must_equal true
     -> { result.finished.value! }.must_raise Dynflow::Error
 
@@ -53,7 +52,7 @@ describe 'remote communication' do
   describe 'execute_planned_execution_plans' do
     specify do
       remote_world = create_remote_world
-      result       = remote_world.trigger Dynflow::CodeWorkflowExample::Commit, 'sha'
+      result       = remote_world.trigger Support::CodeWorkflowExample::Commit, 'sha'
       result.planned.must_equal true
       -> { result.finished.value! }.must_raise Dynflow::Error
 
@@ -81,7 +80,7 @@ describe 'remote communication' do
                     listener:     create_listener(w),
                     remote_world: remote_world = create_remote_world }
 
-        result = remote_world.trigger Dynflow::CodeWorkflowExample::Commit, 'sha'
+        result = remote_world.trigger Support::CodeWorkflowExample::Commit, 'sha'
         result.planned.must_equal true
         result.finished.value!.must_be_kind_of Dynflow::ExecutionPlan
 
@@ -96,15 +95,15 @@ describe 'remote communication' do
       rmw1     = create_remote_world
       rmw2     = create_remote_world
 
-      [rmw1.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished,
-       rmw2.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished].
+      [rmw1.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished,
+       rmw2.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished].
           each(&:value!)
 
       terminate rmw1
 
-      -> { rmw1.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished.value! }.
+      -> { rmw1.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value! }.
           must_raise Dynflow::Error
-      rmw2.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished.value!
+      rmw2.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value!
 
       terminate rmw2, listener, world
     end
@@ -114,7 +113,7 @@ describe 'remote communication' do
       listener     = create_listener(world)
       remote_world = create_remote_world
 
-      result = remote_world.trigger(Dynflow::CodeWorkflowExample::Slow, 2)
+      result = remote_world.trigger(Support::CodeWorkflowExample::Slow, 2)
       result.planned.must_equal true
 
       terminate listener
@@ -130,14 +129,14 @@ describe 'remote communication' do
     listener     = create_listener(world)
     remote_world = create_remote_world
 
-    remote_world.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished.value!
+    remote_world.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value!
 
     terminate listener
     Thread.pass while remote_world.executor.connected?
     listener = create_listener world
     Thread.pass until remote_world.executor.connected?
 
-    remote_world.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished.value!
+    remote_world.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value!
 
     terminate listener, world
     Thread.pass while remote_world.executor.connected?
@@ -145,7 +144,7 @@ describe 'remote communication' do
     listener = create_listener world
     Thread.pass until remote_world.executor.connected?
 
-    remote_world.trigger(Dynflow::CodeWorkflowExample::Commit, 'sha').finished.value!
+    remote_world.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value!
 
     terminate listener, world, remote_world
   end

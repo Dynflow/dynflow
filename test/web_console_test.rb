@@ -1,5 +1,4 @@
 require_relative 'test_helper'
-require_relative 'code_workflow_example'
 
 ENV['RACK_ENV'] = 'test'
 require 'dynflow/web_console'
@@ -13,7 +12,7 @@ module Dynflow
     include WorldInstance
 
     let :execution_plan_id do
-      world.trigger(CodeWorkflowExample::FastCommit, 'sha' => 'abc123').
+      world.trigger(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123').
           tap { |o| o.finished.wait }.
           id
     end

@@ -1,9 +1,9 @@
 require 'logger'
 
-module Dynflow
+module Support
   module CodeWorkflowExample
 
-    class IncomingIssues < Action
+    class IncomingIssues < Dynflow::Action
 
       def plan(issues)
         issues.each do |issue|
@@ -25,7 +25,7 @@ module Dynflow
 
       def summary
         triages   = all_actions.find_all do |action|
-          action.is_a? Dynflow::CodeWorkflowExample::Triage
+          action.is_a? Triage
         end
         assignees = triages.map do |triage|
           triage.output[:classification] &&
@@ -36,7 +36,7 @@ module Dynflow
 
     end
 
-    class Slow < Action
+    class Slow < Dynflow::Action
       def plan(seconds)
         plan_self interval: seconds
       end
@@ -49,7 +49,7 @@ module Dynflow
       end
     end
 
-    class IncomingIssue < Action
+    class IncomingIssue < Dynflow::Action
 
       def plan(issue)
         plan_self(issue)
@@ -63,7 +63,7 @@ module Dynflow
 
     end
 
-    class Triage < Action
+    class Triage < Dynflow::Action
 
       def plan(issue)
         triage = plan_self(issue)
@@ -100,7 +100,7 @@ module Dynflow
 
     end
 
-    class UpdateIssue < Action
+    class UpdateIssue < Dynflow::Action
 
       input_format do
         param :author, String
@@ -113,7 +113,7 @@ module Dynflow
       end
     end
 
-    class NotifyAssignee < Action
+    class NotifyAssignee < Dynflow::Action
 
       def self.subscribe
         Triage
@@ -135,7 +135,7 @@ module Dynflow
       end
     end
 
-    class Commit < Action
+    class Commit < Dynflow::Action
       input_format do
         param :sha, String
       end
@@ -157,7 +157,7 @@ module Dynflow
       end
     end
 
-    class FastCommit < Action
+    class FastCommit < Dynflow::Action
 
       def plan(commit)
         sequence do
@@ -179,7 +179,7 @@ module Dynflow
 
     end
 
-    class Ci < Action
+    class Ci < Dynflow::Action
 
       input_format do
         param :commit, Commit.input_format
@@ -194,7 +194,7 @@ module Dynflow
       end
     end
 
-    class Review < Action
+    class Review < Dynflow::Action
 
       input_format do
         param :reviewer, String
@@ -214,7 +214,7 @@ module Dynflow
       end
     end
 
-    class Merge < Action
+    class Merge < Dynflow::Action
 
       input_format do
         param :commit, Commit.input_format
@@ -227,22 +227,22 @@ module Dynflow
       end
     end
 
-    class Dummy < Action
+    class Dummy < Dynflow::Action
     end
 
-    class DummyWithFinalize < Action
+    class DummyWithFinalize < Dynflow::Action
       def finalize
         TestExecutionLog.finalize << self
       end
     end
 
-    class DummyTrigger < Action
+    class DummyTrigger < Dynflow::Action
     end
 
-    class DummyAnotherTrigger < Action
+    class DummyAnotherTrigger < Dynflow::Action
     end
 
-    class DummySubscribe < Action
+    class DummySubscribe < Dynflow::Action
 
       def self.subscribe
         DummyTrigger
@@ -253,7 +253,7 @@ module Dynflow
 
     end
 
-    class DummyMultiSubscribe < Action
+    class DummyMultiSubscribe < Dynflow::Action
 
       def self.subscribe
         [DummyTrigger, DummyAnotherTrigger]
@@ -264,7 +264,7 @@ module Dynflow
 
     end
 
-    class CancelableSuspended < Action
+    class CancelableSuspended < Dynflow::Action
       include Dynflow::Action::CancellablePolling
 
       Cancel = Dynflow::Action::CancellablePolling::Cancel
@@ -319,8 +319,8 @@ module Dynflow
       end
     end
 
-    class DummySuspended < Action
-      include Action::Polling
+    class DummySuspended < Dynflow::Action
+      include Dynflow::Action::Polling
 
       def invoke_external_task
         error! 'Trolling detected' if input[:text] == 'troll setup'
@@ -362,7 +362,7 @@ module Dynflow
       end
     end
 
-    class DummyHeavyProgress < Action
+    class DummyHeavyProgress < Dynflow::Action
 
       def plan(input)
         sequence do

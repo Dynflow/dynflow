@@ -1,5 +1,4 @@
 require_relative 'test_helper'
-require_relative 'code_workflow_example'
 
 module Dynflow
   module ExecutionPlanTest
@@ -16,7 +15,7 @@ module Dynflow
       describe 'serialization' do
 
         let :execution_plan do
-          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+          world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
         let :deserialized_execution_plan do
@@ -47,7 +46,7 @@ module Dynflow
       describe '#result' do
 
         let :execution_plan do
-          world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+          world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
         describe 'for error in planning phase' do
@@ -107,7 +106,7 @@ module Dynflow
 
       describe 'plan steps' do
         let :execution_plan do
-          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+          world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
         it 'stores the information about the sub actions' do
@@ -129,7 +128,7 @@ module Dynflow
       describe 'persisted action' do
 
         let :execution_plan do
-          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+          world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
         let :action do
@@ -148,7 +147,7 @@ module Dynflow
 
         describe 'single dependencies' do
           let :execution_plan do
-            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+            world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
           end
 
           it 'constructs the plan of actions to be executed in run phase' do
@@ -169,7 +168,7 @@ module Dynflow
 
         describe 'multi dependencies' do
           let :execution_plan do
-            world.plan(CodeWorkflowExample::Commit, 'sha' => 'abc123')
+            world.plan(Support::CodeWorkflowExample::Commit, 'sha' => 'abc123')
           end
 
           it 'constructs the plan of actions to be executed in run phase' do
@@ -186,7 +185,7 @@ module Dynflow
 
         describe 'sequence and concurrence keyword used' do
           let :execution_plan do
-            world.plan(CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+            world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
           end
 
           it 'constructs the plan of actions to be executed in run phase' do
@@ -202,7 +201,7 @@ module Dynflow
 
         describe 'subscribed action' do
           let :execution_plan do
-            world.plan(CodeWorkflowExample::DummyTrigger, {})
+            world.plan(Support::CodeWorkflowExample::DummyTrigger, {})
           end
 
           it 'constructs the plan of actions to be executed in run phase' do
@@ -218,7 +217,7 @@ module Dynflow
         describe 'finalize flow' do
 
           let :execution_plan do
-            world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+            world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
           end
 
           it 'plans the finalize steps in a sequence' do
@@ -237,7 +236,7 @@ module Dynflow
 
       describe 'accessing actions results' do
         let :execution_plan do
-          world.plan(CodeWorkflowExample::IncomingIssues, issues_data)
+          world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
         it 'provides the access to the actions data via Action::Presenter' do
