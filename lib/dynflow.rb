@@ -19,6 +19,7 @@ module Dynflow
   require 'dynflow/stateful'
   require 'dynflow/transaction_adapters'
   require 'dynflow/persistence'
+  require 'dynflow/middleware'
   require 'dynflow/action'
   require 'dynflow/flows'
   require 'dynflow/execution_plan'

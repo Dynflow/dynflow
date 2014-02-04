@@ -4,13 +4,14 @@ module Dynflow
       extend Mimic
       mimic! World
 
-      attr_reader :clock, :executor
+      attr_reader :clock, :executor, :middleware
       attr_accessor :action
 
       def initialize
         @logger_adapter = Testing.logger_adapter
         @clock          = ManagedClock.new
         @executor       = DummyExecutor.new(self)
+        @middleware     = Middleware::World.new
       end
 
       def action_logger
@@ -28,6 +29,7 @@ module Dynflow
       def event(execution_plan_id, step_id, event, future = Future.new)
         executor.event execution_plan_id, step_id, event, future
       end
+
     end
   end
 end

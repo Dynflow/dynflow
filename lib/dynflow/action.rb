@@ -10,6 +10,8 @@ module Dynflow
     require 'dynflow/action/format'
     extend Format
 
+    extend Middleware::Action
+
     require 'dynflow/action/progress'
     include Progress
 

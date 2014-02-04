@@ -21,7 +21,9 @@ module Dynflow
       save_state
       with_error_handling do
         concurrence do
-          plan(*args)
+          world.middleware.execute(:plan, self, *args) do |*new_args|
+            plan(*new_args)
+          end
         end
 
         subscribed_actions = world.subscribed_actions(self.action_class)

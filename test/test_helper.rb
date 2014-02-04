@@ -7,9 +7,15 @@ if ENV['RM_INFO']
   MiniTest::Reporters.use!
 end
 
+load_path = File.expand_path(File.dirname(__FILE__))
+$LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
+
 require 'dynflow'
 require 'dynflow/testing'
 require 'pry'
+
+require 'support/code_workflow_example'
+require 'support/middleware_example'
 
 Dynflow::Testing.logger_adapter.level = 1
 

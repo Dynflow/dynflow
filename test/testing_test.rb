@@ -1,9 +1,8 @@
 require_relative 'test_helper'
-require_relative 'code_workflow_example'
 
 module Dynflow
 
-  CWE = CodeWorkflowExample
+  CWE = Support::CodeWorkflowExample
 
   describe Testing do
     include Testing

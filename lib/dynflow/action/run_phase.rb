@@ -22,7 +22,9 @@ module Dynflow
         self.state = :running
         save_state
         with_error_handling do
-          result = catch(SUSPEND) { event ? run(event) : run }
+          result = catch(SUSPEND) do
+            world.middleware.execute(:run, self, *Array(event)) { |*args| run(*args) }
+          end
           if result == SUSPEND
             self.state = :suspended
           end

@@ -114,11 +114,13 @@ module Dynflow
     def plan(*args)
       update_state(:planning)
       world.transaction_adapter.transaction do
-        with_planning_scope do
-          root_plan_step.execute(self, nil, *args)
+        world.middleware.execute(:plan_phase, root_plan_step.action_class) do
+          with_planning_scope do
+            root_plan_step.execute(self, nil, *args)
 
-          if @dependency_graph.unresolved?
-            raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
+            if @dependency_graph.unresolved?
+              raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
+            end
           end
         end
 

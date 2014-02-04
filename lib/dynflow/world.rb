@@ -3,7 +3,7 @@ module Dynflow
     include Algebrick::TypeCheck
 
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options
+                :logger_adapter, :options, :middleware
 
     def initialize(options_hash = {})
       @options             = default_options.merge options_hash
@@ -13,6 +13,7 @@ module Dynflow
       @persistence         = Persistence.new(self, persistence_adapter)
       @executor            = Type! option_val(:executor), Executors::Abstract
       @action_classes      = option_val(:action_classes)
+      @middleware          = Middleware::World.new
       calculate_subscription_index
 
       executor.initialized.wait
@@ -47,6 +48,7 @@ module Dynflow
     # reload actions classes, intended only for devel
     def reload!
       @action_classes.map! { |klass| klass.to_s.constantize }
+      middleware.clear_cache!
       calculate_subscription_index
     end
 
