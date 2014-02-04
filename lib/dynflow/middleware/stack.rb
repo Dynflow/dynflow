@@ -1,32 +1,29 @@
 module Dynflow
   class Middleware::Stack
+    include Algebrick::TypeCheck
 
-    attr_reader :action, :rest
+    attr_reader :action, :middleware_class, :middleware
 
-    def initialize(middleware_classes, method, action = nil, &block)
-      @action = action
-      @method = method
-      raise ArgumentError, 'Block required' unless block
-      if middleware_classes.empty?
-        @bottom = true
-        @block = block
-      else
-        top_class, *rest = middleware_classes
-        @top  = top_class.new(self)
-        @rest = Middleware::Stack.new(rest, method, action, &block)
+    def self.build(middleware_classes, method, action, &block)
+      middleware_classes.reverse_each.reduce(block) do |stack, klass|
+        Middleware::Stack.new(stack, klass, method, action)
       end
     end
 
+    def initialize(next_stack, middleware_class, method, action)
+      @middleware_class = Child! middleware_class, Middleware
+      @middleware       = middleware_class.new self
+      @action           = Type! action, Dynflow::Action, NilClass
+      @method           = Match! method, :plan, :run, :finalize, :plan_phase, :finalize_phase
+      @next_stack       = Type! next_stack, Middleware::Stack, Proc
+    end
+
+    def call(*args)
+      @middleware.send @method, *args
+    end
+
     def pass(*args)
-      if @bottom
-        @block.call(*args)
-      else
-        if @top.respond_to?(@method)
-          @top.send(@method, *args)
-        else
-          @rest.pass(*args)
-        end
-      end
+      @next_stack.call(*args)
     end
   end
 end

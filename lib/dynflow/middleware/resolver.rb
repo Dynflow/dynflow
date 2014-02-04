@@ -4,15 +4,25 @@ module Dynflow
   class Middleware::Resolver
 
     include TSort
+    include Algebrick::TypeCheck
 
     def initialize(register)
-      @deps = normalize_rules(register.rules)
+      @register = Type! register, Middleware::Register
     end
+
+    def result
+      @result ||= begin
+        @deps = normalize_rules(@register.rules)
+        self.tsort
+      end
+    end
+
+    private
 
     # Takes eliminate :replace and :before rules.
     # Returns hash, that maps middleware classes to their dependencies
     def normalize_rules(rules)
-      deps = Hash.new { |h, k| h[k] = [] }
+      deps          = Hash.new { |h, k| h[k] = [] }
       substitutions = {}
 
       # replace before with after on oposite direction and build the
@@ -39,10 +49,6 @@ module Dynflow
       end
 
       return deps
-    end
-
-    def result
-      return self.tsort
     end
 
     def tsort_each_node(&block)

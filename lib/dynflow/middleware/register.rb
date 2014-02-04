@@ -1,5 +1,7 @@
 module Dynflow
   class Middleware::Register
+    include Algebrick::TypeCheck
+
     attr_reader :rules
 
     def initialize
@@ -21,6 +23,7 @@ module Dynflow
     end
 
     def merge!(register)
+      Type! register, Middleware::Register
       register.rules.each do |klass, rules|
         use(klass, rules)
       end

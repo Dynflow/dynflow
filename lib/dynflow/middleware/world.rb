@@ -1,6 +1,8 @@
 module Dynflow
   class Middleware::World
 
+    include Algebrick::TypeCheck
+
     def initialize
       @register = Middleware::Register.new
       clear_cache!
@@ -12,18 +14,23 @@ module Dynflow
     end
 
     def execute(method, action_or_class, *args, &block)
-      if action_or_class.is_a? Class
+      Match! method, :plan, :run, :finalize, :plan_phase, :finalize_phase
+      if Child? action_or_class, Dynflow::Action
         action = nil
         action_class = action_or_class
-      else
+      elsif Type? action_or_class, Dynflow::Action
         action = action_or_class
         action_class = action.action_class
+      else
+        Algebrick::TypeCheck.error action_or_class, 'is not instance or child class', Dynflow::Action
       end
 
       classes = middleware_classes(action_class)
-      stack   = Middleware::Stack.new(classes, method, action, &block)
-      stack.pass(*args)
+      stack   = Middleware::Stack.build(classes, method, action, &block)
+      stack.call(*args)
     end
+
+    private
 
     def cumulate_register(action_class, register = Middleware::Register.new)
       register.merge!(@register)
@@ -35,7 +42,7 @@ module Dynflow
     end
 
     def middleware_classes(action_class)
-      unless @middleware_classes_cache.has_key?(action_class)
+      unless @middleware_classes_cache.key?(action_class)
         register = cumulate_register(action_class)
         resolver = Dynflow::Middleware::Resolver.new(register)
         @middleware_classes_cache[action_class] = resolver.result
