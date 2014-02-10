@@ -30,6 +30,10 @@ module Dynflow
       stack.call(*args)
     end
 
+    def clear_cache!
+      @middleware_classes_cache = {}
+    end
+
     private
 
     def cumulate_register(action_class, register = Middleware::Register.new)
@@ -48,10 +52,6 @@ module Dynflow
         @middleware_classes_cache[action_class] = resolver.result
       end
       return @middleware_classes_cache[action_class]
-    end
-
-    def clear_cache!
-      @middleware_classes_cache = {}
     end
 
   end
