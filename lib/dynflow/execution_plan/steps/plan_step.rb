@@ -24,7 +24,7 @@ module Dynflow
       end
 
       def phase
-        :plan_phase
+        Action::Plan
       end
 
       def to_hash
@@ -37,8 +37,13 @@ module Dynflow
         attributes = { execution_plan_id: execution_plan.id,
                        id:                action_id,
                        step:              self,
-                       plan_step_id:      self.id }
-        action     = action_class.plan_phase.new(attributes, execution_plan, trigger)
+                       plan_step_id:      self.id,
+                       run_step_id:       nil,
+                       finalize_step_id:  nil,
+                       phase:             phase,
+                       execution_plan:    execution_plan,
+                       trigger:           trigger }
+        action     = action_class.new(attributes, execution_plan.world)
         persistence.save_action(execution_plan_id, action)
 
         with_time_calculation do

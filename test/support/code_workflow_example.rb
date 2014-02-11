@@ -24,7 +24,7 @@ module Support
       end
 
       def summary
-        triages   = all_actions.find_all do |action|
+        triages   = execution_plan.actions.find_all do |action|
           action.is_a? Triage
         end
         assignees = triages.map do |triage|
@@ -33,7 +33,6 @@ module Support
         end.compact.uniq
         { assignees: assignees }
       end
-
     end
 
     class Slow < Dynflow::Action
@@ -274,7 +273,7 @@ module Support
       end
 
       def poll_external_task
-        progress     = external_task[:progress]
+        progress     = external_task.fetch(:progress)
         new_progress = if progress == 30
                          if input[:text] =~ /cancel-external/
                            progress

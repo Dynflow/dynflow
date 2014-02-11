@@ -20,7 +20,7 @@ module Dynflow
 
       # assert that +assert_actioned_plan+ was planned by +action+
       def assert_action_planed(action, planned_action_class)
-        Type! action, Dynflow::Action::PlanPhase
+        Match! action.phase, Action::Plan
         Match! action.state, :success
         found = action.execution_plan.planned_plan_steps.
             select { |a| a.is_a?(planned_action_class) }
@@ -31,7 +31,7 @@ module Dynflow
 
       # assert that +action+ has run-phase planned
       def assert_run_phase(action, input = nil, &block)
-        Type! action, Dynflow::Action::PlanPhase
+        Match! action.phase, Action::Plan
         Match! action.state, :success
         action.execution_plan.planned_run_steps.must_include action
         action.input.must_equal input.stringify_keys if input
@@ -40,21 +40,21 @@ module Dynflow
 
       # refute that +action+ has run-phase planned
       def refute_run_phase(action)
-        Type! action, Dynflow::Action::PlanPhase
+        Match! action.phase, Action::Plan
         Match! action.state, :success
         action.execution_plan.planned_run_steps.wont_include action
       end
 
       # assert that +action+ has finalize-phase planned
       def assert_finalize_phase(action)
-        Type! action, Dynflow::Action::PlanPhase
+        Match! action.phase, Action::Plan
         Match! action.state, :success
         action.execution_plan.planned_finalize_steps.must_include action
       end
 
       # refute that +action+ has finalize-phase planned
       def refute_finalize_phase(action)
-        Type! action, Dynflow::Action::PlanPhase
+        Match! action.phase, Action::Plan
         Match! action.state, :success
         action.execution_plan.planned_finalize_steps.wont_include action
       end

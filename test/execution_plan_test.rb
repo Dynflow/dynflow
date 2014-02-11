@@ -242,7 +242,7 @@ module Dynflow
         it 'provides the access to the actions data via Action::Presenter' do
           execution_plan.actions.size.must_equal 9
           execution_plan.actions.each do |action|
-            action.must_be_kind_of Action::Presenter
+            action.phase.must_equal Action::Present
           end
         end
       end

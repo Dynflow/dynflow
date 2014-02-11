@@ -149,7 +149,7 @@ module Dynflow
     # FIND maybe move to persistence to let adapter to do it effectively?
     # @return [Array<Steps::Abstract>]
     def steps_to_skip(step)
-      dependent_steps = @steps.values.find_all do |s|
+      dependent_steps = steps.values.find_all do |s|
         next if s.is_a? Steps::PlanStep
         action = persistence.load_action(s)
         action.required_step_ids.include?(step.id)
@@ -199,14 +199,14 @@ module Dynflow
     end
 
     def add_run_step(action)
-      add_step(Steps::RunStep, action.action_class, action.id).tap do |step|
+      add_step(Steps::RunStep, action.class, action.id).tap do |step|
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end
 
     def add_finalize_step(action)
-      add_step(Steps::FinalizeStep, action.action_class, action.id).tap do |step|
+      add_step(Steps::FinalizeStep, action.class, action.id).tap do |step|
         finalize_flow << Flows::Atom.new(step.id)
       end
     end
@@ -264,19 +264,14 @@ module Dynflow
     # @return [Array<Action::Presenter>] presenter of the actions
     # involved in the plan
     def actions
-      action_steps = Hash.new { |h, k| h[k] = [] }
-      all_actions  = []
-      steps.values.each do |step|
-        action_steps[step.action_id] << step
+      @actions ||= begin
+        action_ids = steps.values.map(&:action_id).uniq
+        action_ids.map do |action_id|
+          attributes = world.persistence.adapter.load_action(id, action_id)
+          Action.from_hash(attributes.update(phase: Action::Present, execution_plan: self),
+                           world)
+        end
       end
-      action_steps.each do |action_id, involved_steps|
-        action = Action::Presenter.load(self,
-                                        action_id,
-                                        involved_steps,
-                                        all_actions)
-        all_actions << action
-      end
-      return all_actions
     end
 
     private

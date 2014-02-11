@@ -20,7 +20,7 @@ module Dynflow
         action_class = action_or_class
       elsif Type? action_or_class, Dynflow::Action
         action = action_or_class
-        action_class = action.action_class
+        action_class = action.class
       else
         Algebrick::TypeCheck.error action_or_class, 'is not instance or child class', Dynflow::Action
       end

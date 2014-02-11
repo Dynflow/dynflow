@@ -33,13 +33,13 @@ module Dynflow
       when :success, :skipped
         1
       when :running, :suspended
-        case self
-        when Action::RunPhase
+        case phase
+        when Action::Run
           run_progress
-        when Action::FinalizePhase
+        when Action::Finalize
           finalize_progress
         else
-          raise "Calculating progress for this phase is not supported"
+          raise 'Calculating progress for this phase is not supported'
         end
       else
         0
@@ -47,13 +47,13 @@ module Dynflow
     end
 
     def progress_weight
-      case self
-      when Action::RunPhase
+      case phase
+      when Action::Run
         run_progress_weight
-      when Action::FinalizePhase
+      when Action::Finalize
         finalize_progress_weight
       else
-        raise "Calculating progress for this phase is not supported"
+        raise 'Calculating progress for this phase is not supported'
       end
     end
 

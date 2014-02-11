@@ -28,7 +28,7 @@ class TestExecutionLog
   end
 
   def <<(action)
-    @log << [action.action_class, action.input]
+    @log << [action.class, action.input]
   end
 
   def log

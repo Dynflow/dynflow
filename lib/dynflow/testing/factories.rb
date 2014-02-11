@@ -7,17 +7,22 @@ module Dynflow
       def create_action(action_class, trigger = nil)
         execution_plan = DummyExecutionPlan.new
         step           = DummyStep.new
-        action_class.plan_phase.new(
+        action_class.new(
             { step:              DummyStep.new,
+              execution_plan:    execution_plan,
+              trigger:           trigger,
               execution_plan_id: execution_plan.id,
               id:                Testing.get_id,
-              plan_step_id:      step.id },
-            execution_plan, trigger)
+              phase:             Action::Plan,
+              plan_step_id:      step.id,
+              run_step_id:       nil,
+              finalize_step_id:  nil },
+            execution_plan.world)
       end
 
       # @return [Action::PlanPhase]
       def plan_action(plan_action, *args, &block)
-        Type! plan_action, Dynflow::Action::PlanPhase
+        Match! plan_action.phase, Action::Plan
 
         plan_action.execute *args, &block
         raise plan_action.error if plan_action.error
@@ -30,15 +35,17 @@ module Dynflow
 
       # @return [Action::RunPhase]
       def run_action(plan_action, event = nil, &stubbing)
-        Type! plan_action, Dynflow::Action::PlanPhase, Dynflow::Action::RunPhase
+        Match! plan_action.phase, Action::Plan, Action::Run
         step       = DummyStep.new
-        run_action = if Dynflow::Action::PlanPhase === plan_action
-                       plan_action.action_class.run_phase.new(
+        run_action = if plan_action.phase == Action::Plan
+                       plan_action.class.new(
                            { step:              step,
                              execution_plan_id: plan_action.execution_plan_id,
                              id:                plan_action.id,
                              plan_step_id:      plan_action.plan_step_id,
                              run_step_id:       step.id,
+                             finalize_step_id:  nil,
+                             phase:             Action::Run,
                              input:             plan_action.input },
                            plan_action.world)
 
@@ -56,15 +63,16 @@ module Dynflow
 
       # @return [Action::FinalizePhase]
       def finalize_action(run_action, &stubbing)
-        Type! run_action, Dynflow::Action::RunPhase
+        Match! run_action.phase, Action::Run
         step            = DummyStep.new
-        finalize_action = run_action.action_class.finalize_phase.new(
+        finalize_action = run_action.class.new(
             { step:              step,
               execution_plan_id: run_action.execution_plan_id,
               id:                run_action.id,
               plan_step_id:      run_action.plan_step_id,
               run_step_id:       run_action.run_step_id,
               finalize_step_id:  step.id,
+              phase:             Action::Finalize,
               input:             run_action.input },
             run_action.world)
 
@@ -74,7 +82,7 @@ module Dynflow
       end
 
       def progress_action_time action
-        Type! action, Dynflow::Action::RunPhase
+        Match! action.phase, Action::Run
         action.world.clock.progress
         action.world.executor.progress
       end
