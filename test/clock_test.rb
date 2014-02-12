@@ -22,7 +22,7 @@ describe clock_class do
     clock.ping q, 0.1, o = Object.new
     assert_equal o, q.pop
     finish = Time.now
-    assert_in_delta 0.1, finish - start, 0.02
+    assert_in_delta 0.1, finish - start, 0.08
   end
 
   it 'pongs on expected times' do
@@ -35,11 +35,11 @@ describe clock_class do
     clock.ping q, 0.2, :c
 
     assert_equal :b, q.pop
-    assert_in_delta 0.1, Time.now - start, 0.02
+    assert_in_delta 0.1, Time.now - start, 0.08
     assert_equal :c, q.pop
-    assert_in_delta 0.2, Time.now - start, 0.02
+    assert_in_delta 0.2, Time.now - start, 0.08
     assert_equal :a, q.pop
-    assert_in_delta 0.3, Time.now - start, 0.02
+    assert_in_delta 0.3, Time.now - start, 0.08
   end
 
   it 'works under stress' do
