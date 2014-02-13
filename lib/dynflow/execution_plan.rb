@@ -96,6 +96,10 @@ module Dynflow
       result == :error
     end
 
+    def errors
+      steps.values.map(&:error).compact
+    end
+
     def generate_action_id
       @last_action_id ||= 0
       @last_action_id += 1

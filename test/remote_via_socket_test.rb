@@ -43,8 +43,9 @@ describe 'remote communication' do
   it 'raises when not connected' do
     remote_world = create_remote_world
     result       = remote_world.trigger Support::CodeWorkflowExample::Commit, 'sha'
-    result.planned.must_equal true
-    -> { result.finished.value! }.must_raise Dynflow::Error
+    result.must_be :planned?
+    result.wont_be :triggered?
+    result.error.must_be_kind_of Dynflow::Error
 
     terminate remote_world
   end
@@ -53,8 +54,9 @@ describe 'remote communication' do
     specify do
       remote_world = create_remote_world
       result       = remote_world.trigger Support::CodeWorkflowExample::Commit, 'sha'
-      result.planned.must_equal true
-      -> { result.finished.value! }.must_raise Dynflow::Error
+      result.must_be :planned?
+      result.wont_be :triggered?
+      result.error.must_be_kind_of Dynflow::Error
 
       remote_world.persistence.load_execution_plan(result.id).state.must_equal :planned
 
@@ -81,7 +83,7 @@ describe 'remote communication' do
                     remote_world: remote_world = create_remote_world }
 
         result = remote_world.trigger Support::CodeWorkflowExample::Commit, 'sha'
-        result.planned.must_equal true
+        result.must_be :planned?
         result.finished.value!.must_be_kind_of Dynflow::ExecutionPlan
 
         terminate *objects.values_at(*order)
@@ -101,9 +103,9 @@ describe 'remote communication' do
 
       terminate rmw1
 
-      -> { rmw1.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value! }.
-          must_raise Dynflow::Error
-      rmw2.trigger(Support::CodeWorkflowExample::Commit, 'sha').finished.value!
+      refute rmw1.trigger(Support::CodeWorkflowExample::Commit, 'sha').triggered?
+      rmw2.trigger(Support::CodeWorkflowExample::Commit, 'sha').
+          finished.value!.must_be_kind_of Dynflow::ExecutionPlan
 
       terminate rmw2, listener, world
     end
@@ -114,7 +116,7 @@ describe 'remote communication' do
       remote_world = create_remote_world
 
       result = remote_world.trigger(Support::CodeWorkflowExample::Slow, 2)
-      result.planned.must_equal true
+      result.must_be :planned?
 
       terminate listener
 

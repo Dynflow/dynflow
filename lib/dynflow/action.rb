@@ -336,11 +336,7 @@ module Dynflow
       Type! error, Exception, String
       action_logger.error error
       self.state  = :error
-      @step.error = if error.is_a?(String)
-                      ExecutionPlan::Steps::Error.new(nil, error, nil)
-                    else
-                      ExecutionPlan::Steps::Error.new(error.class.name, error.message, error.backtrace)
-                    end
+      @step.error = ExecutionPlan::Steps::Error.new(error)
     end
 
     def execute_plan(*args)

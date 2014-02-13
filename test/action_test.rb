@@ -50,9 +50,9 @@ module Dynflow
       include WorldInstance
 
       let :execution_plan do
-        id, planned, finished = *world.trigger(Support::CodeWorkflowExample::IncomingIssues, issues_data)
-        raise unless planned
-        finished.value
+        result = world.trigger(Support::CodeWorkflowExample::IncomingIssues, issues_data)
+        result.must_be :planned?
+        result.finished.value
       end
 
       let :issues_data do
