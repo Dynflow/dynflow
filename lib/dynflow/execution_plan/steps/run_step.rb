@@ -14,7 +14,7 @@ module Dynflow
       end
 
       def phase
-        :run_phase
+        Action::Run
       end
     end
   end

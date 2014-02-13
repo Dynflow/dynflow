@@ -52,21 +52,35 @@ module Dynflow
       calculate_subscription_index
     end
 
-    class TriggerResult
-      include Algebrick::TypeCheck
+    TriggerResult = Algebrick.type do
+      # Returned by #trigger when planning fails.
+      PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
+      # Returned by #trigger when planning is successful but execution fails to start.
+      ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
+      # Returned by #trigger when planning is successful, #future will resolve after
+      # ExecutionPlan is executed.
+      Triggered       = type { fields! execution_plan_id: String, future: Future }
 
-      attr_reader :execution_plan_id, :planned, :finished
-      alias_method :id, :execution_plan_id
-      alias_method :planned?, :planned
+      variants PlaningFailed, ExecutionFailed, Triggered
+    end
 
-      def initialize(execution_plan_id, planned, finished)
-        @execution_plan_id = Type! execution_plan_id, String
-        @planned           = Type! planned, TrueClass, FalseClass
-        @finished          = Type! finished, Future
+    module TriggerResult
+      def planned?
+        match self, PlaningFailed => false, ExecutionFailed => true, Triggered => true
       end
 
-      def to_a
-        [execution_plan_id, planned, finished]
+      def triggered?
+        match self, PlaningFailed => false, ExecutionFailed => false, Triggered => true
+      end
+
+      def id
+        execution_plan_id
+      end
+    end
+
+    module Triggered
+      def finished
+        future
       end
     end
 
@@ -75,16 +89,16 @@ module Dynflow
     def trigger(action_class, *args)
       execution_plan = plan(action_class, *args)
       planned        = execution_plan.state == :planned
-      finished       = if planned
-                         begin
-                           execute(execution_plan.id)
-                         rescue => exception
-                           Future.new.fail exception
-                         end
-                       else
-                         Future.new.resolve(execution_plan)
-                       end
-      return TriggerResult.new(execution_plan.id, planned, finished)
+
+      if planned
+        begin
+          Triggered[execution_plan.id, execute(execution_plan.id)]
+        rescue => exception
+          ExecutionFailed[execution_plan.id, exception]
+        end
+      else
+        PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
+      end
     end
 
     def event(execution_plan_id, step_id, event, future = Future.new)

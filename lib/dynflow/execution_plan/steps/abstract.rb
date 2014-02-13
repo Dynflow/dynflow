@@ -31,9 +31,7 @@ module Dynflow
 
         self.state = state.to_sym
 
-        Type! action_class, Class
-        raise ArgumentError, 'action_class is not an child of Action' unless action_class < Action
-        raise ArgumentError, 'action_class must not be phase' if action_class.phase?
+        Child! action_class, Action
         @action_class = action_class
 
         @action_id = action_id || raise(ArgumentError, 'missing action_id')

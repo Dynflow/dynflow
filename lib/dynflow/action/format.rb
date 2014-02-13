@@ -14,12 +14,12 @@ module Dynflow
       when !block && @input_format_block
         return @input_format ||= Apipie::Params::Description.define(&@input_format_block)
       when block && @input_format_block
-        raise "The input_format has already been defined in #{self.action_class}"
+        raise "The input_format has already been defined in #{self.class}"
       when !block && !@input_format_block
         if superclass.respond_to? :input_format
           superclass.input_format
         else
-          raise "The input_format has not been defined yet in #{self.action_class}"
+          raise "The input_format has not been defined yet in #{self.class}"
         end
       end
     end
@@ -31,12 +31,12 @@ module Dynflow
       when !block && @output_format_block
         return @output_format ||= Apipie::Params::Description.define(&@output_format_block)
       when block && @output_format_block
-        raise "The output_format has already been defined in #{self.action_class}"
+        raise "The output_format has already been defined in #{self.class}"
       when !block && !@output_format_block
         if superclass.respond_to? :output_format
           superclass.output_format
         else
-          raise "The output_format has not been defined yet in #{self.action_class}"
+          raise "The output_format has not been defined yet in #{self.class}"
         end
       end
     end

@@ -7,6 +7,7 @@ require 'active_support/core_ext/hash/indifferent_access'
 # TODO validate in/output, also validate unknown keys
 # TODO performance testing, how many actions will it handle?
 # TODO profiling, find bottlenecks
+# FIND change ids to uuid, uuid-<action_id>, uuid-<action_id-(plan, run, finalize)
 module Dynflow
 
   class Error < StandardError
@@ -20,9 +21,9 @@ module Dynflow
   require 'dynflow/transaction_adapters'
   require 'dynflow/persistence'
   require 'dynflow/middleware'
-  require 'dynflow/action'
   require 'dynflow/flows'
   require 'dynflow/execution_plan'
+  require 'dynflow/action'
   require 'dynflow/listeners'
   require 'dynflow/executors'
   require 'dynflow/logger_adapters'

@@ -1,7 +1,6 @@
 module Dynflow
   module Listeners
     class Socket < Abstract
-      # TODO terminate when exiting
       include Listeners::Serialization
       include Algebrick::Matching
 

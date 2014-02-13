@@ -2,7 +2,6 @@ module Dynflow
   class Middleware
     require 'dynflow/middleware/register'
     require 'dynflow/middleware/world'
-    require 'dynflow/middleware/action'
     require 'dynflow/middleware/resolver'
     require 'dynflow/middleware/stack'
 

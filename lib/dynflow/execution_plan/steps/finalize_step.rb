@@ -15,7 +15,7 @@ module Dynflow
 
 
       def phase
-        :finalize_phase
+        Action::Finalize
       end
 
     end

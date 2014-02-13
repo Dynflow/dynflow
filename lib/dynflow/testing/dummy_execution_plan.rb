@@ -7,7 +7,7 @@ module Dynflow
       attr_reader :id, :planned_plan_steps, :planned_run_steps, :planned_finalize_steps
 
       def initialize
-        @id                     = Testing.get_id
+        @id                     = Testing.get_id.to_s
         @planned_plan_steps     = []
         @planned_run_steps      = []
         @planned_finalize_steps = []

@@ -30,6 +30,10 @@ module Dynflow
         executor.event execution_plan_id, step_id, event, future
       end
 
+      def persistence
+        nil
+      end
+
     end
   end
 end

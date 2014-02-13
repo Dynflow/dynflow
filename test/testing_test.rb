@@ -14,7 +14,7 @@ module Dynflow
         action = create_and_plan_action CWE::DummyHeavyProgress, input
 
         action.must_be_kind_of CWE::DummyHeavyProgress
-        action.must_be_kind_of Action::PlanPhase
+        action.phase.must_equal Action::Plan
         action.input.must_equal input
         action.execution_plan.must_be_kind_of Testing::DummyExecutionPlan
         action.state.must_equal :success
@@ -29,7 +29,7 @@ module Dynflow
         action = run_action plan
 
         action.must_be_kind_of CWE::DummyHeavyProgress
-        action.must_be_kind_of Action::RunPhase
+        action.phase.must_equal Action::Run
         action.input.must_equal input
         action.world.must_equal plan.world
         action.run_step_id.wont_equal action.plan_step_id
@@ -67,7 +67,7 @@ module Dynflow
         action                = finalize_action run
 
         action.must_be_kind_of CWE::DummyHeavyProgress
-        action.must_be_kind_of Action::FinalizePhase
+        action.phase.must_equal Action::Finalize
         action.input.must_equal input
         action.output.must_equal run.output
         action.world.must_equal plan.world

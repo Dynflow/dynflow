@@ -723,8 +723,9 @@ module Dynflow
             it 'does not accept new work' do
               assert world.terminate.wait
               result = world.trigger(Support::CodeWorkflowExample::Slow, 0.02)
-              result.planned.must_equal true
-              -> { result.finished.value! }.must_raise Dynflow::Error
+              result.must_be :planned?
+              result.wont_be :triggered?
+              result.error.must_be_kind_of Dynflow::Error
             end
 
             it 'it terminates when no work' do
