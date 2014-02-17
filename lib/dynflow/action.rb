@@ -64,6 +64,12 @@ module Dynflow
       end
     end
 
+    module Phase
+      def to_s_humanized
+        to_s.split('::').last
+      end
+    end
+
     def self.constantize(action_name)
       super action_name
     rescue NameError
@@ -215,7 +221,10 @@ module Dynflow
 
     def state=(state)
       phase! Executable
-      @world.logger.debug "step #{execution_plan_id}:#{@step.id} #{self.state} >> #{state}"
+      @world.logger.debug format('%13s %s:%2d %9s >> %9s in phase %8s %s',
+                                 'Step', execution_plan_id, @step.id,
+                                 self.state, state,
+                                 phase.to_s_humanized, self.class)
       @step.state = state
     end
 
@@ -367,7 +376,8 @@ module Dynflow
 
     def execute_run(event)
       phase! Run
-      @world.logger.debug "step #{execution_plan_id}:#{@step.id} got event #{event}" if event
+      @world.logger.debug format('%13s %s:%2d got event %s',
+                                 'Step', execution_plan_id, @step.id, event) if event
       @input = OutputReference.dereference @input, world.persistence
 
       case

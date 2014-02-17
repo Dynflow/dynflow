@@ -73,7 +73,8 @@ module Dynflow
       else
         # ignore
       end
-      logger.debug "execution plan #{id} #{original} >> #{state}"
+      logger.debug format('%13s %s    %9s >> %9s',
+                          'ExecutionPlan', id, original, state)
       self.save
     end
 

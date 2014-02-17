@@ -62,7 +62,7 @@ module Dynflow
       end
 
       def to_s
-        "[#{self.class.name}:#{execution_plan_id}:#{id}]"
+        "#<#{self.class.name}:#{execution_plan_id}:#{id}>"
       end
 
       def to_hash
