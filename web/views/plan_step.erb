@@ -1,9 +1,13 @@
 <ul class="plan-step">
   <li>
-    <p>
+    <p class="step-label">
       <span class="label label-<%= step_css_class(step) %>"><%= h("#{step.action_class}") %></span>
     </p>
-    <%= step_error(step) %>
+    <div class="action">
+      <% action = step.action @plan %>
+      <%= show_action_data("Input:", action.input) %>
+      <%= step_error(step) %>
+    </div>
     <% step.children.each do |sub_step_id| %>
       <%= erb :plan_step, locals: { step: @plan.steps[sub_step_id] } %>
     <% end %>

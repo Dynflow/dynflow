@@ -86,6 +86,12 @@ module Dynflow
         raise NotImplementedError, "Expected to be implemented in RunStep and FinalizeStep"
       end
 
+      def action(execution_plan)
+        attributes = world.persistence.adapter.load_action(execution_plan_id, action_id)
+        Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan),
+                         world)
+      end
+
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)

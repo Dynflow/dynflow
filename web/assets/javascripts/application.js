@@ -20,6 +20,10 @@
             var stepData = $(this).siblings('div.action');
             stepData.slideToggle();
         });
+    $('.plan-step .step-label').click(function (e) {
+      var stepData = $(this).siblings('div.action');
+      stepData.slideToggle();
     });
+  });
 
 })(jQuery);

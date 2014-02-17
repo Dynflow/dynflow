@@ -90,6 +90,10 @@ table.flow span.step-label {
     height: 1.5em;
 }
 
+.plan-step div.action {
+    display: none;
+}
+
 table.flow div.action {
     background-color: white;
     padding: 10px;
