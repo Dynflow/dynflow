@@ -1,9 +1,9 @@
 body {
-    margin: 1em;
+  margin: 1em;
 }
 
 pre {
-    white-space: pre;
+  white-space: pre;
 }
 
 div.tab-pane {
@@ -25,81 +25,81 @@ ul.plan-step span.error {
 table.flow td.flow.sequence,
 table.flow td.flow.concurrence,
 table.flow-hint td.border {
-    border-style: solid;
-    border-width: 4px;
+  border-style: solid;
+  border-width: 4px;
 }
 
 table.flow-hint td {
-    width: 6em;
-    padding: 0.3em;
+  width: 6em;
+  padding: 0.3em;
 }
 
 table.flow-hint {
-    margin: 1em 0 1em 0;
+  margin: 1em 0 1em 0;
 }
 
 table.flow td.sequence, table.flow-hint td.sequence {
-    border-color: #FF6600;
+  border-color: #FF6600;
 }
 
 table.flow td.concurrence, table.flow-hint td.concurrence {
-    border-color: #005CE6;
+  border-color: #005CE6;
 }
 
 td.atom {
-    padding: 0;
+  padding: 0;
 }
 
 table.flow div.atom {
-    margin-bottom: -1.6em;
-    position: relative;
-    height: 2.1em;
-    top: 0;
-    left: 0;
-    z-index:-1;
+  margin-bottom: -1.6em;
+  position: relative;
+  height: 2.1em;
+  top: 0;
+  left: 0;
+  z-index: -1;
 }
 
 table.flow table {
-    width: 100%;
+  width: 100%;
 }
 
 table.flow td.success span.step-label {
-    color: #468847;
+  color: #468847;
 }
 
 table.flow div.success {
-    background-color: #DFF0D8;
+  background-color: #DFF0D8;
 }
 
 table.flow div.error {
-    background-color: #FF9D9D;
+  background-color: #FF9D9D;
 }
 
 table.flow td.skipped span.step-label {
-    color: #C09853;
+  color: #C09853;
 }
 
 table.flow div.skipped {
-    background-color: #FCF8E3;
+  background-color: #FCF8E3;
 }
 
 table.flow span.step-label {
-    cursor: pointer;
-    margin-left: 4px;
-    display: inline-block;
-    height: 1.5em;
+  cursor: pointer;
+  margin-left: 4px;
+  display: inline-block;
+  height: 1.5em;
 }
 
 .plan-step div.action {
-    display: none;
+  display: none;
 }
 
 table.flow div.action {
-    background-color: white;
-    padding: 10px;
-    display: none;
+  background-color: white;
+  padding: 10px;
+  display: none;
 }
 
 table.flow td.error div.step-data {
-    display: block;
+  display: block;
 }
