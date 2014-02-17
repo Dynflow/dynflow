@@ -285,7 +285,8 @@ module Dynflow
 
     def plan_self(input)
       phase! Plan
-      self.input = input
+      self.input.update input
+
       if self.respond_to?(:run)
         run_step          = @execution_plan.add_run_step(self)
         @run_step_id      = run_step.id
