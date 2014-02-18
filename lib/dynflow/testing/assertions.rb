@@ -14,7 +14,8 @@ module Dynflow
         end
 
         assert(!found.empty?,
-               "Action #{planned_action_class} with plan_input #{plan_input} was not planned, there were only #{found_classes.map(&:plan_input)}")
+               "Action #{planned_action_class} with plan_input #{plan_input} was not planned, " +
+                   "there were only #{found_classes.map(&:plan_input)}")
         found
       end
 

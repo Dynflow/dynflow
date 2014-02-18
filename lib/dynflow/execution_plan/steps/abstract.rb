@@ -62,7 +62,7 @@ module Dynflow
       end
 
       def to_s
-        "[#{self.class.name}:#{execution_plan_id}:#{id}]"
+        "#<#{self.class.name}:#{execution_plan_id}:#{id}>"
       end
 
       def to_hash
@@ -84,6 +84,12 @@ module Dynflow
       # @see [Action::Progress] for more details
       def progress
         raise NotImplementedError, "Expected to be implemented in RunStep and FinalizeStep"
+      end
+
+      def action(execution_plan)
+        attributes = world.persistence.adapter.load_action(execution_plan_id, action_id)
+        Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan),
+                         world)
       end
 
       protected

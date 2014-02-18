@@ -28,12 +28,18 @@ implementations as well).
 * [Related projects](#related-projects)
 
 Current status
--------------
+--------------
 
 Dynflow has been under heavy development for several months to be able
 to support the services orchestration in the
 [Katello](http://katello.org) and [Foreman](http://theforeman.org/)
 projects, getting to production-ready state in couple of weeks.
+
+Requirements
+------------
+
+-   Ruby MRI 1.9.3, 2.0, or 2.1.
+-   It does not work on JRuby nor Rubinius yet.
 
 How it works
 ------------
