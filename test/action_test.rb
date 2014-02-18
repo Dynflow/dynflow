@@ -61,9 +61,7 @@ module Dynflow
       end
 
       let :presenter do
-        execution_plan.actions.find do |action|
-          action.is_a? Support::CodeWorkflowExample::IncomingIssues
-        end
+        execution_plan.root_plan_step.action execution_plan
       end
 
       specify { presenter.class.must_equal Support::CodeWorkflowExample::IncomingIssues }

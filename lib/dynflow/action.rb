@@ -156,6 +156,27 @@ module Dynflow
       execution_plan.steps.fetch(plan_step_id)
     end
 
+    # @param [Class] filter_class return only actions which are kind of `filter_class`
+    # @return [Array<Action>] of directly planned actions by this action,
+    # returned actions are in Present phase
+    def planned_actions(filter = Action)
+      phase! Present
+      plan_step.
+          planned_steps(execution_plan).
+          map { |s| s.action execution_plan }.
+          select { |a| a.is_a?(filter) }
+    end
+
+    # @param [Class] filter_class return only actions which are kind of `filter_class`
+    # @return [Array<Action>] of all (including indirectly) planned actions by this action,
+    # returned actions are in Present phase
+    def all_planned_actions(filter_class = Action)
+      phase! Present
+      mine = planned_actions
+      (mine + mine.reduce([]) { |arr, action| arr + action.all_planned_actions }).
+          select { |a| a.is_a?(filter_class) }
+    end
+
     def run_step
       phase! Present
       execution_plan.steps.fetch(run_step_id) if run_step_id

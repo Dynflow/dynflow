@@ -24,9 +24,8 @@ module Support
       end
 
       def summary
-        triages   = execution_plan.actions.find_all do |action|
-          action.is_a? Triage
-        end
+        # TODO fix, not a good pattern, it should delegate to IncomingIssue first
+        triages   = all_planned_actions(Triage)
         assignees = triages.map do |triage|
           triage.output[:classification] &&
               triage.output[:classification][:assignee]

@@ -264,18 +264,12 @@ module Dynflow
       plan_total > 0 ? (plan_done / plan_total) : 1
     end
 
-    # This method can be used to access result of the whole execution plan and detailed
-    # progress.
-    # @return [Array<Action::Presenter>] presenter of the actions
-    # involved in the plan
+    # @return [Array<Action>] actions in Present phase, consider using
+    # Steps::Abstract#action instead
     def actions
       @actions ||= begin
-        action_ids = steps.values.map(&:action_id).uniq
-        action_ids.map do |action_id|
-          attributes = world.persistence.adapter.load_action(id, action_id)
-          Action.from_hash(attributes.update(phase: Action::Present, execution_plan: self),
-                           world)
-        end
+        action_ids = steps.reduce({}) { |h, (_, s)| h.update s.action_id => s }
+        action_ids.map { |_, step| step.action self }
       end
     end
 

@@ -86,6 +86,8 @@ module Dynflow
         raise NotImplementedError, "Expected to be implemented in RunStep and FinalizeStep"
       end
 
+      # @return [Action] in presentation mode, intended for retrieving: progress information,
+      # details, human outputs, etc.
       def action(execution_plan)
         attributes = world.persistence.adapter.load_action(execution_plan_id, action_id)
         Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan),

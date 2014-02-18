@@ -64,7 +64,7 @@ module Dynflow
         describe 'for error in running phase' do
 
           before do
-            step_id                             = execution_plan.run_flow.all_step_ids[2]
+            step_id = execution_plan.run_flow.all_step_ids[2]
             execution_plan.steps[step_id].set_state :error, true
           end
 
@@ -77,7 +77,7 @@ module Dynflow
         describe 'for pending step in running phase' do
 
           before do
-            step_id                             = execution_plan.run_flow.all_step_ids[2]
+            step_id = execution_plan.run_flow.all_step_ids[2]
             execution_plan.steps[step_id].set_state :pending, true
           end
 
@@ -239,10 +239,10 @@ module Dynflow
           world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
-        it 'provides the access to the actions data via Action::Presenter' do
-          execution_plan.actions.size.must_equal 9
-          execution_plan.actions.each do |action|
-            action.phase.must_equal Action::Present
+        it 'provides the access to the actions data via steps #action' do
+          execution_plan.steps.size.must_equal 20
+          execution_plan.steps.each do |_, step|
+            step.action(execution_plan).phase.must_equal Action::Present
           end
         end
       end
