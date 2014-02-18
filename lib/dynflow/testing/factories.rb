@@ -63,7 +63,7 @@ module Dynflow
 
       # @return [Action::FinalizePhase]
       def finalize_action(run_action, &stubbing)
-        Match! run_action.phase, Action::Run
+        Match! run_action.phase, Action::Plan, Action::Run
         step            = DummyStep.new
         finalize_action = run_action.class.new(
             { step:              step,
