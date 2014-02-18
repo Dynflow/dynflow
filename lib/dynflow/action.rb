@@ -165,7 +165,7 @@ module Dynflow
     end
 
     def steps
-      [plan_step, run_step, finalize_step_id]
+      [plan_step, run_step, finalize_step]
     end
 
     def to_hash
