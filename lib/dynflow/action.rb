@@ -306,7 +306,7 @@ module Dynflow
       @execution_plan.switch_flow(Flows::Sequence.new([]), &block)
     end
 
-    def plan_self(input)
+    def plan_self(input = {})
       phase! Plan
       self.input.update input
 
