@@ -21,16 +21,18 @@ module Dynflow
     require 'dynflow/action/cancellable_polling'
 
     def self.all_children
-      children.inject(children) { |children, child| children + child.all_children }
+      children.values.inject(children.values) do |children, child|
+        children + child.all_children
+      end
     end
 
     def self.inherited(child)
-      children << child
+      children[child.name] = child
       super child
     end
 
     def self.children
-      @children ||= []
+      @children ||= {}
     end
 
     def self.middleware
