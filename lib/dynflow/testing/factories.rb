@@ -20,6 +20,20 @@ module Dynflow
             execution_plan.world)
       end
 
+      def create_action_presentation(action_class)
+        execution_plan = DummyExecutionPlan.new
+        action_class.new(
+            { execution_plan:    execution_plan,
+              execution_plan_id: execution_plan.id,
+              id:                Testing.get_id,
+              phase:             Action::Present,
+              plan_step_id:      1,
+              run_step_id:       nil,
+              finalize_step_id:  nil,
+              input:             nil },
+            execution_plan.world)
+      end
+
       # @return [Action::PlanPhase]
       def plan_action(plan_action, *args, &block)
         Match! plan_action.phase, Action::Plan

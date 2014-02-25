@@ -23,6 +23,10 @@ module Dynflow
         @children = children
       end
 
+      def planned_steps(execution_plan)
+        @children.map { |id| execution_plan.steps.fetch(id) }
+      end
+
       def phase
         Action::Plan
       end
