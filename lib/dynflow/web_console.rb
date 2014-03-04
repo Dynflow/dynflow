@@ -56,6 +56,10 @@ module Dynflow
         end
       end
 
+      def duration_to_s(duration)
+        h("%0.2fs" % duration)
+      end
+
       def load_action(step)
         world.persistence.load_action(step)
       end
@@ -74,7 +78,7 @@ module Dynflow
         if !value_html.empty?
           <<-HTML
             <p>
-              #{h(label)}
+              <b>#{h(label)}</b>
           #{value_html}
             </p>
           HTML
