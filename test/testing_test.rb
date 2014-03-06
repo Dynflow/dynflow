@@ -9,7 +9,7 @@ module Dynflow
 
     describe 'testing' do
 
-      it '#plan_action' do
+      specify '#plan_action' do
         input  = { 'input' => 'input' }
         action = create_and_plan_action CWE::DummyHeavyProgress, input
 
@@ -23,7 +23,17 @@ module Dynflow
         assert_action_planed action, CWE::DummySuspended
       end
 
-      it '#run_action without suspend' do
+      specify 'stub_plan_action' do
+        action = create_action CWE::DummyHeavyProgress
+        action.execution_plan.stub_planned_action(CWE::DummySuspended) do |sub_action|
+          sub_action.define_singleton_method(:test) { "test" }
+        end
+        plan_action(action, {})
+        stubbed_action = action.execution_plan.planned_plan_steps.first
+        stubbed_action.test.must_equal "test"
+      end
+
+      specify '#run_action without suspend' do
         input  = { 'input' => 'input' }
         plan   = create_and_plan_action CWE::DummyHeavyProgress, input
         action = run_action plan
@@ -37,7 +47,7 @@ module Dynflow
         action.progress_done.must_equal 1
       end
 
-      it '#run_action with suspend' do
+      specify '#run_action with suspend' do
         input  = { 'input' => 'input' }
         plan   = create_and_plan_action CWE::DummySuspended, input
         action = run_action plan
@@ -59,7 +69,7 @@ module Dynflow
         action.progress_done.must_equal 1
       end
 
-      it '#finalizes' do
+      specify '#finalize_action' do
         input                 = { 'input' => 'input' }
         plan                  = create_and_plan_action CWE::DummyHeavyProgress, input
         run                   = run_action plan
@@ -122,14 +132,14 @@ module Dynflow
         let(:planned_action) { create_and_plan_action CWE::Merge, plan_input }
         let(:runned_action) { run_action planned_action }
 
-        it '#plans' do
+        it 'plans' do
           assert_run_phase planned_action
           refute_finalize_phase planned_action
 
           planned_action.execution_plan.planned_plan_steps.must_be_empty
         end
 
-        it '#runs' do
+        it 'runs' do
           runned_action.output.fetch(:passed).must_equal true
         end
 
@@ -138,7 +148,7 @@ module Dynflow
             super.update review_results: [true, false]
           end
 
-          it '#runs' do
+          it 'runs' do
             runned_action.output.fetch(:passed).must_equal false
           end
         end
