@@ -23,6 +23,7 @@ module Dynflow
                   sequential_manager.finalize
                 end)
           @pool << WorkerDone[work: message, worker: self]
+        ensure
           @transaction_adapter.cleanup
         end
       end
