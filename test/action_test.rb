@@ -70,5 +70,26 @@ module Dynflow
         presenter.summary.must_equal(assignees: ["John Doe"])
       end
     end
+
+    describe 'serialization' do
+
+      include Testing
+
+      it 'fails when input is not serializable' do
+        klass = Class.new(Dynflow::Action)
+        -> { create_and_plan_action klass, key: Object.new }.must_raise NoMethodError
+      end
+
+      it 'fails when output is not serializable' do
+        klass  = Class.new(Dynflow::Action) do
+          def run
+            output.update key: Object.new
+          end
+        end
+        action = create_and_plan_action klass, {}
+        -> { run_action action }.must_raise NoMethodError
+      end
+    end
+
   end
 end
