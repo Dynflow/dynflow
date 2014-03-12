@@ -30,6 +30,16 @@ module Dynflow
         found
       end
 
+      def refute_action_planed(action, planned_action_class)
+        Match! action.phase, Action::Plan
+        Match! action.state, :success
+        found = action.execution_plan.planned_plan_steps.
+            select { |a| a.is_a?(planned_action_class) }
+
+        assert(found.empty?, "Action #{planned_action_class} was planned")
+        found
+      end
+
       # assert that +action+ has run-phase planned
       def assert_run_phase(action, input = nil, &block)
         Match! action.phase, Action::Plan

@@ -21,6 +21,7 @@ module Dynflow
         assert_run_phase action
         assert_finalize_phase action
         assert_action_planed action, CWE::DummySuspended
+        refute_action_planed action, CWE::DummyAnotherTrigger
       end
 
       specify 'stub_plan_action' do
