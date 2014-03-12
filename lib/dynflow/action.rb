@@ -395,6 +395,8 @@ module Dynflow
             end
           end
         end
+
+        check_serializable :input
       end
     end
 
@@ -422,6 +424,8 @@ module Dynflow
           if result == SUSPEND
             self.state = :suspended
           end
+
+          check_serializable :output
         end
 
       else
@@ -439,6 +443,15 @@ module Dynflow
           finalize
         end
       end
+    end
+
+    def check_serializable(what)
+      Match! what, :input, :output
+      value = send what
+      recursive_to_hash value # it raises when not serializable
+    rescue => e
+      value.replace not_serializable: true
+      raise e
     end
   end
 end
