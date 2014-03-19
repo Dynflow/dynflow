@@ -48,8 +48,8 @@ module Dynflow
       @root_plan_step = root_plan_step
       @started_at     = Type! started_at, Time, NilClass
       @ended_at       = Type! ended_at, Time, NilClass
-      @execution_time = Type! execution_time, Float
-      @real_time      = Type! real_time, Float
+      @execution_time = Type! execution_time, Numeric
+      @real_time      = Type! real_time, Numeric
 
       steps.all? do |k, v|
         Type! k, Integer
