@@ -53,20 +53,24 @@ module Dynflow
         plan   = create_and_plan_action CWE::DummySuspended, input
         action = run_action plan
 
-        action.output.must_equal 'progress' => 0, 'done' => false
+        action.output.must_equal 'task' => { 'progress' => 0, 'done' => false }
         action.progress_done.must_equal 0
 
         3.times { progress_action_time action }
-        action.output.must_equal 'progress' => 30, 'done' => false
+        action.output.must_equal('task' => { 'progress' => 30, 'done' => false } ,
+                                 'poll_attempts' => {'total' => 2, 'failed'=> 0 })
         action.progress_done.must_equal 0.3
 
         run_action action, Dynflow::Action::Polling::Poll
         run_action action, Dynflow::Action::Polling::Poll
-        action.output.must_equal 'progress' => 50, 'done' => false
+        action.output.must_equal('task' => { 'progress' => 50, 'done' => false },
+                                 'poll_attempts' => {'total' => 4, 'failed' => 0 })
         action.progress_done.must_equal 0.5
 
         5.times { progress_action_time action }
-        action.output.must_equal 'progress' => 100, 'done' => true
+
+        action.output.must_equal('task' => { 'progress' => 100, 'done' => true },
+                                 'poll_attempts' => {'total' => 9, 'failed' => 0 })
         action.progress_done.must_equal 1
       end
 

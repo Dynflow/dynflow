@@ -290,22 +290,14 @@ module Support
 
       def cancel_external_task
         if input[:text] !~ /cancel-fail/
-          { cancelled: true }
+          external_task.merge(cancelled: true)
         else
           error! 'action cancelled'
         end
       end
 
-      def external_task=(external_task_data)
-        self.output.update external_task_data
-      end
-
-      def external_task
-        output
-      end
-
       def done?
-        external_task[:progress] >= 100
+        external_task && external_task[:progress] >= 100
       end
 
       def poll_interval
@@ -313,7 +305,7 @@ module Support
       end
 
       def run_progress
-        output[:progress].to_f / 100
+        external_task && external_task[:progress].to_f / 100
       end
     end
 
@@ -325,14 +317,6 @@ module Support
         { progress: 0, done: false }
       end
 
-      def external_task=(external_task_data)
-        self.output.update external_task_data
-      end
-
-      def external_task
-        output
-      end
-
       def poll_external_task
         if input[:text] == 'troll progress' && !output[:trolled]
           output[:trolled] = true
@@ -340,15 +324,15 @@ module Support
         end
 
         if input[:text] =~ /pause in progress (\d+)/
-          TestPause.pause if output[:progress] == $1.to_i
+          TestPause.pause if external_task[:progress] == $1.to_i
         end
 
-        progress = output[:progress] + 10
+        progress = external_task[:progress] + 10
         { progress: progress, done: progress >= 100 }
       end
 
       def done?
-        external_task[:progress] >= 100
+        external_task && external_task[:progress] >= 100
       end
 
       def poll_interval
@@ -356,7 +340,7 @@ module Support
       end
 
       def run_progress
-        output[:progress].to_f / 100
+        external_task && external_task[:progress].to_f / 100
       end
     end
 

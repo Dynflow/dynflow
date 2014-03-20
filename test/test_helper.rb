@@ -17,8 +17,6 @@ require 'pry'
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 
-Dynflow::Testing.logger_adapter.level = 1
-
 class TestExecutionLog
 
   include Enumerable

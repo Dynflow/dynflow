@@ -1,22 +1,38 @@
 module Dynflow
   module Testing
     class ManagedClock
+
+      attr_reader :pending_pings
+
+      include Algebrick::Types
+      Timer = Algebrick.type do
+        fields! who:   Object, # to ping back
+                when:  type { variants Time, Numeric }, # to deliver
+                what:  Maybe[Object], # to send
+                where: Symbol # it should be delivered, which method
+      end
+
+      module Timer
+        include Clock::Timer
+      end
+
       def initialize
-        @pings_to_process = []
+        @pending_pings = []
       end
 
       def ping(who, time, with_what = nil, where = :<<)
-        @pings_to_process << [who, [where, with_what].compact]
+        with = with_what.nil? ? None : Some[Object][with_what]
+        @pending_pings << Timer[who, time, with, where]
       end
 
       def progress
-        copy = @pings_to_process.dup
+        copy = @pending_pings.dup
         clear
-        copy.each { |who, args| who.send *args }
+        copy.each { |ping| ping.apply }
       end
 
       def clear
-        @pings_to_process.clear
+        @pending_pings.clear
       end
     end
   end

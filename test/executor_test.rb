@@ -203,8 +203,8 @@ module Dynflow
                   result.result.must_equal :success
                   result.state.must_equal :stopped
                   action = world.persistence.load_action result.steps[2]
-                  action.output[:progress].must_equal 30
-                  action.output[:cancelled].must_equal true
+                  action.output[:task][:progress].must_equal 30
+                  action.output[:task][:cancelled].must_equal true
                 end
               end
 
@@ -219,7 +219,7 @@ module Dynflow
                   step = result.steps[2]
                   step.error.message.must_equal 'action cancelled'
                   action = world.persistence.load_action step
-                  action.output[:progress].must_equal 30
+                  action.output[:task][:progress].must_equal 30
                 end
               end
 
@@ -241,8 +241,8 @@ module Dynflow
                     result.result.must_equal :success
                     result.state.must_equal :stopped
                     action = world.persistence.load_action result.steps[2]
-                    action.output[:progress].must_be :<=, 30
-                    action.output[:cancelled].must_equal true
+                    action.output[:task][:progress].must_be :<=, 30
+                    action.output[:task][:cancelled].must_equal true
                   end
                 end
               end

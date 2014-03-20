@@ -3,7 +3,7 @@ module Dynflow
     extend Algebrick::TypeCheck
 
     def self.logger_adapter
-      @logger_adapter ||= LoggerAdapters::Simple.new $stdout, 0
+      @logger_adapter || LoggerAdapters::Simple.new($stdout, 1)
     end
 
     def self.logger_adapter=(adapter)
