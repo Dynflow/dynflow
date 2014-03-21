@@ -25,7 +25,7 @@ module Dynflow
 
       META_DATA = { execution_plan: %w(state result started_at ended_at real_time execution_time),
                     action:         [],
-                    step:           %w(state started_at ended_at real_time execution_time action_id) }
+                    step:           %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight) }
 
       def initialize(db_path)
         @db = initialize_db db_path

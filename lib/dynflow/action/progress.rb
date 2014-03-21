@@ -10,6 +10,37 @@ module Dynflow
   # the progress is 1 for success/skipped actions and 0 for errorneous ones.
   module Action::Progress
 
+    class Calculate < Middleware
+
+      def run(*args)
+        with_progress_calculation(*args) do
+          [action.run_progress, action.run_progress_weight]
+        end
+      end
+
+      def finalize(*args)
+        with_progress_calculation(*args) do
+          [action.finalize_progress, action.finalize_progress_weight]
+        end
+      end
+
+      protected
+
+      def with_progress_calculation(*args)
+        pass(*args)
+      ensure
+        begin
+          action.calculated_progress = yield
+        rescue => error
+          # we don't want progress calculation to cause fail of the whole process
+          # TODO: introduce post-execute state for handling issues with additional
+          # calculations after the step is run
+          action.action_logger.error('Error in progress calculation')
+          action.action_logger.error(error)
+        end
+      end
+    end
+
     def run_progress
       0.5
     end
@@ -26,37 +57,7 @@ module Dynflow
       1
     end
 
-    # this method is not intended to be overriden. Use +{run, finalize}_progress+
-    # variants instead
-    def progress_done
-      case self.state
-      when :success, :skipped
-        1
-      when :running, :suspended
-        case phase
-        when Action::Run
-          run_progress
-        when Action::Finalize
-          finalize_progress
-        else
-          raise 'Calculating progress for this phase is not supported'
-        end
-      else
-        0
-      end
-    end
-
-    def progress_weight
-      case phase
-      when Action::Run
-        run_progress_weight
-      when Action::Finalize
-        finalize_progress_weight
-      else
-        raise 'Calculating progress for this phase is not supported'
-      end
-    end
-
+    attr_accessor :calculated_progress
   end
 end
 

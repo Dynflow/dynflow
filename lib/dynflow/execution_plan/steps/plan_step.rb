@@ -50,7 +50,7 @@ module Dynflow
         action     = action_class.new(attributes, execution_plan.world)
         persistence.save_action(execution_plan_id, action)
 
-        with_time_calculation do
+        with_meta_calculation(action) do
           action.execute(*args)
         end
 

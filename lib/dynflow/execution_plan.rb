@@ -205,6 +205,7 @@ module Dynflow
 
     def add_run_step(action)
       add_step(Steps::RunStep, action.class, action.id).tap do |step|
+        step.progress_weight = action.run_progress_weight
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
@@ -212,6 +213,7 @@ module Dynflow
 
     def add_finalize_step(action)
       add_step(Steps::FinalizeStep, action.class, action.id).tap do |step|
+        step.progress_weight = action.finalize_progress_weight
         finalize_flow << Flows::Atom.new(step.id)
       end
     end
@@ -257,9 +259,9 @@ module Dynflow
     def progress
       flow_step_ids         = run_flow.all_step_ids + finalize_flow.all_step_ids
       plan_done, plan_total = flow_step_ids.reduce([0.0, 0]) do |(done, total), step_id|
-        step_progress_done, step_progress_weight = self.steps[step_id].progress
-        [done + (step_progress_done * step_progress_weight),
-         total + step_progress_weight]
+        step = self.steps[step_id]
+        [done + (step.progress_done * step.progress_weight),
+         total + step.progress_weight]
       end
       plan_total > 0 ? (plan_done / plan_total) : 1
     end

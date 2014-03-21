@@ -1,7 +1,7 @@
 <% action = load_action(step) %>
 
 <% if flow.is_a? Dynflow::Flows::Atom %>
-   <div class="<%= h(atom_css_classes(flow)) %>" style=" width: <%= progress_width(action) %>%;"></div>
+   <div class="<%= h(atom_css_classes(flow)) %>" style=" width: <%= progress_width(step) %>%;"></div>
 <% end %>
 
 <span class="step-label">

@@ -5,7 +5,7 @@ module Dynflow
       def execute(*args)
         return self if [:skipped, :success].include? self.state
         open_action do |action|
-          with_time_calculation do
+          with_meta_calculation(action) do
             action.execute(*args)
           end
         end
@@ -13,11 +13,6 @@ module Dynflow
 
       def clone
         self.class.from_hash(to_hash, execution_plan_id, world)
-      end
-
-      def progress
-        action = persistence.load_action(self)
-        [action.progress_done, action.progress_weight]
       end
 
       private
