@@ -126,11 +126,11 @@ module Dynflow
         end
       end
 
-      def progress_width(action)
-        if action.state == :error
+      def progress_width(step)
+        if step.state == :error
           100 # we want to show the red bar in full width
         else
-          action.progress_done * 100
+          step.progress_done * 100
         end
       end
 

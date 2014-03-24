@@ -18,7 +18,9 @@ module Dynflow
           started_at = nil,
           ended_at = nil,
           execution_time = 0.0,
-          real_time = 0.0)
+          real_time = 0.0,
+          progress_done = nil,
+          progress_weight = nil)
 
         @id                = id || raise(ArgumentError, 'missing id')
         @execution_plan_id = Type! execution_plan_id, String
@@ -28,6 +30,9 @@ module Dynflow
         @ended_at          = Type! ended_at, Time, NilClass
         @execution_time    = Type! execution_time, Numeric
         @real_time         = Type! real_time, Numeric
+
+        @progress_done     = Type! progress_done, Numeric, NilClass
+        @progress_weight   = Type! progress_weight, Numeric, NilClass
 
         self.state = state.to_sym
 
@@ -76,15 +81,30 @@ module Dynflow
                           started_at:        time_to_str(started_at),
                           ended_at:          time_to_str(ended_at),
                           execution_time:    execution_time,
-                          real_time:         real_time
+                          real_time:         real_time,
+                          progress_done:     progress_done,
+                          progress_weight:   progress_weight
       end
 
-      # @return [Array<[0..100], Fixnum>] the percentage of the step progress
-      # and the weight - how time-consuming the task is comparing the others.
-      # @see [Action::Progress] for more details
-      def progress
-        raise NotImplementedError, "Expected to be implemented in RunStep and FinalizeStep"
+      def progress_done
+        default_progress_done || @progress_done || 0
       end
+
+      # in specific states it's clear what progress the step is in
+      def default_progress_done
+        case self.state
+        when :success, :skipped
+          1
+        when :pending
+          0
+        end
+      end
+
+      def progress_weight
+        @progress_weight || 0 # 0 means not calculated yet
+      end
+
+      attr_writer :progress_weight # to allow setting the weight from planning
 
       # @return [Action] in presentation mode, intended for retrieving: progress information,
       # details, human outputs, etc.
@@ -108,16 +128,19 @@ module Dynflow
             string_to_time(hash[:started_at]),
             string_to_time(hash[:ended_at]),
             hash[:execution_time],
-            hash[:real_time]
+            hash[:real_time],
+            hash[:progress_done],
+            hash[:progress_weight]
       end
 
       private
 
-      def with_time_calculation(&block)
+      def with_meta_calculation(action, &block)
         start       = Time.now
         @started_at ||= start
         block.call
       ensure
+        @progress_done, @progress_weight = action.calculated_progress
         @ended_at       = Time.now
         @execution_time += @ended_at - start
         @real_time      = @ended_at - @started_at

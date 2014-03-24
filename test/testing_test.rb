@@ -45,7 +45,6 @@ module Dynflow
         action.world.must_equal plan.world
         action.run_step_id.wont_equal action.plan_step_id
         action.state.must_equal :success
-        action.progress_done.must_equal 1
       end
 
       specify '#run_action with suspend' do
@@ -54,24 +53,25 @@ module Dynflow
         action = run_action plan
 
         action.output.must_equal 'task' => { 'progress' => 0, 'done' => false }
-        action.progress_done.must_equal 0
+        action.run_progress.must_equal 0
 
         3.times { progress_action_time action }
         action.output.must_equal('task' => { 'progress' => 30, 'done' => false } ,
                                  'poll_attempts' => {'total' => 2, 'failed'=> 0 })
-        action.progress_done.must_equal 0.3
+        action.run_progress.must_equal 0.3
 
         run_action action, Dynflow::Action::Polling::Poll
         run_action action, Dynflow::Action::Polling::Poll
         action.output.must_equal('task' => { 'progress' => 50, 'done' => false },
                                  'poll_attempts' => {'total' => 4, 'failed' => 0 })
-        action.progress_done.must_equal 0.5
+        action.run_progress.must_equal 0.5
 
         5.times { progress_action_time action }
 
+
         action.output.must_equal('task' => { 'progress' => 100, 'done' => true },
                                  'poll_attempts' => {'total' => 9, 'failed' => 0 })
-        action.progress_done.must_equal 1
+        action.run_progress.must_equal 1
       end
 
       specify '#finalize_action' do
@@ -88,7 +88,6 @@ module Dynflow
         action.world.must_equal plan.world
         action.finalize_step_id.wont_equal action.run_step_id
         action.state.must_equal :success
-        action.progress_done.must_equal 1
 
         $dummy_heavy_progress.must_equal 'dummy_heavy_progress'
       end

@@ -81,6 +81,8 @@ module Dynflow
     attr_reader :world, :phase, :execution_plan_id, :id, :input,
                 :plan_step_id, :run_step_id, :finalize_step_id
 
+    middleware.use Action::Progress::Calculate
+
     def initialize(attributes, world)
       Type! attributes, Hash
 
