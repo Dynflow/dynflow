@@ -51,15 +51,8 @@ module Dynflow
                    execution_plan.steps[step.id] = step
                    suspended, work = @running_steps_manager.done(step)
                    unless suspended
-                     execution_plan.update_execution_time step.execution_time
                      work = compute_next_from_step.call step
                    end
-                   # TODO: can be probably disabled to improve
-                   # performance, execution time will not be updated,
-                   # maybe more - check on the other side, it allows
-                   # us to use persistence adapter for hooking into
-                   # the running process.
-                   execution_plan.save
                    work
                  end),
                 (on Work::Finalize do

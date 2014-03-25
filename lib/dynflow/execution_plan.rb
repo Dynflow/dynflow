@@ -37,7 +37,7 @@ module Dynflow
         steps = {},
         started_at = nil,
         ended_at = nil,
-        execution_time = 0.0,
+        execution_time = nil,
         real_time = 0.0)
 
       @id             = Type! id, String
@@ -48,7 +48,7 @@ module Dynflow
       @root_plan_step = root_plan_step
       @started_at     = Type! started_at, Time, NilClass
       @ended_at       = Type! ended_at, Time, NilClass
-      @execution_time = Type! execution_time, Numeric
+      @execution_time = Type! execution_time, Numeric, NilClass
       @real_time      = Type! real_time, Numeric
 
       steps.all? do |k, v|
@@ -68,18 +68,15 @@ module Dynflow
       when :planning
         @started_at = Time.now
       when :stopped
-        @ended_at  = Time.now
-        @real_time = @ended_at - @started_at
+        @ended_at       = Time.now
+        @real_time      = @ended_at - @started_at
+        @execution_time = compute_execution_time
       else
         # ignore
       end
       logger.debug format('%13s %s    %9s >> %9s',
                           'ExecutionPlan', id, original, state)
       self.save
-    end
-
-    def update_execution_time(execution_time)
-      @execution_time += execution_time
     end
 
     def result
@@ -252,6 +249,12 @@ module Dynflow
                string_to_time(hash[:ended_at]),
                hash[:execution_time],
                hash[:real_time])
+    end
+
+    def compute_execution_time
+      self.steps.values.reduce(0) do |execution_time, step|
+        execution_time + (step.execution_time || 0)
+      end
     end
 
     # @return [0..1] the percentage of the progress. See Action::Progress for more
