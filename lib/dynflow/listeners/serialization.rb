@@ -32,12 +32,14 @@ module Dynflow
         end
 
         module Event
+          # TODO fix the workaround
+          # marshal and then use base64 because not all json libs can correctly escape binary data
           def to_hash
-            super.update event: Marshal.dump(event)
+            super.update event: Base64.strict_encode64(Marshal.dump(event))
           end
 
           def self.product_from_hash(hash)
-            super(hash.merge 'event' => Marshal.load(hash.fetch('event')))
+            super(hash.merge 'event' => Marshal.load(Base64.strict_decode64(hash.fetch('event'))))
           end
         end
       end

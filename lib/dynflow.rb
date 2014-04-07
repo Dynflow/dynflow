@@ -3,6 +3,7 @@ require 'algebrick'
 require 'thread'
 require 'set'
 require 'active_support/core_ext/hash/indifferent_access'
+require 'base64'
 
 # TODO validate in/output, also validate unknown keys
 # TODO performance testing, how many actions will it handle?
