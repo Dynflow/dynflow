@@ -22,6 +22,10 @@ module Dynflow
         @logger_adapter.dynflow_logger
       end
 
+      def silence_logger!
+        action_logger.level = 4
+      end
+
       def subscribed_actions(klass)
         []
       end
