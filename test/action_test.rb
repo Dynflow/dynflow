@@ -213,7 +213,7 @@ module Dynflow
 
       it 'invokes the external task again when polling on the old one fails' do
         action   = run_action plan
-        action.world.action_logger.level = 3
+        action.world.silence_logger!
         action.external_service.will_fail
         action.output[:task][:progress].must_equal 0
         run_action action
@@ -223,7 +223,7 @@ module Dynflow
       it 'tolerates some failure while polling' do
         action   = run_action plan
         action.external_service.will_fail
-        action.world.action_logger.level = 4
+        action.world.silence_logger!
 
         TestPollingAction.config.poll_max_retries = 3
         (1..2).each do |attempt|
