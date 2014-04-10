@@ -119,7 +119,7 @@ module Dynflow
 
         it 'plans' do
           planned_action.input.must_equal input.stringify_keys
-          assert_run_phase planned_action
+          assert_run_phase planned_action, { commit: "sha", reviewer: "name", result: true}
           refute_finalize_phase planned_action
 
           planned_action.execution_plan.planned_plan_steps.must_be_empty
@@ -137,7 +137,9 @@ module Dynflow
         let(:runned_action) { run_action planned_action }
 
         it 'plans' do
-          assert_run_phase planned_action
+          assert_run_phase planned_action do |input|
+            input[:commit].must_equal "sha"
+          end
           refute_finalize_phase planned_action
 
           planned_action.execution_plan.planned_plan_steps.must_be_empty

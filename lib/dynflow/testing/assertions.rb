@@ -46,7 +46,7 @@ module Dynflow
         Match! action.state, :success
         action.execution_plan.planned_run_steps.must_include action
         action.input.must_equal input.stringify_keys if input
-        block.call input if block
+        block.call action.input if block
       end
 
       # refute that +action+ has run-phase planned
