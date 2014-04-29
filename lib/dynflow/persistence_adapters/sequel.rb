@@ -92,6 +92,7 @@ module Dynflow
       end
 
       def migrate_db
+        log :info, 'migrating DB to include latest dynflow data-model'
         ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
