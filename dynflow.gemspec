@@ -24,6 +24,7 @@ Gem::Specification.new do |s|
   s.add_dependency "concurrent-ruby", '~> 1.0'
   s.add_dependency "concurrent-ruby-edge", '~> 0.2.3'
   s.add_dependency "sequel"
+  s.add_dependency "minitar"
 
   s.add_development_dependency "rake"
   s.add_development_dependency "rack-test"

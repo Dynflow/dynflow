@@ -27,20 +27,22 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="<%= url '/' %>">
+            <a class="navbar-brand" href="<%= url(@export ? 'index.html' : '/') %>">
               <img src="<%= url '/images/logo-square.png' %>"/>
               Dynflow
             </a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-              <li><a href="<%= url '/' %>">Execution plans</a></li>
-              <li><a href="<%= url '/status' %>">Status</a></li>
-              <% if settings.respond_to?(:custom_navigation) && settings.custom_navigation %>
+              <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/' %>">Execution plans</a></li>
+              <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/status' %>">Status</a></li>
+              <% if !export && settings.respond_to?(:custom_navigation) && settings.custom_navigation %>
                 <% settings.custom_navigation.each do |description, uri| %>
                   <li><a href="<%= uri %>"><%= description %></a></li>
                 <% end %>
               <% end %>
+              <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/' %>">Execution plans</a></li>
+              <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/status' %>">Status</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
             </ul>

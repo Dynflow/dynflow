@@ -1,6 +1,16 @@
 module Dynflow
   module Web
     module ConsoleHelpers
+
+      def url(link = '')
+        relativize_links(uri(link, false))
+      end
+
+      def relativize_links(link)
+        return link unless @export
+        link.gsub(%r(^/), '')
+      end
+
       def validation_result_css_class(result)
         if result == :valid
           "success"
@@ -141,7 +151,7 @@ module Dynflow
       end
 
       def order_link(attr, label)
-        return h(label) unless supported_ordering?(attr)
+        return h(label) if @export || !supported_ordering?(attr)
         new_ordering_options = { order_by: attr.to_s,
                                  desc:     false }
         arrow                = ""

@@ -49,6 +49,5 @@ module Dynflow
   require 'dynflow/semaphores'
   require 'dynflow/throttle_limiter'
   require 'dynflow/config'
-  require 'dynflow/exporter'
-  require 'dynflow/importer'
+  require 'dynflow/exporters'
 end

@@ -1,7 +1,7 @@
 <ul class="plan-step">
   <li>
     <p class="step-label">
-      <span class="label label-<%= step_css_class(step) %>"><%= h("#{step.action_class}") %></span>
+      <span class="label label-<%= step_css_class(step) %>"><%= h("#{step.action_class.name}") %></span>
     </p>
     <div class="action">
       <p><b>Started at:</b> <%= h(step.started_at) %></p>
