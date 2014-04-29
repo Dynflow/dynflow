@@ -458,6 +458,7 @@ module Dynflow
       case
       when state == :running
         raise NotImplementedError, 'recovery after restart is not implemented'
+        # FIXME it looks like it can crush process
 
       when [:pending, :error, :skipping, :suspended].include?(state)
         if event && state != :suspended
