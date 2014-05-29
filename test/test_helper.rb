@@ -16,6 +16,7 @@ require 'pry'
 
 require 'support/code_workflow_example'
 require 'support/middleware_example'
+require 'support/rescue_example'
 
 class TestExecutionLog
 
@@ -111,9 +112,11 @@ module WorldInstance
     @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, 4
   end
 
-  def self.create_world
-    Dynflow::SimpleWorld.new logger_adapter: logger_adapter,
-                             auto_terminate: false
+  def self.create_world(options = {})
+    options = { logger_adapter: logger_adapter,
+                auto_terminate: false,
+                auto_rescue: false }.merge(options)
+    Dynflow::SimpleWorld.new(options)
   end
 
   def self.create_remote_world(world)

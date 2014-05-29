@@ -50,6 +50,10 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def mark_to_skip
+        raise NotImplementedError
+      end
+
       def persistence
         world.persistence
       end
@@ -59,7 +63,7 @@ module Dynflow
       end
 
       def self.states
-        @states ||= [:pending, :running, :success, :suspended, :skipped, :error]
+        @states ||= [:pending, :running, :success, :suspended, :skipping, :skipped, :error]
       end
 
       def execute(*args)
@@ -108,9 +112,9 @@ module Dynflow
 
       # @return [Action] in presentation mode, intended for retrieving: progress information,
       # details, human outputs, etc.
-      def action(execution_plan)
+      def action(execution_plan, parent_action = nil)
         attributes = world.persistence.adapter.load_action(execution_plan_id, action_id)
-        Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan),
+        Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan, parent_action: parent_action),
                          world)
       end
 

@@ -96,8 +96,8 @@ module Dynflow
             end
           end
 
-          it 'should be :success' do
-            execution_plan.result.must_equal :success
+          it 'should be :warning' do
+            execution_plan.result.must_equal :warning
           end
 
         end

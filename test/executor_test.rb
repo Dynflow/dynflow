@@ -556,7 +556,7 @@ module Dynflow
 
             it "runs all pending steps except skipped" do
               resumed_execution_plan.state.must_equal :stopped
-              resumed_execution_plan.result.must_equal :success
+              resumed_execution_plan.result.must_equal :warning
 
               run_triages = TestExecutionLog.run.find_all do |action_class, input|
                 action_class == Support::CodeWorkflowExample::Triage
@@ -570,7 +570,7 @@ module Dynflow
                 7: UpdateIssue(success) {\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\", \"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"} --> {}
                 9: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
               Dynflow::Flows::Sequence
-                13: Triage(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"} --> {}
+                13: Triage(skipping) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"} --> {}
                 16: UpdateIssue(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\", \"assignee\"=>Step(13).output[:classification][:assignee], \"severity\"=>Step(13).output[:classification][:severity]} --> {}
                 18: NotifyAssignee(skipped) {\"triage\"=>Step(13).output} --> {}
               EXECUTED_RUN_FLOW

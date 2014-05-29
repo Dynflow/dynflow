@@ -18,6 +18,11 @@ module Dynflow
         Action::Finalize
       end
 
+      def mark_to_skip
+        self.state = :skipped
+        self.save
+      end
+
     end
   end
 end
