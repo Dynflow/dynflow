@@ -5,11 +5,11 @@ module Support
 
     class ComplexActionWithSkip < Dynflow::Action
 
-      def plan
+      def plan(error_state)
         sequence do
           concurrence do
             plan_action(ActionWithSkip, 3, :success)
-            plan_action(ActionWithSkip, 4, :error)
+            plan_action(ActionWithSkip, 4, error_state)
           end
           plan_action(ActionWithSkip, 5, :success)
         end
@@ -33,14 +33,21 @@ module Support
 
       def run
         case input[:desired_state].to_sym
-        when :success
+        when :success, :error_on_finalize
           output[:message] = 'Been here'
-        when :error, :error_on_skip
+        when :error_on_run, :error_on_skip
           raise 'some error as you wish'
         when :pending
           raise 'we were not supposed to get here'
         else
-          raise "unkown desired state #{inpuyt[:desired_state]}"
+          raise "unkown desired state #{input[:desired_state]}"
+        end
+      end
+
+      def finalize
+        case input[:desired_state].to_sym
+        when :error_on_finalize, :error_on_skip
+          raise 'some error as you wish'
         end
       end
 

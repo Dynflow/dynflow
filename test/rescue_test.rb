@@ -18,10 +18,10 @@ module Dynflow
         execution_plan.rescue_from_error.value
       end
 
-      describe 'of simple skippable action' do
+      describe 'of simple skippable action in run phase' do
 
         let :execution_plan do
-          execute(Example::ActionWithSkip, 1, :error)
+          execute(Example::ActionWithSkip, 1, :error_on_run)
         end
 
         it 'suggests skipping the action' do
@@ -37,10 +37,28 @@ module Dynflow
 
       end
 
-      describe 'of complex action with skips' do
+      describe 'of simple skippable action in finalize phase' do
 
         let :execution_plan do
-          execute(Example::ComplexActionWithSkip)
+          execute(Example::ActionWithSkip, 1, :error_on_finalize)
+        end
+
+        it 'suggests skipping the action' do
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Skip
+        end
+
+        it 'skips the action and continues' do
+          rescued_plan.state.must_equal :stopped
+          rescued_plan.result.must_equal :warning
+          rescued_plan.entry_action.output[:message].must_equal "Been here"
+        end
+
+      end
+
+      describe 'of complex action with skips in run phase' do
+
+        let :execution_plan do
+          execute(Example::ComplexActionWithSkip, :error_on_run)
         end
 
         it 'suggests skipping the action' do
@@ -58,10 +76,31 @@ module Dynflow
 
       end
 
+      describe 'of complex action with skips in finalize phase' do
+
+        let :execution_plan do
+          execute(Example::ComplexActionWithSkip, :error_on_finalize)
+        end
+
+        it 'suggests skipping the action' do
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Skip
+        end
+
+        it 'skips the action and continues' do
+          rescued_plan.state.must_equal :stopped
+          rescued_plan.result.must_equal :warning
+          skipped_action = rescued_plan.actions.find do |action|
+            action.steps.find { |step| step && step.state == :skipped }
+          end
+          skipped_action.output[:message].must_equal "Been here"
+        end
+
+      end
+
       describe 'of complex action without skips' do
 
         let :execution_plan do
-          execute(Example::ComplexActionWithoutSkip)
+          execute(Example::ComplexActionWithoutSkip, :error_on_run)
         end
 
         it 'suggests pausing the plan' do
@@ -83,7 +122,7 @@ module Dynflow
         describe 'of plan with skips' do
 
            let :execution_plan do
-             execute(Example::ComplexActionWithSkip)
+             execute(Example::ComplexActionWithSkip, :error_on_run)
            end
 
            it 'skips the action and continues automatically' do
@@ -109,7 +148,7 @@ module Dynflow
         describe 'of plan without skips' do
 
           let :execution_plan do
-             execute(Example::ComplexActionWithoutSkip)
+             execute(Example::ComplexActionWithoutSkip, :error_on_run)
            end
 
            it 'skips the action and continues automatically' do

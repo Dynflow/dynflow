@@ -21,7 +21,7 @@ module Dynflow
     def rescue_strategy
       suggested_strategies = []
 
-      if run_step && run_step.state == :error
+      if self.steps.compact.any? { |step| step.state == :error }
         suggested_strategies << SuggestedStrategy[self, rescue_strategy_for_self]
       end
 
@@ -47,10 +47,11 @@ module Dynflow
     # Override when different appraoch should be taken for combining
     # the suggested strategies
     def combine_suggested_strategies(suggested_strategies)
-      if suggested_strategies.any? { |suggested_strategy| suggested_strategy[:strategy] == Skip }
+      if suggested_strategies.empty? ||
+            suggested_strategies.all? { |suggested_strategy| suggested_strategy[:strategy] == Skip }
         return Skip
       else
-        rescue_strategy_for_self
+        return Pause
       end
     end
   end
