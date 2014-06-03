@@ -18,7 +18,7 @@ module Support
 
     class ComplexActionWithoutSkip < ComplexActionWithSkip
 
-      def rescue_strategy(action, suggested_reaction)
+      def rescue_strategy_for_planned_action(action, suggested_reaction)
         # enforce rollback even when error on skipable action
         :pause
       end
@@ -57,7 +57,7 @@ module Support
         end
       end
 
-      def run_rescue_strategy
+      def rescue_strategy_for_self
         :skip
       end
 

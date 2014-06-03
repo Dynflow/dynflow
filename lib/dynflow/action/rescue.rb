@@ -43,17 +43,17 @@ module Dynflow
     #
     def rescue_strategy(action, suggested_strategy)
       if action == self
-        run_rescue_strategy
+        rescue_strategy_for_self
       else
-        planned_action_rescue_strategy(action, suggested_strategy)
+        rescue_strategy_for_planned_action(action, suggested_strategy)
       end
     end
 
-    def run_rescue_strategy
+    def rescue_strategy_for_self
       return :pause
     end
 
-    def planned_action_rescue_strategy(action, suggested_strategy)
+    def rescue_strategy_for_planned_action(action, suggested_strategy)
       if suggested_strategy == :skip
         return :skip
       else
