@@ -25,7 +25,7 @@ module Dynflow
         end
 
         it 'suggests skipping the action' do
-          execution_plan.rescue_strategy.must_equal :skip
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Skip
         end
 
         it 'skips the action and continues' do
@@ -44,7 +44,7 @@ module Dynflow
         end
 
         it 'suggests skipping the action' do
-          execution_plan.rescue_strategy.must_equal :skip
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Skip
         end
 
         it 'skips the action and continues' do
@@ -65,11 +65,11 @@ module Dynflow
         end
 
         it 'suggests pausing the plan' do
-          execution_plan.rescue_strategy.must_equal :pause
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Pause
         end
 
         it 'fails rescuing' do
-          lambda { rescued_plan }.must_raise ExecutionPlan::RescueError
+          lambda { rescued_plan }.must_raise Errors::RescueError
         end
 
       end

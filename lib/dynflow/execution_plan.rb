@@ -5,15 +5,12 @@ module Dynflow
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
 
-    class RescueError < StandardError; end
-
     include Algebrick::TypeCheck
     include Stateful
 
     require 'dynflow/execution_plan/steps'
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
-    require 'dynflow/execution_plan/rescuer'
 
     attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time
@@ -105,18 +102,28 @@ module Dynflow
     end
 
     def rescue_strategy
-      ExecutionPlan::Rescuer.new(self).suggested_strategy
+      Type! entry_action.rescue_strategy, Action::Rescue::Strategy
     end
 
     def rescue_plan_id
-      ExecutionPlan::Rescuer.new(self).rescue_plan_id
+      case rescue_strategy
+      when Action::Rescue::Pause
+        nil
+      when Action::Rescue::Skip
+        failed_steps.each { |step| self.skip(step) }
+        self.id
+      end
+    end
+
+    def failed_steps
+      self.steps.values.find_all { |step| step.state == :error }
     end
 
     def rescue_from_error
       if rescue_plan_id = self.rescue_plan_id
         @world.execute(rescue_plan_id)
       else
-        raise RescueError, 'Unable to rescue from the error'
+        raise Errors::RescueError, 'Unable to rescue from the error'
       end
     end
 
