@@ -116,7 +116,11 @@ module Dynflow
     end
 
     def failed_steps
-      self.steps.values.find_all { |step| step.state == :error }
+      steps_in_state(:error)
+    end
+
+    def steps_in_state(*states)
+      self.steps.values.find_all {|step| states.include?(step.state) }
     end
 
     def rescue_from_error
