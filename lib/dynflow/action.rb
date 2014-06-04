@@ -430,23 +430,17 @@ module Dynflow
         self.state = :running unless self.state == :skipping
         save_state
         with_error_handling do
-          if state == :skipping
-            if run_accepts_events?
-              event = Skip
-            else
-              # when skipping but the run method doesn't accept events
-              # do nothing
-              break
-            end
-          end
+          event = Skip if state == :skipping
 
-          result = catch(SUSPEND) do
-            world.middleware.execute(:run, self, *[event].compact) do |*args|
-              run(*args)
+          # we run the Skip event only when the run accepts events
+          if event != Skip || run_accepts_events?
+            result = catch(SUSPEND) do
+              world.middleware.execute(:run, self, *[event].compact) do |*args|
+                run(*args)
+              end
             end
-          end
-          if result == SUSPEND
-            self.state = :suspended
+
+            self.state = :suspended if result == SUSPEND
           end
 
           check_serializable :output
