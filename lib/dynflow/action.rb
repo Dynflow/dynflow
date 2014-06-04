@@ -104,8 +104,6 @@ module Dynflow
                                  ExecutionPlan) if phase? Plan, Present
       @trigger           = Type! attributes.fetch(:trigger), Action, NilClass if phase? Plan
 
-      @parent_action     = Type! attributes.fetch(:parent_action), Action, NilClass if phase? Present
-
       getter =-> key, required do
         required ? attributes.fetch(key) : attributes.fetch(key, {})
       end
@@ -154,11 +152,6 @@ module Dynflow
       @execution_plan
     end
 
-    def parent_action
-      phase! Present
-      @parent_action
-    end
-
     def action_logger
       phase! Executable
       world.action_logger
@@ -176,7 +169,7 @@ module Dynflow
       phase! Present
       plan_step.
           planned_steps(execution_plan).
-          map { |s| s.action(execution_plan, self) }.
+          map { |s| s.action(execution_plan) }.
           select { |a| a.is_a?(filter) }
     end
 
