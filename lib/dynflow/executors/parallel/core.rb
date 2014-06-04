@@ -90,6 +90,8 @@ module Dynflow
         end
 
         def rescue!(manager)
+          # TODO: after moving to concurrent-ruby actors, there should be better place
+          # to put this logic of making sure we don't run rescues in endless loop
           @plan_ids_in_rescue << manager.execution_plan.id
           rescue_plan_id = manager.execution_plan.rescue_plan_id
           if rescue_plan_id

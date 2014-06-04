@@ -301,6 +301,10 @@ module Dynflow
     end
     remove_method :finalize
 
+    def run_accepts_events?
+      method(:run).arity != 0
+    end
+
     def self.new_from_hash(hash, world)
       new(hash, world)
     end
@@ -434,9 +438,11 @@ module Dynflow
         save_state
         with_error_handling do
           if state == :skipping
-            if method(:run).arity != 0
+            if run_accepts_events?
               event = Skip
             else
+              # when skipping but the run method doesn't accept events
+              # do nothing
               break
             end
           end

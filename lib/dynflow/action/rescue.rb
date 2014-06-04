@@ -6,8 +6,8 @@ module Dynflow
     end
 
     SuggestedStrategy = Algebrick.type do
-      fields action:   Action,
-             strategy: Strategy
+      fields! action:   Action,
+              strategy: Strategy
     end
 
     # What strategy should be used for rescuing from error in
@@ -48,7 +48,7 @@ module Dynflow
     # the suggested strategies
     def combine_suggested_strategies(suggested_strategies)
       if suggested_strategies.empty? ||
-            suggested_strategies.all? { |suggested_strategy| suggested_strategy[:strategy] == Skip }
+            suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Skip }
         return Skip
       else
         return Pause
