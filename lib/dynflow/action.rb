@@ -9,10 +9,13 @@ module Dynflow
     include Algebrick::Matching
 
     require 'dynflow/action/format'
-    extend Format
+    extend Action::Format
 
     require 'dynflow/action/progress'
-    include Progress
+    include Action::Progress
+
+    require 'dynflow/action/rescue'
+    include Action::Rescue
 
     require 'dynflow/action/suspended'
     require 'dynflow/action/missing'
@@ -56,6 +59,7 @@ module Dynflow
       end
       variants Executable, Present = atom
     end
+    Skip    = Algebrick.atom
 
     module Executable
       def execute_method_name
@@ -165,7 +169,7 @@ module Dynflow
       phase! Present
       plan_step.
           planned_steps(execution_plan).
-          map { |s| s.action execution_plan }.
+          map { |s| s.action(execution_plan) }.
           select { |a| a.is_a?(filter) }
     end
 
@@ -290,6 +294,10 @@ module Dynflow
     end
     remove_method :finalize
 
+    def run_accepts_events?
+      method(:run).arity != 0
+    end
+
     def self.new_from_hash(hash, world)
       new(hash, world)
     end
@@ -347,7 +355,7 @@ module Dynflow
     end
 
     def with_error_handling(&block)
-      raise "wrong state #{self.state}" unless self.state == :running
+      raise "wrong state #{self.state}" unless [:skipping, :running].include?(self.state)
 
       begin
         catch(ERROR) { block.call }
@@ -360,6 +368,8 @@ module Dynflow
       case self.state
       when :running
         self.state = :success
+      when :skipping
+        self.state = :skipped
       when :suspended, :error
       else
         raise "wrong state #{self.state}"
@@ -412,19 +422,25 @@ module Dynflow
       when state == :running
         raise NotImplementedError, 'recovery after restart is not implemented'
 
-      when [:pending, :error, :suspended].include?(state)
-        if [:pending, :error].include?(state) && event
+      when [:pending, :error, :skipping, :suspended].include?(state)
+        if event && state != :suspended
           raise 'event can be processed only when in suspended state'
         end
 
-        self.state = :running
+        self.state = :running unless self.state == :skipping
         save_state
         with_error_handling do
-          result = catch(SUSPEND) do
-            world.middleware.execute(:run, self, *[event].compact) { |*args| run(*args) }
-          end
-          if result == SUSPEND
-            self.state = :suspended
+          event = Skip if state == :skipping
+
+          # we run the Skip event only when the run accepts events
+          if event != Skip || run_accepts_events?
+            result = catch(SUSPEND) do
+              world.middleware.execute(:run, self, *[event].compact) do |*args|
+                run(*args)
+              end
+            end
+
+            self.state = :suspended if result == SUSPEND
           end
 
           check_serializable :output

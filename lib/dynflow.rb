@@ -14,6 +14,7 @@ module Dynflow
   class Error < StandardError
   end
 
+  require 'dynflow/errors'
   require 'dynflow/future'
   require 'dynflow/micro_actor'
   require 'dynflow/serializable'

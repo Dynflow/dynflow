@@ -3,7 +3,7 @@ module Dynflow
     include Algebrick::TypeCheck
 
     attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options, :middleware
+                :logger_adapter, :options, :middleware, :auto_rescue
 
     def initialize(options_hash = {})
       @options             = default_options.merge options_hash
@@ -13,6 +13,7 @@ module Dynflow
       @persistence         = Persistence.new(self, persistence_adapter)
       @executor            = Type! option_val(:executor), Executors::Abstract
       @action_classes      = option_val(:action_classes)
+      @auto_rescue         = option_val(:auto_rescue)
       @middleware          = Middleware::World.new
       calculate_subscription_index
 
@@ -26,7 +27,8 @@ module Dynflow
       @default_options ||=
           { action_classes: Action.all_children,
             logger_adapter: LoggerAdapters::Simple.new,
-            executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) } }
+            executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) },
+            auto_rescue:    true }
     end
 
     def clock

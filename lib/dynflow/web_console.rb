@@ -95,7 +95,7 @@ module Dynflow
           classes << "success"
         when :error
           classes << "error"
-        when :skipped
+        when :skipped, :skipping
           classes << "skipped"
         end
         return classes.join(" ")

@@ -4,6 +4,7 @@ module Dynflow
 
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
+
     include Algebrick::TypeCheck
     include Stateful
 
@@ -83,7 +84,9 @@ module Dynflow
       all_steps = steps.values
       if all_steps.any? { |step| step.state == :error }
         return :error
-      elsif all_steps.all? { |step| [:success, :skipped].include?(step.state) }
+      elsif all_steps.any? { |step| [:skipping, :skipped].include?(step.state) }
+        return :warning
+      elsif all_steps.all? { |step| step.state == :success }
         return :success
       else
         return :pending
@@ -96,6 +99,36 @@ module Dynflow
 
     def errors
       steps.values.map(&:error).compact
+    end
+
+    def rescue_strategy
+      Type! entry_action.rescue_strategy, Action::Rescue::Strategy
+    end
+
+    def rescue_plan_id
+      case rescue_strategy
+      when Action::Rescue::Pause
+        nil
+      when Action::Rescue::Skip
+        failed_steps.each { |step| self.skip(step) }
+        self.id
+      end
+    end
+
+    def failed_steps
+      steps_in_state(:error)
+    end
+
+    def steps_in_state(*states)
+      self.steps.values.find_all {|step| states.include?(step.state) }
+    end
+
+    def rescue_from_error
+      if rescue_plan_id = self.rescue_plan_id
+        @world.execute(rescue_plan_id)
+      else
+        raise Errors::RescueError, 'Unable to rescue from the error'
+      end
     end
 
     def generate_action_id
@@ -137,11 +170,7 @@ module Dynflow
     end
 
     def skip(step)
-      raise "plan step can't be skipped" if step.is_a? Steps::PlanStep
-      steps_to_skip = steps_to_skip(step).each do |s|
-        s.state = :skipped
-        s.save
-      end
+      steps_to_skip = steps_to_skip(step).each(&:mark_to_skip)
       self.save
       return steps_to_skip
     end
@@ -269,12 +298,14 @@ module Dynflow
       plan_total > 0 ? (plan_done / plan_total) : 1
     end
 
-    # @return [Array<Action>] actions in Present phase, consider using
-    # Steps::Abstract#action instead
+    def entry_action
+      @entry_action ||= root_plan_step.action(self)
+    end
+
+    # @return [Array<Action>] actions in Present phase
     def actions
       @actions ||= begin
-        action_ids = steps.reduce({}) { |h, (_, s)| h.update s.action_id => s }
-        action_ids.map { |_, step| step.action self }
+        [entry_action] + entry_action.all_planned_actions
       end
     end
 

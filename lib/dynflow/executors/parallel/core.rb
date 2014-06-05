@@ -14,6 +14,7 @@ module Dynflow
           @world                   = Type! world, World
           @pool                    = Pool.new(self, pool_size, world.transaction_adapter)
           @execution_plan_managers = {}
+          @plan_ids_in_rescue      = Set.new
         end
 
         def on_message(message)
@@ -77,10 +78,26 @@ module Dynflow
 
         def continue_manager(manager, next_work)
           if manager.done?
-            loose_manager_and_set_future manager.execution_plan.id
-            try_to_terminate
+            finish_plan manager.execution_plan.id
           else
             feed_pool next_work
+          end
+        end
+
+        def rescue?(manager)
+          @world.auto_rescue && manager.execution_plan.state == :paused &&
+              !@plan_ids_in_rescue.include?(manager.execution_plan.id)
+        end
+
+        def rescue!(manager)
+          # TODO: after moving to concurrent-ruby actors, there should be better place
+          # to put this logic of making sure we don't run rescues in endless loop
+          @plan_ids_in_rescue << manager.execution_plan.id
+          rescue_plan_id = manager.execution_plan.rescue_plan_id
+          if rescue_plan_id
+            self << Parallel::Execution[rescue_plan_id, manager.future]
+          else
+            set_future(manager)
           end
         end
 
@@ -92,10 +109,21 @@ module Dynflow
           work_items.each { |new_work| @pool << new_work }
         end
 
-        def loose_manager_and_set_future(execution_plan_id)
+        def finish_plan(execution_plan_id)
           manager = @execution_plan_managers.delete(execution_plan_id)
-          manager.future.resolve manager.execution_plan
+          if rescue?(manager)
+            rescue!(manager)
+          else
+            set_future(manager)
+          end
         end
+
+        def set_future(manager)
+          @plan_ids_in_rescue.delete(manager.execution_plan.id)
+          manager.future.resolve manager.execution_plan
+          try_to_terminate
+        end
+
 
         def event(event)
           Type! event, Parallel::Event

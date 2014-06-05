@@ -556,7 +556,7 @@ module Dynflow
 
             it "runs all pending steps except skipped" do
               resumed_execution_plan.state.must_equal :stopped
-              resumed_execution_plan.result.must_equal :success
+              resumed_execution_plan.result.must_equal :warning
 
               run_triages = TestExecutionLog.run.find_all do |action_class, input|
                 action_class == Support::CodeWorkflowExample::Triage
