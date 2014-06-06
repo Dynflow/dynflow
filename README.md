@@ -91,6 +91,24 @@ The output of this phase is a set of actions and their inputs.
 
 Every action can participate in every phase.
 
+Examples
+--------
+
+The `examples` directory contains simple ruby scripts different
+features in action. You can just run the example files and see the Dynflow
+in action.
+
+* `orchestrate.rb` - example worlflow of getting some infrastructure
+  up and running, with ability to rescue from some error states.
+
+* `orchestrate_evented.rb` - the same workflow using the ability to
+  suspend/wakeup actions while waiting for some external event.
+  It also demonstrates the ability to cancel actions that support it.
+
+* `remote_executor.rb` - example of executing the flows in external
+  process
+
+
 The Anatomy of Action Class
 ---------------------------
 
