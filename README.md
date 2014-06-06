@@ -90,14 +90,10 @@ The output of this phase is a set of actions and their inputs.
 
 Every action can participate in every phase.
 
-Example
--------
-
-One code snippet is worth 1000 words:
+The Anatomy of Action Class
+---------------------------
 
 ```ruby
-# The anatomy of action class
-
 # every action needs to inherit from Dynflow::Action
 class Action < Dynflow::Action
 
@@ -151,7 +147,6 @@ class Action < Dynflow::Action
   end
 end
 ```
-
 Every action should be as atomic as possible, providing better
 granularity when manipulating the process. Since every action can be
 subscribed by another one, adding new behaviour to an existing
@@ -160,7 +155,19 @@ workflow is really simple.
 The input and output format can be used for defining the interface
 that other developers can use when extending the workflows.
 
-See the examples directory for more complete examples.
+Examples
+--------
+
+The `examples` directory contains simple ruby scripts different
+features in action. You can just run the example files and see the Dynflow
+in action.
+
+* `orchestrate.rb` - example worlflow of getting some infrastructure
+  up and running, with ability to rescue from some error states.
+
+* `remote_executor.rb` - example of executing the flows in external
+  process
+
 
 Glossary
 --------

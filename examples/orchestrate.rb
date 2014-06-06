@@ -1,6 +1,29 @@
-# Simple example on how Dynflow could be used for simple infrastructure orchestration
+#!/usr/bin/env ruby
+
+example_description = <<DESC
+  Orchestrate Example
+  ===================
+
+  This example simulates a workflow of setting up an infrastructure, using
+  more high-level steps in CreateInfrastructure, that expand to smaller steps
+  of PrepareDisk, CraeteVM etc.
+
+  It shows the possibility to run the independend actions concurrently, chaining
+  the actions (passing the output of PrepareDisk action to CreateVM, automatically
+  detecting the dependency making sure to run the one before the other).
+
+  It also simulates a failure and demonstrates the Dynflow ability to rescue
+  from the error and consinue with the run.
+
+  Once the Sinatra web console starts, you can navigate to http://localhost:4567
+  to see what's happening in the Dynflow world.
+
+DESC
+
+require_relative 'example_helper'
 
 module Orchestrate
+
 
   class CreateInfrastructure < Dynflow::Action
 
@@ -16,7 +39,6 @@ module Orchestrate
                     :db_machine => 'host1',
                     :storage_machine => 'host2')
       end
-      sleep 2
     end
   end
 
@@ -36,12 +58,19 @@ module Orchestrate
     end
 
     def finalize
-      puts "We've create a machine #{input[:name]}"
+      # this is called after run methods of the actions in the
+      # execution plan were finished
     end
 
   end
 
-  class PrepareDisk < Dynflow::Action
+  class Base < Dynflow::Action
+    def sleep!
+      sleep(rand(2))
+    end
+  end
+
+  class PrepareDisk < Base
 
     input_format do
       param :name
@@ -52,13 +81,13 @@ module Orchestrate
     end
 
     def run
-      sleep(rand(5))
+      sleep!
       output[:path] = "/var/images/#{input[:name]}.img"
     end
 
   end
 
-  class CreateVM < Dynflow::Action
+  class CreateVM < Base
 
     input_format do
       param :name
@@ -70,25 +99,25 @@ module Orchestrate
     end
 
     def run
-      sleep(rand(5))
+      sleep!
       output[:ip] = "192.168.100.#{rand(256)}"
     end
 
   end
 
-  class AddIPtoHosts < Dynflow::Action
+  class AddIPtoHosts < Base
 
     input_format do
       param :ip
     end
 
     def run
-      sleep(rand(5))
+      sleep!
     end
 
   end
 
-  class ConfigureMachine < Dynflow::Action
+  class ConfigureMachine < Base
 
     input_format do
       param :ip
@@ -98,24 +127,31 @@ module Orchestrate
 
     def run
       # for demonstration of resuming after error
-      if Orchestrate.should_fail?
-        Orchestrate.should_pass!
+      if ExampleHelper.something_should_fail?
+        ExampleHelper.nothing_should_fail!
+        puts <<-MSG.gsub(/^.*\|/, '')
+
+                | Execution plan #{execution_plan_id} is failing
+                | You can resume it at http://localhost:4567/#{execution_plan_id}
+
+        MSG
         raise "temporary unavailabe"
       end
 
-      sleep(rand(5))
+      sleep!
     end
 
   end
+end
 
-
-  # for simulation of the execution failing for the first time
-  def self.should_fail?
-    ! @should_pass
+if $0 == __FILE__
+  ExampleHelper.something_should_fail!
+  ExampleHelper.world.trigger(Orchestrate::CreateInfrastructure)
+  Thread.new do
+    9.times do
+      ExampleHelper.world.trigger(Orchestrate::CreateInfrastructure)
+    end
   end
-
-  def self.should_pass!
-    @should_pass = true
-  end
-
+  puts example_description
+  ExampleHelper.run_web_console
 end
