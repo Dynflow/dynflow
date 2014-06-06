@@ -1,6 +1,5 @@
 module Dynflow
   module Action::Cancellable
-    include Action::Polling
     Cancel = Algebrick.atom
 
     def run(event = nil)

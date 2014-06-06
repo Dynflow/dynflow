@@ -117,6 +117,14 @@ module Dynflow
         Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan), world)
       end
 
+      def skippable?
+        self.state == :error
+      end
+
+      def cancellable?
+        false
+      end
+
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)
