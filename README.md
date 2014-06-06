@@ -12,6 +12,9 @@ written in Ruby that allows to:
 * extend the workflows from third-party libraries
 * keep consistency between local transactional database and
   external services
+* suspend the long-running steps, not blocking the thread pool
+* cancel steps when possible
+* extend the actions behavior with middlewares
 * define the input/output interface between the building blocks (planned)
 * define rollback for the workflow (planned)
 * have multiple workers for distributing the load (planned)
@@ -22,8 +25,12 @@ persistence, transaction layer or executor implementation, giving you
 the last word in choosing the right one (providing default
 implementations as well).
 
+![Screenshot](doc/images/screenshot.png)
+
 * [Current status](#current-status)
 * [How it works](#how-it-works)
+* [Examples](#examples)
+* [The Anatomy of Action Class](#the-anatomy-of-action-class)
 * [Glossary](#glossary)
 * [Related projects](#related-projects)
 
@@ -34,12 +41,6 @@ Dynflow has been under heavy development for several months to be able
 to support the services orchestration in the
 [Katello](http://katello.org) and [Foreman](http://theforeman.org/)
 projects, getting to production-ready state in couple of weeks.
-
-Requirements
-------------
-
--   Ruby MRI 1.9.3, 2.0, or 2.1.
--   It does not work on JRuby nor Rubinius yet.
 
 How it works
 ------------
@@ -89,6 +90,24 @@ The output of this phase is a set of actions and their inputs.
   database.
 
 Every action can participate in every phase.
+
+Examples
+--------
+
+The `examples` directory contains simple ruby scripts different
+features in action. You can just run the example files and see the Dynflow
+in action.
+
+* `orchestrate.rb` - example worlflow of getting some infrastructure
+  up and running, with ability to rescue from some error states.
+
+* `orchestrate_evented.rb` - the same workflow using the ability to
+  suspend/wakeup actions while waiting for some external event.
+  It also demonstrates the ability to cancel actions that support it.
+
+* `remote_executor.rb` - example of executing the flows in external
+  process
+
 
 The Anatomy of Action Class
 ---------------------------
@@ -155,24 +174,6 @@ workflow is really simple.
 The input and output format can be used for defining the interface
 that other developers can use when extending the workflows.
 
-Examples
---------
-
-The `examples` directory contains simple ruby scripts different
-features in action. You can just run the example files and see the Dynflow
-in action.
-
-* `orchestrate.rb` - example worlflow of getting some infrastructure
-  up and running, with ability to rescue from some error states.
-
-* `orchestrate_evented.rb` - the same workflow using the ability to
-  suspend/wakeup actions while waiting for some external event.
-  It also demonstrates the ability to cancel actions that support it.
-
-* `remote_executor.rb` - example of executing the flows in external
-  process
-
-
 Glossary
 --------
 
@@ -218,6 +219,14 @@ Related projects
 * [Sysflow](https://github.com/iNecas/sysflow) - set of reusable tools
    for running system tasks with Dynflow, comes with simple Web-UI for
    testing it
+
+
+Requirements
+------------
+
+-   Ruby MRI 1.9.3, 2.0, or 2.1.
+-   It does not work on JRuby nor Rubinius yet.
+
 
 License
 -------
