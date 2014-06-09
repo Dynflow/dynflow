@@ -263,9 +263,10 @@ module Support
     end
 
     class CancelableSuspended < Dynflow::Action
-      include Dynflow::Action::CancellablePolling
+      include Dynflow::Action::Polling
+      include Dynflow::Action::Cancellable
 
-      Cancel = Dynflow::Action::CancellablePolling::Cancel
+      Cancel = Dynflow::Action::Cancellable::Cancel
 
       def invoke_external_task
         { progress: 0 }
@@ -288,9 +289,9 @@ module Support
         { progress: new_progress }
       end
 
-      def cancel_external_task
+      def cancel!
         if input[:text] !~ /cancel-fail/
-          external_task.merge(cancelled: true)
+          self.external_task = external_task.merge(cancelled: true)
         else
           error! 'action cancelled'
         end

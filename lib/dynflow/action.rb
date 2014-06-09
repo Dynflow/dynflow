@@ -21,7 +21,7 @@ module Dynflow
     require 'dynflow/action/missing'
 
     require 'dynflow/action/polling'
-    require 'dynflow/action/cancellable_polling'
+    require 'dynflow/action/cancellable'
 
     def self.all_children
       children.values.inject(children.values) do |children, child|

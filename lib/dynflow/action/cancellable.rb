@@ -1,17 +1,17 @@
 module Dynflow
-  module Action::CancellablePolling
+  module Action::Cancellable
     include Action::Polling
     Cancel = Algebrick.atom
 
     def run(event = nil)
       if Cancel === event
-        self.external_task = cancel_external_task
+        cancel!
       else
         super event
       end
     end
 
-    def cancel_external_task
+    def cancel!
       NotImplementedError
     end
   end
