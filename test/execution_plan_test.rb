@@ -246,6 +246,19 @@ module Dynflow
           end
         end
       end
+
+      describe ExecutionPlan::Steps::Error do
+
+        it "doesn't fail when deserializing with missing class" do
+          error = ExecutionPlan::Steps::Error.new_from_hash(exception_class: "RenamedError",
+                                                            message: "This errror is not longer here",
+                                                            backtrace: [])
+          error.exception_class.name.must_equal "RenamedError"
+          error.exception_class.to_s.must_equal "Dynflow::Errors::UnknownError[RenamedError]"
+          error.exception.inspect.must_equal "Dynflow::Errors::UnknownError[RenamedError]: This errror is not longer here"
+        end
+
+      end
     end
   end
 end
