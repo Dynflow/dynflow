@@ -63,6 +63,10 @@ table.flow table {
   width: 100%;
 }
 
+ul.plan-step p.step-label {
+  cursor: pointer;
+}
+
 table.flow td.success span.step-label {
   color: #468847;
 }

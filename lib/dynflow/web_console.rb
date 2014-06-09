@@ -256,6 +256,7 @@ module Dynflow
 
     get('/:id') do |id|
       @plan = world.persistence.load_execution_plan(id)
+      @notice = params[:notice]
       erb :show
     end
 
@@ -279,6 +280,17 @@ module Dynflow
       else
         plan.skip(step)
         redirect(url "/#{plan.id}")
+      end
+    end
+
+    post('/:id/cancel/:step_id') do |id, step_id|
+      plan = world.persistence.load_execution_plan(id)
+      step = plan.steps[step_id.to_i]
+      if step.cancellable?
+        world.event(plan.id, step.id, Dynflow::Action::Cancellable::Cancel)
+        redirect(url "/#{plan.id}?notice=#{url_encode('The step was asked to cancel')}")
+      else
+        redirect(url "/#{plan.id}?notice=#{url_encode('The step does not support cancelling')}")
       end
     end
 

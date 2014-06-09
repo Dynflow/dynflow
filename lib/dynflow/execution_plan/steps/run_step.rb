@@ -18,6 +18,11 @@ module Dynflow
         Action::Run
       end
 
+      def cancellable?
+        [:suspended, :running].include?(self.state) &&
+            self.action_class < Action::Cancellable
+      end
+
       def mark_to_skip
         case self.state
         when :error

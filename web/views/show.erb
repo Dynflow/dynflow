@@ -1,4 +1,6 @@
-<p id="notice"><%= h(@notice) %></p>
+<% if @notice %>
+  <div id="notice" class="alert alert-warning"><%= h(@notice) %></div>
+<% end %>
 
 
 <p>

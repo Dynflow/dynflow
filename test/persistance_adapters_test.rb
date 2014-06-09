@@ -103,7 +103,7 @@ module PersistenceAdapterTest
 
 end
 
-class SequelTest < MiniTest::Test
+class SequelTest < MiniTest::Spec
   include PersistenceAdapterTest
 
   def storage
