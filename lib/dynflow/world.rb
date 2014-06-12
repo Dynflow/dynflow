@@ -145,7 +145,7 @@ module Dynflow
     # to fix the orphaned plans as well.
     def consistency_check
       abnormal_execution_plans =
-          self.persistence.find_execution_plans filters: { 'state' => %w(running planning) }
+          self.persistence.find_execution_plans filters: { 'state' => %w(planning running) }
       if abnormal_execution_plans.empty?
         logger.info 'Clean start.'
       else
@@ -169,6 +169,13 @@ module Dynflow
                           else
                             raise
                           end
+          ep.steps.values.each do |step|
+            if [:suspended, :running].include?(step.state)
+              step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
+              step.state = :error
+              step.save
+            end
+          end
         end
       end
     end
