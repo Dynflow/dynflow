@@ -100,9 +100,7 @@ module Dynflow
       @run_step_id       = Type! attributes.fetch(:run_step_id), Integer, NilClass
       @finalize_step_id  = Type! attributes.fetch(:finalize_step_id), Integer, NilClass
 
-      @execution_plan    = Type!(attributes.fetch(:execution_plan),
-                                 ExecutionPlan) if phase? Plan, Present
-      @trigger           = Type! attributes.fetch(:trigger), Action, NilClass if phase? Plan
+      @execution_plan    = Type!(attributes.fetch(:execution_plan), ExecutionPlan) if phase? Present
 
       getter =-> key, required do
         required ? attributes.fetch(key) : attributes.fetch(key, {})
@@ -140,6 +138,12 @@ module Dynflow
       else
         @output
       end
+    end
+
+    def set_plan_context(execution_plan, trigger)
+      phase! Plan
+      @execution_plan = Type! execution_plan, ExecutionPlan
+      @trigger        = Type! trigger, Action, NilClass
     end
 
     def trigger

@@ -143,7 +143,8 @@ module Dynflow
 
     def prepare(action_class)
       save
-      @root_plan_step = add_step(Steps::PlanStep, action_class, generate_action_id)
+      @root_plan_step = add_plan_step(action_class)
+      @root_plan_step.save
     end
 
     def plan(*args)
@@ -225,8 +226,10 @@ module Dynflow
       current_run_flow.add_and_resolve(@dependency_graph, new_flow) if current_run_flow
     end
 
-    def add_plan_step(action_class, planned_by)
-      add_step(Steps::PlanStep, action_class, generate_action_id, planned_by.plan_step_id)
+    def add_plan_step(action_class, planned_by = nil)
+      add_step(Steps::PlanStep, action_class, generate_action_id, planned_by && planned_by.plan_step_id).tap do |step|
+        step.initialize_action
+      end
     end
 
     def add_run_step(action)

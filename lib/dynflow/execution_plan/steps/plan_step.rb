@@ -37,25 +37,17 @@ module Dynflow
 
       # @return [Action]
       def execute(execution_plan, trigger, *args)
+        unless @action
+          raise "The action was not initialized, you might forgot to call initialize_action method"
+        end
+        @action.set_plan_context(execution_plan, trigger)
         Type! execution_plan, ExecutionPlan
-        attributes = { execution_plan_id: execution_plan.id,
-                       id:                action_id,
-                       step:              self,
-                       plan_step_id:      self.id,
-                       run_step_id:       nil,
-                       finalize_step_id:  nil,
-                       phase:             phase,
-                       execution_plan:    execution_plan,
-                       trigger:           trigger }
-        action     = action_class.new(attributes, execution_plan.world)
-        persistence.save_action(execution_plan_id, action)
-
-        with_meta_calculation(action) do
-          action.execute(*args)
+        with_meta_calculation(@action) do
+          @action.execute(*args)
         end
 
-        persistence.save_action(execution_plan_id, action)
-        return action
+        persistence.save_action(execution_plan_id, @action)
+        return @action
       end
 
       def self.state_transitions
@@ -82,6 +74,19 @@ module Dynflow
             hash[:execution_time],
             hash[:real_time],
             hash[:children]
+      end
+
+      def initialize_action
+        attributes = { execution_plan_id: execution_plan_id,
+                       id:                action_id,
+                       step:              self,
+                       plan_step_id:      self.id,
+                       run_step_id:       nil,
+                       finalize_step_id:  nil,
+                       phase:             phase}
+        @action = action_class.new(attributes, world)
+        persistence.save_action(execution_plan_id, @action)
+        @action
       end
     end
   end
