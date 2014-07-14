@@ -9,15 +9,15 @@ module Dynflow
         step           = DummyStep.new
         action_class.new(
             { step:              DummyStep.new,
-              execution_plan:    execution_plan,
-              trigger:           trigger,
               execution_plan_id: execution_plan.id,
               id:                Testing.get_id,
               phase:             Action::Plan,
               plan_step_id:      step.id,
               run_step_id:       nil,
               finalize_step_id:  nil },
-            execution_plan.world)
+            execution_plan.world).tap do |action|
+          action.set_plan_context(execution_plan, trigger)
+        end
       end
 
       def create_action_presentation(action_class)
