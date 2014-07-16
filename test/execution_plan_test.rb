@@ -166,6 +166,16 @@ module Dynflow
 
         end
 
+        describe 'error in planning phase' do
+          let :execution_plan do
+            world.plan(Support::CodeWorkflowExample::IncomingIssues, [:fail] + issues_data)
+          end
+
+          it 'stops the planning right after the first error occurred' do
+            execution_plan.steps.size.must_equal 2
+          end
+        end
+
         describe 'multi dependencies' do
           let :execution_plan do
             world.plan(Support::CodeWorkflowExample::Commit, 'sha' => 'abc123')

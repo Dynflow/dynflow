@@ -49,9 +49,9 @@ module Dynflow
       nil
     end
 
-    ERROR   = Object.new
-    SUSPEND = Object.new
-    Phase   = Algebrick.type do
+    ERROR         = Object.new
+    SUSPEND       = Object.new
+    Phase         = Algebrick.type do
       Executable = type do
         variants Plan     = atom,
                  Run      = atom,
@@ -140,15 +140,21 @@ module Dynflow
       end
     end
 
-    def set_plan_context(execution_plan, trigger)
+    def set_plan_context(execution_plan, trigger, from_subscription)
       phase! Plan
-      @execution_plan = Type! execution_plan, ExecutionPlan
-      @trigger        = Type! trigger, Action, NilClass
+      @execution_plan    = Type! execution_plan, ExecutionPlan
+      @trigger           = Type! trigger, Action, NilClass
+      @from_subscription = Type! from_subscription, TrueClass, FalseClass
     end
 
     def trigger
       phase! Plan
       @trigger
+    end
+
+    def from_subscription?
+      phase! Plan
+      @from_subscription
     end
 
     def execution_plan
@@ -271,7 +277,7 @@ module Dynflow
     # Use #plan_self and #plan_action methods to plan actions.
     # It can use DB in this phase.
     def plan(*args)
-      if trigger
+      if from_subscription?
         # if the action is triggered by subscription, by default use the
         # input of parent action.
         # should be replaced by referencing the input from input format
@@ -340,7 +346,7 @@ module Dynflow
 
     def plan_action(action_class, *args)
       phase! Plan
-      @execution_plan.add_plan_step(action_class, self).execute(@execution_plan, nil, *args)
+      @execution_plan.add_plan_step(action_class, self).execute(@execution_plan, self, false, *args)
     end
 
     # DSL for run phase
@@ -358,7 +364,7 @@ module Dynflow
       throw ERROR
     end
 
-    def with_error_handling(&block)
+    def with_error_handling(propagate_error = nil, &block)
       raise "wrong state #{self.state}" unless [:skipping, :running].include?(self.state)
 
       begin
@@ -378,6 +384,10 @@ module Dynflow
       else
         raise "wrong state #{self.state}"
       end
+
+      if propagate_error && self.state == :error
+        raise(@step.error.exception)
+      end
     end
 
     def set_error(error)
@@ -392,7 +402,10 @@ module Dynflow
       phase! Plan
       self.state = :running
       save_state
-      with_error_handling do
+
+      # when the error occurred inside the planning, catch that
+      # before getting out of the planning phase
+      with_error_handling(!root_action?) do
         concurrence do
           world.middleware.execute(:plan, self, *args) do |*new_args|
             plan(*new_args)
@@ -407,7 +420,7 @@ module Dynflow
           @execution_plan.switch_flow(Flows::Concurrence.new([trigger_flow].compact)) do
             subscribed_actions.each do |action_class|
               new_plan_step = @execution_plan.add_plan_step(action_class, self)
-              new_plan_step.execute(@execution_plan, self, *args)
+              new_plan_step.execute(@execution_plan, self, true, *args)
             end
           end
         end
@@ -474,6 +487,10 @@ module Dynflow
     rescue => e
       value.replace not_serializable: true
       raise e
+    end
+
+    def root_action?
+      @trigger.nil?
     end
   end
 end

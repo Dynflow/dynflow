@@ -50,6 +50,7 @@ module Support
     class IncomingIssue < Dynflow::Action
 
       def plan(issue)
+        raise "You want me to fail" if issue == :fail
         plan_self(issue)
         plan_action(Triage, issue)
       end
