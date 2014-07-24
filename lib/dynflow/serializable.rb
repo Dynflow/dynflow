@@ -65,7 +65,7 @@ module Dynflow
     def time_to_str(time)
       return if time.nil?
       Type! time, Time
-      time.strftime '%Y-%m-%d %H:%M:%S'
+      time.utc.strftime '%Y-%m-%d %H:%M:%S'
     end
 
     def self.hash_to_error(hash)
