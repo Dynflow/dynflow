@@ -70,7 +70,7 @@ module Dynflow
       def to_hash
         { execution_plans: table(:execution_plan).all,
           steps:           table(:step).all,
-          actionsg:         table(:action).all }
+          actions:         table(:action).all }
       end
 
       private
