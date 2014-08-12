@@ -104,10 +104,11 @@ module Dynflow
 
               before do
                 TestPause.setup
-                world.execute(execution_plan.id)
+                @execution = world.execute(execution_plan.id)
               end
 
               after do
+                @execution.wait
                 TestPause.teardown
               end
 
