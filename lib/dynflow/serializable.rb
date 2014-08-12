@@ -59,7 +59,7 @@ module Dynflow
       return if string.nil?
       _, year, month, day, hour, min, sec =
           */(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/.match(string)
-      Time.new(year.to_i, month.to_i, day.to_i, hour.to_i, min.to_i, sec.to_i)
+      Time.utc(year.to_i, month.to_i, day.to_i, hour.to_i, min.to_i, sec.to_i)
     end
 
     def time_to_str(time)

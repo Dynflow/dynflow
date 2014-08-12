@@ -113,20 +113,23 @@ module WorldInstance
   end
 
   def self.create_world(options = {})
-    options = { logger_adapter: logger_adapter,
-                auto_terminate: false,
+    options = { pool_size: 5,
+                persistence_adapter: Dynflow::PersistenceAdapters::Sequel.new('sqlite:/'),
+                transaction_adapter: Dynflow::TransactionAdapters::None.new,
+                logger_adapter: logger_adapter,
                 auto_rescue: false }.merge(options)
-    Dynflow::SimpleWorld.new(options)
+    Dynflow::World.new(options)
   end
 
   def self.create_remote_world(world)
     @counter    ||= 0
     socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
     listener    = Dynflow::Listeners::Socket.new world, socket_path
-    world       = Dynflow::SimpleWorld.new(
+    world       = Dynflow::World.new(
         logger_adapter:      logger_adapter,
         auto_terminate:      false,
         persistence_adapter: -> remote_world { world.persistence.adapter },
+        transaction_adapter: Dynflow::TransactionAdapters::None.new,
         executor:            -> remote_world do
           Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path)
         end)
