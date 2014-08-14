@@ -138,10 +138,10 @@ module Dynflow
             world,
             string_to_time(hash[:started_at]),
             string_to_time(hash[:ended_at]),
-            hash[:execution_time],
-            hash[:real_time],
-            hash[:progress_done],
-            hash[:progress_weight]
+            hash[:execution_time].to_f,
+            hash[:real_time].to_f,
+            hash[:progress_done].to_f,
+            hash[:progress_weight].to_f
       end
 
       private
