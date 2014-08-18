@@ -279,8 +279,8 @@ module Dynflow
                steps,
                string_to_time(hash[:started_at]),
                string_to_time(hash[:ended_at]),
-               hash[:execution_time],
-               hash[:real_time])
+               hash[:execution_time].to_f,
+               hash[:real_time].to_f)
     end
 
     def compute_execution_time
