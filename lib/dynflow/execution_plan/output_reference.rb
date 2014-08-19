@@ -50,6 +50,18 @@ module Dynflow
       self.class.new(execution_plan_id, step_id, action_id, subkeys + [subkey])
     end
 
+    def hash
+      "#{self.class}-#{@execution_plan_id}-#{@step_id}+#{@action_id}+#{@subkeys}".hash
+    end
+
+    def ==(reference)
+      reference.class == self.class &&
+        reference.execution_plan_id == @execution_plan_id &&
+        reference.step_id == @step_id &&
+        reference.action_id == @action_id &&
+        reference.subkeys == @subkeys
+    end
+
     def to_hash
       recursive_to_hash class:             self.class.to_s,
                         execution_plan_id: execution_plan_id,

@@ -5,8 +5,8 @@ module Dynflow
       include Stateful
 
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
-                  :ended_at, :execution_time, :real_time
-      attr_accessor :error
+                  :ended_at, :execution_time, :real_time, :run_always
+      attr_accessor :error, :parent_step_id
 
       def initialize(execution_plan_id,
           id,
@@ -63,7 +63,7 @@ module Dynflow
       end
 
       def self.states
-        @states ||= [:pending, :running, :success, :suspended, :skipping, :skipped, :error]
+        @states ||= [:pending, :running, :success, :suspended, :skipping, :skipped, :error, :duplicate]
       end
 
       def execute(*args)

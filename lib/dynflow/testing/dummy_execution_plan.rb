@@ -47,6 +47,14 @@ module Dynflow
         end
       end
 
+      def planning_log=(thing)
+        @planning_log = thing
+      end
+
+      def planning_log
+        @planning_log
+      end
+
       def switch_flow(*args, &block)
         block.call
       end

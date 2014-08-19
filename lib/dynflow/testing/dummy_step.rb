@@ -14,6 +14,10 @@ module Dynflow
 
       def save
       end
+
+      def run_always
+        return true
+      end
     end
   end
 end

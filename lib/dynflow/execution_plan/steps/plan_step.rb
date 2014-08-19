@@ -35,6 +35,14 @@ module Dynflow
         super.merge recursive_to_hash(:children => children)
       end
 
+      def run_always!
+        @run_always = true
+      end
+
+      def deduplicate!
+        @run_always = false
+      end
+
       # @return [Action]
       def execute(execution_plan, trigger, from_subscription, *args)
         unless @action
@@ -52,10 +60,11 @@ module Dynflow
 
       def self.state_transitions
         @state_transitions ||= { pending:   [:running],
-                                 running:   [:success, :error],
+                                 running:   [:success, :error, :duplicate],
+                                 skipped:   [],
                                  success:   [],
                                  suspended: [],
-                                 skipped:   [],
+                                 duplicate: [],
                                  error:     [] }
       end
 

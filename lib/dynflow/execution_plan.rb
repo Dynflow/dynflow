@@ -15,6 +15,8 @@ module Dynflow
     attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time
 
+    attr_accessor :planning_log
+
     def self.states
       @states ||= [:pending, :planning, :planned, :running, :paused, :stopped]
     end
@@ -69,9 +71,12 @@ module Dynflow
       when :planning
         @started_at = Time.now
       when :stopped
+        dereference_inputs
         @ended_at       = Time.now
         @real_time      = @ended_at - @started_at
         @execution_time = compute_execution_time
+      when :paused
+        dereference_inputs
       else
         # ignore
       end
@@ -80,13 +85,22 @@ module Dynflow
       self.save
     end
 
+    def dereference_inputs
+      dereferencable = actions.map { |action| action if action.input.any? { |_, v| v.is_a? OutputReference } }.compact
+      dereferencable.reject! { |action| action.steps.any? { |step| step && step.state == :pending || step.state == :skipped } }
+      dereferencable.each do |action|
+        action.input = OutputReference.dereference action.input, @world.persistence if action.input
+        @world.persistence.save_action(self.id, action)
+      end
+    end
+
     def result
       all_steps = steps.values
       if all_steps.any? { |step| step.state == :error }
         return :error
       elsif all_steps.any? { |step| [:skipping, :skipped].include?(step.state) }
         return :warning
-      elsif all_steps.all? { |step| step.state == :success }
+      elsif all_steps.all? { |step| step.state == :success || step.state == :duplicate }
         return :success
       else
         return :pending
@@ -326,6 +340,7 @@ module Dynflow
                      action_id,
                      nil,
                      world).tap do |new_step|
+        new_step.parent_step_id = planned_by_step_id if planned_by_step_id
         @steps[new_step.id] = new_step
         @steps[planned_by_step_id].children << new_step.id if planned_by_step_id
       end

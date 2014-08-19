@@ -17,6 +17,7 @@ require 'pry'
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'
+require 'support/duplicate_example'
 
 class TestExecutionLog
 

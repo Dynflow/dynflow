@@ -110,6 +110,34 @@ module Dynflow
       @output = OutputReference.deserialize getter.(:output, false) if phase? Run, Finalize, Present
     end
 
+    # @step.run_always variable is a boolean which is unset by default, methods run_always! and deduplicate! set it's
+    # value true/false
+    def run_always!
+      @step.run_always!
+    end
+
+    def deduplicate!
+      @step.deduplicate!
+    end
+
+    # goes up the planning tree to find a step which has run_always set or has no parent
+    def parent_run_always?(parent_step_id)
+      parent_step = @execution_plan.steps[parent_step_id]
+      if parent_step.nil?
+        return true
+      elsif parent_step.run_always.nil?
+        parent_run_always?(parent_step.parent_step_id)
+      else
+        parent_step.run_always
+      end
+    end
+
+    # gets the value of @step.run_always, if unset, inherits the value from parent step's run_always
+    def run_always?
+      return @step.run_always unless @step.run_always.nil?
+      parent_run_always?(@step.parent_step_id) ? @step.run_always! : @step.deduplicate!
+    end
+
     def phase?(*phases)
       Match? phase, *phases
     end
@@ -121,7 +149,7 @@ module Dynflow
 
     def input=(hash)
       Type! hash, Hash
-      phase! Plan
+      phase! Plan unless steps.any? { |step| step.state == :duplicate }
       @input = hash.with_indifferent_access
     end
 
@@ -326,22 +354,73 @@ module Dynflow
       @execution_plan.switch_flow(Flows::Sequence.new([]), &block)
     end
 
+    def plan_with_deduplication(phase)
+      return unless self.respond_to?(phase)
+      duplicate = run_always? ? {} : find_duplicates(phase)
+      if duplicate.empty?
+        use_new_step(phase)
+      else
+        use_duplicate_step(duplicate, phase)
+      end
+    end
+
     def plan_self(input = {})
       phase! Plan
       self.input.update input
+      plan_with_deduplication(:run)
+      plan_with_deduplication(:finalize)
+      return self
+    end
 
-      if self.respond_to?(:run)
-        run_step          = @execution_plan.add_run_step(self)
-        @run_step_id      = run_step.id
-        @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
+    def add_to_planning_log(phase, klass, input_hash, options)
+      @execution_plan.planning_log ||= Hash.new { |h,k| h[k] = Hash.new(&h.default_proc) }
+      @execution_plan.planning_log[phase][klass][input_hash] = options
+    end
+
+    def use_duplicate_step(duplicate, phase)
+      @output_reference = duplicate[:output_reference] if phase == :run
+      set_step_id(phase, duplicate[:step_id])
+      self.state = :duplicate unless self.state == :duplicate
+    end
+
+    def use_new_step(phase)
+      log_hash = { :step_id => add_step(phase) }
+      if @finalize_step_id.nil?
+        @output_reference = OutputReference.new(@execution_plan.id, @run_step_id, id)
+        log_hash.update(:output_reference => @output_reference)
       end
+      add_to_planning_log(phase, self.class, hash_input, log_hash)
+    end
 
-      if self.respond_to?(:finalize)
-        finalize_step     = @execution_plan.add_finalize_step(self)
-        @finalize_step_id = finalize_step.id
+    def hash_input
+      self.input.hash
+    end
+
+    def add_step(phase)
+      if phase == :run
+        @run_step_id = @execution_plan.add_run_step(self).id
+      elsif phase == :finalize
+        @finalize_step_id = @execution_plan.add_finalize_step(self).id
       end
+    end
 
-      return self # to stay consistent with plan_action
+    def set_step_id(phase, id)
+      if phase == :run
+        @run_step_id = id
+      elsif phase == :finalize
+        @finalize_step_id = id
+      end
+    end
+
+    def find_duplicates(phase)
+      if @execution_plan.planning_log
+        @execution_plan.planning_log.
+          fetch(phase, {}).
+          fetch(self.class, {}).
+          fetch(hash_input, {})
+      else
+        {}
+      end
     end
 
     def plan_action(action_class, *args)
@@ -365,7 +444,7 @@ module Dynflow
     end
 
     def with_error_handling(propagate_error = nil, &block)
-      raise "wrong state #{self.state}" unless [:skipping, :running].include?(self.state)
+      raise "wrong state #{self.state}" unless [:skipping, :running, :duplicate].include?(self.state)
 
       begin
         catch(ERROR) { block.call }
@@ -380,7 +459,7 @@ module Dynflow
         self.state = :success
       when :skipping
         self.state = :skipped
-      when :suspended, :error
+      when :suspended, :error, :duplicate
       else
         raise "wrong state #{self.state}"
       end
