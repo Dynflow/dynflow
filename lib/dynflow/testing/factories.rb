@@ -16,7 +16,7 @@ module Dynflow
               run_step_id:       nil,
               finalize_step_id:  nil },
             execution_plan.world).tap do |action|
-          action.set_plan_context(execution_plan, trigger)
+          action.set_plan_context(execution_plan, trigger, false)
         end
       end
 

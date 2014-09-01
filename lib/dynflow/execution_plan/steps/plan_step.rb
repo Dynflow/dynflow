@@ -36,11 +36,11 @@ module Dynflow
       end
 
       # @return [Action]
-      def execute(execution_plan, trigger, *args)
+      def execute(execution_plan, trigger, from_subscription, *args)
         unless @action
           raise "The action was not initialized, you might forgot to call initialize_action method"
         end
-        @action.set_plan_context(execution_plan, trigger)
+        @action.set_plan_context(execution_plan, trigger, from_subscription)
         Type! execution_plan, ExecutionPlan
         with_meta_calculation(@action) do
           @action.execute(*args)

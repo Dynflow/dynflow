@@ -18,6 +18,9 @@ module Dynflow
 
       def mimic!(*types)
         define =-> _ do
+          define_method :mimic_types do
+            types
+          end
           define_method :kind_of? do |type|
             types.any? { |t| t <= type } || super(type)
           end
