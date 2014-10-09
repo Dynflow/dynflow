@@ -1,5 +1,9 @@
 require_relative 'test_helper'
 
+# disabled
+__END__
+
+
 describe 'remote communication' do
 
   let(:persistence_adapter) { Dynflow::PersistenceAdapters::Sequel.new('sqlite:/') }

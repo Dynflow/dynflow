@@ -32,7 +32,7 @@ module Dynflow
     end
 
     def clock
-      @clock ||= Clock.new(logger)
+      @clock ||= Clock.spawn 'clock'
     end
 
     def logger
@@ -124,12 +124,16 @@ module Dynflow
       @termination_barrier.synchronize do
         if @executor_terminated.nil?
           @executor_terminated = Future.new
-          @clock_terminated    = Future.new
+          @clock_terminated    = Concurrent::IVar.new
           executor.terminate(@executor_terminated).
-              do_then { clock.ask(MicroActor::Terminate, @clock_terminated) }
+              do_then { clock.ask(:terminate!, @clock_terminated) }
         end
       end
-      Future.join([@executor_terminated, @clock_terminated], future)
+      @executor_terminated.wait
+      @clock_terminated.wait
+      future.resolve true
+      # Future.join([@executor_terminated, @clock_terminated], future)
+      future
     end
 
     # Detects execution plans that are marked as running but no executor

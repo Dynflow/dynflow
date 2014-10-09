@@ -17,48 +17,7 @@ require 'pry'
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'
-
-class TestExecutionLog
-
-  include Enumerable
-
-  def initialize
-    @log = []
-  end
-
-  def <<(action)
-    @log << [action.class, action.input]
-  end
-
-  def log
-    @log
-  end
-
-  def each(&block)
-    @log.each(&block)
-  end
-
-  def size
-    @log.size
-  end
-
-  def self.setup
-    @run, @finalize = self.new, self.new
-  end
-
-  def self.teardown
-    @run, @finalize = nil, nil
-  end
-
-  def self.run
-    @run || []
-  end
-
-  def self.finalize
-    @finalize || []
-  end
-
-end
+require 'support/test_execution_log'
 
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
@@ -113,11 +72,11 @@ module WorldInstance
   end
 
   def self.create_world(options = {})
-    options = { pool_size: 5,
+    options = { pool_size:           5,
                 persistence_adapter: Dynflow::PersistenceAdapters::Sequel.new('sqlite:/'),
                 transaction_adapter: Dynflow::TransactionAdapters::None.new,
-                logger_adapter: logger_adapter,
-                auto_rescue: false }.merge(options)
+                logger_adapter:      logger_adapter,
+                auto_rescue:         false }.merge(options)
     Dynflow::World.new(options)
   end
 
@@ -152,6 +111,11 @@ module WorldInstance
   end
 end
 
+Concurrent.configuration.auto_terminate = false
+MiniTest.after_run do
+  Concurrent.finalize_global_executors
+end
+
 # ensure there are no unresolved Futures at the end or being GCed
 future_tests =-> do
   future_creations  = {}
@@ -173,16 +137,19 @@ future_tests =-> do
     end
   end
 
-  set_method = Dynflow::Future.instance_method :set
-  Dynflow::Future.send :define_method, :set do |*args|
-    begin
-      set_method.bind(self).call *args
-    ensure
-      non_ready_futures.delete self.object_id
+  [:resolve, :fail].each do |method|
+    original_method = Dynflow::Future.instance_method method
+    Dynflow::Future.send :define_method, method do |*args|
+      begin
+        original_method.bind(self).call *args
+      ensure
+        non_ready_futures.delete self.object_id
+      end
     end
   end
 
   MiniTest.after_run do
+    non_ready_futures.delete_if { |id, _| ObjectSpace._id2ref(id).ready? }
     unless non_ready_futures.empty?
       unified = non_ready_futures.each_with_object({}) do |(id, _), h|
         backtrace_first    = future_creations[id][0]

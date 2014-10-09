@@ -6,7 +6,8 @@ module Dynflow
 
       include PlanAssertions
 
-      [:world, :remote_world].each do |world_method|
+      # [:world, :remote_world].each do |world_method|
+      [:world].each do |world_method|
 
         describe world_method.to_s do
 
@@ -129,7 +130,7 @@ module Dynflow
 
               it "fails when trying to execute again" do
                 TestPause.when_paused do
-                  assert_raises(Dynflow::Error) { world.execute(execution_plan.id) }
+                  assert_raises(Dynflow::Error) { world.execute(execution_plan.id).value! }
                 end
               end
             end
@@ -700,7 +701,8 @@ module Dynflow
         let(:normal_world) { WorldInstance.create_world }
         let(:remote_world) { WorldInstance.create_remote_world(normal_world).last }
 
-        [:normal_world, :remote_world].each do |which|
+        # [:normal_world, :remote_world].each do |which|
+        [:normal_world].each do |which|
           describe which do
             let(:world) { self.send which }
 

@@ -1,7 +1,9 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class Pool < MicroActor
+      class Pool < Concurrent::Actor::Context
+        include Algebrick::Matching
+
         class RoundRobin
           def initialize
             @data   = []
@@ -20,7 +22,9 @@ module Dynflow
 
           def next
             @cursor = 0 if @cursor > @data.size-1
-            @data[@cursor].tap { @cursor += 1 }
+            @data[@cursor]
+          ensure
+            @cursor += 1
           end
 
           def empty?
@@ -62,35 +66,31 @@ module Dynflow
         end
 
         def initialize(core, pool_size, transaction_adapter)
-          super(core.logger, core, pool_size, transaction_adapter)
-        end
-
-        private
-
-        def delayed_initialize(core, pool_size, transaction_adapter)
-          @core         = core
-          @pool_size    = pool_size
-          @free_workers = Array.new(pool_size) { Worker.new(self, transaction_adapter) }
-          @jobs         = JobStorage.new
+          @executor_core = core
+          @pool_size     = pool_size
+          @free_workers  = Array.new(pool_size) { |i| Worker.spawn("worker-#{i}", reference, transaction_adapter) }
+          @jobs          = JobStorage.new
         end
 
         def on_message(message)
           match message,
-                ~Work >-> work do
+                (on ~Work do |work|
                   @jobs.add work
                   distribute_jobs
-                end,
-                WorkerDone.(~any, ~any) >-> step, worker do
-                  @core << PoolDone[step]
+                end),
+                (on ~WorkerDone do |(step, worker)|
+                  @executor_core << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
-                end
+                end)
         end
 
-        def termination
-          raise unless @free_workers.size == @pool_size
-          @free_workers.map { |worker| worker.ask(Terminate) }.each(&:wait)
-          super
+        def on_event(event)
+          case event
+          when :terminated
+            raise unless @free_workers.size == @pool_size
+            @free_workers.map { |worker| worker.ask(:terminate!) }.each(&:wait)
+          end
         end
 
         def distribute_jobs
