@@ -22,7 +22,6 @@ module Dynflow
   end
 
   require 'dynflow/errors'
-  require 'dynflow/future'
   require 'dynflow/serializable'
   require 'dynflow/clock'
   require 'dynflow/stateful'

@@ -719,7 +719,7 @@ module Dynflow
                                        external_task_id: '123',
                                        text:             'none')
                 world.terminate.wait
-                assert result.finished.ready?
+                assert result.finished.completed?
               end
             end
 

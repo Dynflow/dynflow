@@ -8,7 +8,7 @@ module Dynflow
         attr_reader :logger
 
         StartTerminating = Algebrick.type do
-          fields! terminated: Future
+          fields! terminated: Concurrent::IVar
         end
 
         def initialize(world, pool_size)
@@ -128,7 +128,7 @@ module Dynflow
 
         def set_future(manager)
           @plan_ids_in_rescue.delete(manager.execution_plan.id)
-          manager.future.resolve manager.execution_plan
+          manager.future.set manager.execution_plan
           try_to_terminate
         end
 
@@ -152,7 +152,7 @@ module Dynflow
             @pool.ask(:terminate!).wait
             reference.ask :terminate!
             logger.info '... Core terminated.'
-            @terminated.resolve true
+            @terminated.set true
           end
         end
       end

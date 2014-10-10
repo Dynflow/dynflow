@@ -44,33 +44,32 @@ module Dynflow
         @core = Core.spawn name:        'parallel-executor-core',
                            args:        [world, pool_size],
                            initialized: @core_initialized = Concurrent::IVar.new
-        @initialized_future = Future.new.tap { |f| f.ivar = @core_initialized }
       end
 
-      def execute(execution_plan_id, finished = Future.new)
+      def execute(execution_plan_id, finished = Concurrent::IVar.new)
         @core.ask(Execution[execution_plan_id, finished]).value!
         finished
       rescue Concurrent::Actor::ActorTerminated => error
         dynflow_error = Dynflow::Error.new('executor terminated')
-        finished.fail dynflow_error unless finished.ready?
+        finished.fail dynflow_error unless finished.completed?
         raise dynflow_error
       rescue => e
-        finished.fail e unless finished.ready?
+        finished.fail e unless finished.completed?
         raise e
       end
 
-      def event(execution_plan_id, step_id, event, future = Future.new)
+      def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
         @core << Event[execution_plan_id, step_id, event, future]
         future
       end
 
-      def terminate(future = Future.new)
+      def terminate(future = Concurrent::IVar.new)
         @core << Core::StartTerminating[future]
         future
       end
 
       def initialized
-        @initialized_future
+        @core_initialized
       end
     end
   end

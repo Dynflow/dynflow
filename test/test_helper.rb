@@ -23,8 +23,8 @@ require 'support/test_execution_log'
 class TestPause
 
   def self.setup
-    @pause = Dynflow::Future.new
-    @ready = Dynflow::Future.new
+    @pause = Concurrent::IVar.new
+    @ready = Concurrent::IVar.new
   end
 
   def self.teardown
@@ -36,10 +36,10 @@ class TestPause
   def self.pause
     if !@pause
       raise 'the TestPause class was not setup'
-    elsif @ready.ready?
+    elsif @ready.completed?
       raise 'you can pause only once'
     else
-      @ready.resolve(true)
+      @ready.set(true)
       @pause.wait
     end
   end
@@ -49,7 +49,7 @@ class TestPause
     if @pause
       @ready.wait # wait till we are paused
       yield
-      @pause.resolve(true) # resume the run
+      @pause.set(true) # resume the run
     else
       raise 'the TestPause class was not setup'
     end
@@ -117,57 +117,50 @@ MiniTest.after_run do
 end
 
 # ensure there are no unresolved Futures at the end or being GCed
-future_tests =-> do
-  future_creations  = {}
-  non_ready_futures = {}
+future_tests = -> do
+  ivar_creations  = {}
+  non_ready_ivars = {}
 
   MiniTest.after_run do
     WorldInstance.terminate
-    futures = ObjectSpace.each_object(Dynflow::Future).select { |f| !f.ready? }
-    unless futures.empty?
-      raise "there are unready futures:\n" +
-                futures.map { |f| "#{f}\n#{future_creations[f.object_id]}" }.join("\n")
+  end
+
+  Concurrent::IVar.singleton_class.send :define_method, :new do |*args, &block|
+    super(*args, &block).tap do |ivar|
+      ivar_creations[ivar.object_id]  = caller(3)
+      non_ready_ivars[ivar.object_id] = true
     end
   end
 
-  Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
-    super(*args, &block).tap do |f|
-      future_creations[f.object_id]  = caller(3)
-      non_ready_futures[f.object_id] = true
-    end
-  end
-
-  [:resolve, :fail].each do |method|
-    original_method = Dynflow::Future.instance_method method
-    Dynflow::Future.send :define_method, method do |*args|
-      begin
-        original_method.bind(self).call *args
-      ensure
-        non_ready_futures.delete self.object_id
-      end
+  original_method = Concurrent::IVar.instance_method :complete
+  Concurrent::IVar.send :define_method, :complete do |*args|
+    begin
+      original_method.bind(self).call *args
+    ensure
+      non_ready_ivars.delete self.object_id
     end
   end
 
   MiniTest.after_run do
-    non_ready_futures.delete_if { |id, _| ObjectSpace._id2ref(id).ready? }
-    unless non_ready_futures.empty?
-      unified = non_ready_futures.each_with_object({}) do |(id, _), h|
-        backtrace_first    = future_creations[id][0]
+    non_ready_ivars.delete_if { |id, _| ObjectSpace._id2ref(id).completed? }
+    unless non_ready_ivars.empty?
+      unified = non_ready_ivars.each_with_object({}) do |(id, _), h|
+        backtrace_first    = ivar_creations[id][0]
         h[backtrace_first] ||= []
         h[backtrace_first] << id
       end
-      raise("there were #{non_ready_futures.size} non_ready_futures:\n" +
+      raise("there were #{non_ready_ivars.size} non_ready_futures:\n" +
                 unified.map do |backtrace, ids|
-                  "--- #{ids.size}: #{ids}\n#{future_creations[ids.first].join("\n")}"
+                  "--- #{ids.size}: #{ids}\n#{ivar_creations[ids.first].join("\n")}"
                 end.join("\n"))
     end
   end
 
   # time out all futures by default
   default_timeout = 8
-  wait_method     = Dynflow::Future.instance_method(:wait)
+  wait_method     = Concurrent::IVar.instance_method(:wait)
 
-  Dynflow::Future.class_eval do
+  Concurrent::IVar.class_eval do
     define_method :wait do |timeout = nil|
       wait_method.bind(self).call(timeout || default_timeout)
     end
