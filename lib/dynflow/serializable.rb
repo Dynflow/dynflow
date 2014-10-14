@@ -75,5 +75,20 @@ module Dynflow
 
     private_class_method :string_to_time, :hash_to_error
 
+    class AlgebrickSerializer
+
+      def self.instance
+        @instance ||= self.new
+      end
+
+      def dump(object)
+        Base64.encode64(MultiJson.dump(object.to_hash))
+      end
+
+      def load(string, desired_type)
+        hash = MultiJson.load(Base64.decode64(string)).with_indifferent_access
+        desired_type.from_hash(hash)
+      end
+    end
   end
 end

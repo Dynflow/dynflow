@@ -59,9 +59,7 @@ module Dynflow
     end
 
     def find_worlds(options)
-      adapter.find_worlds(options).map do |data|
-        RegisteredWorld[data]
-      end
+      adapter.find_worlds(options)
     end
 
     def save_world(world)
@@ -86,15 +84,12 @@ module Dynflow
     end
 
     def find_executor_allocations(options)
-      adapter.find_executor_allocations(options).map do |data|
-        ExecutorAllocation[data]
-      end
+      adapter.find_executor_allocations(options)
     end
 
     def save_executor_allocation(executor_allocation)
       Type! executor_allocation, ExecutorAllocation
-      adapter.save_executor_allocation(executor_allocation.world_id,
-                                       executor_allocation.execution_plan_id)
+      adapter.save_executor_allocation(executor_allocation)
     end
 
     def delete_executor_allocation(executor_allocation)
@@ -105,13 +100,11 @@ module Dynflow
 
     def push_envelope(envelope)
       Type! envelope, Dispatcher::Envelope
-      adapter.push_envelope(envelope.to_hash)
+      adapter.push_envelope(envelope)
     end
 
     def pull_envelopes(world_id)
-      adapter.pull_envelopes(world_id).map do |data|
-        Dispatcher::Envelope.from_hash(data)
-      end
+      adapter.pull_envelopes(world_id)
     end
   end
 end

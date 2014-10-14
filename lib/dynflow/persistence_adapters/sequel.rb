@@ -8,6 +8,7 @@ module Dynflow
 
     class Sequel < Abstract
       include Algebrick::TypeCheck
+      include Algebrick::Matching
 
       attr_reader :db
 
@@ -85,7 +86,7 @@ module Dynflow
                           options)
 
         data_set.map do |record|
-          HashWithIndifferentAccess.new(record)
+          Persistence::RegisteredWorld[record]
         end
       end
 
@@ -97,9 +98,10 @@ module Dynflow
         delete :world, { id: id }
       end
 
-      def save_executor_allocation(world_id, execution_plan_id)
-        val = { world_id: world_id, execution_plan_id: execution_plan_id }
-        save :executor_allocation, val, val
+      def save_executor_allocation(executor_allocation)
+        conditions = { world_id: executor_allocation.world_id,
+                       execution_plan_id: executor_allocation.execution_plan_id }
+        save :executor_allocation, conditions, executor_allocation
       end
 
       def find_executor_allocations(options)
@@ -110,8 +112,9 @@ module Dynflow
                                 options),
                           options)
 
+
         data_set.map do |record|
-          HashWithIndifferentAccess.new(record)
+          Persistence::ExecutorAllocation[record]
         end
       end
 
@@ -128,8 +131,7 @@ module Dynflow
           data_set = table(:envelope).where(receiver_id: receiver_id)
 
           envelopes = data_set.map do |record|
-            data = MultiJson.load(record[:data])
-            HashWithIndifferentAccess.new(data)
+            Serializable::AlgebrickSerializer.instance.load(record[:data], Dispatcher::Envelope)
           end
 
           table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
@@ -137,8 +139,8 @@ module Dynflow
         end
       end
 
-      def push_envelope(data)
-        save :envelope, {}, data
+      def push_envelope(envelope)
+        save :envelope, {}, envelope
       end
 
       def to_hash
@@ -180,13 +182,11 @@ module Dynflow
         existing_record = table.first condition unless condition.empty?
 
         if value
-          value         = value.with_indifferent_access
           record        = existing_record || condition
           if table.columns.include?(:data)
-            record[:data] = MultiJson.dump Type!(value, Hash)
+            record[:data] = dump_data(value)
           end
-          meta_data     = META_DATA.fetch(what).inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
-          record.merge! meta_data
+          record.merge! extract_metadata(what, value)
           record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
 
           if existing_record
@@ -212,6 +212,28 @@ module Dynflow
 
       def delete(what, condition)
         table(what).where(condition.symbolize_keys).delete
+      end
+
+      def extract_metadata(what, value)
+        meta_keys = META_DATA.fetch(what)
+        match value,
+              (on Hash do
+                 value         = value.with_indifferent_access
+                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
+               end),
+              (on Algebrick::Value do
+                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k.to_sym] }
+               end)
+      end
+
+      def dump_data(value)
+        match value,
+              (on Hash do
+                 MultiJson.dump Type!(value, Hash)
+               end),
+              (on Algebrick::Value do
+                 Serializable::AlgebrickSerializer.instance.dump(value)
+               end)
       end
 
       def paginate(data_set, options)

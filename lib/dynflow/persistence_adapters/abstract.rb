@@ -63,7 +63,7 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def save_executor_allocation(world_id, execution_plan_id)
+      def save_executor_allocation(executor_allocation)
         raise NotImplementedError
       end
 
@@ -84,7 +84,7 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def push_envelope(data)
+      def push_envelope(envelope)
         raise NotImplementedError
       end
     end
