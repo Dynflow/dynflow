@@ -17,6 +17,7 @@ require 'pry'
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'
+require 'support/dummy_example'
 require 'support/test_execution_log'
 
 # To be able to stop a process in some step and perform assertions while paused
@@ -58,56 +59,72 @@ end
 
 module WorldInstance
   def self.world
-    @world ||= create_world
-  end
-
-  def self.remote_world
-    return @remote_world if @remote_world
-    @listener, @remote_world = create_remote_world world
-    @remote_world
+    @world ||= create_world(:isolated => false)
   end
 
   def self.logger_adapter
     @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, 4
   end
 
+  # @param isolated [boolean] - if the adapter is not shared between two test runs: we clear
+  #   the worlrs register there every run to avoid collisions
+  def self.persistence_adapter(isolated = true)
+    db_config =     if isolated
+                      db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
+                      @isolated_adapter ||= Dynflow::PersistenceAdapters::Sequel.new(db_config)
+                    else
+                      Dynflow::PersistenceAdapters::Sequel.new('sqlite:/')
+                    end
+  end
+
   def self.create_world(options = {})
+    isolated = options.key?(:isolated) ? options.delete(:isolated) : true
     options = { pool_size:           5,
-                persistence_adapter: Dynflow::PersistenceAdapters::Sequel.new('sqlite:/'),
+                persistence_adapter: persistence_adapter(isolated),
                 transaction_adapter: Dynflow::TransactionAdapters::None.new,
                 logger_adapter:      logger_adapter,
                 auto_rescue:         false }.merge(options)
-    Dynflow::World.new(options)
+    Dynflow::World.new(options).tap do |world|
+      if isolated
+        @isolated_worlds ||= []
+        @isolated_worlds << world
+      end
+    end
   end
 
-  def self.create_remote_world(world)
-    @counter    ||= 0
-    socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
-    listener    = Dynflow::Listeners::Socket.new world, socket_path
-    world       = Dynflow::World.new(
-        logger_adapter:      logger_adapter,
-        auto_terminate:      false,
-        persistence_adapter: -> remote_world { world.persistence.adapter },
-        transaction_adapter: Dynflow::TransactionAdapters::None.new,
-        executor:            -> remote_world do
-          Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path)
-        end)
-    return listener, world
+  def self.clean_worlds_register
+    persistence_adapter = WorldInstance.persistence_adapter(true)
+    persistence_adapter.find_worlds({}).each do |w|
+      warn "Unexpected world in the regiter: #{ w[:id] }"
+      persistence_adapter.pull_envelopes(w[:id])
+      persistence_adapter.delete_executor_allocations(world_id: w[:id])
+      persistence_adapter.delete_world(w[:id])
+    end
   end
 
-  def self.terminate
-    remote_world.terminate.wait if @remote_world
-    world.terminate.wait if @world
+  def self.terminate_isolated
+    return unless @isolated_worlds
+    @isolated_worlds.map(&:terminate).map(&:wait)
+    @isolated_worlds.clear
+  end
 
-    @remote_world = @world = nil
+  def self.terminate_shared
+    @world.terminate.wait if @world
+    @world = nil
   end
 
   def world
     WorldInstance.world
   end
+end
 
-  def remote_world
-    WorldInstance.remote_world
+class MiniTest::Test
+  def setup
+    WorldInstance.clean_worlds_register
+  end
+
+  def teardown
+    WorldInstance.terminate_isolated
   end
 end
 
@@ -122,7 +139,7 @@ future_tests = -> do
   non_ready_ivars = {}
 
   MiniTest.after_run do
-    WorldInstance.terminate
+    WorldInstance.terminate_shared
   end
 
   Concurrent::IVar.singleton_class.send :define_method, :new do |*args, &block|

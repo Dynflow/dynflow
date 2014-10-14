@@ -11,22 +11,22 @@ module Dynflow
 
       specify '#plan_action' do
         input  = { 'input' => 'input' }
-        action = create_and_plan_action CWE::DummyHeavyProgress, input
+        action = create_and_plan_action Support::DummyExample::WeightedPolling, input
 
-        action.must_be_kind_of CWE::DummyHeavyProgress
+        action.must_be_kind_of Support::DummyExample::WeightedPolling
         action.phase.must_equal Action::Plan
         action.input.must_equal input
         action.execution_plan.must_be_kind_of Testing::DummyExecutionPlan
         action.state.must_equal :success
         assert_run_phase action
         assert_finalize_phase action
-        assert_action_planed action, CWE::DummySuspended
+        assert_action_planed action, Support::DummyExample::Polling
         refute_action_planed action, CWE::DummyAnotherTrigger
       end
 
       specify 'stub_plan_action' do
-        action = create_action CWE::DummyHeavyProgress
-        action.execution_plan.stub_planned_action(CWE::DummySuspended) do |sub_action|
+        action = create_action Support::DummyExample::WeightedPolling
+        action.execution_plan.stub_planned_action(Support::DummyExample::Polling) do |sub_action|
           sub_action.define_singleton_method(:test) { "test" }
         end
         plan_action(action, {})
@@ -36,10 +36,10 @@ module Dynflow
 
       specify '#run_action without suspend' do
         input  = { 'input' => 'input' }
-        plan   = create_and_plan_action CWE::DummyHeavyProgress, input
+        plan   = create_and_plan_action Support::DummyExample::WeightedPolling, input
         action = run_action plan
 
-        action.must_be_kind_of CWE::DummyHeavyProgress
+        action.must_be_kind_of Support::DummyExample::WeightedPolling
         action.phase.must_equal Action::Run
         action.input.must_equal input
         action.world.must_equal plan.world
@@ -49,7 +49,7 @@ module Dynflow
 
       specify '#run_action with suspend' do
         input  = { 'input' => 'input' }
-        plan   = create_and_plan_action CWE::DummySuspended, input
+        plan   = create_and_plan_action Support::DummyExample::Polling, input
         action = run_action plan
 
         action.output.must_equal 'task' => { 'progress' => 0, 'done' => false }
@@ -76,12 +76,12 @@ module Dynflow
 
       specify '#finalize_action' do
         input                 = { 'input' => 'input' }
-        plan                  = create_and_plan_action CWE::DummyHeavyProgress, input
+        plan                  = create_and_plan_action Support::DummyExample::WeightedPolling, input
         run                   = run_action plan
         $dummy_heavy_progress = false
         action                = finalize_action run
 
-        action.must_be_kind_of CWE::DummyHeavyProgress
+        action.must_be_kind_of Support::DummyExample::WeightedPolling
         action.phase.must_equal Action::Finalize
         action.input.must_equal input
         action.output.must_equal run.output

@@ -5,6 +5,10 @@ module Dynflow
         false
       end
 
+      def transaction
+        raise NotImplementedError
+      end
+
       def filtering_by
         []
       end
@@ -47,8 +51,40 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def find_worlds(options)
+        raise NotImplementedError
+      end
+
+      def save_world(id, data)
+        raise NotImplementedError
+      end
+
+      def delete_world(id)
+        raise NotImplementedError
+      end
+
+      def save_executor_allocation(world_id, execution_plan_id)
+        raise NotImplementedError
+      end
+
+      def find_executor_allocations(options)
+        raise NotImplementedError
+      end
+
+      def delete_executor_allocations(options)
+        raise NotImplementedError
+      end
+
       # for debug purposes
       def to_hash
+        raise NotImplementedError
+      end
+
+      def pull_envelopes(receiver_id)
+        raise NotImplementedError
+      end
+
+      def push_envelope(data)
         raise NotImplementedError
       end
     end

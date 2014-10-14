@@ -4,6 +4,8 @@ module Dynflow
 
   class Persistence
 
+    include Algebrick::TypeCheck
+
     attr_reader :adapter
 
     def initialize(world, persistence_adapter)
@@ -46,5 +48,70 @@ module Dynflow
       adapter.save_step(step.execution_plan_id, step.id, step.to_hash)
     end
 
+    RegisteredWorld = Algebrick.type do
+      fields! id:       String,
+              executor: type { variants TrueClass, FalseClass }
+    end
+
+    ExecutorAllocation = Algebrick.type do
+      fields! world_id: String,
+              execution_plan_id: String
+    end
+
+    def find_worlds(options)
+      adapter.find_worlds(options).map do |data|
+        RegisteredWorld[data]
+      end
+    end
+
+    def save_world(world)
+      Type! world, RegisteredWorld
+      adapter.save_world(world.id, world.to_hash)
+    end
+
+    def delete_world(world)
+      Type! world, RegisteredWorld
+      adapter.transaction do
+        pull_envelopes(world.id)
+        adapter.delete_executor_allocations(world_id: world.id)
+        adapter.delete_world(world.id)
+      end
+    end
+
+    def find_executor_for_plan(execution_plan_id)
+      allocation = find_executor_allocations(filters: { execution_plan_id: execution_plan_id }).first
+      if allocation
+        return RegisteredWorld[allocation.world_id, true]
+      end
+    end
+
+    def find_executor_allocations(options)
+      adapter.find_executor_allocations(options).map do |data|
+        ExecutorAllocation[data]
+      end
+    end
+
+    def save_executor_allocation(executor_allocation)
+      Type! executor_allocation, ExecutorAllocation
+      adapter.save_executor_allocation(executor_allocation.world_id,
+                                       executor_allocation.execution_plan_id)
+    end
+
+    def delete_executor_allocation(executor_allocation)
+      Type! executor_allocation, ExecutorAllocation
+      adapter.delete_executor_allocations(world_id: executor_allocation.world_id,
+                                          execution_plan_id: executor_allocation.execution_plan_id)
+    end
+
+    def push_envelope(envelope)
+      Type! envelope, Dispatcher::Envelope
+      adapter.push_envelope(envelope.to_hash)
+    end
+
+    def pull_envelopes(world_id)
+      adapter.pull_envelopes(world_id).map do |data|
+        Dispatcher::Envelope.from_hash(data)
+      end
+    end
   end
 end

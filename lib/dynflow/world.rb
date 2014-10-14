@@ -1,32 +1,43 @@
+# -*- coding: utf-8 -*-
 module Dynflow
   class World
     include Algebrick::TypeCheck
 
-    attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options, :middleware, :auto_rescue
+    attr_reader :id, :dispatcher, :executor, :connector, :persistence, :transaction_adapter,
+                :action_classes, :subscription_index, :logger_adapter,
+                :options, :middleware, :auto_rescue
 
     def initialize(options_hash = {})
+      @id                  = UUIDTools::UUID.random_create.to_s
       @options             = default_options.merge options_hash
       @logger_adapter      = Type! option_val(:logger_adapter), LoggerAdapters::Abstract
       @transaction_adapter = Type! option_val(:transaction_adapter), TransactionAdapters::Abstract
       persistence_adapter  = Type! option_val(:persistence_adapter), PersistenceAdapters::Abstract
       @persistence         = Persistence.new(self, persistence_adapter)
-      @executor            = Type! option_val(:executor), Executors::Abstract
+      @executor            = Type! option_val(:executor), Executors::Abstract, FalseClass
       @action_classes      = option_val(:action_classes)
       @auto_rescue         = option_val(:auto_rescue)
       @middleware          = Middleware::World.new
+      @dispatcher          = Dispatcher.new(self)
+      @connector           = Type! option_val(:connector), Connectors::Abstract
       calculate_subscription_index
 
-      executor.initialized.wait
+      executor.initialized.wait if executor
+      persistence.save_world(registered_world)
       @termination_barrier = Mutex.new
 
       transaction_adapter.check self
+    end
+
+    def registered_world
+      Persistence::RegisteredWorld[id, !!executor]
     end
 
     def default_options
       @default_options ||=
           { action_classes: Action.all_children,
             logger_adapter: LoggerAdapters::Simple.new,
+            connector:      -> world { Dynflow::Connectors::Direct.new(world.logger, world)} ,
             executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) },
             auto_rescue:    true }
     end
@@ -103,8 +114,8 @@ module Dynflow
       end
     end
 
-    def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
-      executor.event execution_plan_id, step_id, event, future
+    def require_executor!
+      raise 'Operation not permitted on a world without assigned executor' unless executor
     end
 
     def plan(action_class, *args)
@@ -116,23 +127,56 @@ module Dynflow
 
     # @return [Concurrent::IVar] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, finished = Concurrent::IVar.new)
-      executor.execute execution_plan_id, finished
+    def execute(execution_plan_id, future = Concurrent::IVar.new)
+      dispatcher.publish_job(future, Dispatcher::Execution[execution_plan_id])
+    end
+
+    def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
+      dispatcher.publish_job(future, Dispatcher::Event[execution_plan_id, step_id, event])
+    end
+
+    def receive(object)
+      dispatcher << object
     end
 
     def terminate(future = Concurrent::IVar.new)
       @termination_barrier.synchronize do
-        if @executor_terminated.nil?
-          @executor_terminated = Concurrent::IVar.new
-          @clock_terminated    = Concurrent::IVar.new
-          executor.terminate(@executor_terminated).
-              with_observer { clock.ask(:terminate!, @clock_terminated) }
+        if @dispatcher_terminated.nil?
+          persistence.delete_world(registered_world)
+
+          # TODO: refactory once we can chain futures (probably after migrating
+          #       to concurrent-ruby promises
+          @dispatcher_terminated = Concurrent::IVar.new
+          @listening_stopped     = connector.stop_listening(self)
+          if executor
+            @executor_terminated   = Concurrent::IVar.new
+            @listening_stopped.with_observer do
+              logger.info "start terminating executor..."
+              executor.terminate(@executor_terminated)
+            end
+            ready_to_terminate_dispatcher = @executor_terminated
+          else
+            ready_to_terminate_dispatcher = @listening_stopped
+          end
+
+          ready_to_terminate_dispatcher.with_observer do
+            logger.info "start terminating dispatcher..."
+            dispatcher.terminate(@dispatcher_terminated)
+          end
+
+          if @clock
+            @dispatcher_terminated.with_observer do
+              logger.info "start terminating clock..."
+              clock << MicroActor::Terminate
+            end
+            @dispatcher_terminated.with_observer do
+              connector.terminate
+            end
+          end
         end
       end
-
-      # TODO fix me do not block, replace with IVar.join/zip when available
-      @executor_terminated.wait
-      @clock_terminated.wait
+      # TODO: do not block, replace with IVar.join/zip when available
+      [@dispatcher_terminated, @executor_terminated].compact.each(&:wait)
       future.set true
       future
     end
