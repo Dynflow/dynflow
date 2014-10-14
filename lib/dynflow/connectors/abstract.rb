@@ -22,15 +22,6 @@ module Dynflow
       def send(receiver, object)
         raise NotImplementedError
       end
-
-      def dump(object)
-        MultiJson.dump(object.to_hash)
-      end
-
-      def load(string)
-        Protocol::Message.from_hash MultiJson.load(string)
-      end
-
     end
   end
 end

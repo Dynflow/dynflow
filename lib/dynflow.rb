@@ -32,7 +32,6 @@ module Dynflow
   require 'dynflow/execution_history'
   require 'dynflow/execution_plan'
   require 'dynflow/action'
-  require 'dynflow/listeners'
   require 'dynflow/executors'
   require 'dynflow/logger_adapters'
   require 'dynflow/world'
