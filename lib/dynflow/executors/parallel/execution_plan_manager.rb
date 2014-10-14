@@ -21,6 +21,7 @@ module Dynflow
 
         def start
           raise "The future was already set" if @future.completed?
+          execution_plan.execution_history.add('start execution', @world)
           start_run or start_finalize or finish
         end
 
@@ -71,6 +72,11 @@ module Dynflow
           (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
         end
 
+        def terminate
+          execution_plan.execution_history.add('terminate execution', @world)
+          @execution_plan.update_state(:paused)
+        end
+
         private
 
         def no_work
@@ -95,6 +101,7 @@ module Dynflow
         end
 
         def finish
+          execution_plan.execution_history.add('finish execution', @world)
           @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
           return no_work
         end
