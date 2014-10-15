@@ -75,19 +75,22 @@ module Dynflow
 
     private_class_method :string_to_time, :hash_to_error
 
+    # TODO: revisit when after enhancing algebrick serialization
     class AlgebrickSerializer
+
+      include Algebrick::TypeCheck
 
       def self.instance
         @instance ||= self.new
       end
 
       def dump(object)
-        Base64.encode64(MultiJson.dump(object.to_hash))
+        Base64.encode64(Marshal.dump(object))
       end
 
       def load(string, desired_type)
-        hash = MultiJson.load(Base64.decode64(string)).with_indifferent_access
-        desired_type.from_hash(hash)
+        object = Marshal.load(Base64.decode64(string))
+        Type! object, desired_type
       end
     end
   end
