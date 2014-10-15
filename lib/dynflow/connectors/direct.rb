@@ -12,16 +12,12 @@ module Dynflow
 
       Terminate = Algebrick.atom
 
-      class Core < MicroActor
+      class Core < Concurrent::Actor::Context
+        include Algebrick::Matching
 
-        def initialize(*args)
-          super
+        def initialize
           @worlds = {}
           @round_robin_counter = 0
-        end
-
-        def termination
-          try_to_terminate
         end
 
         private
@@ -33,7 +29,7 @@ module Dynflow
                  end),
                 (on StopListening.(~Dynflow::World.to_m) do |world|
                    @worlds.delete(world.id)
-                   try_to_terminate if terminating?
+                   try_to_terminate
                  end),
                 (on Terminate do
                    terminate!
@@ -42,13 +38,13 @@ module Dynflow
                    if world = find_receiver(envelope)
                      world.receive(envelope)
                    else
-                     logger.error("Receiver for envelope #{ envelope } not found")
+                     log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
                    end
                  end)
         end
 
         def try_to_terminate
-          self << Terminate if @worlds.empty?
+          terminate! if @worlds.empty?
         end
 
         def find_receiver(envelope)
@@ -69,8 +65,8 @@ module Dynflow
         end
       end
 
-      def initialize(logger, world = nil)
-        @core  = Core.new(logger)
+      def initialize(world = nil)
+        @core  = Core.spawn('connector-direct-core')
         start_listening(world) if world
       end
 
@@ -84,10 +80,12 @@ module Dynflow
 
       def send(envelope)
         @core.ask(envelope).value!
+      rescue Concurrent::Actor::ActorTerminated => _
+        # just drop the message
       end
 
       def terminate
-        @core << MicroActor::Terminate
+        # The core terminates itself when last world stops listening
       end
     end
   end

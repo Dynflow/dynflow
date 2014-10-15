@@ -45,7 +45,7 @@ module Dynflow
               plan   = result.finished.value
               step   = plan.steps.values.first
               future = client_world.event(plan.id, step.id, 'finish').wait
-              assert future.failed?
+              assert future.rejected?
             end
 
             it 'succeeds when executor acts as client' do
@@ -95,7 +95,7 @@ module Dynflow
       end
 
       describe 'direct connector - all in one' do
-        let(:connector) { ->(world) { Connectors::Direct.new(world.logger, world) } }
+        let(:connector) { ->(world) { Connectors::Direct.new(world) } }
         let(:executor_world) { create_world }
         let(:client_world) { executor_world }
 
@@ -103,7 +103,7 @@ module Dynflow
       end
 
       describe 'direct connector - multi executor multi client' do
-        let(:shared_connector) { Connectors::Direct.new(WorldInstance.logger_adapter.logger) }
+        let(:shared_connector) { Connectors::Direct.new() }
         let(:connector) { ->(world) { shared_connector.start_listening(world); shared_connector } }
         let(:executor_world) { create_world(true) }
         let(:executor_world_2) { create_world(true) }
@@ -115,7 +115,7 @@ module Dynflow
       end
 
       describe 'database connector - all in one' do
-        let(:connector) { ->(world) { Connectors::Database.new(world.logger, world) } }
+        let(:connector) { ->(world) { Connectors::Database.new(world) } }
         let(:executor_world) { create_world(connector: connector) }
         let(:client_world) { executor_world }
 
@@ -123,7 +123,7 @@ module Dynflow
       end
 
       describe 'database connector - multi executor multi client' do
-        let(:connector) { ->(world) { Connectors::Database.new(world.logger, world) } }
+        let(:connector) { ->(world) { Connectors::Database.new(world) } }
         let(:executor_world) { create_world(true) }
         let(:executor_world_2) { create_world(true) }
         let(:client_world) { create_world(false) }

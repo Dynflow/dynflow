@@ -133,7 +133,7 @@ MiniTest.after_run do
   Concurrent.finalize_global_executors
 end
 
-# ensure there are no unresolved Futures at the end or being GCed
+# ensure there are no unresolved IVars at the end or being GCed
 future_tests = -> do
   ivar_creations  = {}
   non_ready_ivars = {}

@@ -51,10 +51,10 @@ module Dynflow
         end
       end
 
-      class Core < MicroActor
+      class Core < Concurrent::Actor::Context
+        include Algebrick::Matching
 
-        def initialize(*args)
-          super
+        def initialize
           @world = nil
           @round_robin_counter = 0
           @stopped = false
@@ -88,7 +88,7 @@ module Dynflow
                    if world_id = find_receiver(envelope)
                      if world_id == @world.id
                        if @stopped
-                         logger.error("Envelope #{envelope} received for stopped world")
+                         log(Logger::ERROR, "Envelope #{envelope} received for stopped world")
                        else
                          @world.receive(envelope)
                        end
@@ -96,7 +96,7 @@ module Dynflow
                        send_envelope(update_receiver_id(envelope, world_id))
                      end
                    else
-                     logger.error("Receiver for envelope #{ envelope } not found")
+                     log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
                    end
                  end)
         end
@@ -148,8 +148,8 @@ module Dynflow
         end
       end
 
-      def initialize(logger, world = nil)
-        @core  = Core.new(logger)
+      def initialize(world = nil)
+        @core  = Core.spawn('connector-database-core')
         start_listening(world) if world
       end
 
@@ -166,7 +166,7 @@ module Dynflow
       end
 
       def terminate
-        @core << MicroActor::Terminate
+        @core.ask(:terminate!)
       end
     end
   end

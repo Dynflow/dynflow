@@ -657,7 +657,7 @@ module Dynflow
         result = world.trigger(Support::DummyExample::Slow, 0.02)
         result.must_be :planned?
         result.wont_be :triggered?
-        result.error.must_be_kind_of Dynflow::Error
+        result.error.must_be_kind_of Concurrent::Actor::ActorTerminated
       end
 
       it 'it terminates when no work right after initialization' do

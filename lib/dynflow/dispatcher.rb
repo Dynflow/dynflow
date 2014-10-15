@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 module Dynflow
-  class Dispatcher < MicroActor
+  class Dispatcher < Concurrent::Actor::Context
+    include Algebrick::Matching
 
     Job = Algebrick.type do
       Event = type do
@@ -17,7 +18,7 @@ module Dynflow
     end
 
     PublishJob = Algebrick.type do
-      fields! future: Future, job: Job
+      fields! future: Concurrent::IVar, job: Job
     end
 
     Request = Algebrick.type do
@@ -48,68 +49,54 @@ module Dynflow
     end
 
     TrackedJob = Algebrick.type do
-      fields! id: Integer, job: Job, accepted: Future, finished: Future
+      fields! id: Integer, job: Job, accepted: Concurrent::IVar, finished: Concurrent::IVar
     end
 
     module TrackedJob
       def accept!
-        accepted.resolve true unless accepted.ready?
+        accepted.set true unless accepted.completed?
         self
       end
 
       def fail!(error)
-        accepted.fail error unless accepted.ready?
+        accepted.fail error unless accepted.completed?
         finished.fail error
         self
       end
 
       def success!(resolve_to)
-        accepted.resolve true unless accepted.ready?
-        finished.resolve(resolve_to)
+        accepted.set true unless accepted.completed?
+        finished.set(resolve_to)
         self
       end
     end
 
+    # TODO: DRY - common for more actors
+    StartTerminating = Algebrick.type do
+      fields! terminated: Concurrent::IVar
+    end
+
     def initialize(world)
-      super(world.logger, world)
-    end
-
-    def terminate(future = Future.new)
-      self.ask(MicroActor::Terminate, future)
-    end
-
-    def publish_job(future, job)
-      if terminated?
-        raise Dynflow::Error.new('Dispatcher terminated')
-      else
-        self << Dispatcher::PublishJob[future, job]
-      end
-      return future
-    rescue Exception => e
-      future.fail e
-      raise e
-    end
-
-    private
-
-    def delayed_initialize(world)
       @world        = Type! world, World
       @last_id      = 0
       @tracked_jobs = {}
+      @terminated   = nil
     end
+
+    private
 
     def connector
       @world.connector
     end
 
-    def termination
+    def try_to_terminate
       @tracked_jobs.values.each { |tracked_job| tracked_job.fail!(Dynflow::Error.new('Dispatcher terminated')) }
       @tracked_jobs.clear
-      terminate!
+      @terminated.set true
+      reference.ask(:terminate!)
     end
 
     def on_message(message)
-      Type! message, PublishJob, Envelope
       match message,
             (on PublishJob.(~any, ~any) do |future, job|
                dispatch_job(add_tracked_job(future, job))
@@ -119,6 +106,10 @@ module Dynflow
              end),
             (on ~Envelope.(message: ~Response) do |envelope, response|
                dispatch_response(envelope, response)
+             end),
+            (on StartTerminating.(~any) do |terminated|
+               @terminated = terminated
+               try_to_terminate
              end)
     end
 
@@ -134,19 +125,19 @@ module Dynflow
       connector.send(request)
     rescue Dynflow::Error => e
       resolve_tracked_job(tracked_job.id, e)
-      logger.error(e)
+      log(Logger::ERROR, e)
     end
 
     def perform_job(envelope, job)
-      future = Future.new.do_then do |_|
+      future = Concurrent::IVar.new.with_observer do |_, value, reason|
         if Execution === job
           allocation = Persistence::ExecutorAllocation[@world.id, job.execution_plan_id]
           @world.persistence.delete_executor_allocation(allocation)
         end
-        if future.resolved?
-          respond(envelope, Done)
+        if reason
+          respond(envelope, Failed[reason.message])
         else
-          respond(envelope, Failed[future.value.message])
+          respond(envelope, Done)
         end
       end
       match job,
@@ -187,19 +178,19 @@ module Dynflow
 
     def add_tracked_job(finished, job)
       id = @last_id += 1
-      tracked_job = TrackedJob[id, job, Future.new, finished]
+      tracked_job = TrackedJob[id, job, Concurrent::IVar.new, finished]
       @tracked_jobs[id] = tracked_job
       return tracked_job
     end
 
     def reset_tracked_job(tracked_job)
-      if tracked_job.finished.ready?
+      if tracked_job.finished.completed?
         raise Dynflow::Error.new('Can not reset resolved tracked job')
       end
-      unless tracked_job.accepted.ready?
+      unless tracked_job.accepted.completed?
         tracked_job.accept! # otherwise nobody would set the accept future
       end
-      @tracked_jobs[tracked_job.id] = TrackedJob[tracked_job.id, tracked_job.job, Future.new, tracked_job.finished]
+      @tracked_jobs[tracked_job.id] = TrackedJob[tracked_job.id, tracked_job.job, Concurrent::IVar.new, tracked_job.finished]
     end
 
     def resolve_tracked_job(id, error = nil)

@@ -18,7 +18,7 @@ module Dynflow
       @action_classes      = option_val(:action_classes)
       @auto_rescue         = option_val(:auto_rescue)
       @middleware          = Middleware::World.new
-      @dispatcher          = Dispatcher.new(self)
+      @dispatcher          = Dispatcher.spawn("dispatcher", self)
       @connector           = Type! option_val(:connector), Connectors::Abstract
       calculate_subscription_index
 
@@ -37,7 +37,7 @@ module Dynflow
       @default_options ||=
           { action_classes: Action.all_children,
             logger_adapter: LoggerAdapters::Simple.new,
-            connector:      -> world { Dynflow::Connectors::Direct.new(world.logger, world)} ,
+            connector:      -> world { Dynflow::Connectors::Direct.new(world)} ,
             executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) },
             auto_rescue:    true }
     end
@@ -105,7 +105,13 @@ module Dynflow
 
       if planned
         begin
-          Triggered[execution_plan.id, execute(execution_plan.id)]
+          accepted = Concurrent::IVar.new
+          done = execute(execution_plan.id, Concurrent::IVar.new, accepted)
+          if accepted.wait.fulfilled?
+            Triggered[execution_plan.id, done]
+          else
+            ExecutionFailed[execution_plan.id, accepted.reason]
+          end
         rescue => exception
           ExecutionFailed[execution_plan.id, exception]
         end
@@ -127,12 +133,20 @@ module Dynflow
 
     # @return [Concurrent::IVar] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, future = Concurrent::IVar.new)
-      dispatcher.publish_job(future, Dispatcher::Execution[execution_plan_id])
+    def execute(execution_plan_id, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
+      publish_job(Dispatcher::Execution[execution_plan_id], done, accepted)
     end
 
-    def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
-      dispatcher.publish_job(future, Dispatcher::Event[execution_plan_id, step_id, event])
+    def event(execution_plan_id, step_id, event, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
+      publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, accepted)
+    end
+
+    def publish_job(job, done, accepted)
+      accepted.with_observer do |_, value, reason|
+        done.fail reason if reason
+      end
+      dispatcher.ask(Dispatcher::PublishJob[done, job], accepted)
+      done
     end
 
     def receive(object)
@@ -161,13 +175,13 @@ module Dynflow
 
           ready_to_terminate_dispatcher.with_observer do
             logger.info "start terminating dispatcher..."
-            dispatcher.terminate(@dispatcher_terminated)
+            dispatcher.ask(Dispatcher::StartTerminating[@dispatcher_terminated])
           end
 
           if @clock
             @dispatcher_terminated.with_observer do
               logger.info "start terminating clock..."
-              clock << MicroActor::Terminate
+              clock.ask(:terminate!)
             end
             @dispatcher_terminated.with_observer do
               connector.terminate
