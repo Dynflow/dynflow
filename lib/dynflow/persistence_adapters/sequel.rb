@@ -8,6 +8,7 @@ module Dynflow
 
     class Sequel < Abstract
       include Algebrick::TypeCheck
+      include Algebrick::Matching
 
       attr_reader :db
 
@@ -23,17 +24,29 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      META_DATA = { execution_plan: %w(state result started_at ended_at real_time execution_time),
-                    action:         [],
-                    step:           %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight) }
+      META_DATA = { execution_plan:      %w(state result started_at ended_at real_time execution_time),
+                    action:              [],
+                    step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
+                    world:               %w(id executor),
+                    envelope:            %w(receiver_id),
+                    executor_allocation: %w(world_id execution_plan_id) }
 
       def initialize(db_path)
         @db = initialize_db db_path
         migrate_db
       end
 
+      def transaction(&block)
+        db.transaction(&block)
+      end
+
       def find_execution_plans(options = {})
-        data_set = filter(order(paginate(table(:execution_plan), options), options), options)
+        options[:order_by] ||= :started_at
+        data_set = filter(:execution_plan,
+                          order(:execution_plan,
+                                paginate(table(:execution_plan), options),
+                                options),
+                          options)
 
         data_set.map do |record|
           HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
@@ -64,17 +77,89 @@ module Dynflow
         save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value
       end
 
+      def find_worlds(options)
+        data_set = filter(:world,
+                          order(:world,
+                                paginate(table(:world),
+                                         options),
+                                options),
+                          options)
+
+        data_set.map do |record|
+          Persistence::RegisteredWorld[record]
+        end
+      end
+
+      def save_world(id, value)
+        save :world, { id: id }, value
+      end
+
+      def delete_world(id)
+        delete :world, { id: id }
+      end
+
+      def save_executor_allocation(executor_allocation)
+        conditions = { world_id: executor_allocation.world_id,
+                       execution_plan_id: executor_allocation.execution_plan_id }
+        save :executor_allocation, conditions, executor_allocation
+      end
+
+      def find_executor_allocations(options)
+        options = options.dup
+        data_set = filter(:executor_allocation,
+                          order(:executor_allocation,
+                                paginate(table(:executor_allocation), options),
+                                options),
+                          options)
+
+
+        data_set.map do |record|
+          Persistence::ExecutorAllocation[record]
+        end
+      end
+
+      def delete_executor_allocations(options)
+        delete :executor_allocation, options
+      end
+
+      def save_envelope(data)
+        save :envelope, {}, data
+      end
+
+      def pull_envelopes(receiver_id)
+        db.transaction do
+          data_set = table(:envelope).where(receiver_id: receiver_id)
+
+          envelopes = data_set.map do |record|
+            Serializable::AlgebrickSerializer.instance.load(record[:data], Dispatcher::Envelope)
+          end
+
+          table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
+          return envelopes
+        end
+      end
+
+      def push_envelope(envelope)
+        save :envelope, {}, envelope
+      end
+
       def to_hash
-        { execution_plans: table(:execution_plan).all,
-          steps:           table(:step).all,
-          actions:         table(:action).all }
+        { execution_plans:      table(:execution_plan).all,
+          steps:                table(:step).all,
+          actions:              table(:action).all,
+          worlds:               table(:world).all,
+          envelopes:            table(:envelope).all,
+          executor_allocations: table(:executor_allocation).all}
       end
 
       private
 
-      TABLES = { execution_plan: :dynflow_execution_plans,
-                 action:         :dynflow_actions,
-                 step:           :dynflow_steps }
+      TABLES = { execution_plan:      :dynflow_execution_plans,
+                 action:              :dynflow_actions,
+                 step:                :dynflow_steps,
+                 world:               :dynflow_worlds,
+                 envelope:            :dynflow_envelopes,
+                 executor_allocation: :dynflow_executor_allocations }
 
       def table(which)
         db[TABLES.fetch(which)]
@@ -94,14 +179,14 @@ module Dynflow
 
       def save(what, condition, value)
         table           = table(what)
-        existing_record = table.first condition
+        existing_record = table.first condition unless condition.empty?
 
         if value
-          value         = value.with_indifferent_access
           record        = existing_record || condition
-          record[:data] = MultiJson.dump Type!(value, Hash)
-          meta_data     = META_DATA.fetch(what).inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
-          record.merge! meta_data
+          if table.columns.include?(:data)
+            record[:data] = dump_data(value)
+          end
+          record.merge! extract_metadata(what, value)
           record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
 
           if existing_record
@@ -125,6 +210,32 @@ module Dynflow
         end
       end
 
+      def delete(what, condition)
+        table(what).where(condition.symbolize_keys).delete
+      end
+
+      def extract_metadata(what, value)
+        meta_keys = META_DATA.fetch(what)
+        match value,
+              (on Hash do
+                 value         = value.with_indifferent_access
+                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
+               end),
+              (on Algebrick::Value do
+                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k.to_sym] }
+               end)
+      end
+
+      def dump_data(value)
+        match value,
+              (on Hash do
+                 MultiJson.dump Type!(value, Hash)
+               end),
+              (on Algebrick::Value do
+                 Serializable::AlgebrickSerializer.instance.dump(value)
+               end)
+      end
+
       def paginate(data_set, options)
         page     = Integer(options[:page] || 0)
         per_page = Integer(options[:per_page] || 20)
@@ -136,20 +247,21 @@ module Dynflow
         end
       end
 
-      def order(data_set, options)
-        order_by = (options[:order_by] || :started_at).to_s
-        unless META_DATA.fetch(:execution_plan).include? order_by
+      def order(what, data_set, options)
+        order_by = (options[:order_by]).to_s
+        return data_set if order_by.empty?
+        unless META_DATA.fetch(what).include? order_by
           raise ArgumentError, "unknown column #{order_by.inspect}"
         end
         order_by = order_by.to_sym
         data_set.order_by options[:desc] ? ::Sequel.desc(order_by) : order_by
       end
 
-      def filter(data_set, options)
+      def filter(what, data_set, options)
         filters = Type! options[:filters], NilClass, Hash
         return data_set if filters.nil?
 
-        unless (unknown = filters.keys - META_DATA.fetch(:execution_plan)).empty?
+        unless (unknown = filters.keys.map(&:to_s) - META_DATA.fetch(what)).empty?
           raise ArgumentError, "unkown columns: #{unknown.inspect}"
         end
 

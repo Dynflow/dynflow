@@ -34,19 +34,6 @@ module Support
       end
     end
 
-    class Slow < Dynflow::Action
-      def plan(seconds)
-        plan_self interval: seconds
-      end
-
-      def run
-        sleep input[:interval]
-        action_logger.debug 'done with sleeping'
-        $slow_actions_done ||= 0
-        $slow_actions_done +=1
-      end
-    end
-
     class IncomingIssue < Dynflow::Action
 
       def plan(issue)
@@ -308,66 +295,6 @@ module Support
 
       def run_progress
         external_task && external_task[:progress].to_f / 100
-      end
-    end
-
-    class DummySuspended < Dynflow::Action
-      include Dynflow::Action::Polling
-
-      def invoke_external_task
-        error! 'Trolling detected' if input[:text] == 'troll setup'
-        { progress: 0, done: false }
-      end
-
-      def poll_external_task
-        if input[:text] == 'troll progress' && !output[:trolled]
-          output[:trolled] = true
-          error! 'Trolling detected'
-        end
-
-        if input[:text] =~ /pause in progress (\d+)/
-          TestPause.pause if external_task[:progress] == $1.to_i
-        end
-
-        progress = external_task[:progress] + 10
-        { progress: progress, done: progress >= 100 }
-      end
-
-      def done?
-        external_task && external_task[:progress] >= 100
-      end
-
-      def poll_interval
-        0.001
-      end
-
-      def run_progress
-        external_task && external_task[:progress].to_f / 100
-      end
-    end
-
-    class DummyHeavyProgress < Dynflow::Action
-
-      def plan(input)
-        sequence do
-          plan_self(input)
-          plan_action(DummySuspended, input)
-        end
-      end
-
-      def run
-      end
-
-      def finalize
-        $dummy_heavy_progress = 'dummy_heavy_progress'
-      end
-
-      def run_progress_weight
-        4
-      end
-
-      def finalize_progress_weight
-        5
       end
     end
 

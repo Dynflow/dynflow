@@ -29,13 +29,14 @@ module Dynflow
   require 'dynflow/persistence'
   require 'dynflow/middleware'
   require 'dynflow/flows'
+  require 'dynflow/execution_history'
   require 'dynflow/execution_plan'
   require 'dynflow/action'
-  require 'dynflow/listeners'
   require 'dynflow/executors'
   require 'dynflow/logger_adapters'
   require 'dynflow/world'
-  require 'dynflow/simple_world'
+  require 'dynflow/connectors'
+  require 'dynflow/dispatcher'
   require 'dynflow/daemon'
-
+  require 'dynflow/config'
 end

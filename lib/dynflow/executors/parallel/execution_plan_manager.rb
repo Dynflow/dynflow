@@ -21,12 +21,21 @@ module Dynflow
 
         def start
           raise "The future was already set" if @future.completed?
+          execution_plan.execution_history.add('start execution', @world)
           start_run or start_finalize or finish
         end
 
         def prepare_next_step(step)
           Work::Step[step, execution_plan.id].tap do |work|
             @running_steps_manager.add(step, work)
+          end
+        end
+
+        def try_to_terminate
+          if @running_steps_manager.try_to_terminate
+            @execution_plan.execution_history.add('terminate execution', @world)
+            @execution_plan.update_state(:paused)
+            return true
           end
         end
 
@@ -95,6 +104,7 @@ module Dynflow
         end
 
         def finish
+          execution_plan.execution_history.add('finish execution', @world)
           @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
           return no_work
         end

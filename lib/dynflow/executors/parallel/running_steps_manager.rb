@@ -43,6 +43,13 @@ module Dynflow
           end
         end
 
+        def try_to_terminate
+          @running_steps.delete_if do |_, step|
+            step.state != :running
+          end
+          return @running_steps.empty?
+        end
+
         # @returns [Work, nil]
         def event(event)
           Type! event, Parallel::Event

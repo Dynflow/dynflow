@@ -9,8 +9,8 @@ module Dynflow
 
     def initialize(logger, *args)
       @logger      = logger
-      @initialized = Future.new
-      @thread      = Thread.new { run *args }
+      @initialized = Concurrent::IVar.new
+      @thread      = Concurrent::IVar.new { run *args }
       Thread.pass until @mailbox
     end
 
@@ -20,14 +20,14 @@ module Dynflow
       self
     end
 
-    def ask(message, future = Future.new)
+    def ask(message, future = Concurrent::IVar.new)
       future.fail Dynflow::Error.new('actor terminated') if terminated?
       @mailbox << [message, future]
       future
     end
 
     def stopped?
-      @terminated.ready?
+      @terminated.completed?
     end
 
     private
@@ -44,12 +44,12 @@ module Dynflow
     end
 
     def terminated?
-      terminating? && @terminated.ready?
+      terminating? && @terminated.completed?
     end
 
     def terminate!
       raise unless Thread.current == @thread
-      @terminated.resolve true
+      @terminated.set true
       throw Terminate
     end
 
@@ -63,9 +63,9 @@ module Dynflow
       if message == Terminate
         # TODO do not use this future to store in @terminated use one added to Terminate message
         if terminating?
-          @terminated.do_then { future.resolve true } if future
+          @terminated.with_observer { future.set true } if future
         else
-          @terminated = (future || Future.new)
+          @terminated = (future || Concurrent::IVar.new)
           termination
         end
       else
@@ -94,7 +94,7 @@ module Dynflow
 
       delayed_initialize(*args)
       Thread.pass until @initialized
-      @initialized.resolve true
+      @initialized.set true
 
       catch(Terminate) { loop { receive } }
     end

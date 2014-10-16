@@ -1,34 +1,38 @@
+# -*- coding: utf-8 -*-
 module Dynflow
   class World
     include Algebrick::TypeCheck
 
-    attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options, :middleware, :auto_rescue
+    attr_reader :id, :dispatcher, :executor, :connector, :persistence, :transaction_adapter,
+                :action_classes, :subscription_index, :logger_adapter,
+                :middleware, :auto_rescue
 
-    def initialize(options_hash = {})
-      @options             = default_options.merge options_hash
-      @logger_adapter      = Type! option_val(:logger_adapter), LoggerAdapters::Abstract
-      @transaction_adapter = Type! option_val(:transaction_adapter), TransactionAdapters::Abstract
-      persistence_adapter  = Type! option_val(:persistence_adapter), PersistenceAdapters::Abstract
-      @persistence         = Persistence.new(self, persistence_adapter)
-      @executor            = Type! option_val(:executor), Executors::Abstract
-      @action_classes      = option_val(:action_classes)
-      @auto_rescue         = option_val(:auto_rescue)
+    def initialize(config)
+      @id                  = UUIDTools::UUID.random_create.to_s
+      config_for_world     = Config::ForWorld.new(config, self)
+      config_for_world.validate
+      @logger_adapter      = config_for_world.logger_adapter
+      @transaction_adapter = config_for_world.transaction_adapter
+      @persistence         = Persistence.new(self, config_for_world.persistence_adapter)
+      @executor            = config_for_world.executor
+      @action_classes      = config_for_world.action_classes
+      @auto_rescue         = config_for_world.auto_rescue
+      @connector           = config_for_world.connector
       @middleware          = Middleware::World.new
+      @dispatcher          = Dispatcher.spawn("dispatcher", self)
       calculate_subscription_index
 
-      executor.initialized.wait
+      executor.initialized.wait if executor
+      persistence.save_world(registered_world)
       @termination_barrier = Mutex.new
 
-      transaction_adapter.check self
+      at_exit { self.terminate.wait } if config_for_world.auto_terminate
+      self.consistency_check if config_for_world.consistency_check
+      self.execute_planned_execution_plans if config_for_world.auto_execute
     end
 
-    def default_options
-      @default_options ||=
-          { action_classes: Action.all_children,
-            logger_adapter: LoggerAdapters::Simple.new,
-            executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) },
-            auto_rescue:    true }
+    def registered_world
+      Persistence::RegisteredWorld[id, !!executor]
     end
 
     def clock
@@ -94,7 +98,13 @@ module Dynflow
 
       if planned
         begin
-          Triggered[execution_plan.id, execute(execution_plan.id)]
+          accepted = Concurrent::IVar.new
+          done = execute(execution_plan.id, Concurrent::IVar.new, accepted)
+          if accepted.wait.fulfilled?
+            Triggered[execution_plan.id, done]
+          else
+            ExecutionFailed[execution_plan.id, accepted.reason]
+          end
         rescue => exception
           ExecutionFailed[execution_plan.id, exception]
         end
@@ -103,8 +113,8 @@ module Dynflow
       end
     end
 
-    def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
-      executor.event execution_plan_id, step_id, event, future
+    def require_executor!
+      raise 'Operation not permitted on a world without assigned executor' unless executor
     end
 
     def plan(action_class, *args)
@@ -116,23 +126,64 @@ module Dynflow
 
     # @return [Concurrent::IVar] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, finished = Concurrent::IVar.new)
-      executor.execute execution_plan_id, finished
+    def execute(execution_plan_id, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
+      publish_job(Dispatcher::Execution[execution_plan_id], done, accepted)
+    end
+
+    def event(execution_plan_id, step_id, event, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
+      publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, accepted)
+    end
+
+    def publish_job(job, done, accepted)
+      accepted.with_observer do |_, value, reason|
+        done.fail reason if reason
+      end
+      dispatcher.ask(Dispatcher::PublishJob[done, job], accepted)
+      done
+    end
+
+    def receive(object)
+      dispatcher << object
     end
 
     def terminate(future = Concurrent::IVar.new)
       @termination_barrier.synchronize do
-        if @executor_terminated.nil?
-          @executor_terminated = Concurrent::IVar.new
-          @clock_terminated    = Concurrent::IVar.new
-          executor.terminate(@executor_terminated).
-              with_observer { clock.ask(:terminate!, @clock_terminated) }
+        if @dispatcher_terminated.nil?
+          persistence.delete_world(registered_world)
+
+          # TODO: refactory once we can chain futures (probably after migrating
+          #       to concurrent-ruby promises
+          @dispatcher_terminated = Concurrent::IVar.new
+          @listening_stopped     = connector.stop_listening(self)
+          if executor
+            @executor_terminated   = Concurrent::IVar.new
+            @listening_stopped.with_observer do
+              logger.info "start terminating executor..."
+              executor.terminate(@executor_terminated)
+            end
+            ready_to_terminate_dispatcher = @executor_terminated
+          else
+            ready_to_terminate_dispatcher = @listening_stopped
+          end
+
+          ready_to_terminate_dispatcher.with_observer do
+            logger.info "start terminating dispatcher..."
+            dispatcher.ask(Dispatcher::StartTerminating[@dispatcher_terminated])
+          end
+
+          if @clock
+            @dispatcher_terminated.with_observer do
+              logger.info "start terminating clock..."
+              clock.ask(:terminate!)
+            end
+            @dispatcher_terminated.with_observer do
+              connector.terminate
+            end
+          end
         end
       end
-
-      # TODO fix me do not block, replace with IVar.join/zip when available
-      @executor_terminated.wait
-      @clock_terminated.wait
+      # TODO: do not block, replace with IVar.join/zip when available
+      [@executor_terminated, @dispatcher_terminated].compact.each(&:wait)
       future.set true
       future
     end
@@ -204,13 +255,5 @@ module Dynflow
           end.tap { |o| o.freeze }
     end
 
-    def option_val(key)
-      val = options.fetch(key)
-      if val.is_a? Proc
-        options[key] = val.call(self)
-      else
-        val
-      end
-    end
   end
 end

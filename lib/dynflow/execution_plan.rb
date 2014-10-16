@@ -13,7 +13,7 @@ module Dynflow
     require 'dynflow/execution_plan/dependency_graph'
 
     attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow,
-                :started_at, :ended_at, :execution_time, :real_time
+                :started_at, :ended_at, :execution_time, :real_time, :execution_history
 
     def self.states
       @states ||= [:pending, :planning, :planned, :running, :paused, :stopped]
@@ -39,18 +39,20 @@ module Dynflow
         started_at = nil,
         ended_at = nil,
         execution_time = nil,
-        real_time = 0.0)
+        real_time = 0.0,
+        execution_history = ExecutionHistory.new)
 
-      @id             = Type! id, String
-      @world          = Type! world, World
-      self.state      = state
-      @run_flow       = Type! run_flow, Flows::Abstract
-      @finalize_flow  = Type! finalize_flow, Flows::Abstract
-      @root_plan_step = root_plan_step
-      @started_at     = Type! started_at, Time, NilClass
-      @ended_at       = Type! ended_at, Time, NilClass
-      @execution_time = Type! execution_time, Numeric, NilClass
-      @real_time      = Type! real_time, Numeric
+      @id                = Type! id, String
+      @world             = Type! world, World
+      self.state         = state
+      @run_flow          = Type! run_flow, Flows::Abstract
+      @finalize_flow     = Type! finalize_flow, Flows::Abstract
+      @root_plan_step    = root_plan_step
+      @started_at        = Type! started_at, Time, NilClass
+      @ended_at          = Type! ended_at, Time, NilClass
+      @execution_time    = Type! execution_time, Numeric, NilClass
+      @real_time         = Type! real_time, Numeric
+      @execution_history = Type! execution_history, ExecutionHistory
 
       steps.all? do |k, v|
         Type! k, Integer
@@ -259,7 +261,8 @@ module Dynflow
                         started_at:        time_to_str(started_at),
                         ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
-                        real_time:         real_time
+                        real_time:         real_time,
+                        execution_history: execution_history.to_hash
     end
 
     def save
@@ -280,7 +283,8 @@ module Dynflow
                string_to_time(hash[:started_at]),
                string_to_time(hash[:ended_at]),
                hash[:execution_time].to_f,
-               hash[:real_time].to_f)
+               hash[:real_time].to_f,
+               ExecutionHistory.new_from_hash(hash[:execution_history]))
     end
 
     def compute_execution_time

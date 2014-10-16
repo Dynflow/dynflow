@@ -16,11 +16,6 @@ module Dynflow
       def cleanup
         # override if needed
       end
-
-      # Called after World instantiation, it can be used to check Dynflow configuration etc.
-      def check(world)
-        # override if needed
-      end
     end
   end
 end
