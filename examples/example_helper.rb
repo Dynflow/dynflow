@@ -8,13 +8,20 @@ class ExampleHelper
       @world ||= create_world
     end
 
-    def create_world(options = {})
-      options = default_world_options.merge(options)
-      Dynflow::SimpleWorld.new(options)
+    def create_world
+      config = Dynflow::Config.new
+      yield config if block_given?
+      config.persistence_adapter = persistence_adapter
+      config.logger_adapter      = logger_adapter
+      Dynflow::SimpleWorld.new(config)
     end
 
-    def default_world_options
-      { logger_adapter: logger_adapter }
+    def persistence_conn_string
+      ENV['DB_CONN_STRING'] || 'sqlite:/'
+    end
+
+    def persistence_adapter
+      Dynflow::PersistenceAdapters::Sequel.new persistence_conn_string
     end
 
     def logger_adapter

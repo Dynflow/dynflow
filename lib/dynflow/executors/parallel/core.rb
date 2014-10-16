@@ -154,7 +154,7 @@ module Dynflow
           else
             logger.warn format('dropping event %s - no manager for %s:%s',
                                event, event.execution_plan_id, event.step_id)
-            eventh.result.fail UnprocessableEvent.new(
+            event.result.fail UnprocessableEvent.new(
                                   "no manager for #{event.execution_plan_id}:#{event.step_id}")
           end
         end

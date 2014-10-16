@@ -7,12 +7,13 @@ module Dynflow
       let(:persistence_adapter) { WorldInstance.persistence_adapter }
 
       def create_world(with_executor = true)
-        options = { :connector => connector,
-                    :persistence_adapter => persistence_adapter }
-        unless with_executor
-          options[:executor] = false
+        WorldInstance.create_world do |config|
+          config.connector = connector
+          config.persistence_adapter = persistence_adapter
+          unless with_executor
+            config.executor = false
+          end
         end
-        WorldInstance.create_world(options)
       end
 
       def self.dispatcher_works_with_this_connector
@@ -95,7 +96,7 @@ module Dynflow
       end
 
       describe 'direct connector - all in one' do
-        let(:connector) { ->(world) { Connectors::Direct.new(world) } }
+        let(:connector) { Proc.new { |world| Connectors::Direct.new(world) } }
         let(:executor_world) { create_world }
         let(:client_world) { executor_world }
 
@@ -104,7 +105,7 @@ module Dynflow
 
       describe 'direct connector - multi executor multi client' do
         let(:shared_connector) { Connectors::Direct.new() }
-        let(:connector) { ->(world) { shared_connector.start_listening(world); shared_connector } }
+        let(:connector) { Proc.new { |world| shared_connector.start_listening(world); shared_connector } }
         let(:executor_world) { create_world(true) }
         let(:executor_world_2) { create_world(true) }
         let(:client_world) { create_world(false) }
@@ -115,15 +116,15 @@ module Dynflow
       end
 
       describe 'database connector - all in one' do
-        let(:connector) { ->(world) { Connectors::Database.new(world) } }
-        let(:executor_world) { create_world(connector: connector) }
+        let(:connector) { Proc.new { |world| Connectors::Database.new(world) } }
+        let(:executor_world) { create_world }
         let(:client_world) { executor_world }
 
         dispatcher_works_with_this_connector
       end
 
       describe 'database connector - multi executor multi client' do
-        let(:connector) { ->(world) { Connectors::Database.new(world) } }
+        let(:connector) { Proc.new { |world| Connectors::Database.new(world) } }
         let(:executor_world) { create_world(true) }
         let(:executor_world_2) { create_world(true) }
         let(:client_world) { create_world(false) }

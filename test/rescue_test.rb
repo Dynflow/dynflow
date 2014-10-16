@@ -116,7 +116,9 @@ module Dynflow
       describe 'auto rescue' do
 
         def world
-          @world ||= WorldInstance.create_world(auto_rescue: true)
+          @world ||= WorldInstance.create_world do |config|
+            config.auto_rescue = true
+          end
         end
 
         describe 'of plan with skips' do

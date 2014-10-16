@@ -37,7 +37,6 @@ module Dynflow
   require 'dynflow/world'
   require 'dynflow/connectors'
   require 'dynflow/dispatcher'
-  require 'dynflow/simple_world'
   require 'dynflow/daemon'
-
+  require 'dynflow/config'
 end

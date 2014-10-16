@@ -59,7 +59,7 @@ end
 
 module WorldInstance
   def self.world
-    @world ||= create_world(:isolated => false)
+    @world ||= create_world(false)
   end
 
   def self.logger_adapter
@@ -69,22 +69,25 @@ module WorldInstance
   # @param isolated [boolean] - if the adapter is not shared between two test runs: we clear
   #   the worlrs register there every run to avoid collisions
   def self.persistence_adapter(isolated = true)
-    db_config =     if isolated
-                      db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
-                      @isolated_adapter ||= Dynflow::PersistenceAdapters::Sequel.new(db_config)
-                    else
-                      Dynflow::PersistenceAdapters::Sequel.new('sqlite:/')
-                    end
+    db_config = if isolated
+                  db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
+                  @isolated_adapter ||= Dynflow::PersistenceAdapters::Sequel.new(db_config)
+                else
+                  Dynflow::PersistenceAdapters::Sequel.new('sqlite:/')
+                end
   end
 
-  def self.create_world(options = {})
-    isolated = options.key?(:isolated) ? options.delete(:isolated) : true
-    options = { pool_size:           5,
-                persistence_adapter: persistence_adapter(isolated),
-                transaction_adapter: Dynflow::TransactionAdapters::None.new,
-                logger_adapter:      logger_adapter,
-                auto_rescue:         false }.merge(options)
-    Dynflow::World.new(options).tap do |world|
+  def self.create_world(isolated = nil)
+    isolated                   = true if isolated.nil?
+    config                     = Dynflow::Config.new
+    config.persistence_adapter = persistence_adapter(isolated)
+    config.logger_adapter      = logger_adapter
+    config.auto_rescue         = false
+    config.auto_execute        = false
+    config.auto_terminate      = false
+    config.consistency_check   = false
+    yield config if block_given?
+    Dynflow::World.new(config).tap do |world|
       if isolated
         @isolated_worlds ||= []
         @isolated_worlds << world

@@ -5,41 +5,34 @@ module Dynflow
 
     attr_reader :id, :dispatcher, :executor, :connector, :persistence, :transaction_adapter,
                 :action_classes, :subscription_index, :logger_adapter,
-                :options, :middleware, :auto_rescue
+                :middleware, :auto_rescue
 
-    def initialize(options_hash = {})
+    def initialize(config)
       @id                  = UUIDTools::UUID.random_create.to_s
-      @options             = default_options.merge options_hash
-      @logger_adapter      = Type! option_val(:logger_adapter), LoggerAdapters::Abstract
-      @transaction_adapter = Type! option_val(:transaction_adapter), TransactionAdapters::Abstract
-      persistence_adapter  = Type! option_val(:persistence_adapter), PersistenceAdapters::Abstract
-      @persistence         = Persistence.new(self, persistence_adapter)
-      @executor            = Type! option_val(:executor), Executors::Abstract, FalseClass
-      @action_classes      = option_val(:action_classes)
-      @auto_rescue         = option_val(:auto_rescue)
+      config_for_world     = Config::ForWorld.new(config, self)
+      config_for_world.validate
+      @logger_adapter      = config_for_world.logger_adapter
+      @transaction_adapter = config_for_world.transaction_adapter
+      @persistence         = Persistence.new(self, config_for_world.persistence_adapter)
+      @executor            = config_for_world.executor
+      @action_classes      = config_for_world.action_classes
+      @auto_rescue         = config_for_world.auto_rescue
+      @connector           = config_for_world.connector
       @middleware          = Middleware::World.new
       @dispatcher          = Dispatcher.spawn("dispatcher", self)
-      @connector           = Type! option_val(:connector), Connectors::Abstract
       calculate_subscription_index
 
       executor.initialized.wait if executor
       persistence.save_world(registered_world)
       @termination_barrier = Mutex.new
 
-      transaction_adapter.check self
+      at_exit { self.terminate.wait } if config_for_world.auto_terminate
+      self.consistency_check if config_for_world.consistency_check
+      self.execute_planned_execution_plans if config_for_world.auto_execute
     end
 
     def registered_world
       Persistence::RegisteredWorld[id, !!executor]
-    end
-
-    def default_options
-      @default_options ||=
-          { action_classes: Action.all_children,
-            logger_adapter: LoggerAdapters::Simple.new,
-            connector:      -> world { Dynflow::Connectors::Direct.new(world)} ,
-            executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) },
-            auto_rescue:    true }
     end
 
     def clock
@@ -262,13 +255,5 @@ module Dynflow
           end.tap { |o| o.freeze }
     end
 
-    def option_val(key)
-      val = options.fetch(key)
-      if val.is_a? Proc
-        options[key] = val.call(self)
-      else
-        val
-      end
-    end
   end
 end
