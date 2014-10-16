@@ -43,5 +43,11 @@ class ExampleHelper
     def nothing_should_fail!
       @should_fail = false
     end
+
+    def terminate
+      @world.terminate.wait if @world
+    end
   end
 end
+
+at_exit { ExampleHelper.terminate }

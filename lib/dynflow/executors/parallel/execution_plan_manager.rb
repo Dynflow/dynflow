@@ -31,6 +31,14 @@ module Dynflow
           end
         end
 
+        def try_to_terminate
+          if @running_steps_manager.try_to_terminate
+            @execution_plan.execution_history.add('terminate execution', @world)
+            @execution_plan.update_state(:paused)
+            return true
+          end
+        end
+
         # @return [Array<Work>] of Work items to continue with
         def what_is_next(work)
           Type! work, Work
@@ -70,11 +78,6 @@ module Dynflow
 
         def done?
           (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
-        end
-
-        def terminate
-          execution_plan.execution_history.add('terminate execution', @world)
-          @execution_plan.update_state(:paused)
         end
 
         private

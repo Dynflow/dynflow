@@ -130,10 +130,13 @@ module Dynflow
           end
         end
 
-        def terminate_manager!(manager)
-          return unless @execution_plan_managers.delete(manager.execution_plan.id)
-          manager.terminate
-          set_future(manager)
+        def terminate_managers!
+          @execution_plan_managers.delete_if do |_, manager|
+            if manager.try_to_terminate
+              set_future(manager)
+              true
+            end
+          end
         end
 
         def set_future(manager)
@@ -151,14 +154,14 @@ module Dynflow
           else
             logger.warn format('dropping event %s - no manager for %s:%s',
                                event, event.execution_plan_id, event.step_id)
-            event.result.fail UnprocessableEvent.new(
+            eventh.result.fail UnprocessableEvent.new(
                                   "no manager for #{event.execution_plan_id}:#{event.step_id}")
           end
         end
 
         def try_to_terminate(manager = nil)
           return unless terminating?
-          terminate_manager!(manager) if manager
+          terminate_managers!
           if @execution_plan_managers.empty?
             @pool.ask(:terminate!).wait
             reference.ask :terminate!

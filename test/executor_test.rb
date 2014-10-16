@@ -643,13 +643,16 @@ module Dynflow
 
       it 'waits for currently running actions' do
         $slow_actions_done = 0
-        triggered = world.trigger(Support::DummyExample::Slow, 1)
+        running = world.trigger(Support::DummyExample::Slow, 1)
+        suspended = world.trigger(Support::DummyExample::EventedAction, :timeout => 3 )
         sleep 0.2
         world.terminate.wait
         $slow_actions_done.must_equal 1
-        plan = world.persistence.load_execution_plan(triggered.id)
-        assert_equal plan.state, :paused
-        assert_equal plan.result, :pending
+        [running, suspended].each do |triggered|
+          plan = world.persistence.load_execution_plan(triggered.id)
+          plan.state.must_equal :paused
+          plan.result.must_equal :pending
+        end
       end
 
       it 'does not accept new work' do

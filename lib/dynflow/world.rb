@@ -190,7 +190,7 @@ module Dynflow
         end
       end
       # TODO: do not block, replace with IVar.join/zip when available
-      [@dispatcher_terminated, @executor_terminated].compact.each(&:wait)
+      [@executor_terminated, @dispatcher_terminated].compact.each(&:wait)
       future.set true
       future
     end
