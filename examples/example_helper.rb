@@ -13,7 +13,7 @@ class ExampleHelper
       yield config if block_given?
       config.persistence_adapter = persistence_adapter
       config.logger_adapter      = logger_adapter
-      Dynflow::SimpleWorld.new(config)
+      Dynflow::World.new(config)
     end
 
     def persistence_conn_string
