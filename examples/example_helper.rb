@@ -10,9 +10,9 @@ class ExampleHelper
 
     def create_world
       config = Dynflow::Config.new
-      yield config if block_given?
       config.persistence_adapter = persistence_adapter
       config.logger_adapter      = logger_adapter
+      yield config if block_given?
       Dynflow::World.new(config)
     end
 
