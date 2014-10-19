@@ -61,7 +61,12 @@ module Dynflow
 
         def inc_round_robin_counter
           @round_robin_counter += 1
-          @round_robin_counter %= executors.size
+          executors_size = executors.size
+          if executors_size > 0
+            @round_robin_counter %= executors_size
+          else
+            @round_robin_counter = 0
+          end
         end
       end
 
