@@ -121,6 +121,8 @@ module Dynflow
           @world.persistence.pull_envelopes(@world.id).each do |envelope|
             self << envelope
           end
+        rescue Sequel::DatabaseError => e
+          log(Logger::ERROR, "Receiving envelopes failed on #{e}")
         end
 
         def send_envelope(envelope)
