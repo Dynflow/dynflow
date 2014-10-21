@@ -10,7 +10,8 @@ module Dynflow
         fields! world: Dynflow::World
       end
 
-      CheckInbox = Algebrick.atom
+      CheckInbox         = Algebrick.atom
+      PeriodicCheckInbox = Algebrick.atom
 
       class PostgresListerner
         def initialize(core, world_id, db)
@@ -73,16 +74,19 @@ module Dynflow
                    @stopped = false
                    @postgres_listener ||= PostgresListerner.new(self, @world.id, @world.persistence.adapter.db)
                    postgres_listen_start
-                   self << CheckInbox
+                   self << PeriodicCheckInbox
                  end),
                 (on StopListening.(~Dynflow::World.to_m) do |world|
                    @stopped = true
                    postgres_listen_stop
                  end),
+                (on PeriodicCheckInbox do
+                   self << CheckInbox
+                   @world.clock.ping(self, interval, PeriodicCheckInbox) unless @stopped
+                 end),
                 (on CheckInbox do
                    return unless @world
                    receive_envelopes
-                   @world.clock.ping(self, interval, CheckInbox) unless @stopped
                  end),
                 (on ~Dispatcher::Envelope do |envelope|
                    if world_id = find_receiver(envelope)
