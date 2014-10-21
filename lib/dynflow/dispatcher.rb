@@ -14,7 +14,11 @@ module Dynflow
         fields! execution_plan_id: String
       end
 
-      variants Event, Execution
+      Ping = type do
+        fields! receiver_id: String
+      end
+
+      variants Event, Execution, Ping
     end
 
     PublishJob = Algebrick.type do
@@ -28,7 +32,8 @@ module Dynflow
     Response = Algebrick.type do
       variants Accepted = atom,
                Failed   = type { fields! error: String },
-               Done     = atom
+               Done     = atom,
+               Pong     = atom
     end
 
     Envelope = Algebrick.type do
@@ -101,6 +106,9 @@ module Dynflow
             (on PublishJob.(~any, ~any) do |future, job|
                dispatch_job(add_tracked_job(future, job))
             end),
+            (on ~Envelope.(message: Ping) do |envelope|
+               respond(envelope, Pong)
+             end),
             (on ~Envelope.(message: ~Request) do |envelope, request|
                perform_job(envelope, request)
              end),
@@ -120,6 +128,9 @@ module Dynflow
                            end),
                           (on ~Event do |event|
                              find_executor(event.execution_plan_id).id
+                           end),
+                          (on Ping.(~any) do |receiver_id|
+                             receiver_id
                            end)
       request      = Envelope[tracked_job.id, @world.id, executor_id, tracked_job.job]
       connector.send(request)
@@ -162,7 +173,7 @@ module Dynflow
           (on ~Failed do |msg|
              resolve_tracked_job(envelope.request_id, Dynflow::Error.new(msg.error))
            end),
-          (on ~Done do
+          (on Done | Pong do
              resolve_tracked_job(envelope.request_id)
            end)
     end
@@ -210,7 +221,7 @@ module Dynflow
                  resolve_to = plan
                end
              end),
-            (on Event do
+            (on Event | Ping do
                resolve_to = true
              end)
         @tracked_jobs.delete(id).success! resolve_to unless resolve_to.nil?

@@ -134,6 +134,10 @@ module Dynflow
       publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, accepted)
     end
 
+    def ping(world_id, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
+      publish_job(Dispatcher::Ping[world_id], done, accepted)
+    end
+
     def publish_job(job, done, accepted)
       accepted.with_observer do |_, value, reason|
         done.fail reason if reason
