@@ -12,8 +12,12 @@ class ExampleHelper
       config = Dynflow::Config.new
       config.persistence_adapter = persistence_adapter
       config.logger_adapter      = logger_adapter
+      config.consistency_check   = false
+      config.auto_rescue         = false
       yield config if block_given?
-      Dynflow::World.new(config)
+      Dynflow::World.new(config).tap do |world|
+        puts "World #{world.id} started..."
+      end
     end
 
     def persistence_conn_string

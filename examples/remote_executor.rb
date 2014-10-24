@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 require_relative 'example_helper'
+require_relative 'orchestrate_evented'
 require 'tmpdir'
 
 class SampleAction < Dynflow::Action
@@ -18,6 +19,19 @@ end
 
 class RemoteExecutorExample
   class << self
+
+    def run_observer
+      world               = ExampleHelper.create_world do |config|
+        config.persistence_adapter = persistence_adapter
+        config.connector           = connector
+        config.executor            = false
+      end
+      begin
+        ExampleHelper.run_web_console(world)
+      rescue Errno::EADDRINUSE
+        STDIN.gets
+      end
+    end
 
     def run_server
       world               = ExampleHelper.create_world do |config|
@@ -54,6 +68,9 @@ class RemoteExecutorExample
         config.connector           = connector
       end
 
+      world.trigger(OrchestrateEvented::CreateInfrastructure)
+      world.trigger(OrchestrateEvented::CreateInfrastructure, true)
+
       loop do
         world.trigger(SampleAction).finished.wait
         sleep 0.5
@@ -67,6 +84,11 @@ command = ARGV.first || 'server'
 
 if $0 == __FILE__
   case command
+  when 'observer'
+    puts <<MSG
+The observer starting…. You can see what's going on there
+MSG
+   RemoteExecutorExample.run_observer
   when 'server'
     puts <<MSG
 The server is starting…. You can send the work to it by running:
