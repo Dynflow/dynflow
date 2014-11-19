@@ -128,7 +128,7 @@ module Dynflow
 
       def pull_envelopes(receiver_id)
         db.transaction do
-          data_set = table(:envelope).where(receiver_id: receiver_id)
+          data_set = table(:envelope).where(receiver_id: receiver_id).to_a
 
           envelopes = data_set.map do |record|
             Serializable::AlgebrickSerializer.instance.load(record[:data], Dispatcher::Envelope)
@@ -140,7 +140,7 @@ module Dynflow
       end
 
       def push_envelope(envelope)
-        save :envelope, {}, envelope
+        table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
       def to_hash
@@ -177,18 +177,22 @@ module Dynflow
         ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
+      def prepare_record(table_name, value, base = {})
+        record = base.dup
+        if table(table_name).columns.include?(:data)
+          record[:data] = dump_data(value)
+        end
+        record.merge! extract_metadata(table_name, value)
+        record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
+        record
+      end
+
       def save(what, condition, value)
         table           = table(what)
         existing_record = table.first condition unless condition.empty?
 
         if value
-          record        = existing_record || condition
-          if table.columns.include?(:data)
-            record[:data] = dump_data(value)
-          end
-          record.merge! extract_metadata(what, value)
-          record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
-
+          record = prepare_record(what, value, (existing_record || condition))
           if existing_record
             table.where(condition).update(record)
           else

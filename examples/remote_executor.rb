@@ -26,11 +26,7 @@ class RemoteExecutorExample
         config.connector           = connector
         config.executor            = false
       end
-      begin
-        ExampleHelper.run_web_console(world)
-      rescue Errno::EADDRINUSE
-        STDIN.gets
-      end
+      run(world)
     end
 
     def run_server
@@ -38,10 +34,17 @@ class RemoteExecutorExample
         config.persistence_adapter = persistence_adapter
         config.connector           = connector
       end
+      run(world)
+    end
+
+    def run(world)
       begin
         ExampleHelper.run_web_console(world)
       rescue Errno::EADDRINUSE
-        STDIN.gets
+        require 'io/console'
+        puts "Running without a web console. Press q<enter> to quit."
+        until STDIN.gets.chomp == 'q'
+        end
       end
     end
 

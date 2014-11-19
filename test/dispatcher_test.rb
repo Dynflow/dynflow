@@ -68,8 +68,13 @@ module Dynflow
       end
 
       def self.supports_dynamic_retry
-        describe 'when some executor is terminated' do
-          it 'passed the work to another executor' do
+        before do
+          # mention the executors to make sure they are initialized
+          @executors = [executor_world, executor_world_2]
+        end
+
+        describe 'when some executor is terminated and client is notified about the failure' do
+          specify 'client passes the work to another executor' do
             triggered = client_world.trigger(Support::DummyExample::Slow, 0.5)
             sleep 0.2
             executor = wait_for do
@@ -86,11 +91,6 @@ module Dynflow
                  ['terminate execution', first_executor.id],
                  ['start execution', second_executor.id],
                  ['finish execution', second_executor.id]]
-          end
-
-          before do
-            # mention the executors to make sure they are initialized
-            @executors = [executor_world, executor_world_2]
           end
         end
       end
