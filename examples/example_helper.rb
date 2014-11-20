@@ -34,11 +34,11 @@ class ExampleHelper
 
 
     def run_web_console(world = ExampleHelper.world)
-      require 'dynflow/web_console'
-      dynflow_console = Dynflow::WebConsole.setup do
+      require 'dynflow/web'
+      dynflow_console = Dynflow::Web.setup do
         set :world, world
       end
-      dynflow_console.run!
+      Rack::Server.new(:app => dynflow_console, :Port => 4567).start
     end
 
     # for simulation of the execution failing for the first time
