@@ -121,7 +121,7 @@ module Dynflow
           @world.persistence.pull_envelopes(@world.id).each do |envelope|
             self << envelope
           end
-        rescue Sequel::DatabaseError => e
+        rescue => e
           log(Logger::ERROR, "Receiving envelopes failed on #{e}")
         end
 
@@ -130,6 +130,8 @@ module Dynflow
           if @postgres_listener.enabled?
             @postgres_listener.notify(envelope.receiver_id)
           end
+        rescue => e
+          log(Logger::ERROR, "Sending envelope failed on #{e}")
         end
 
         def update_receiver_id(envelope, new_receiver_id)
