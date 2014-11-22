@@ -23,7 +23,7 @@ module Dynflow
         end
       end
 
-      def terminate(future = Future.new)
+      def terminate(future = Concurrent::IVar.new)
         raise 'multiple calls' if @terminate
         @terminate = future
       end
@@ -69,7 +69,7 @@ module Dynflow
           end
         end
 
-        future = Future.new.do_then do |_|
+        future = Concurrent::IVar.new.do_then do |_|
           if future.resolved?
             respond.call
             send_message_to_client readable, Protocol::Done[id]

@@ -20,8 +20,9 @@ Gem::Specification.new do |s|
   s.add_dependency "activesupport"
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
-  s.add_dependency "algebrick", '~> 0.4.0'
+  s.add_dependency "algebrick", '~> 0.5.0.pre'
   s.add_dependency "uuidtools"
+  s.add_dependency "concurrent-ruby", '~> 0.7.0'
 
   s.add_development_dependency "rack-test"
   s.add_development_dependency "minitest"

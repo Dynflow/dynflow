@@ -1,15 +1,11 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class Worker < MicroActor
+      class Worker < Concurrent::Actor::Context
+        include Algebrick::Matching
+
         def initialize(pool, transaction_adapter)
-          super(pool.logger, pool, transaction_adapter)
-        end
-
-        private
-
-        def delayed_initialize(pool, transaction_adapter)
-          @pool                = pool
+          @pool                = Type! pool, Concurrent::Actor::Reference
           @transaction_adapter = Type! transaction_adapter, TransactionAdapters::Abstract
         end
 
@@ -22,7 +18,7 @@ module Dynflow
                 (on Work::Finalize.(~any, any) do |sequential_manager|
                   sequential_manager.finalize
                 end)
-          @pool << WorkerDone[work: message, worker: self]
+          @pool << WorkerDone[work: message, worker: reference]
         ensure
           @transaction_adapter.cleanup
         end

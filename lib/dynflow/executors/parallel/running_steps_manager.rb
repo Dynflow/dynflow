@@ -25,7 +25,7 @@ module Dynflow
         def done(step)
           Type! step, ExecutionPlan::Steps::RunStep
           @events.shift(step.id).tap do |work|
-            work.event.result.resolve true if Work::Event === work
+            work.event.result.set true if Work::Event === work
           end
 
           if step.state == :suspended

@@ -32,7 +32,7 @@ module Dynflow
     end
 
     def clock
-      @clock ||= Clock.new(logger)
+      @clock ||= Clock.spawn 'clock'
     end
 
     def logger
@@ -61,7 +61,7 @@ module Dynflow
       ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
       # Returned by #trigger when planning is successful, #future will resolve after
       # ExecutionPlan is executed.
-      Triggered       = type { fields! execution_plan_id: String, future: Future }
+      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::IVar }
 
       variants PlaningFailed, ExecutionFailed, Triggered
     end
@@ -103,7 +103,7 @@ module Dynflow
       end
     end
 
-    def event(execution_plan_id, step_id, event, future = Future.new)
+    def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
       executor.event execution_plan_id, step_id, event, future
     end
 
@@ -114,22 +114,27 @@ module Dynflow
       end
     end
 
-    # @return [Future] containing execution_plan when finished
+    # @return [Concurrent::IVar] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, finished = Future.new)
+    def execute(execution_plan_id, finished = Concurrent::IVar.new)
       executor.execute execution_plan_id, finished
     end
 
-    def terminate(future = Future.new)
+    def terminate(future = Concurrent::IVar.new)
       @termination_barrier.synchronize do
         if @executor_terminated.nil?
-          @executor_terminated = Future.new
-          @clock_terminated    = Future.new
+          @executor_terminated = Concurrent::IVar.new
+          @clock_terminated    = Concurrent::IVar.new
           executor.terminate(@executor_terminated).
-              do_then { clock.ask(MicroActor::Terminate, @clock_terminated) }
+              with_observer { clock.ask(:terminate!, @clock_terminated) }
         end
       end
-      Future.join([@executor_terminated, @clock_terminated], future)
+
+      # TODO fix me do not block, replace with IVar.join/zip when available
+      @executor_terminated.wait
+      @clock_terminated.wait
+      future.set true
+      future
     end
 
     # Detects execution plans that are marked as running but no executor

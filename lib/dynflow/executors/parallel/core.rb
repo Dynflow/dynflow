@@ -3,18 +3,21 @@ module Dynflow
     class Parallel < Abstract
 
       # TODO add dynflow error handling to avoid getting stuck and report errors to the future
-      class Core < MicroActor
-        def initialize(world, pool_size)
-          super(world.logger, world, pool_size)
+      class Core < Concurrent::Actor::Context
+        include Algebrick::Matching
+        attr_reader :logger
+
+        StartTerminating = Algebrick.type do
+          fields! terminated: Concurrent::IVar
         end
 
-        private
-
-        def delayed_initialize(world, pool_size)
+        def initialize(world, pool_size)
+          @logger                  = world.logger
           @world                   = Type! world, World
-          @pool                    = Pool.new(self, pool_size, world.transaction_adapter)
+          @pool                    = Pool.spawn('pool', reference, pool_size, world.transaction_adapter)
           @execution_plan_managers = {}
           @plan_ids_in_rescue      = Set.new
+          @terminated              = nil
         end
 
         def on_message(message)
@@ -28,15 +31,15 @@ module Dynflow
                 end),
                 (on PoolDone.(~any) do |step|
                   update_manager(step)
+                end),
+                (on StartTerminating.(~any) do |terminated|
+                  logger.info 'shutting down Core ...'
+                  @terminated = terminated
+                  try_to_terminate
                 end)
         end
 
-        def termination
-          logger.info 'shutting down Core ...'
-          try_to_terminate
-        end
-
-        # @return false on problem
+        # @return
         def track_execution_plan(execution_plan_id, finished)
           execution_plan = @world.persistence.load_execution_plan(execution_plan_id)
 
@@ -60,10 +63,15 @@ module Dynflow
 
         rescue Dynflow::Error => e
           finished.fail e
-          raise e
+          nil
+        end
+
+        def terminating?
+          !!@terminated
         end
 
         def start_executing(manager)
+          return if manager.nil?
           Type! manager, ExecutionPlanManager
 
           next_work = manager.start
@@ -120,7 +128,7 @@ module Dynflow
 
         def set_future(manager)
           @plan_ids_in_rescue.delete(manager.execution_plan.id)
-          manager.future.resolve manager.execution_plan
+          manager.future.set manager.execution_plan
           try_to_terminate
         end
 
@@ -141,9 +149,10 @@ module Dynflow
 
         def try_to_terminate
           if terminating? && @execution_plan_managers.empty?
-            @pool.ask(Terminate).wait
+            @pool.ask(:terminate!).wait
+            reference.ask :terminate!
             logger.info '... Core terminated.'
-            terminate!
+            @terminated.set true
           end
         end
       end

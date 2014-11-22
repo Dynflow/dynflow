@@ -10,7 +10,7 @@ module Dynflow
         def initialize(world, execution_plan, future)
           @world                 = Type! world, World
           @execution_plan        = Type! execution_plan, ExecutionPlan
-          @future                = Type! future, Future
+          @future                = Type! future, Concurrent::IVar
           @running_steps_manager = RunningStepsManager.new(world)
 
           unless [:planned, :paused].include? execution_plan.state
@@ -20,7 +20,7 @@ module Dynflow
         end
 
         def start
-          raise "The future was already set" if @future.ready?
+          raise "The future was already set" if @future.completed?
           start_run or start_finalize or finish
         end
 

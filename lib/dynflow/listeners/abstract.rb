@@ -9,7 +9,7 @@ module Dynflow
         @logger = world.logger
       end
 
-      def terminate(future = Future.new)
+      def terminate(future = Concurrent::IVar.new)
         raise NotImplementedError
       end
     end

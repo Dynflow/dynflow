@@ -5,12 +5,12 @@ module Dynflow
         fields! execution_plan_id: String,
                 step_id:           Fixnum,
                 event:             Object,
-                result:            Future
+                result:            Concurrent::IVar
       end
 
       Execution = Algebrick.type do
         fields! execution_plan_id: String,
-                finished:          Future
+                finished:          Concurrent::IVar
       end
 
       include Algebrick::TypeCheck
@@ -21,21 +21,21 @@ module Dynflow
         @logger = world.logger
       end
 
-      # @return [Future]
+      # @return [Concurrent::IVar]
       # @raise when execution_plan_id is not accepted
       def execute(execution_plan_id)
         raise NotImplementedError
       end
 
-      def event(execution_plan_id, step_id, event, future = Future)
+      def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
         raise NotImplementedError
       end
 
-      def terminate(future = Future.new)
+      def terminate(future = Concurrent::IVar.new)
         raise NotImplementedError
       end
 
-      # @return [Future]
+      # @return [Concurrent::IVar]
       def initialized
         raise NotImplementedError
       end

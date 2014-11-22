@@ -4,6 +4,13 @@ require 'thread'
 require 'set'
 require 'active_support/core_ext/hash/indifferent_access'
 require 'base64'
+require 'concurrent'
+
+logger                          = Logger.new($stderr)
+logger.level                    = Logger::INFO
+Concurrent.configuration.logger = lambda do |level, progname, message = nil, &block|
+  logger.add level, message, progname, &block
+end
 
 # TODO validate in/output, also validate unknown keys
 # TODO performance testing, how many actions will it handle?
@@ -15,8 +22,6 @@ module Dynflow
   end
 
   require 'dynflow/errors'
-  require 'dynflow/future'
-  require 'dynflow/micro_actor'
   require 'dynflow/serializable'
   require 'dynflow/clock'
   require 'dynflow/stateful'
