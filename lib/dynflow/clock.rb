@@ -43,7 +43,7 @@ module Dynflow
     def ping(who, time, with_what = nil, where = :<<)
       Type! time, Time, Numeric
       time  = Time.now + time if time.is_a? Numeric
-      timer = Timer[who, time, with_what.nil? ? None : Some[Object][with_what], where]
+      timer = Timer[who, time, with_what.nil? ? Algebrick::Types::None : Some[Object][with_what], where]
       if terminated?
         Thread.new do
           sleep [timer.when - Time.now, 0].max

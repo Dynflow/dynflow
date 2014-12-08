@@ -12,7 +12,7 @@ module Dynflow
       @world.event execution_plan_id, step_id, event, future
     end
 
-    def <<(event)
+    def <<(event = nil)
       event event
     end
 
