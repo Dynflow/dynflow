@@ -159,7 +159,6 @@ module Dynflow
 
               describe event_class = Listeners::Serialization::Protocol::Event do
                 it 'de/serializes' do
-                  skip 'fix this when algebrick new serializers are out'
 
                   Klass = Class.new do
                     def initialize(v)
@@ -175,13 +174,12 @@ module Dynflow
                     end
                   end
 
+                  serializer  = Object.new.tap { |o| o.extend Listeners::Serialization }
                   object      = Klass.new :value
                   event       = event_class['uuid', 0, object]
-                  hash        = event.to_hash
-                  json        = MultiJson.dump(hash)
-                  hash_loaded = MultiJson.load(json)
-                  assert_equal event[:event], event_class.from_hash(hash_loaded)[:event]
-                  assert_equal event, event_class.from_hash(hash_loaded)
+                  json        = serializer.dump event
+                  assert_equal event[:event], serializer.load(json)[:event]
+                  assert_equal event, serializer.load(json)
 
                   ExecutorTest.send :remove_const, :Klass
                 end
@@ -353,13 +351,13 @@ module Dynflow
                   assert_equal :paused, result.state
                   assert_equal :error, result.result
                   assert_equal :error, result.steps.values.
-                      find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+                                         find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
 
                   ep = world.execute(result.id).value
                   assert_equal :stopped, ep.state
                   assert_equal :success, ep.result
                   assert_equal :success, ep.steps.values.
-                      find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+                                           find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
                 end
               end
 

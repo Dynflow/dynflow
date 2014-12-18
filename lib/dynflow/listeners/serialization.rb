@@ -1,6 +1,8 @@
 module Dynflow
   module Listeners
     module Serialization
+      SERIALIZER = Serializer.new
+
       module Protocol
 
         Job = Algebrick.type do
@@ -30,26 +32,14 @@ module Dynflow
 
           variants Request, Response
         end
-
-        module Event
-          # TODO fix the workaround
-          # marshal and then use base64 because not all json libs can correctly escape binary data
-          def to_hash
-            super.update event: Base64.strict_encode64(Marshal.dump(event))
-          end
-
-          def self.product_from_hash(hash)
-            super(hash.merge 'event' => Marshal.load(Base64.strict_decode64(hash.fetch('event'))))
-          end
-        end
       end
 
       def dump(obj)
-        MultiJson.dump(obj.to_hash)
+        MultiJson.dump(SERIALIZER.dump(obj))
       end
 
       def load(str)
-        Protocol::Message.from_hash MultiJson.load(str)
+        SERIALIZER.load MultiJson.load(str)
       end
 
       def send_message(io, message, barrier = nil)
