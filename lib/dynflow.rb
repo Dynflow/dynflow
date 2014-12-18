@@ -23,6 +23,7 @@ module Dynflow
 
   require 'dynflow/actor'
   require 'dynflow/errors'
+  require 'dynflow/serializer'
   require 'dynflow/serializable'
   require 'dynflow/clock'
   require 'dynflow/stateful'
