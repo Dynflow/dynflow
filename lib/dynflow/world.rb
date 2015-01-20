@@ -2,9 +2,10 @@
 module Dynflow
   class World
     include Algebrick::TypeCheck
+    include Algebrick::Matching
 
-    attr_reader :id, :dispatcher, :executor, :connector, :persistence, :transaction_adapter,
-                :action_classes, :subscription_index, :logger_adapter,
+    attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
+        :persistence, :transaction_adapter, :action_classes, :subscription_index, :logger_adapter,
                 :middleware, :auto_rescue
 
     def initialize(config)
@@ -19,10 +20,13 @@ module Dynflow
       @auto_rescue         = config_for_world.auto_rescue
       @connector           = config_for_world.connector
       @middleware          = Middleware::World.new
-      @dispatcher          = Dispatcher.spawn("dispatcher", self)
+      @client_dispatcher   = Dispatcher::ClientDispatcher.spawn("client-dispatcher", self)
       calculate_subscription_index
 
-      executor.initialized.wait if executor
+      if executor
+        @executor_dispatcher = Dispatcher::ExecutorDispatcher.spawn("executor-dispatcher", self)
+        executor.initialized.wait
+      end
       persistence.save_world(registered_world)
       @termination_barrier = Mutex.new
 
@@ -142,53 +146,51 @@ module Dynflow
       accepted.with_observer do |_, value, reason|
         done.fail reason if reason
       end
-      dispatcher.ask(Dispatcher::PublishJob[done, job], accepted)
+      client_dispatcher.ask(Dispatcher::PublishJob[done, job], accepted)
       done
     end
 
-    def receive(object)
-      dispatcher << object
+    def receive(envelope)
+      match(envelope,
+            (on Dispatcher::Envelope.(message: Dispatcher::Request) do
+               executor_dispatcher << envelope
+             end),
+            (on Dispatcher::Envelope.(message: Dispatcher::Response) do
+               client_dispatcher << envelope
+             end))
     end
 
     def terminate(future = Concurrent::IVar.new)
       @termination_barrier.synchronize do
-        if @dispatcher_terminated.nil?
-          persistence.delete_world(registered_world)
-
+        @terminated ||= Concurrent::Promise.execute do
           # TODO: refactory once we can chain futures (probably after migrating
           #       to concurrent-ruby promises
-          @dispatcher_terminated = Concurrent::IVar.new
-          @listening_stopped     = connector.stop_listening(self)
-          if executor
-            @executor_terminated   = Concurrent::IVar.new
-            @listening_stopped.with_observer do
-              logger.info "start terminating executor..."
-              executor.terminate(@executor_terminated)
-            end
-            ready_to_terminate_dispatcher = @executor_terminated
-          else
-            ready_to_terminate_dispatcher = @listening_stopped
-          end
+          persistence.delete_world(registered_world)
+          client_dispatcher_terminated = Concurrent::IVar.new
+          logger.info "stop listening for new events..."
+          listening_stopped     = connector.stop_listening(self)
+          logger.info "start terminating client dispatcher..."
+          client_dispatcher.ask(Dispatcher::StartTerminating[client_dispatcher_terminated])
+          [client_dispatcher_terminated, listening_stopped].each(&:wait)
 
-          ready_to_terminate_dispatcher.with_observer do
-            logger.info "start terminating dispatcher..."
-            dispatcher.ask(Dispatcher::StartTerminating[@dispatcher_terminated])
+          if executor
+            logger.info "start terminating executor..."
+            executor.terminate.wait
+
+            logger.info "start terminating executor dispatcher..."
+            executor_dispatcher.ask(:terminate!).wait
           end
 
           if @clock
-            @dispatcher_terminated.with_observer do
-              logger.info "start terminating clock..."
-              clock.ask(:terminate!)
-            end
-            @dispatcher_terminated.with_observer do
-              connector.terminate
-            end
+            logger.info "start terminating clock..."
+            clock.ask(:terminate!).wait
           end
+
+          connector.terminate
         end
       end
-      # TODO: do not block, replace with IVar.join/zip when available
-      [@executor_terminated, @dispatcher_terminated].compact.each(&:wait)
-      future.set true
+
+      @terminated.then { future.set true }
       future
     end
 
