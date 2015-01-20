@@ -152,6 +152,10 @@ module Dynflow
 
     def receive(envelope)
       match(envelope,
+            (on Dispatcher::Envelope.(message: Dispatcher::Ping) do
+               response_envelope = envelope.build_response_envelope(Dispatcher::Pong, self)
+               connector.send(response_envelope)
+             end),
             (on Dispatcher::Envelope.(message: Dispatcher::Request) do
                executor_dispatcher << envelope
              end),

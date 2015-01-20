@@ -54,17 +54,9 @@ module Dynflow
       end
 
       def respond(request_envelope, response)
-        response_envelope = build_response_envelope(request_envelope, response)
+        response_envelope = request_envelope.build_response_envelope(response, @world)
         @world.connector.send(response_envelope)
       end
-
-      def build_response_envelope(request_envelope, response)
-        Envelope[request_envelope.request_id,
-                 @world.id,
-                 request_envelope.sender_id,
-                 response]
-      end
-
     end
   end
 end

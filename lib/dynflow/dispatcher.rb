@@ -40,6 +40,15 @@ module Dynflow
               message: type { variants Request, Response }
     end
 
+    module Envelope
+      def build_response_envelope(response_message, sender)
+        Envelope[self.request_id,
+                 sender.id,
+                 self.sender_id,
+                 response_message]
+      end
+    end
+
     # TODO: DRY - common for more actors
     StartTerminating = Algebrick.type do
       fields! terminated: Concurrent::IVar

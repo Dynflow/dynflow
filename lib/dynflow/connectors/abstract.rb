@@ -3,10 +3,6 @@ module Dynflow
     class Abstract
       include Algebrick::TypeCheck
 
-      def initialize(world)
-        @world = world
-      end
-
       def start_listening(world)
         raise NotImplementedError
       end
