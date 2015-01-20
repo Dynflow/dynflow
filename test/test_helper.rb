@@ -164,7 +164,19 @@ future_tests = -> do
   end
 
   MiniTest.after_run do
-    non_ready_ivars.delete_if { |id, _| ObjectSpace._id2ref(id).completed? }
+    non_ready_ivars.delete_if do |id, _|
+      begin
+        object = ObjectSpace._id2ref(id)
+        # the object might get garbage-collected and other one being put on its place
+        if object.is_a? Concurrent::IVar
+          object.completed?
+        else
+          true
+        end
+      rescue RangeError
+        true
+      end
+    end
     unless non_ready_ivars.empty?
       unified = non_ready_ivars.each_with_object({}) do |(id, _), h|
         backtrace_first    = ivar_creations[id][0]
