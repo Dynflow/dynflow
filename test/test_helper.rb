@@ -1,6 +1,8 @@
 require 'bundler/setup'
 require 'minitest/autorun'
 require 'minitest/spec'
+require 'minitest/line_plugin'
+require 'minitest/line/describe_track'
 
 if ENV['RM_INFO']
   require 'minitest/reporters'
