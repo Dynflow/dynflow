@@ -9,6 +9,9 @@ module Dynflow
     class Sequel < Abstract
       include Algebrick::TypeCheck
 
+      MAX_RETRIES = 10
+      RETRY_DELAY = 1
+
       attr_reader :db
 
       def pagination?
@@ -27,8 +30,8 @@ module Dynflow
                     action:         [],
                     step:           %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight) }
 
-      def initialize(db_path)
-        @db = initialize_db db_path
+      def initialize(config)
+        @db = initialize_db config
         migrate_db
       end
 
@@ -94,7 +97,7 @@ module Dynflow
 
       def save(what, condition, value)
         table           = table(what)
-        existing_record = table.first condition
+        existing_record = with_retry { table.first condition }
 
         if value
           value         = value.with_indifferent_access
@@ -105,20 +108,20 @@ module Dynflow
           record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
 
           if existing_record
-            table.where(condition).update(record)
+            with_retry { table.where(condition).update(record) }
           else
-            table.insert record
+            with_retry { table.insert record }
           end
 
         else
-          existing_record and table.where(condition).delete
+          existing_record and with_retry { table.where(condition).delete }
         end
         value
       end
 
       def load(what, condition)
         table = table(what)
-        if (record = table.first(condition.symbolize_keys))
+        if (record = with_retry { table.first(condition.symbolize_keys) } )
           HashWithIndifferentAccess.new MultiJson.load(record[:data])
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
@@ -154,6 +157,24 @@ module Dynflow
         end
 
         data_set.where filters.symbolize_keys
+      end
+
+      def with_retry
+        attempts = 0
+        begin
+          yield
+        rescue Exception => e
+          log(:error, e)
+          attempts += 1
+          if attempts > MAX_RETRIES
+            log(:error, "Exceeded the number of persistence retries. Terminating.")
+            raise Errors::PersistenceError.delegate(e)
+          else
+            sleep RETRY_DELAY
+            log(:error, "Persistence retry no. #{attempts}")
+            retry
+          end
+        end
       end
     end
   end

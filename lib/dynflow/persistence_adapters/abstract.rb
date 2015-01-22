@@ -1,6 +1,14 @@
 module Dynflow
   module PersistenceAdapters
     class Abstract
+
+      # The logger is set by the world when used inside it
+      attr_accessor :logger
+
+      def log(level, message)
+        (logger || Logger.mew($stderr)).send(level, message)
+      end
+
       def pagination?
         false
       end

@@ -13,8 +13,17 @@ class ExampleHelper
       Dynflow::SimpleWorld.new(options)
     end
 
+    def persistence_conn_string
+      ENV['DB_CONN_STRING'] || 'sqlite:/'
+    end
+
+    def persistence_adapter
+      Dynflow::PersistenceAdapters::Sequel.new persistence_conn_string
+    end
+
     def default_world_options
-      { logger_adapter: logger_adapter }
+      { logger_adapter: logger_adapter,
+        persistence_adapter: persistence_adapter }
     end
 
     def logger_adapter

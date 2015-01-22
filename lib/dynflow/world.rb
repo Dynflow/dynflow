@@ -10,6 +10,7 @@ module Dynflow
       @logger_adapter      = Type! option_val(:logger_adapter), LoggerAdapters::Abstract
       @transaction_adapter = Type! option_val(:transaction_adapter), TransactionAdapters::Abstract
       persistence_adapter  = Type! option_val(:persistence_adapter), PersistenceAdapters::Abstract
+      persistence_adapter.logger ||= logger
       @persistence         = Persistence.new(self, persistence_adapter)
       @executor            = Type! option_val(:executor), Executors::Abstract
       @action_classes      = option_val(:action_classes)
