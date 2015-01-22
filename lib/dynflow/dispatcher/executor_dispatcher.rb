@@ -14,34 +14,45 @@ module Dynflow
             (on ~Envelope.(message: Ping) do |envelope|
                respond(envelope, Pong)
              end),
-            (on ~Envelope.(message: ~Request) do |envelope, request|
-               perform_job(envelope, request)
+            (on ~Envelope.(message: ~Execution) do |envelope, execution|
+               perform_execution(envelope, execution)
+             end),
+            (on ~Envelope.(message: ~Event) do |envelope, event|
+               perform_event(envelope, event)
              end)
       end
 
-      def perform_job(envelope, job)
-        future = Concurrent::IVar.new.with_observer do |_, value, reason|
-          if Execution === job
-            allocation = Persistence::ExecutorAllocation[@world.id, job.execution_plan_id]
-            @world.persistence.delete_executor_allocation(allocation)
+      def perform_execution(envelope, execution)
+        future = Concurrent::IVar.new.with_observer do |_, _, reason|
+          allocation = Persistence::ExecutorAllocation[@world.id, execution.execution_plan_id]
+          @world.persistence.delete_executor_allocation(allocation)
+          if reason
+            respond(envelope, Failed[reason.message])
+          #elsif execution_plan.state == :paused && execution_plan.result == :pending
+            # the execution plan was returned without reporting error
+            # but marked as paused = the execution was paused due to
+            # termination: retry on other executor
+            # @world.execute()
+          else
+            respond(envelope, Done)
           end
+        end
+        allocate_executor(execution.execution_plan_id)
+        @world.executor.execute(execution.execution_plan_id, future)
+        respond(envelope, Accepted)
+      rescue Dynflow::Error => e
+        respond(envelope, Failed[e.message])
+      end
+
+      def perform_event(envelope, event_job)
+        future = Concurrent::IVar.new.with_observer do |_, _, reason|
           if reason
             respond(envelope, Failed[reason.message])
           else
             respond(envelope, Done)
           end
         end
-        match job,
-            (on ~Execution do |(execution_plan_id)|
-               allocate_executor(job.execution_plan_id)
-               @world.executor.execute(execution_plan_id, future)
-             end),
-            (on ~Event do |(execution_plan_id, step_id, event)|
-               @world.executor.event(execution_plan_id, step_id, event, future)
-             end)
-        respond(envelope, Accepted)
-      rescue Dynflow::Error => e
-        respond(envelope, Failed[e.message])
+        @world.executor.event(event_job.execution_plan_id, event_job.step_id, event_job.event, future)
       end
 
       def allocate_executor(execution_plan_id)
