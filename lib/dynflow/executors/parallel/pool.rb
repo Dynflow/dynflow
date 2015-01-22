@@ -88,12 +88,19 @@ module Dynflow
         end
 
         def termination
-          raise unless @free_workers.size == @pool_size
-          @free_workers.map { |worker| worker.ask(Terminate) }.each(&:wait)
-          super
+          try_to_terminate
+        end
+
+        def try_to_terminate
+          if terminating? && @free_workers.size == @pool_size
+            @free_workers.map { |worker| worker.ask(Terminate) }.each(&:wait)
+            @core << PoolTerminated
+            terminate!
+          end
         end
 
         def distribute_jobs
+          try_to_terminate
           @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
         end
       end

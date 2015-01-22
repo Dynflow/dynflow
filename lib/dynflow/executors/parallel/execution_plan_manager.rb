@@ -71,6 +71,10 @@ module Dynflow
           (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
         end
 
+        def terminate
+          @execution_plan.update_state(:paused)
+        end
+
         private
 
         def no_work

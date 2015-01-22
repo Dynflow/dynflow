@@ -36,8 +36,9 @@ module Dynflow
         variants Work::Step, Work::Event, Work::Finalize
       end
 
-      PoolDone   = Algebrick.type { fields! work: Work }
-      WorkerDone = Algebrick.type { fields! work: Work, worker: Worker }
+      PoolDone       = Algebrick.type { fields! work: Work }
+      PoolTerminated = Algebrick.atom
+      WorkerDone     = Algebrick.type { fields! work: Work, worker: Worker }
 
       def initialize(world, pool_size = 10)
         super(world)
