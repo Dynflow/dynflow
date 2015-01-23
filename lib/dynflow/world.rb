@@ -19,6 +19,7 @@ module Dynflow
 
       executor.initialized.wait
       @termination_barrier = Mutex.new
+      @clock_barrier       = Mutex.new
 
       transaction_adapter.check self
     end
@@ -32,7 +33,7 @@ module Dynflow
     end
 
     def clock
-      @clock ||= Clock.new(logger)
+      @clock_barrier.synchronize { @clock ||= Clock.new(logger) }
     end
 
     def logger
