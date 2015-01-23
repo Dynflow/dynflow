@@ -16,6 +16,7 @@ describe 'remote communication' do
     def create_world
       Dynflow::SimpleWorld.new logger_adapter:      logger_adapter,
                                auto_terminate:      false,
+                               exit_on_terminate:   false,
                                persistence_adapter: persistence_adapter
     end
 
@@ -24,6 +25,7 @@ describe 'remote communication' do
           logger_adapter:      logger_adapter,
           auto_terminate:      false,
           persistence_adapter: persistence_adapter,
+          exit_on_terminate:   false,
           executor:            -> remote_world do
             Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path)
           end)

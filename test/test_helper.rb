@@ -116,6 +116,7 @@ module WorldInstance
     options = { pool_size: 5,
                 persistence_adapter: Dynflow::PersistenceAdapters::Sequel.new('sqlite:/'),
                 transaction_adapter: Dynflow::TransactionAdapters::None.new,
+                exit_on_terminate: false,
                 logger_adapter: logger_adapter,
                 auto_rescue: false }.merge(options)
     Dynflow::World.new(options)
@@ -128,6 +129,7 @@ module WorldInstance
     world       = Dynflow::World.new(
         logger_adapter:      logger_adapter,
         auto_terminate:      false,
+        exit_on_terminate:   false,
         persistence_adapter: -> remote_world { world.persistence.adapter },
         transaction_adapter: Dynflow::TransactionAdapters::None.new,
         executor:            -> remote_world do

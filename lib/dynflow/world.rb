@@ -14,6 +14,7 @@ module Dynflow
       @executor            = Type! option_val(:executor), Executors::Abstract
       @action_classes      = option_val(:action_classes)
       @auto_rescue         = option_val(:auto_rescue)
+      @exit_on_terminate   = option_val(:exit_on_terminate)
       @middleware          = Middleware::World.new
       calculate_subscription_index
 
@@ -26,10 +27,11 @@ module Dynflow
 
     def default_options
       @default_options ||=
-          { action_classes: Action.all_children,
-            logger_adapter: LoggerAdapters::Simple.new,
-            executor:       -> world { Executors::Parallel.new(world, options[:pool_size]) },
-            auto_rescue:    true }
+          { action_classes:    Action.all_children,
+            logger_adapter:    LoggerAdapters::Simple.new,
+            executor:          -> world { Executors::Parallel.new(world, options[:pool_size]) },
+            exit_on_terminate: true,
+            auto_rescue:       true }
     end
 
     def clock
@@ -128,6 +130,9 @@ module Dynflow
           @clock_terminated    = Future.new
           executor.terminate(@executor_terminated).
               do_then { clock.ask(MicroActor::Terminate, @clock_terminated) }
+          if @exit_on_terminate
+            future.do_then { Kernel.exit }
+          end
         end
       end
       Future.join([@executor_terminated, @clock_terminated], future)
