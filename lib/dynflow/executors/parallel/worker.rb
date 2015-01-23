@@ -22,8 +22,8 @@ module Dynflow
                 (on Work::Finalize.(~any, any) do |sequential_manager|
                   sequential_manager.finalize
                 end)
-          @pool << WorkerDone[work: message, worker: self]
         ensure
+          @pool << WorkerDone[work: message, worker: self]
           @transaction_adapter.cleanup
         end
       end

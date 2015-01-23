@@ -5,8 +5,13 @@ module Dynflow
       # The logger is set by the world when used inside it
       attr_accessor :logger
 
+      def register_world(world)
+        @worlds ||= Set.new
+        @worlds << world
+      end
+
       def log(level, message)
-        (logger || Logger.mew($stderr)).send(level, message)
+        (@worlds.first && @worlds.first.logger).send(level, message)
       end
 
       def pagination?

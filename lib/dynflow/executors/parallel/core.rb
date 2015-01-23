@@ -148,9 +148,15 @@ module Dynflow
 
         def finish_termination
           unless @execution_plan_managers.empty?
-            logger.error "... #{@execution_plan_managers.size} execution plans ..."
+            logger.error "... cleaning #{@execution_plan_managers.size} execution plans ..."
+            begin
+              @execution_plan_managers.values.each do |manager|
+                manager.terminate
+              end
+            rescue Errors::PersistenceError
+              logger.error "could not to clean the data properly"
+            end
             @execution_plan_managers.values.each do |manager|
-              manager.terminate
               finish_plan(manager.execution_plan.id)
             end
           end
