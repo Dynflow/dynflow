@@ -73,7 +73,9 @@ module Dynflow
 
         def terminate
           @running_steps_manager.terminate
-          @execution_plan.update_state(:paused)
+          unless @execution_plan.state == :paused
+            @execution_plan.update_state(:paused)
+          end
         end
 
         private
