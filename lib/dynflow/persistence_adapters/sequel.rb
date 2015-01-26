@@ -165,15 +165,13 @@ module Dynflow
           yield
         rescue Exception => e
           attempts += 1
+          log(:error, e)
           if attempts > MAX_RETRIES
-            log(:fatal, e)
-            log(:fatal, "Exceeded the number of persistence retries. Terminating.")
-            @worlds.each(&:terminate)
+            log(:error, "The number of MAX_RETRIES exceeded")
             raise Errors::PersistenceError.delegate(e)
           else
-            sleep RETRY_DELAY
-            log(:error, e)
             log(:error, "Persistence retry no. #{attempts}")
+            sleep RETRY_DELAY
             retry
           end
         end

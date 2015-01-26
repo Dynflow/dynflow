@@ -31,7 +31,14 @@ module Dynflow
                  end),
                 (on PoolDone.(~any) do |step|
                   update_manager(step)
-                end)
+                 end),
+                (on ~Errors::PersistenceError.to_m do |error|
+                   logger.fatal "PersistenceError in executor: terminating"
+                   logger.fatal error
+                   @world.terminate
+                 end)
+        rescue Errors::PersistenceError => e
+          self << e
         end
 
         def termination

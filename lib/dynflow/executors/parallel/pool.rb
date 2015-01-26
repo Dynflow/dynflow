@@ -76,15 +76,18 @@ module Dynflow
 
         def on_message(message)
           match message,
-                ~Work >-> work do
+                (on ~Work do |work|
                   @jobs.add work
                   distribute_jobs
-                end,
-                WorkerDone.(~any, ~any) >-> step, worker do
+                 end),
+                (on WorkerDone.(~any, ~any) do |step, worker|
                   @core << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
-                end
+                 end),
+                (on Errors::PersistenceError do
+                   @core << message
+                 end)
         end
 
         def termination
