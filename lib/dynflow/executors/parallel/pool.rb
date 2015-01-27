@@ -76,24 +76,34 @@ module Dynflow
 
         def on_message(message)
           match message,
-                ~Work >-> work do
+                (on ~Work do |work|
                   @jobs.add work
                   distribute_jobs
-                end,
-                WorkerDone.(~any, ~any) >-> step, worker do
+                 end),
+                (on WorkerDone.(~any, ~any) do |step, worker|
                   @core << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
-                end
+                 end),
+                (on Errors::PersistenceError do
+                   @core << message
+                 end)
         end
 
         def termination
-          raise unless @free_workers.size == @pool_size
-          @free_workers.map { |worker| worker.ask(Terminate) }.each(&:wait)
-          super
+          try_to_terminate
+        end
+
+        def try_to_terminate
+          if terminating? && @free_workers.size == @pool_size
+            @free_workers.map { |worker| worker.ask(Terminate) }.each(&:wait)
+            @core << PoolTerminated
+            terminate!
+          end
         end
 
         def distribute_jobs
+          try_to_terminate
           @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
         end
       end

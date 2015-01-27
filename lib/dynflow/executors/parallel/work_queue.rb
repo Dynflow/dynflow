@@ -29,6 +29,12 @@ module Dynflow
           !present?(key)
         end
 
+        def clear
+          ret = @stash.dup
+          @stash.clear
+          ret
+        end
+
         def size(key)
           return 0 if empty?(key)
           @stash[key].size

@@ -25,15 +25,25 @@ module Dynflow
                 end),
                 (on ~Parallel::Event do |event|
                   event(event)
-                end),
+                 end),
+                (on Parallel::PoolTerminated do
+                   finish_termination
+                 end),
                 (on PoolDone.(~any) do |step|
                   update_manager(step)
-                end)
+                 end),
+                (on ~Errors::PersistenceError.to_m do |error|
+                   logger.fatal "PersistenceError in executor: terminating"
+                   logger.fatal error
+                   @world.terminate
+                 end)
+        rescue Errors::PersistenceError => e
+          self << e
         end
 
         def termination
           logger.info 'shutting down Core ...'
-          try_to_terminate
+          @pool << MicroActor::Terminate
         end
 
         # @return false on problem
@@ -85,6 +95,7 @@ module Dynflow
         end
 
         def rescue?(manager)
+          return false if terminating?
           @world.auto_rescue && manager.execution_plan.state == :paused &&
               !@plan_ids_in_rescue.include?(manager.execution_plan.id)
         end
@@ -121,30 +132,43 @@ module Dynflow
         def set_future(manager)
           @plan_ids_in_rescue.delete(manager.execution_plan.id)
           manager.future.resolve manager.execution_plan
-          try_to_terminate
         end
 
 
         def event(event)
           Type! event, Parallel::Event
+          if terminating?
+            raise Dynflow::Error,
+                  "cannot accept event: #{event} core is terminating"
+          end
           execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
           if execution_plan_manager
             feed_pool execution_plan_manager.event(event)
             true
           else
-            logger.warn format('dropping event %s - no manager for %s:%s',
-                               event, event.execution_plan_id, event.step_id)
-            event.result.fail UnprocessableEvent.new(
-                                  "no manager for #{event.execution_plan_id}:#{event.step_id}")
+            raise Dynflow::Error, "no manager for #{event.execution_plan_id}:#{event.step_id}"
           end
+        rescue Dynflow::Error => e
+          event.result.fail e.message
+          raise e
         end
 
-        def try_to_terminate
-          if terminating? && @execution_plan_managers.empty?
-            @pool.ask(Terminate).wait
-            logger.info '... Core terminated.'
-            terminate!
+        def finish_termination
+          unless @execution_plan_managers.empty?
+            logger.error "... cleaning #{@execution_plan_managers.size} execution plans ..."
+            begin
+              @execution_plan_managers.values.each do |manager|
+                manager.terminate
+              end
+            rescue Errors::PersistenceError
+              logger.error "could not to clean the data properly"
+            end
+            @execution_plan_managers.values.each do |manager|
+              finish_plan(manager.execution_plan.id)
+            end
           end
+          logger.error '... core terminated.'
+          terminate!
         end
       end
     end
