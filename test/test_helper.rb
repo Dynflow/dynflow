@@ -171,7 +171,7 @@ future_tests =-> do
   Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
     super(*args, &block).tap do |f|
       future_creations[f.object_id]  = caller(3)
-      non_ready_futures[f.object_id] = true
+      non_ready_futures[f.object_id] = f
     end
   end
 
