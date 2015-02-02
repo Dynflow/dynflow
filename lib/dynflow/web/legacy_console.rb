@@ -176,6 +176,11 @@ module Dynflow
         erb :index
       end
 
+      get('/worlds') do
+        @worlds = world.persistence.find_worlds({})
+        erb :worlds
+      end
+
       get('/:id') do |id|
         @plan = world.persistence.load_execution_plan(id)
         @notice = params[:notice]

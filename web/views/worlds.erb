@@ -1,0 +1,17 @@
+<h1>List of worlds</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Executor?</th>
+    </tr>
+  </thead>
+
+<% @worlds.each do |world| %>
+  <tr>
+    <td><%= h(world.id) %></td>
+    <td><%= h(world.executor) %></td>
+  </tr>
+<% end %>
+</table>
