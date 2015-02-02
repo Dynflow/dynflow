@@ -107,7 +107,14 @@ module Dynflow
     end
 
     def event(execution_plan_id, step_id, event, future = Future.new)
+      # we do this to avoid unresolved future when getting into
+      # the executor mailbox right at the termination.
+      # TODO: concurrent-ruby dead letter routing should make this
+      # more elegant
+      raise Dynflow::Error, "terminating world is not accepting events" if terminating?
       executor.event execution_plan_id, step_id, event, future
+    rescue => e
+      future.fail e
     end
 
     def plan(action_class, *args)
@@ -136,6 +143,10 @@ module Dynflow
         end
       end
       Future.join([@executor_terminated, @clock_terminated], future)
+    end
+
+    def terminating?
+      !!@executor_terminated
     end
 
     # Detects execution plans that are marked as running but no executor
