@@ -19,7 +19,14 @@ module Dynflow
     end
 
     PublishJob = Algebrick.type do
-      fields! future: Concurrent::IVar, job: Job
+      fields! future:          Concurrent::IVar,
+              job:             Job
+    end
+
+    RePublishJob = Algebrick.type do
+      fields! job:             Job,
+              client_world_id: String,
+              request_id:      Integer
     end
 
     Request = Algebrick.type do

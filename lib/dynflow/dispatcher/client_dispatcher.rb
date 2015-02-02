@@ -49,7 +49,12 @@ module Dynflow
       def on_message(message)
         match message,
             (on PublishJob.(~any, ~any) do |future, job|
-               dispatch_job(add_tracked_job(future, job))
+               track_job(future, job) do |tracked_job|
+                 dispatch_job(job, @world.id, tracked_job.id)
+               end
+             end),
+            (on RePublishJob.(~any, ~any, ~any) do |job, client_world_id, request_id|
+               dispatch_job(job, client_world_id, request_id)
              end),
             (on ~Envelope.(message: ~Response) do |envelope, response|
                dispatch_response(envelope, response)
@@ -60,8 +65,8 @@ module Dynflow
              end)
       end
 
-      def dispatch_job(tracked_job)
-        executor_id = match tracked_job.job,
+      def dispatch_job(job, client_world_id, request_id)
+        executor_id = match job,
             (on ~Execution do |execution|
                AnyExecutor
              end),
@@ -71,11 +76,8 @@ module Dynflow
             (on Ping.(~any) do |receiver_id|
                receiver_id
              end)
-        request      = Envelope[tracked_job.id, @world.id, executor_id, tracked_job.job]
+        request = Envelope[request_id, client_world_id, executor_id, job]
         connector.send(request)
-      rescue Dynflow::Error => e
-        resolve_tracked_job(tracked_job.id, e)
-        log(Logger::ERROR, e)
       end
 
       def dispatch_response(envelope, response)
@@ -97,11 +99,14 @@ module Dynflow
             raise Dynflow::Error, "Could not find an executor for execution plan #{ execution_plan_id }"
       end
 
-      def add_tracked_job(finished, job)
+      def track_job(finished, job)
         id = @last_id += 1
         tracked_job = TrackedJob[id, job, Concurrent::IVar.new, finished]
         @tracked_jobs[id] = tracked_job
-        return tracked_job
+        yield tracked_job
+      rescue Dynflow::Error => e
+        resolve_tracked_job(tracked_job.id, e)
+        log(Logger::ERROR, e)
       end
 
       def reset_tracked_job(tracked_job)
@@ -120,21 +125,14 @@ module Dynflow
           @tracked_jobs.delete(id).fail! error
         else
           tracked_job = @tracked_jobs[id]
-          resolve_to = nil
-          match tracked_job.job,
+          resolve_to = match tracked_job.job,
               (on Execution.(execution_plan_id: ~any) do |uuid|
-                 plan = @world.persistence.load_execution_plan(uuid)
-                 if plan.state == :paused && plan.execution_history.events.last.name == 'terminate execution'
-                   # TODO: counter: we should not do it for ever
-                   dispatch_job(reset_tracked_job(tracked_job))
-                 else
-                   resolve_to = plan
-                 end
+                 @world.persistence.load_execution_plan(uuid)
                end),
               (on Event | Ping do
-                 resolve_to = true
+                 true
                end)
-          @tracked_jobs.delete(id).success! resolve_to unless resolve_to.nil?
+          @tracked_jobs.delete(id).success! resolve_to
         end
       end
 

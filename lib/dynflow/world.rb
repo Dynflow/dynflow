@@ -102,12 +102,11 @@ module Dynflow
 
       if planned
         begin
-          accepted = Concurrent::IVar.new
-          done = execute(execution_plan.id, Concurrent::IVar.new, accepted)
-          if accepted.wait.fulfilled?
-            Triggered[execution_plan.id, done]
+          done = execute(execution_plan.id, Concurrent::IVar.new)
+          if done.rejected?
+            ExecutionFailed[execution_plan.id, done.reason]
           else
-            ExecutionFailed[execution_plan.id, accepted.reason]
+            Triggered[execution_plan.id, done]
           end
         rescue => exception
           ExecutionFailed[execution_plan.id, exception]
@@ -130,23 +129,24 @@ module Dynflow
 
     # @return [Concurrent::IVar] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
-      publish_job(Dispatcher::Execution[execution_plan_id], done, accepted)
+    def execute(execution_plan_id, done = Concurrent::IVar.new)
+      publish_job(Dispatcher::Execution[execution_plan_id], done, true)
     end
 
-    def event(execution_plan_id, step_id, event, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
-      publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, accepted)
+    def event(execution_plan_id, step_id, event, done = Concurrent::IVar.new)
+      publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
     end
 
-    def ping(world_id, done = Concurrent::IVar.new, accepted = Concurrent::IVar.new)
-      publish_job(Dispatcher::Ping[world_id], done, accepted)
+    def ping(world_id, done = Concurrent::IVar.new)
+      publish_job(Dispatcher::Ping[world_id], done, true)
     end
 
-    def publish_job(job, done, accepted)
-      accepted.with_observer do |_, value, reason|
+    def publish_job(job, done, wait_for_accepted)
+      accepted = Concurrent::IVar.new.with_observer do |_, value, reason|
         done.fail reason if reason
       end
       client_dispatcher.ask(Dispatcher::PublishJob[done, job], accepted)
+      accepted.wait if wait_for_accepted
       done
     end
 
@@ -170,12 +170,10 @@ module Dynflow
           # TODO: refactory once we can chain futures (probably after migrating
           #       to concurrent-ruby promises
           persistence.delete_world(registered_world)
-          client_dispatcher_terminated = Concurrent::IVar.new
           logger.info "stop listening for new events..."
           listening_stopped     = connector.stop_listening(self)
           logger.info "start terminating client dispatcher..."
-          client_dispatcher.ask(Dispatcher::StartTerminating[client_dispatcher_terminated])
-          [client_dispatcher_terminated, listening_stopped].each(&:wait)
+          listening_stopped.wait
 
           if executor
             logger.info "start terminating executor..."
@@ -184,7 +182,9 @@ module Dynflow
             logger.info "start terminating executor dispatcher..."
             executor_dispatcher.ask(:terminate!).wait
           end
-
+          client_dispatcher_terminated = Concurrent::IVar.new
+          client_dispatcher.ask(Dispatcher::StartTerminating[client_dispatcher_terminated])
+          client_dispatcher_terminated.wait
           if @clock
             logger.info "start terminating clock..."
             clock.ask(:terminate!).wait

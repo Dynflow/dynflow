@@ -28,13 +28,16 @@ module Dynflow
           @world.persistence.delete_executor_allocation(allocation)
           if reason
             respond(envelope, Failed[reason.message])
-          #elsif execution_plan.state == :paused && execution_plan.result == :pending
-            # the execution plan was returned without reporting error
-            # but marked as paused = the execution was paused due to
-            # termination: retry on other executor
-            # @world.execute()
           else
-            respond(envelope, Done)
+            plan = @world.persistence.load_execution_plan(execution.execution_plan_id)
+            if plan.state == :paused && plan.result == :pending
+              # the execution plan was returned without reporting error
+              # but marked as paused = the execution was paused due to
+              # termination: retry on other executor
+              @world.client_dispatcher << RePublishJob[execution, envelope.sender_id, envelope.request_id]
+            else
+              respond(envelope, Done)
+            end
           end
         end
         allocate_executor(execution.execution_plan_id)
