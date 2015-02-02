@@ -29,7 +29,7 @@ module Dynflow
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     world:               %w(id executor),
                     envelope:            %w(receiver_id),
-                    executor_allocation: %w(world_id execution_plan_id) }
+                    executor_allocation: %w(world_id execution_plan_id client_world_id request_id) }
 
       def initialize(db_path)
         @db = initialize_db db_path
@@ -100,7 +100,7 @@ module Dynflow
 
       def save_executor_allocation(executor_allocation)
         conditions = { world_id: executor_allocation.world_id,
-                       execution_plan_id: executor_allocation.execution_plan_id }
+                       execution_plan_id: executor_allocation.execution_plan_id}
         save :executor_allocation, conditions, executor_allocation
       end
 

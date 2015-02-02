@@ -32,11 +32,7 @@ module Dynflow
         end
 
         def try_to_terminate
-          if @running_steps_manager.try_to_terminate
-            @execution_plan.execution_history.add('terminate execution', @world)
-            @execution_plan.update_state(:paused)
-            return true
-          end
+          @running_steps_manager.try_to_terminate
         end
 
         # @return [Array<Work>] of Work items to continue with

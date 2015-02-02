@@ -55,7 +55,9 @@ module Dynflow
 
     ExecutorAllocation = Algebrick.type do
       fields! world_id: String,
-              execution_plan_id: String
+              execution_plan_id: String,
+              client_world_id: String,
+              request_id: Integer
     end
 
     def find_worlds(options)

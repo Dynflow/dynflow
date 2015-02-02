@@ -33,7 +33,27 @@ module Dynflow
       post('/worlds/:id/ping') do |id|
         timeout = 5
         ping_response = world.ping(id, timeout).wait
-        response = ping_response.rejected? ? "failed: #{ping_response.reason.message}" : 'pong'
+        if ping_response.rejected?
+          response = "failed: #{ping_response.reason.message}"
+          inactive_world_id = id
+        else
+          response = 'pong'
+        end
+        redirect(url "/worlds?notice=#{url_encode(response)}&inactive_world_id=#{inactive_world_id}")
+      end
+
+      post('/worlds/:id/invalidate') do |id|
+        invalidated_world = world.persistence.find_worlds(filters: { id: id }).first
+        unless invalidated_world
+          response = "World #{id} not found"
+        else
+          begin
+            world.invalidate(invalidated_world)
+            response = "World #{invalidated_world.id} invalidated"
+          rescue => e
+            response = "World invalidation failed: #{e.message}"
+          end
+        end
         redirect(url "/worlds?notice=#{url_encode(response)}")
       end
 

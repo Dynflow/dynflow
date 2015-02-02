@@ -13,7 +13,12 @@
   <tr>
     <td><%= h(world.id) %></td>
     <td><%= h(world.executor) %></td>
-    <td><a href="<%= url("/worlds/#{world.id}/ping") %>" class="postlink">ping</a></td>
+    <td>
+      <a href="<%= url("/worlds/#{world.id}/ping") %>" class="postlink">ping</a>
+      <% if world.id == params[:inactive_world_id] %>
+        <a href="<%= url("/worlds/#{world.id}/invalidate") %>" class="postlink">invalidate</a>
+      <% end %>
+    </td>
   </tr>
 <% end %>
 </table>

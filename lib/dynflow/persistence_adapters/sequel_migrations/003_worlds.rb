@@ -14,6 +14,8 @@ Sequel.migration do
           type: String, size: 36, fixed: true
       index :execution_plan_id, :unique => true
       primary_key [:world_id, :execution_plan_id]
+      column :client_world_id, String, size: 36, fixed: true
+      column :request_id, Integer
     end
   end
 end

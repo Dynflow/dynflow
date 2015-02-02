@@ -169,7 +169,6 @@ module Dynflow
         @terminated ||= Concurrent::Promise.execute do
           # TODO: refactory once we can chain futures (probably after migrating
           #       to concurrent-ruby promises
-          persistence.delete_world(registered_world)
           logger.info "stop listening for new events..."
           listening_stopped     = connector.stop_listening(self)
           logger.info "start terminating client dispatcher..."
@@ -182,6 +181,9 @@ module Dynflow
             logger.info "start terminating executor dispatcher..."
             executor_dispatcher.ask(:terminate!).wait
           end
+
+          invalidate(self.registered_world)
+
           client_dispatcher_terminated = Concurrent::IVar.new
           client_dispatcher.ask(Dispatcher::StartTerminating[client_dispatcher_terminated])
           client_dispatcher_terminated.wait
@@ -196,6 +198,22 @@ module Dynflow
 
       @terminated.then { future.set true }
       future
+    end
+
+    # Invalidate another world, that left some data in the runtime,
+    # but it's not really running
+    def invalidate(world)
+      old_allocations = persistence.find_executor_allocations(filters: { world_id: world.id } )
+      persistence.delete_world(world)
+
+      old_allocations.each do |allocation|
+        plan = persistence.load_execution_plan(allocation.execution_plan_id)
+        plan.execution_history.add('terminate execution', world)
+        plan.update_state(:paused) unless plan.state == :paused
+        client_dispatcher << Dispatcher::RePublishJob[Dispatcher::Execution[allocation.execution_plan_id],
+                                                      allocation.client_world_id,
+                                                      allocation.request_id]
+      end
     end
 
     # Detects execution plans that are marked as running but no executor

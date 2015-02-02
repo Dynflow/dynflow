@@ -75,22 +75,82 @@ module Dynflow
 
         describe 'when some executor is terminated and client is notified about the failure' do
           specify 'client passes the work to another executor' do
-            triggered = client_world.trigger(Support::DummyExample::Slow, 0.5)
-            sleep 0.2
-            executor = wait_for do
+            triggered = while_executing { |executor| executor.terminate.wait }
+            plan = finish_the_plan(triggered)
+            assert_plan_reexecuted(plan)
+          end
+        end
+
+        def simulate_executor_fail(world)
+          if Connectors::Direct === world.connector
+            world.connector.stop_listening(world)
+          end
+        end
+
+        def while_executing
+          triggered = client_world.trigger(Support::DummyExample::EventedAction)
+          executor_info = wait_for do
+            if client_world.persistence.load_execution_plan(triggered.id).state == :running
               client_world.persistence.find_executor_for_plan(triggered.id)
             end
-            first_executor = @executors.find { |e| e.id == executor.id }
-            second_executor = @executors.find { |e| e.id != executor.id }
-            first_executor.terminate.wait
-            plan = triggered.finished.value
-            assert_equal :stopped, plan.state
-            assert_equal :success, plan.result
+          end
+          executor = @executors.find { |e| e.id == executor_info.id }
+          yield executor
+          return triggered
+        end
+
+        def finish_the_plan(triggered)
+          wait_for do
+            client_world.persistence.load_execution_plan(triggered.id).state == :running
+          end
+          client_world.event(triggered.id, 2, 'finish')
+          return triggered.finished.value
+        end
+
+        def assert_plan_reexecuted(plan)
+          registered_worlds = client_world.persistence.find_worlds({})
+          terminated_executor = @executors.find { |e| registered_worlds.all? { |w| w.id != e.id } }
+          running_executor = @executors.find { |e| registered_worlds.any? { |w| w.id == e.id } }
+          assert_equal :stopped, plan.state
+          assert_equal :success, plan.result
+          assert_equal plan.execution_history.map { |h| [h.name, h.world_id] },
+              [['start execution', terminated_executor.id],
+               ['terminate execution', terminated_executor.id],
+               ['start execution', running_executor.id],
+               ['finish execution', running_executor.id]]
+        end
+      end
+
+      def self.supports_world_invalidation
+
+        describe 'world invalidation' do
+          it 'removes the world from the register' do
+            client_world.invalidate(executor_world.registered_world)
+            worlds = client_world.persistence.find_worlds({})
+            refute_includes(worlds, executor_world.registered_world)
+          end
+
+          it 'schedules the plans to be run on different executor' do
+            triggered = while_executing do |executor|
+              client_world.invalidate(executor.registered_world)
+            end
+            plan = finish_the_plan(triggered)
+            assert_plan_reexecuted(plan)
+          end
+
+          it 'when no executor is available, marks the plans as paused' do
+            executor_world_2.terminate.wait
+            triggered = while_executing do |executor|
+              client_world.invalidate(executor.registered_world)
+            end
+            # TODO: send response to the client to resolve the future
+            # plan = triggered.finished
+            plan = client_world.persistence.load_execution_plan(triggered.id)
+            assert_equal :paused, plan.state
+            assert_equal :pending, plan.result
             assert_equal plan.execution_history.map { |h| [h.name, h.world_id] },
-                [['start execution', first_executor.id],
-                 ['terminate execution', first_executor.id],
-                 ['start execution', second_executor.id],
-                 ['finish execution', second_executor.id]]
+                [['start execution', executor_world.id],
+                 ['terminate execution', executor_world.id]]
           end
         end
       end
@@ -129,6 +189,7 @@ module Dynflow
 
         dispatcher_works_with_this_connector
         supports_dynamic_retry
+        supports_world_invalidation
         supports_ping_pong
       end
 
@@ -150,6 +211,7 @@ module Dynflow
 
         dispatcher_works_with_this_connector
         supports_dynamic_retry
+        supports_world_invalidation
         supports_ping_pong
       end
     end
