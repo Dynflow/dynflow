@@ -30,6 +30,7 @@
   <li><a href="#plan">Plan</a></li>
   <li class="active"><a href="#run">Run</a></li>
   <li><a href="#finalize">Finalize</a></li>
+  <li><a href="#execution-history">Execution History</a></li>
 </ul>
 
 <div class="tab-content">
@@ -51,6 +52,9 @@
   </div>
   <div class="tab-pane" id="finalize">
     <%= erb :flow, locals: { flow: @plan.finalize_flow } %>
+  </div>
+  <div class="tab-pane" id="execution-history">
+    <%= erb :execution_history %>
   </div>
 </div>
 
