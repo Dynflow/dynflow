@@ -55,10 +55,13 @@ module Dynflow
       class Core < Concurrent::Actor::Context
         include Algebrick::Matching
 
-        def initialize
+        attr_reader :polling_interval
+
+        def initialize(polling_interval)
           @world = nil
           @round_robin_counter = 0
           @stopped = false
+          @polling_interval = polling_interval
         end
 
         def stopped?
@@ -82,7 +85,7 @@ module Dynflow
                  end),
                 (on PeriodicCheckInbox do
                    self << CheckInbox
-                   @world.clock.ping(self, interval, PeriodicCheckInbox) unless @stopped
+                   @world.clock.ping(self, polling_interval, PeriodicCheckInbox) unless @stopped
                  end),
                 (on CheckInbox do
                    return unless @world
@@ -111,10 +114,6 @@ module Dynflow
 
         def postgres_listen_stop
           @postgres_listener.stop if @postgres_listener.started?
-        end
-
-        def interval
-          1
         end
 
         def receive_envelopes
@@ -161,8 +160,8 @@ module Dynflow
         end
       end
 
-      def initialize(world = nil)
-        @core  = Core.spawn('connector-database-core')
+      def initialize(world = nil, polling_interval = 1)
+        @core  = Core.spawn('connector-database-core', polling_interval)
         start_listening(world) if world
       end
 
@@ -175,7 +174,7 @@ module Dynflow
       end
 
       def send(envelope)
-        @core.ask(envelope).value!
+        @core.ask(envelope)
       end
 
       def terminate

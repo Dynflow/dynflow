@@ -84,9 +84,7 @@ module Dynflow
       end
 
       def send(envelope)
-        @core.ask(envelope).value!
-      rescue Concurrent::Actor::ActorTerminated => _
-        # just drop the message
+        @core.ask(envelope)
       end
 
       def terminate

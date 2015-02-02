@@ -30,9 +30,15 @@ module Dynflow
         erb :worlds
       end
 
+      post('/worlds/:id/ping') do |id|
+        timeout = 5
+        ping_response = world.ping(id, timeout).wait
+        response = ping_response.rejected? ? "failed: #{ping_response.reason.message}" : 'pong'
+        redirect(url "/worlds?notice=#{url_encode(response)}")
+      end
+
       get('/:id') do |id|
         @plan = world.persistence.load_execution_plan(id)
-        @notice = params[:notice]
         erb :show
       end
 

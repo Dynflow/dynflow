@@ -95,12 +95,28 @@ module Dynflow
         end
       end
 
+      def self.supports_ping_pong
+        describe 'ping/pong' do
+          it 'succeeds when the world is available' do
+            ping_response = client_world.ping(executor_world.id, 0.1).wait
+            assert ping_response.fulfilled?
+          end
+
+          it 'time-outs when the world is not responding' do
+            executor_world.terminate.wait
+            ping_response = client_world.ping(executor_world.id, 0.1).wait
+            assert ping_response.rejected?
+          end
+        end
+      end
+
       describe 'direct connector - all in one' do
         let(:connector) { Proc.new { |world| Connectors::Direct.new(world) } }
         let(:executor_world) { create_world }
         let(:client_world) { executor_world }
 
         dispatcher_works_with_this_connector
+        supports_ping_pong
       end
 
       describe 'direct connector - multi executor multi client' do
@@ -113,18 +129,20 @@ module Dynflow
 
         dispatcher_works_with_this_connector
         supports_dynamic_retry
+        supports_ping_pong
       end
 
       describe 'database connector - all in one' do
-        let(:connector) { Proc.new { |world| Connectors::Database.new(world) } }
+        let(:connector) { Proc.new { |world| Connectors::Database.new(world, 0.005) } }
         let(:executor_world) { create_world }
         let(:client_world) { executor_world }
 
         dispatcher_works_with_this_connector
+        supports_ping_pong
       end
 
       describe 'database connector - multi executor multi client' do
-        let(:connector) { Proc.new { |world| Connectors::Database.new(world) } }
+        let(:connector) { Proc.new { |world| Connectors::Database.new(world, 0.005) } }
         let(:executor_world) { create_world(true) }
         let(:executor_world_2) { create_world(true) }
         let(:client_world) { create_world(false) }
@@ -132,6 +150,7 @@ module Dynflow
 
         dispatcher_works_with_this_connector
         supports_dynamic_retry
+        supports_ping_pong
       end
     end
   end

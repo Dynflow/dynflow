@@ -20,7 +20,8 @@ module Dynflow
 
     PublishJob = Algebrick.type do
       fields! future:          Concurrent::IVar,
-              job:             Job
+              job:             Job,
+              timeout:         type { variants NilClass, Numeric }
     end
 
     RePublishJob = Algebrick.type do

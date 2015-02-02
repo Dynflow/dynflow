@@ -5,6 +5,7 @@
     <tr>
       <th>Id</th>
       <th>Executor?</th>
+      <th></th>
     </tr>
   </thead>
 
@@ -12,6 +13,7 @@
   <tr>
     <td><%= h(world.id) %></td>
     <td><%= h(world.executor) %></td>
+    <td><a href="<%= url("/worlds/#{world.id}/ping") %>" class="postlink">ping</a></td>
   </tr>
 <% end %>
 </table>

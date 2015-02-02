@@ -137,15 +137,15 @@ module Dynflow
       publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
     end
 
-    def ping(world_id, done = Concurrent::IVar.new)
-      publish_job(Dispatcher::Ping[world_id], done, true)
+    def ping(world_id, timeout, done = Concurrent::IVar.new)
+      publish_job(Dispatcher::Ping[world_id], done, false, timeout)
     end
 
-    def publish_job(job, done, wait_for_accepted)
+    def publish_job(job, done, wait_for_accepted, timeout = nil)
       accepted = Concurrent::IVar.new.with_observer do |_, value, reason|
         done.fail reason if reason
       end
-      client_dispatcher.ask(Dispatcher::PublishJob[done, job], accepted)
+      client_dispatcher.ask(Dispatcher::PublishJob[done, job, timeout], accepted)
       accepted.wait if wait_for_accepted
       done
     end

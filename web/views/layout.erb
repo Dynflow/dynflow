@@ -15,6 +15,10 @@
   </head>
 
   <body>
+    <% if params[:notice] %>
+    <div id="notice" class="alert alert-warning"><%= h(params[:notice]) %></div>
+    <% end %>
+
     <%= yield %>
   </body>
 </html>

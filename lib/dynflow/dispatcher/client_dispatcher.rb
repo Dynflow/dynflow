@@ -7,6 +7,10 @@ module Dynflow
         fields! id: Integer, job: Job, accepted: Concurrent::IVar, finished: Concurrent::IVar
       end
 
+      Timeout = Algebrick.type do
+        fields! request_id: Integer
+      end
+
       module TrackedJob
         def accept!
           accepted.set true unless accepted.completed?
@@ -48,8 +52,8 @@ module Dynflow
 
       def on_message(message)
         match message,
-            (on PublishJob.(~any, ~any) do |future, job|
-               track_job(future, job) do |tracked_job|
+            (on PublishJob.(~any, ~any, ~any) do |future, job, timeout|
+               track_job(future, job, timeout) do |tracked_job|
                  dispatch_job(job, @world.id, tracked_job.id)
                end
              end),
@@ -58,6 +62,9 @@ module Dynflow
              end),
             (on ~Envelope.(message: ~Response) do |envelope, response|
                dispatch_response(envelope, response)
+             end),
+            (on Timeout.(~any) do |request_id|
+               resolve_tracked_job(request_id, Dynflow::Error.new("Request timeout"))
              end),
             (on StartTerminating.(~any) do |terminated|
                @terminated = terminated
@@ -99,10 +106,11 @@ module Dynflow
             raise Dynflow::Error, "Could not find an executor for execution plan #{ execution_plan_id }"
       end
 
-      def track_job(finished, job)
+      def track_job(finished, job, timeout)
         id = @last_id += 1
         tracked_job = TrackedJob[id, job, Concurrent::IVar.new, finished]
         @tracked_jobs[id] = tracked_job
+        @world.clock.ping(self, timeout, Timeout[id]) if timeout
         yield tracked_job
       rescue Dynflow::Error => e
         resolve_tracked_job(tracked_job.id, e)
