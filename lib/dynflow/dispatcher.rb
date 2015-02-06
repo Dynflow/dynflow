@@ -24,12 +24,6 @@ module Dynflow
               timeout:         type { variants NilClass, Numeric }
     end
 
-    RePublishJob = Algebrick.type do
-      fields! job:             Job,
-              client_world_id: String,
-              request_id:      Integer
-    end
-
     Request = Algebrick.type do
       variants Job
     end
@@ -46,6 +40,10 @@ module Dynflow
               sender_id: String,
               receiver_id: type { variants String, AnyExecutor = atom },
               message: type { variants Request, Response }
+    end
+
+    InvalidateAllocation = Algebrick.type do
+      fields! allocation: Persistence::ExecutorAllocation
     end
 
     module Envelope

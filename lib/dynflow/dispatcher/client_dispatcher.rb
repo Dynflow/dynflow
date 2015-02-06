@@ -57,8 +57,8 @@ module Dynflow
                  dispatch_job(job, @world.id, tracked_job.id)
                end
              end),
-            (on RePublishJob.(~any, ~any, ~any) do |job, client_world_id, request_id|
-               dispatch_job(job, client_world_id, request_id)
+            (on InvalidateAllocation.(~any) do |allocation|
+               invalidate_allocation(allocation)
              end),
             (on ~Envelope.(message: ~Response) do |envelope, response|
                dispatch_response(envelope, response)
@@ -99,6 +99,15 @@ module Dynflow
             (on Done | Pong do
                resolve_tracked_job(envelope.request_id)
              end)
+      end
+
+      def invalidate_allocation(allocation)
+        plan = @world.persistence.load_execution_plan(allocation.execution_plan_id)
+        plan.execution_history.add('terminate execution', allocation.world_id)
+        plan.update_state(:paused) unless plan.state == :paused
+        dispatch_job(Dispatcher::Execution[allocation.execution_plan_id],
+                     allocation.client_world_id,
+                     allocation.request_id)
       end
 
       def find_executor(execution_plan_id)

@@ -25,15 +25,13 @@ module Dynflow
       def perform_execution(envelope, execution)
         future = Concurrent::IVar.new.with_observer do |_, plan, reason|
           allocation = Persistence::ExecutorAllocation[@world.id, execution.execution_plan_id, envelope.sender_id, envelope.request_id]
-          unless plan && plan.state == :running
-            # the plan can stay in running state in case of
-            # termination: we deal with this situation in world invalidation
-            @world.persistence.delete_executor_allocation(allocation)
-            if reason
-              respond(envelope, Failed[reason.message])
-            else
-              respond(envelope, Done)
-            end
+          @world.persistence.delete_executor_allocation(allocation)
+          if plan && plan.state == :running
+            @world.client_dispatcher << InvalidateAllocation[allocation]
+          elsif reason
+            respond(envelope, Failed[reason.message])
+          else
+            respond(envelope, Done)
           end
         end
         allocate_executor(execution.execution_plan_id, envelope.sender_id, envelope.request_id)

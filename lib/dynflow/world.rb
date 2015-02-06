@@ -169,9 +169,10 @@ module Dynflow
         @terminated ||= Concurrent::Promise.execute do
           # TODO: refactory once we can chain futures (probably after migrating
           #       to concurrent-ruby promises
+          persistence.delete_world(registered_world)
+
           logger.info "stop listening for new events..."
           listening_stopped     = connector.stop_listening(self)
-          logger.info "start terminating client dispatcher..."
           listening_stopped.wait
 
           if executor
@@ -182,11 +183,12 @@ module Dynflow
             executor_dispatcher.ask(:terminate!).wait
           end
 
-          invalidate(self.registered_world)
 
+          logger.info "start terminating client dispatcher..."
           client_dispatcher_terminated = Concurrent::IVar.new
           client_dispatcher.ask(Dispatcher::StartTerminating[client_dispatcher_terminated])
           client_dispatcher_terminated.wait
+
           if @clock
             logger.info "start terminating clock..."
             clock.ask(:terminate!).wait
@@ -207,12 +209,7 @@ module Dynflow
       persistence.delete_world(world)
 
       old_allocations.each do |allocation|
-        plan = persistence.load_execution_plan(allocation.execution_plan_id)
-        plan.execution_history.add('terminate execution', world)
-        plan.update_state(:paused) unless plan.state == :paused
-        client_dispatcher << Dispatcher::RePublishJob[Dispatcher::Execution[allocation.execution_plan_id],
-                                                      allocation.client_world_id,
-                                                      allocation.request_id]
+        client_dispatcher.ask(Dispatcher::InvalidateAllocation[allocation]).wait
       end
     end
 

@@ -16,7 +16,7 @@ module Dynflow
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
           end
-          execution_plan.execution_history.add('start execution', @world)
+          execution_plan.execution_history.add('start execution', @world.id)
           execution_plan.update_state(:running)
         end
 
@@ -100,7 +100,7 @@ module Dynflow
         end
 
         def finish
-          execution_plan.execution_history.add('finish execution', @world)
+          execution_plan.execution_history.add('finish execution', @world.id)
           @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
           return no_work
         end

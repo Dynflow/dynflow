@@ -25,8 +25,8 @@ module Dynflow
       @events.each(&block)
     end
 
-    def add(name, world = nil)
-      @events << Event[Time.now.to_i, name, world && world.id]
+    def add(name, world_id = nil)
+      @events << Event[Time.now.to_i, name, world_id]
     end
 
     def to_hash
