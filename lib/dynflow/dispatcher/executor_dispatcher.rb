@@ -1,8 +1,6 @@
 module Dynflow
   module Dispatcher
-    class ExecutorDispatcher < Concurrent::Actor::Context
-      include Algebrick::Matching
-
+    class ExecutorDispatcher < Abstract
       def initialize(world)
         @world        = Type! world, World
       end
@@ -59,11 +57,6 @@ module Dynflow
       def find_executor(execution_plan_id)
         @world.persistence.find_executor_for_plan(execution_plan_id) or
             raise Dynflow::Error, "Could not find an executor for execution plan #{ execution_plan_id }"
-      end
-
-      def respond(request_envelope, response)
-        response_envelope = request_envelope.build_response_envelope(response, @world)
-        @world.connector.send(response_envelope)
       end
     end
   end

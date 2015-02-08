@@ -38,7 +38,7 @@ module Dynflow
     Envelope = Algebrick.type do
       fields! request_id: Integer,
               sender_id: String,
-              receiver_id: type { variants String, AnyExecutor = atom },
+              receiver_id: type { variants String, AnyExecutor = atom, UnknownWorld = atom },
               message: type { variants Request, Response }
     end
 
@@ -72,5 +72,6 @@ module Dynflow
   end
 end
 
+require 'dynflow/dispatcher/abstract'
 require 'dynflow/dispatcher/client_dispatcher'
 require 'dynflow/dispatcher/executor_dispatcher'

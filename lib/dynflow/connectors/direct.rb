@@ -20,10 +20,15 @@ module Dynflow
           @round_robin_counter = 0
         end
 
+        def behaviour_definition
+          [*Concurrent::Actor::Behaviour.base,
+           *Concurrent::Actor::Behaviour.user_messages(:just_log)]
+        end
+
         private
 
         def on_message(msg)
-          match msg,
+          match(msg,
                 (on StartListening.(~Dynflow::World.to_m) do |world|
                    @worlds[world.id] = world
                  end),
@@ -40,7 +45,7 @@ module Dynflow
                    else
                      log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
                    end
-                 end)
+                 end))
         end
 
         def try_to_terminate
@@ -48,11 +53,13 @@ module Dynflow
         end
 
         def find_receiver(envelope)
-          if Dispatcher::AnyExecutor === envelope.receiver_id
-            executors[inc_round_robin_counter]
-          else
-            @worlds[envelope.receiver_id]
-          end
+          receiver = if Dispatcher::AnyExecutor === envelope.receiver_id
+                       executors[inc_round_robin_counter]
+                     else
+                       @worlds[envelope.receiver_id]
+                     end
+          raise Dynflow::Error, "No executor available" unless receiver
+          return receiver
         end
 
         def executors

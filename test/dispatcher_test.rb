@@ -43,7 +43,7 @@ module Dynflow
 
             it 'fails the future when the step is not accepting events' do
               result = client_world.trigger(Support::CodeWorkflowExample::Dummy, { :text => "dummy" })
-              plan   = result.finished.value
+              plan   = result.finished.value!
               step   = plan.steps.values.first
               future = client_world.event(plan.id, step.id, 'finish').wait
               assert future.rejected?
@@ -143,13 +143,16 @@ module Dynflow
 
           def with_invalidation_while_executing(finish)
             triggered = while_executing do |executor|
+              if Connectors::Direct === executor.connector
+                # for better simulation of invalidation with direct executor
+                executor.connector.stop_listening(executor)
+              end
               client_world.invalidate(executor.registered_world)
             end
             plan = if finish
                      finish_the_plan(triggered)
                    else
-                     # TODO: send response to the client to resolve the future
-                     # plan = triggered.finished
+                     triggered.finished.wait
                      client_world.persistence.load_execution_plan(triggered.id)
                    end
             yield plan
@@ -177,6 +180,18 @@ module Dynflow
         end
       end
 
+      def self.handles_no_executor_available
+        it 'fails to finish the future when no executor available' do
+          client_world # just to initialize the client world before terminating the executors
+          executor_world.terminate.wait
+          executor_world_2.terminate.wait
+          result = client_world.trigger(Support::DummyExample::Dummy)
+          result.finished.wait
+          assert result.finished.rejected?
+          assert_match(/No executor available/, result.finished.reason.message)
+        end
+      end
+
       describe 'direct connector - all in one' do
         let(:connector) { Proc.new { |world| Connectors::Direct.new(world) } }
         let(:executor_world) { create_world }
@@ -198,6 +213,7 @@ module Dynflow
         supports_dynamic_retry
         supports_world_invalidation
         supports_ping_pong
+        handles_no_executor_available
       end
 
       describe 'database connector - all in one' do
@@ -220,6 +236,7 @@ module Dynflow
         supports_dynamic_retry
         supports_world_invalidation
         supports_ping_pong
+        handles_no_executor_available
       end
     end
   end

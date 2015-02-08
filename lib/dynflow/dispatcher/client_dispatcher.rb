@@ -1,7 +1,6 @@
 module Dynflow
   module Dispatcher
-    class ClientDispatcher < Concurrent::Actor::Context
-      include Algebrick::Matching
+    class ClientDispatcher < Abstract
 
       TrackedJob = Algebrick.type do
         fields! id: Integer, job: Job, accepted: Concurrent::IVar, finished: Concurrent::IVar
@@ -39,10 +38,6 @@ module Dynflow
 
       private
 
-      def connector
-        @world.connector
-      end
-
       def try_to_terminate
         @tracked_jobs.values.each { |tracked_job| tracked_job.fail!(Dynflow::Error.new('Dispatcher terminated')) }
         @tracked_jobs.clear
@@ -78,13 +73,18 @@ module Dynflow
                AnyExecutor
              end),
             (on ~Event do |event|
-               find_executor(event.execution_plan_id).id
+               find_executor(event.execution_plan_id)
              end),
             (on Ping.(~any) do |receiver_id|
                receiver_id
              end)
         request = Envelope[request_id, client_world_id, executor_id, job]
-        connector.send(request)
+        if Dispatcher::UnknownWorld === request.receiver_id
+          raise Dynflow::Error, "Could not find an executor for #{job}"
+        end
+        connector.send(request).value!
+      rescue => e
+        respond(request, Failed[e.message])
       end
 
       def dispatch_response(envelope, response)
@@ -111,8 +111,12 @@ module Dynflow
       end
 
       def find_executor(execution_plan_id)
-        @world.persistence.find_executor_for_plan(execution_plan_id) or
-            raise Dynflow::Error, "Could not find an executor for execution plan #{ execution_plan_id }"
+        executor = @world.persistence.find_executor_for_plan(execution_plan_id)
+        if executor
+          executor.id
+        else
+          Dispatcher::UnknownWorld
+        end
       end
 
       def track_job(finished, job, timeout)

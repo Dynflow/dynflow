@@ -101,16 +101,8 @@ module Dynflow
       planned        = execution_plan.state == :planned
 
       if planned
-        begin
-          done = execute(execution_plan.id, Concurrent::IVar.new)
-          if done.rejected?
-            ExecutionFailed[execution_plan.id, done.reason]
-          else
-            Triggered[execution_plan.id, done]
-          end
-        rescue => exception
-          ExecutionFailed[execution_plan.id, exception]
-        end
+        done = execute(execution_plan.id, Concurrent::IVar.new)
+        Triggered[execution_plan.id, done]
       else
         PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
       end
@@ -148,6 +140,8 @@ module Dynflow
       client_dispatcher.ask(Dispatcher::PublishJob[done, job, timeout], accepted)
       accepted.wait if wait_for_accepted
       done
+    rescue => e
+      accepted.fail e
     end
 
     def receive(envelope)

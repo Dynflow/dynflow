@@ -68,6 +68,11 @@ module Dynflow
           !!@stopped
         end
 
+        def behaviour_definition
+          [*Concurrent::Actor::Behaviour.base,
+           *Concurrent::Actor::Behaviour.user_messages(:just_log)]
+        end
+
         private
 
         def on_message(msg)
@@ -92,18 +97,15 @@ module Dynflow
                    receive_envelopes
                  end),
                 (on ~Dispatcher::Envelope do |envelope|
-                   if world_id = find_receiver(envelope)
-                     if world_id == @world.id
-                       if @stopped
-                         log(Logger::ERROR, "Envelope #{envelope} received for stopped world")
-                       else
-                         @world.receive(envelope)
-                       end
+                   world_id = find_receiver(envelope)
+                   if world_id == @world.id
+                     if @stopped
+                       log(Logger::ERROR, "Envelope #{envelope} received for stopped world")
                      else
-                       send_envelope(update_receiver_id(envelope, world_id))
+                       @world.receive(envelope)
                      end
                    else
-                     log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
+                     send_envelope(update_receiver_id(envelope, world_id))
                    end
                  end)
         end
@@ -139,23 +141,20 @@ module Dynflow
 
         def find_receiver(envelope)
           if Dispatcher::AnyExecutor === envelope.receiver_id
-            executors[inc_round_robin_counter].id
+            any_executor
           else
             envelope.receiver_id
           end
         end
 
-        def executors
-          @world.persistence.find_worlds(:filters => { :executor => true }, :order_by => :id)
-        end
-
-        def inc_round_robin_counter
+        def any_executor
+          executors = @world.persistence.find_worlds(:filters => { :executor => true }, :order_by => :id)
           @round_robin_counter += 1
-          executors_size = executors.size
-          if executors_size > 0
-            @round_robin_counter %= executors_size
+          if executors.any?
+            @round_robin_counter %= executors.size
+            executors[@round_robin_counter].id
           else
-            @round_robin_counter = 0
+            raise Dynflow::Error, "No executor available"
           end
         end
       end
