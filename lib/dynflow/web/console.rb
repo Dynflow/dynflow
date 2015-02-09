@@ -1,10 +1,7 @@
 
-require 'sprockets'
-require 'sprockets-helpers'
-
 module Dynflow
   module Web
-    class LegacyConsole < Sinatra::Base
+    class Console < Sinatra::Base
 
       set :public_folder, Web.web_dir('assets')
       set :views, Web.web_dir('views')
@@ -13,7 +10,7 @@ module Dynflow
       helpers ERB::Util
       helpers Web::FilteringHelpers
       helpers Web::WorldHelpers
-      helpers Web::LegacyHelpers
+      helpers Web::ConsoleHelpers
 
       get('/') do
         options = HashWithIndifferentAccess.new

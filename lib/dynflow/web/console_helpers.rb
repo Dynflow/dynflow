@@ -1,6 +1,6 @@
 module Dynflow
   module Web
-    module LegacyHelpers
+    module ConsoleHelpers
       def prettify_value(value)
         YAML.dump(value)
       end

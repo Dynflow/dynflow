@@ -7,9 +7,9 @@ module Dynflow
   module Web
 
     def self.setup(&block)
-      old_console = Sinatra.new(Web::LegacyConsole) { instance_exec(&block)}
+      console = Sinatra.new(Web::Console) { instance_exec(&block)}
       Rack::Builder.app do
-        run Rack::URLMap.new('/'        => old_console)
+        run Rack::URLMap.new('/'        => console)
       end
     end
 
@@ -20,7 +20,7 @@ module Dynflow
 
     require 'dynflow/web/filtering_helpers'
     require 'dynflow/web/world_helpers'
-    require 'dynflow/web/legacy_helpers'
-    require 'dynflow/web/legacy_console'
+    require 'dynflow/web/console_helpers'
+    require 'dynflow/web/console'
   end
 end
