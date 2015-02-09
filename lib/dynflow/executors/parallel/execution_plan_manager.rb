@@ -16,12 +16,12 @@ module Dynflow
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
           end
+          execution_plan.execution_history.add('start execution', @world)
           execution_plan.update_state(:running)
         end
 
         def start
           raise "The future was already set" if @future.completed?
-          execution_plan.execution_history.add('start execution', @world)
           start_run or start_finalize or finish
         end
 
