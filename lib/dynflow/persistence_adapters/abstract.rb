@@ -6,12 +6,11 @@ module Dynflow
       attr_accessor :logger
 
       def register_world(world)
-        @worlds ||= Set.new
-        @worlds << world
+        @logger ||= world.logger
       end
 
       def log(level, message)
-        (@worlds.first && @worlds.first.logger).send(level, message)
+        logger.send(level, message) if logger
       end
 
       def pagination?
