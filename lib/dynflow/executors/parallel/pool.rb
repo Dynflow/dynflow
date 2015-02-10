@@ -102,7 +102,7 @@ module Dynflow
 
         def try_to_terminate
           if terminating? && @free_workers.size == @pool_size
-            @free_workers.map { |worker| worker.ask(:terminate!) }
+            @free_workers.map { |worker| worker.ask(:terminate!) }.map(&:wait)
             @executor_core << PoolTerminated
             @terminated.set(true)
             reference.ask(:terminate!)
