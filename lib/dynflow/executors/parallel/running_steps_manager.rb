@@ -13,6 +13,15 @@ module Dynflow
           @events        = WorkQueue.new(Integer, Work)
         end
 
+        def terminate
+          pending_work = @events.clear.values.flatten
+          pending_work.each do |w|
+            if Work::Event === w
+              w.event.result.fail UnprocessableEvent.new("dropping due to termination")
+            end
+          end
+        end
+
         def add(step, work)
           Type! step, ExecutionPlan::Steps::RunStep
           @running_steps[step.id] = step

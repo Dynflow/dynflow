@@ -31,10 +31,6 @@ module Dynflow
           end
         end
 
-        def try_to_terminate
-          @running_steps_manager.try_to_terminate
-        end
-
         # @return [Array<Work>] of Work items to continue with
         def what_is_next(work)
           Type! work, Work
@@ -74,6 +70,10 @@ module Dynflow
 
         def done?
           (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
+        end
+
+        def terminate
+          @running_steps_manager.terminate
         end
 
         private

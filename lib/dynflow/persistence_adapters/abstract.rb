@@ -1,6 +1,19 @@
 module Dynflow
   module PersistenceAdapters
     class Abstract
+
+      # The logger is set by the world when used inside it
+      attr_accessor :logger
+
+      def register_world(world)
+        @worlds ||= Set.new
+        @worlds << world
+      end
+
+      def log(level, message)
+        (@worlds.first && @worlds.first.logger).send(level, message)
+      end
+
       def pagination?
         false
       end

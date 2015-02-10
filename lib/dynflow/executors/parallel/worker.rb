@@ -17,9 +17,11 @@ module Dynflow
                 end),
                 (on Work::Finalize.(~any, any) do |sequential_manager|
                   sequential_manager.finalize
-                end)
-          @pool << WorkerDone[work: message, worker: reference]
+                 end)
+        rescue Errors::PersistenceError => e
+          @pool << e
         ensure
+          @pool << WorkerDone[work: message, worker: reference]
           @transaction_adapter.cleanup
         end
       end

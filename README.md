@@ -1,6 +1,8 @@
 ![Dynflow](doc/images/logo.png)
 =======
 
+![Build](https://travis-ci.org/Dynflow/dynflow.svg?branch=master)
+
 Dynflow [DYN(amic work)FLOW] is a workflow engine
 written in Ruby that allows to:
 

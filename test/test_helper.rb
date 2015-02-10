@@ -85,6 +85,7 @@ module WorldInstance
     config.persistence_adapter = persistence_adapter(isolated)
     config.logger_adapter      = logger_adapter
     config.auto_rescue         = false
+    config.exit_on_terminate   = false
     config.auto_execute        = false
     config.auto_terminate      = false
     config.consistency_check   = false

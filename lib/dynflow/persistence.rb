@@ -11,6 +11,7 @@ module Dynflow
     def initialize(world, persistence_adapter)
       @world   = world
       @adapter = persistence_adapter
+      @adapter.register_world(world)
     end
 
     def load_action(step)

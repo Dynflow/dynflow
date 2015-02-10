@@ -82,18 +82,35 @@ module Dynflow
                   @executor_core << PoolDone[step]
                   @free_workers << worker
                   distribute_jobs
+                 end),
+                (on Errors::PersistenceError do
+                   @core << message
+                 end),
+                (on Core::StartTerminating.(~any) do |terminated|
+                  start_terminating(terminated)
                 end)
         end
 
-        def on_event(event)
-          case event
-          when :terminated
-            raise unless @free_workers.size == @pool_size
-            @free_workers.map { |worker| worker.ask(:terminate!) }.each(&:wait)
+        def start_terminating(ivar)
+          @terminated = ivar
+          try_to_terminate
+        end
+
+        def terminating?
+          !!@terminated
+        end
+
+        def try_to_terminate
+          if terminating? && @free_workers.size == @pool_size
+            @free_workers.map { |worker| worker.ask(:terminate!) }
+            @executor_core << PoolTerminated
+            @terminated.set(true)
+            reference.ask(:terminate!)
           end
         end
 
         def distribute_jobs
+          try_to_terminate
           @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
         end
       end

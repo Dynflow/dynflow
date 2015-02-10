@@ -124,7 +124,7 @@ module Dynflow
     def ping(who, time, with_what = nil, where = :<<)
       Type! time, Time, Numeric
       time  = Time.now + time if time.is_a? Numeric
-      timer = Clock::Timer[who, time, with_what.nil? ? None : Some[Object][with_what], where]
+      timer = Clock::Timer[who, time, with_what.nil? ? Algebrick::Types::None : Some[Object][with_what], where]
       # if self.ask!(:terminated?) # FIXME not thread safe
       #   Thread.new do
       #     sleep [timer.when - Time.now, 0].max

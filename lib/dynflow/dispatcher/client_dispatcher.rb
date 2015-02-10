@@ -108,6 +108,8 @@ module Dynflow
         dispatch_job(Dispatcher::Execution[allocation.execution_plan_id],
                      allocation.client_world_id,
                      allocation.request_id)
+      rescue Errors::PersistenceError
+        log(Logger::ERROR, "failed to write data while invalidating allocation #{allocation}")
       end
 
       def find_executor(execution_plan_id)

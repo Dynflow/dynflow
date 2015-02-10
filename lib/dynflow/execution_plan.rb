@@ -1,4 +1,4 @@
-require 'uuidtools'
+require 'securerandom'
 
 module Dynflow
 
@@ -30,7 +30,7 @@ module Dynflow
 
     # all params with default values are part of *private* api
     def initialize(world,
-        id = UUIDTools::UUID.random_create.to_s,
+        id = SecureRandom.uuid,
         state = :pending,
         root_plan_step = nil,
         run_flow = Flows::Concurrence.new([]),

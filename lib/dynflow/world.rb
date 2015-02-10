@@ -6,10 +6,11 @@ module Dynflow
 
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
         :persistence, :transaction_adapter, :action_classes, :subscription_index, :logger_adapter,
-                :middleware, :auto_rescue
+        :middleware, :auto_rescue, :clock
 
     def initialize(config)
-      @id                  = UUIDTools::UUID.random_create.to_s
+      @id                  = SecureRandom.uuid
+      @clock               = Clock.spawn('clock')
       config_for_world     = Config::ForWorld.new(config, self)
       config_for_world.validate
       @logger_adapter      = config_for_world.logger_adapter
@@ -18,6 +19,7 @@ module Dynflow
       @executor            = config_for_world.executor
       @action_classes      = config_for_world.action_classes
       @auto_rescue         = config_for_world.auto_rescue
+      @exit_on_terminate   = config_for_world.exit_on_terminate
       @connector           = config_for_world.connector
       @middleware          = Middleware::World.new
       @client_dispatcher   = Dispatcher::ClientDispatcher.spawn("client-dispatcher", self)
@@ -37,10 +39,6 @@ module Dynflow
 
     def registered_world
       Persistence::RegisteredWorld[id, !!executor]
-    end
-
-    def clock
-      @clock ||= Clock.spawn 'clock'
     end
 
     def logger
@@ -189,6 +187,9 @@ module Dynflow
           end
 
           connector.terminate
+          if @exit_on_terminate
+            Kernel.exit
+          end
         end
       end
 
