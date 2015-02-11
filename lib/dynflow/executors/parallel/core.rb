@@ -3,13 +3,8 @@ module Dynflow
     class Parallel < Abstract
 
       # TODO add dynflow error handling to avoid getting stuck and report errors to the future
-      class Core < Concurrent::Actor::Context
-        include Algebrick::Matching
+      class Core < Actor
         attr_reader :logger
-
-        StartTerminating = Algebrick.type do
-          fields! terminated: Concurrent::IVar
-        end
 
         def initialize(world, pool_size)
           @logger                  = world.logger
@@ -22,28 +17,24 @@ module Dynflow
 
         def on_message(message)
           match message,
-                (on ~Parallel::Execution do |(execution_plan_id, finished)|
-                  start_executing track_execution_plan(execution_plan_id, finished)
-                  true
-                end),
-                (on ~Parallel::Event do |event|
-                  event(event)
-                 end),
-                (on Parallel::PoolTerminated do
-                   finish_termination
-                 end),
-                (on PoolDone.(~any) do |step|
-                  update_manager(step)
-                end),
-                (on StartTerminating.(~any) do |terminated|
-                  logger.info 'shutting down Core ...'
-                  start_terminating(terminated)
-                end),
-                (on ~Errors::PersistenceError.to_m do |error|
-                   logger.fatal "PersistenceError in executor: terminating"
-                   logger.fatal error
-                   @world.terminate
-                 end)
+              (on ~Parallel::Execution do |(execution_plan_id, finished)|
+                start_executing track_execution_plan(execution_plan_id, finished)
+                true
+              end),
+              (on ~Parallel::Event do |event|
+                event(event)
+               end),
+              (on Parallel::PoolTerminated do
+                 finish_termination
+               end),
+              (on PoolDone.(~any) do |step|
+                update_manager(step)
+              end),
+              (on ~Errors::PersistenceError.to_m do |error|
+                 logger.fatal "PersistenceError in executor: terminating"
+                 logger.fatal error
+                 @world.terminate
+               end)
         rescue Errors::PersistenceError => e
           self << e
         end
@@ -73,10 +64,6 @@ module Dynflow
         rescue Dynflow::Error => e
           finished.fail e
           nil
-        end
-
-        def terminating?
-          !!@terminated
         end
 
         def start_executing(manager)
@@ -137,20 +124,10 @@ module Dynflow
           end
         end
 
-        def terminate_managers!
-          @execution_plan_managers.delete_if do |_, manager|
-            if manager.try_to_terminate
-              set_future(manager)
-              true
-            end
-          end
-        end
-
         def set_future(manager)
           @plan_ids_in_rescue.delete(manager.execution_plan.id)
           manager.future.set manager.execution_plan
         end
-
 
         def event(event)
           Type! event, Parallel::Event
@@ -170,9 +147,10 @@ module Dynflow
           raise e
         end
 
-        def start_terminating(ivar)
-          @terminated = ivar
-          @pool << StartTerminating[Concurrent::IVar.new]
+        def start_termination(*args)
+          super
+          logger.info 'shutting down Core ...'
+          @pool << StartTermination[Concurrent::IVar.new]
         end
 
         def finish_termination
@@ -190,12 +168,7 @@ module Dynflow
             end
           end
           logger.error '... core terminated.'
-          @terminated.set(true)
-          reference.ask(:terminate!)
-        end
-
-        def terminating?
-          !!@terminated
+          super
         end
       end
     end

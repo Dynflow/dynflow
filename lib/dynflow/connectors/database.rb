@@ -52,9 +52,7 @@ module Dynflow
         end
       end
 
-      class Core < Concurrent::Actor::Context
-        include Algebrick::Matching
-
+      class Core < Actor
         attr_reader :polling_interval
 
         def initialize(polling_interval)
@@ -66,11 +64,6 @@ module Dynflow
 
         def stopped?
           !!@stopped
-        end
-
-        def behaviour_definition
-          [*Concurrent::Actor::Behaviour.base,
-           *Concurrent::Actor::Behaviour.user_messages(:just_log)]
         end
 
         private

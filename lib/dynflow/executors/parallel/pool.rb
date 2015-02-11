@@ -1,9 +1,7 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class Pool < Concurrent::Actor::Context
-        include Algebrick::Matching
-
+      class Pool < Actor
         class RoundRobin
           def initialize
             @data   = []
@@ -85,27 +83,19 @@ module Dynflow
                  end),
                 (on Errors::PersistenceError do
                    @core << message
-                 end),
-                (on Core::StartTerminating.(~any) do |terminated|
-                  start_terminating(terminated)
-                end)
+                 end)
         end
 
-        def start_terminating(ivar)
-          @terminated = ivar
+        def start_termination(*args)
+          super
           try_to_terminate
-        end
-
-        def terminating?
-          !!@terminated
         end
 
         def try_to_terminate
           if terminating? && @free_workers.size == @pool_size
             @free_workers.map { |worker| worker.ask(:terminate!) }.map(&:wait)
             @executor_core << PoolTerminated
-            @terminated.set(true)
-            reference.ask(:terminate!)
+            finish_termination
           end
         end
 

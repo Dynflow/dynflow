@@ -36,15 +36,6 @@ module Dynflow
         @terminated   = nil
       end
 
-      private
-
-      def try_to_terminate
-        @tracked_jobs.values.each { |tracked_job| tracked_job.fail!(Dynflow::Error.new('Dispatcher terminated')) }
-        @tracked_jobs.clear
-        @terminated.set true
-        reference.ask(:terminate!)
-      end
-
       def on_message(message)
         match message,
             (on PublishJob.(~any, ~any, ~any) do |future, job, timeout|
@@ -60,10 +51,6 @@ module Dynflow
              end),
             (on Timeout.(~any) do |request_id|
                resolve_tracked_job(request_id, Dynflow::Error.new("Request timeout"))
-             end),
-            (on StartTerminating.(~any) do |terminated|
-               @terminated = terminated
-               try_to_terminate
              end)
       end
 
@@ -157,6 +144,13 @@ module Dynflow
                end)
           @tracked_jobs.delete(id).success! resolve_to
         end
+      end
+
+      def start_termination(*args)
+        super
+        @tracked_jobs.values.each { |tracked_job| tracked_job.fail!(Dynflow::Error.new('Dispatcher terminated')) }
+        @tracked_jobs.clear
+        finish_termination
       end
 
     end

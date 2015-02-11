@@ -1,10 +1,9 @@
 module Dynflow
   require 'set'
 
-  class Clock < Concurrent::Actor::Context
+  class Clock < Actor
 
     include Algebrick::Types
-    include Algebrick::Matching
 
     Tick  = Algebrick.atom
     Timer = Algebrick.type do

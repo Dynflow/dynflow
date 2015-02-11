@@ -1,6 +1,6 @@
 module Dynflow
   module Dispatcher
-    class Abstract < Concurrent::Actor::Context
+    class Abstract < Actor
       include Algebrick::Matching
 
       def connector

@@ -55,11 +55,6 @@ module Dynflow
       end
     end
 
-    # TODO: DRY - common for more actors
-    StartTerminating = Algebrick.type do
-      fields! terminated: Concurrent::IVar
-    end
-
     module Event
       def to_hash
         super.update event: Base64.strict_encode64(Marshal.dump(event))

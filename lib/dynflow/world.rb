@@ -178,7 +178,7 @@ module Dynflow
 
           logger.info "start terminating client dispatcher..."
           client_dispatcher_terminated = Concurrent::IVar.new
-          client_dispatcher.ask(Dispatcher::StartTerminating[client_dispatcher_terminated])
+          client_dispatcher.ask(Actor::StartTermination[client_dispatcher_terminated])
           client_dispatcher_terminated.wait
 
           if @clock

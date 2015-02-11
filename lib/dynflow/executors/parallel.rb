@@ -65,7 +65,7 @@ module Dynflow
       end
 
       def terminate(future = Concurrent::IVar.new)
-        @core << Core::StartTerminating[future]
+        @core << Actor::StartTermination[future]
         future
       end
 

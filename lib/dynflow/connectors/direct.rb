@@ -12,17 +12,11 @@ module Dynflow
 
       Terminate = Algebrick.atom
 
-      class Core < Concurrent::Actor::Context
-        include Algebrick::Matching
+      class Core < Actor
 
         def initialize
           @worlds = {}
           @round_robin_counter = 0
-        end
-
-        def behaviour_definition
-          [*Concurrent::Actor::Behaviour.base,
-           *Concurrent::Actor::Behaviour.user_messages(:just_log)]
         end
 
         private
