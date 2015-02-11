@@ -6,10 +6,6 @@ module Dynflow
         fields! id: Integer, job: Job, accepted: Concurrent::IVar, finished: Concurrent::IVar
       end
 
-      Timeout = Algebrick.type do
-        fields! request_id: Integer
-      end
-
       module TrackedJob
         def accept!
           accepted.set true unless accepted.completed?
@@ -36,23 +32,35 @@ module Dynflow
         @terminated   = nil
       end
 
-      def on_message(message)
-        match message,
-            (on PublishJob.(~any, ~any, ~any) do |future, job, timeout|
-               track_job(future, job, timeout) do |tracked_job|
-                 dispatch_job(job, @world.id, tracked_job.id)
-               end
-             end),
-            (on InvalidateAllocation.(~any) do |allocation|
-               invalidate_allocation(allocation)
-             end),
-            (on ~Envelope.(message: ~Response) do |envelope, response|
-               dispatch_response(envelope, response)
-             end),
-            (on Timeout.(~any) do |request_id|
-               resolve_tracked_job(request_id, Dynflow::Error.new("Request timeout"))
-             end)
+      def publish_job(future, job, timeout)
+        track_job(future, job, timeout) do |tracked_job|
+          dispatch_job(job, @world.id, tracked_job.id)
+        end
       end
+
+      def invalidate_allocation(allocation)
+        plan = @world.persistence.load_execution_plan(allocation.execution_plan_id)
+        plan.execution_history.add('terminate execution', allocation.world_id)
+        plan.update_state(:paused) unless plan.state == :paused
+        dispatch_job(Dispatcher::Execution[allocation.execution_plan_id],
+                     allocation.client_world_id,
+                     allocation.request_id)
+      rescue Errors::PersistenceError
+        log(Logger::ERROR, "failed to write data while invalidating allocation #{allocation}")
+      end
+
+      def timeout(request_id)
+        resolve_tracked_job(request_id, Dynflow::Error.new("Request timeout"))
+      end
+
+      def start_termination(*args)
+        super
+        @tracked_jobs.values.each { |tracked_job| tracked_job.fail!(Dynflow::Error.new('Dispatcher terminated')) }
+        @tracked_jobs.clear
+        finish_termination
+      end
+
+      private
 
       def dispatch_job(job, client_world_id, request_id)
         executor_id = match job,
@@ -74,9 +82,9 @@ module Dynflow
         respond(request, Failed[e.message])
       end
 
-      def dispatch_response(envelope, response)
+      def dispatch_response(envelope)
         return unless @tracked_jobs.key?(envelope.request_id)
-        match response,
+        match envelope.message,
             (on ~Accepted do
                @tracked_jobs[envelope.request_id].accept!
              end),
@@ -86,17 +94,6 @@ module Dynflow
             (on Done | Pong do
                resolve_tracked_job(envelope.request_id)
              end)
-      end
-
-      def invalidate_allocation(allocation)
-        plan = @world.persistence.load_execution_plan(allocation.execution_plan_id)
-        plan.execution_history.add('terminate execution', allocation.world_id)
-        plan.update_state(:paused) unless plan.state == :paused
-        dispatch_job(Dispatcher::Execution[allocation.execution_plan_id],
-                     allocation.client_world_id,
-                     allocation.request_id)
-      rescue Errors::PersistenceError
-        log(Logger::ERROR, "failed to write data while invalidating allocation #{allocation}")
       end
 
       def find_executor(execution_plan_id)
@@ -112,7 +109,7 @@ module Dynflow
         id = @last_id += 1
         tracked_job = TrackedJob[id, job, Concurrent::IVar.new, finished]
         @tracked_jobs[id] = tracked_job
-        @world.clock.ping(self, timeout, Timeout[id]) if timeout
+        @world.clock.ping(self, timeout, [:timeout, id]) if timeout
         yield tracked_job
       rescue Dynflow::Error => e
         resolve_tracked_job(tracked_job.id, e)
@@ -144,13 +141,6 @@ module Dynflow
                end)
           @tracked_jobs.delete(id).success! resolve_to
         end
-      end
-
-      def start_termination(*args)
-        super
-        @tracked_jobs.values.each { |tracked_job| tracked_job.fail!(Dynflow::Error.new('Dispatcher terminated')) }
-        @tracked_jobs.clear
-        finish_termination
       end
 
     end

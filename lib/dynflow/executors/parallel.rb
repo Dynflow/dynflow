@@ -36,10 +36,6 @@ module Dynflow
         variants Work::Step, Work::Event, Work::Finalize
       end
 
-      PoolTerminated = Algebrick.atom
-      PoolDone   = Algebrick.type     { fields! work: Work }
-      WorkerDone     = Algebrick.type { fields! work: Work, worker: Concurrent::Actor::Reference }
-
       def initialize(world, pool_size = 10)
         super(world)
         @core = Core.spawn name:        'parallel-executor-core',
@@ -48,7 +44,7 @@ module Dynflow
       end
 
       def execute(execution_plan_id, finished = Concurrent::IVar.new)
-        @core.ask(Execution[execution_plan_id, finished]).value!
+        @core.ask([:handle_execution, execution_plan_id, finished]).value!
         finished
       rescue Concurrent::Actor::ActorTerminated => error
         dynflow_error = Dynflow::Error.new('executor terminated')
@@ -60,12 +56,12 @@ module Dynflow
       end
 
       def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
-        @core << Event[execution_plan_id, step_id, event, future]
+        @core.ask([:handle_event, Event[execution_plan_id, step_id, event, future]])
         future
       end
 
       def terminate(future = Concurrent::IVar.new)
-        @core << Actor::StartTermination[future]
+        @core.tell([:start_termination, future])
         future
       end
 

@@ -15,28 +15,68 @@ module Dynflow
           @terminated              = nil
         end
 
+        def handle_execution(execution_plan_id, finished)
+          start_executing track_execution_plan(execution_plan_id, finished)
+        end
+
+        def handle_event(event)
+          Type! event, Parallel::Event
+          if terminating?
+            raise Dynflow::Error,
+                  "cannot accept event: #{event} core is terminating"
+          end
+          execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
+          if execution_plan_manager
+            feed_pool execution_plan_manager.event(event)
+            true
+          else
+            raise Dynflow::Error, "no manager for #{event.execution_plan_id}:#{event.step_id}"
+          end
+        rescue Dynflow::Error => e
+          event.result.fail e.message
+          raise e
+        end
+
+        def finish_step(step)
+          update_manager(step)
+        end
+
+        def handle_persistence_error(error)
+          logger.fatal "PersistenceError in executor: terminating"
+          logger.fatal error
+          @world.terminate
+        end
+
+        def start_termination(*args)
+          super
+          logger.info 'shutting down Core ...'
+          @pool.tell([:start_termination, Concurrent::IVar.new])
+        end
+
+        def finish_termination
+          unless @execution_plan_managers.empty?
+            logger.error "... cleaning #{@execution_plan_managers.size} execution plans ..."
+            begin
+              @execution_plan_managers.values.each do |manager|
+                manager.terminate
+              end
+            rescue Errors::PersistenceError
+              logger.error "could not to clean the data properly"
+            end
+            @execution_plan_managers.values.each do |manager|
+              finish_plan(manager.execution_plan.id)
+            end
+          end
+          logger.error '... core terminated.'
+          super
+        end
+
+        private
+
         def on_message(message)
-          match message,
-              (on ~Parallel::Execution do |(execution_plan_id, finished)|
-                start_executing track_execution_plan(execution_plan_id, finished)
-                true
-              end),
-              (on ~Parallel::Event do |event|
-                event(event)
-               end),
-              (on Parallel::PoolTerminated do
-                 finish_termination
-               end),
-              (on PoolDone.(~any) do |step|
-                update_manager(step)
-              end),
-              (on ~Errors::PersistenceError.to_m do |error|
-                 logger.fatal "PersistenceError in executor: terminating"
-                 logger.fatal error
-                 @world.terminate
-               end)
+          super
         rescue Errors::PersistenceError => e
-          self << e
+          self.tell(:handle_persistence_error, e)
         end
 
         # @return
@@ -66,14 +106,6 @@ module Dynflow
           nil
         end
 
-        def start_executing(manager)
-          return if manager.nil?
-          Type! manager, ExecutionPlanManager
-
-          next_work = manager.start
-          continue_manager manager, next_work
-        end
-
         def update_manager(finished_work)
           manager   = @execution_plan_managers[finished_work.execution_plan_id]
           next_work = manager.what_is_next(finished_work)
@@ -100,7 +132,7 @@ module Dynflow
           @plan_ids_in_rescue << manager.execution_plan.id
           rescue_plan_id = manager.execution_plan.rescue_plan_id
           if rescue_plan_id
-            self << Parallel::Execution[rescue_plan_id, manager.future]
+            reference.tell([:handle_execution, rescue_plan_id, manager.future])
           else
             set_future(manager)
           end
@@ -112,7 +144,7 @@ module Dynflow
           return if work_items.nil?
           work_items = [work_items] if work_items.is_a? Work
           work_items.all? { |i| Type! i, Work }
-          work_items.each { |new_work| @pool << new_work }
+          work_items.each { |new_work| @pool.tell([:schedule_work, new_work]) }
         end
 
         def finish_plan(execution_plan_id)
@@ -129,47 +161,14 @@ module Dynflow
           manager.future.set manager.execution_plan
         end
 
-        def event(event)
-          Type! event, Parallel::Event
-          if terminating?
-            raise Dynflow::Error,
-                  "cannot accept event: #{event} core is terminating"
-          end
-          execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
-          if execution_plan_manager
-            feed_pool execution_plan_manager.event(event)
-            true
-          else
-            raise Dynflow::Error, "no manager for #{event.execution_plan_id}:#{event.step_id}"
-          end
-        rescue Dynflow::Error => e
-          event.result.fail e.message
-          raise e
+        def start_executing(manager)
+          return if manager.nil?
+          Type! manager, ExecutionPlanManager
+
+          next_work = manager.start
+          continue_manager manager, next_work
         end
 
-        def start_termination(*args)
-          super
-          logger.info 'shutting down Core ...'
-          @pool << StartTermination[Concurrent::IVar.new]
-        end
-
-        def finish_termination
-          unless @execution_plan_managers.empty?
-            logger.error "... cleaning #{@execution_plan_managers.size} execution plans ..."
-            begin
-              @execution_plan_managers.values.each do |manager|
-                manager.terminate
-              end
-            rescue Errors::PersistenceError
-              logger.error "could not to clean the data properly"
-            end
-            @execution_plan_managers.values.each do |manager|
-              finish_plan(manager.execution_plan.id)
-            end
-          end
-          logger.error '... core terminated.'
-          super
-        end
       end
     end
   end

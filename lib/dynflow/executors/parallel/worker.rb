@@ -19,9 +19,9 @@ module Dynflow
                   sequential_manager.finalize
                  end)
         rescue Errors::PersistenceError => e
-          @pool << e
+          @pool.tell([:handle_persistence_error, e])
         ensure
-          @pool << WorkerDone[work: message, worker: reference]
+          @pool.tell([:worker_done, reference, message])
           @transaction_adapter.cleanup
         end
       end

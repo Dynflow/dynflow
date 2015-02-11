@@ -18,12 +18,6 @@ module Dynflow
       variants Event, Execution, Ping
     end
 
-    PublishJob = Algebrick.type do
-      fields! future:          Concurrent::IVar,
-              job:             Job,
-              timeout:         type { variants NilClass, Numeric }
-    end
-
     Request = Algebrick.type do
       variants Job
     end

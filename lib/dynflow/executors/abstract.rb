@@ -8,11 +8,6 @@ module Dynflow
                 result:            Concurrent::IVar
       end
 
-      Execution = Algebrick.type do
-        fields! execution_plan_id: String,
-                finished:          Concurrent::IVar
-      end
-
       include Algebrick::TypeCheck
       attr_reader :world, :logger
 

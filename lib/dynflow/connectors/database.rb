@@ -2,17 +2,6 @@ module Dynflow
   module Connectors
     class Database < Abstract
 
-      StartListening = Algebrick.type do
-        fields! world: Dynflow::World
-      end
-
-      StopListening = Algebrick.type do
-        fields! world: Dynflow::World
-      end
-
-      CheckInbox         = Algebrick.atom
-      PeriodicCheckInbox = Algebrick.atom
-
       class PostgresListerner
         def initialize(core, world_id, db)
           @core     = core
@@ -33,7 +22,7 @@ module Dynflow
           @thread = Thread.new do
             @db.listen("world:#{ @world_id }", :loop => true) do
               if @started
-                @core << CheckInbox
+                @core << :check_inbox
               else
                 break # the listener is stopped: don't continue listening
               end
@@ -66,42 +55,43 @@ module Dynflow
           !!@stopped
         end
 
-        private
-
-        def on_message(msg)
-          match msg,
-                (on StartListening.(~Dynflow::World.to_m) do |world|
-                   @world = world
-                   @stopped = false
-                   @postgres_listener ||= PostgresListerner.new(self, @world.id, @world.persistence.adapter.db)
-                   postgres_listen_start
-                   self << PeriodicCheckInbox
-                 end),
-                (on StopListening.(~Dynflow::World.to_m) do |world|
-                   @stopped = true
-                   postgres_listen_stop
-                 end),
-                (on PeriodicCheckInbox do
-                   self << CheckInbox
-                   @world.clock.ping(self, polling_interval, PeriodicCheckInbox) unless @stopped
-                 end),
-                (on CheckInbox do
-                   return unless @world
-                   receive_envelopes
-                 end),
-                (on ~Dispatcher::Envelope do |envelope|
-                   world_id = find_receiver(envelope)
-                   if world_id == @world.id
-                     if @stopped
-                       log(Logger::ERROR, "Envelope #{envelope} received for stopped world")
-                     else
-                       @world.receive(envelope)
-                     end
-                   else
-                     send_envelope(update_receiver_id(envelope, world_id))
-                   end
-                 end)
+        def start_listening(world)
+          @world = world
+          @stopped = false
+          @postgres_listener ||= PostgresListerner.new(self, @world.id, @world.persistence.adapter.db)
+          postgres_listen_start
+          self << :periodic_check_inbox
         end
+
+        def stop_listening(world)
+          @stopped = true
+          postgres_listen_stop
+        end
+
+        def periodic_check_inbox
+          self << :check_inbox
+          @world.clock.ping(self, polling_interval, :periodic_check_inbox) unless @stopped
+        end
+
+        def check_inbox
+          return unless @world
+          receive_envelopes
+        end
+
+        def handle_envelope(envelope)
+          world_id = find_receiver(envelope)
+          if world_id == @world.id
+            if @stopped
+              log(Logger::ERROR, "Envelope #{envelope} received for stopped world")
+            else
+              @world.receive(envelope)
+            end
+          else
+            send_envelope(update_receiver_id(envelope, world_id))
+          end
+        end
+
+        private
 
         def postgres_listen_start
           @postgres_listener.start if @postgres_listener.enabled? && !@postgres_listener.started?
@@ -113,7 +103,7 @@ module Dynflow
 
         def receive_envelopes
           @world.persistence.pull_envelopes(@world.id).each do |envelope|
-            self << envelope
+            self.tell([:handle_envelope, envelope])
           end
         rescue => e
           log(Logger::ERROR, "Receiving envelopes failed on #{e}")
@@ -158,15 +148,15 @@ module Dynflow
       end
 
       def start_listening(world)
-        @core.ask(StartListening[world])
+        @core.ask([:start_listening, world])
       end
 
       def stop_listening(world)
-        @core.ask(StopListening[world])
+        @core.ask([:stop_listening, world])
       end
 
       def send(envelope)
-        @core.ask(envelope)
+        @core.ask([:handle_envelope, envelope])
       end
 
       def terminate

@@ -2,16 +2,6 @@ module Dynflow
   module Connectors
     class Direct < Abstract
 
-      StartListening = Algebrick.type do
-        fields! world: Dynflow::World
-      end
-
-      StopListening = Algebrick.type do
-        fields! world: Dynflow::World
-      end
-
-      Terminate = Algebrick.atom
-
       class Core < Actor
 
         def initialize
@@ -19,32 +9,24 @@ module Dynflow
           @round_robin_counter = 0
         end
 
-        private
-
-        def on_message(msg)
-          match(msg,
-                (on StartListening.(~Dynflow::World.to_m) do |world|
-                   @worlds[world.id] = world
-                 end),
-                (on StopListening.(~Dynflow::World.to_m) do |world|
-                   @worlds.delete(world.id)
-                   try_to_terminate
-                 end),
-                (on Terminate do
-                   terminate!
-                 end),
-                (on ~Dispatcher::Envelope do |envelope|
-                   if world = find_receiver(envelope)
-                     world.receive(envelope)
-                   else
-                     log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
-                   end
-                 end))
+        def start_listening(world)
+          @worlds[world.id] = world
         end
 
-        def try_to_terminate
+        def stop_listening(world)
+          @worlds.delete(world.id)
           terminate! if @worlds.empty?
         end
+
+        def handle_envelope(envelope)
+          if world = find_receiver(envelope)
+            world.receive(envelope)
+          else
+            log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
+          end
+        end
+
+        private
 
         def find_receiver(envelope)
           receiver = if Dispatcher::AnyExecutor === envelope.receiver_id
@@ -77,15 +59,15 @@ module Dynflow
       end
 
       def start_listening(world)
-        @core.ask(StartListening[world])
+        @core.ask([:start_listening, world])
       end
 
       def stop_listening(world)
-        @core.ask(StopListening[world])
+        @core.ask([:stop_listening, world])
       end
 
       def send(envelope)
-        @core.ask(envelope)
+        @core.ask([:handle_envelope, envelope])
       end
 
       def terminate

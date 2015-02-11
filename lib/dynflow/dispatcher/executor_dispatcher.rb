@@ -5,27 +5,20 @@ module Dynflow
         @world        = Type! world, World
       end
 
-      private
-
-      def on_message(message)
-        match message,
-            (on ~Envelope.(message: Ping) do |envelope|
-               respond(envelope, Pong)
-             end),
-            (on ~Envelope.(message: ~Execution) do |envelope, execution|
-               perform_execution(envelope, execution)
-             end),
-            (on ~Envelope.(message: ~Event) do |envelope, event|
-               perform_event(envelope, event)
-             end)
+      def handle_request(envelope)
+        match(envelope.message,
+              on(Execution) { perform_execution(envelope, envelope.message) },
+              on(Event)     { perform_event(envelope, envelope.message) })
       end
+
+      private
 
       def perform_execution(envelope, execution)
         future = Concurrent::IVar.new.with_observer do |_, plan, reason|
           allocation = Persistence::ExecutorAllocation[@world.id, execution.execution_plan_id, envelope.sender_id, envelope.request_id]
           @world.persistence.delete_executor_allocation(allocation)
           if plan && plan.state == :running
-            @world.client_dispatcher << InvalidateAllocation[allocation]
+            @world.client_dispatcher.tell([:invalidate_allocation, allocation])
           elsif reason
             respond(envelope, Failed[reason.message])
           else

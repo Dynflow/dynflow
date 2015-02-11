@@ -58,21 +58,21 @@ module Dynflow
       end
     end
 
-    def on_message(message)
-      match message,
-            (on Tick do
-              run_ready_timers
-              sleep_to first_timer
-            end),
-            (on ~Timer do |timer|
-              @timers.add timer
-              if @timers.size == 1
-                sleep_to timer
-              else
-                wakeup if timer == first_timer
-              end
-            end)
+    def tick
+      run_ready_timers
+      sleep_to first_timer
     end
+
+    def add_timer(timer)
+      @timers.add timer
+      if @timers.size == 1
+        sleep_to timer
+      else
+        wakeup if timer == first_timer
+      end
+    end
+
+    private
 
     def run_ready_timers
       while first_timer && first_timer.when <= Time.now
@@ -111,7 +111,7 @@ module Dynflow
           pill           = @sleeping_pill
           @sleeping_pill = Took
           @sleep_barrier.sleep pill.value
-          self << Tick
+          reference.tell(:tick)
         end
       end
     end
@@ -130,7 +130,7 @@ module Dynflow
       #     timer.apply
       #   end
       # else
-      self << timer
+      self.tell([:add_timer, timer])
       # end
     end
   end

@@ -3,23 +3,24 @@ module Dynflow
   # that we preffer here.
   class Actor < Concurrent::Actor::Context
 
-
-    StartTermination = Algebrick.type do
-      fields! terminated: Concurrent::IVar
-    end
-
     # Behaviour that watches for polite asking for termination
     # and calls corresponding method on the context to do so
     class PoliteTermination < Concurrent::Actor::Behaviour::Abstract
       def on_envelope(envelope)
-        if StartTermination === envelope.message
-          context.start_termination(envelope.message.terminated)
+        message, terminated_ivar = envelope
+        if :start_termination == message
+          context.start_termination(terminated_ivar)
           envelope.ivar.set true if !envelope.ivar.nil?
           Concurrent::Actor::Behaviour::MESSAGE_PROCESSED
         else
           pass envelope
         end
       end
+    end
+
+    def on_message(message)
+      target, *args = message
+      self.send(target, *args)
     end
 
     include Algebrick::Matching
