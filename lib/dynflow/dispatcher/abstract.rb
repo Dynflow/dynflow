@@ -1,8 +1,6 @@
 module Dynflow
   module Dispatcher
     class Abstract < Actor
-      include Algebrick::Matching
-
       def connector
         @world.connector
       end

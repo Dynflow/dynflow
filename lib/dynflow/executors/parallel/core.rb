@@ -2,7 +2,6 @@ module Dynflow
   module Executors
     class Parallel < Abstract
 
-      # TODO add dynflow error handling to avoid getting stuck and report errors to the future
       class Core < Actor
         attr_reader :logger
 

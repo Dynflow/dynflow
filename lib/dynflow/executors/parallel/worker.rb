@@ -2,7 +2,6 @@ module Dynflow
   module Executors
     class Parallel < Abstract
       class Worker < Actor
-        include Algebrick::Matching
 
         def initialize(pool, transaction_adapter)
           @pool                = Type! pool, Concurrent::Actor::Reference
