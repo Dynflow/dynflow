@@ -1,7 +1,17 @@
 module Dynflow
+
+  module MethodicActor
+    def on_message(message)
+      method, *args = message
+      self.send(method, *args)
+    end
+  end
+
   # Common parent for all the Dynflow actors defining some defaults
   # that we preffer here.
   class Actor < Concurrent::Actor::Context
+
+    include MethodicActor
 
     # Behaviour that watches for polite asking for termination
     # and calls corresponding method on the context to do so
@@ -16,11 +26,6 @@ module Dynflow
           pass envelope
         end
       end
-    end
-
-    def on_message(message)
-      target, *args = message
-      self.send(target, *args)
     end
 
     include Algebrick::Matching
