@@ -118,22 +118,22 @@ module Dynflow
     # @return [Concurrent::IVar] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
     def execute(execution_plan_id, done = Concurrent::IVar.new)
-      publish_job(Dispatcher::Execution[execution_plan_id], done, true)
+      publish_request(Dispatcher::Execution[execution_plan_id], done, true)
     end
 
     def event(execution_plan_id, step_id, event, done = Concurrent::IVar.new)
-      publish_job(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
+      publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
     end
 
     def ping(world_id, timeout, done = Concurrent::IVar.new)
-      publish_job(Dispatcher::Ping[world_id], done, false, timeout)
+      publish_request(Dispatcher::Ping[world_id], done, false, timeout)
     end
 
-    def publish_job(job, done, wait_for_accepted, timeout = nil)
+    def publish_request(request, done, wait_for_accepted, timeout = nil)
       accepted = Concurrent::IVar.new.with_observer do |_, value, reason|
         done.fail reason if reason
       end
-      client_dispatcher.ask([:publish_job, done, job, timeout], accepted)
+      client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
       accepted.wait if wait_for_accepted
       done
     rescue => e

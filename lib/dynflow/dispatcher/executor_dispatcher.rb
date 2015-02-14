@@ -32,7 +32,7 @@ module Dynflow
         respond(envelope, Failed[e.message])
       end
 
-      def perform_event(envelope, event_job)
+      def perform_event(envelope, event_request)
         future = Concurrent::IVar.new.with_observer do |_, _, reason|
           if reason
             respond(envelope, Failed[reason.message])
@@ -40,7 +40,7 @@ module Dynflow
             respond(envelope, Done)
           end
         end
-        @world.executor.event(event_job.execution_plan_id, event_job.step_id, event_job.event, future)
+        @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
       end
 
       def allocate_executor(execution_plan_id, client_world_id, request_id)

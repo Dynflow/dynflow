@@ -1,6 +1,6 @@
 module Dynflow
   module Dispatcher
-    Job = Algebrick.type do
+    Request = Algebrick.type do
       Event = type do
         fields! execution_plan_id: String,
                 step_id:           Fixnum,
@@ -16,10 +16,6 @@ module Dynflow
       end
 
       variants Event, Execution, Ping
-    end
-
-    Request = Algebrick.type do
-      variants Job
     end
 
     Response = Algebrick.type do
