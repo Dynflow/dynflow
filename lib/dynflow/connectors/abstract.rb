@@ -1,8 +1,6 @@
 module Dynflow
   module Connectors
     class Abstract
-      include Algebrick::TypeCheck
-
       def start_listening(world)
         raise NotImplementedError
       end

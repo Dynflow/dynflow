@@ -36,10 +36,6 @@ module Dynflow
               message: type { variants Request, Response }
     end
 
-    InvalidateAllocation = Algebrick.type do
-      fields! allocation: Persistence::ExecutorAllocation
-    end
-
     module Envelope
       def build_response_envelope(response_message, sender)
         Envelope[self.request_id,

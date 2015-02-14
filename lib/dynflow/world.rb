@@ -63,22 +63,20 @@ module Dynflow
     TriggerResult = Algebrick.type do
       # Returned by #trigger when planning fails.
       PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
-      # Returned by #trigger when planning is successful but execution fails to start.
-      ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
       # Returned by #trigger when planning is successful, #future will resolve after
       # ExecutionPlan is executed.
       Triggered       = type { fields! execution_plan_id: String, future: Concurrent::IVar }
 
-      variants PlaningFailed, ExecutionFailed, Triggered
+      variants PlaningFailed, Triggered
     end
 
     module TriggerResult
       def planned?
-        match self, PlaningFailed => false, ExecutionFailed => true, Triggered => true
+        match self, PlaningFailed => false, Triggered => true
       end
 
       def triggered?
-        match self, PlaningFailed => false, ExecutionFailed => false, Triggered => true
+        match self, PlaningFailed => false, Triggered => true
       end
 
       def id
