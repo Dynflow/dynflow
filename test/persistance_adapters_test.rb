@@ -4,7 +4,7 @@ require 'fileutils'
 module Dynflow
   module PersistenceAdapterTest
     def persistence
-      @persistence ||= Persistence.new(WorldInstance.create_world, adapter)
+      @persistence ||= Persistence.new(WorldFactory.create_world, adapter)
     end
 
     def adapter

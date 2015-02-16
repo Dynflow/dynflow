@@ -6,7 +6,7 @@ module Dynflow
 
       Example = Support::RescueExample
 
-      include WorldInstance
+      let(:world) { WorldFactory.create_world }
 
       def execute(*args)
         plan = world.plan(*args)
@@ -115,8 +115,8 @@ module Dynflow
 
       describe 'auto rescue' do
 
-        def world
-          @world ||= WorldInstance.create_world do |config|
+        let(:world) do
+          WorldFactory.create_world do |config|
             config.auto_rescue = true
           end
         end

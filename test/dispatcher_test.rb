@@ -4,17 +4,9 @@ module Dynflow
   module DispatcherTest
     describe "dispatcher" do
 
-      let(:persistence_adapter) { WorldInstance.persistence_adapter }
+      include WorldFactory::Helpers
 
-      def create_world(with_executor = true)
-        WorldInstance.create_world do |config|
-          config.connector = connector
-          config.persistence_adapter = persistence_adapter
-          unless with_executor
-            config.executor = false
-          end
-        end
-      end
+      let(:persistence_adapter) { WorldFactory.persistence_adapter }
 
       def self.dispatcher_works_with_this_connector
         describe 'connector basics' do

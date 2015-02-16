@@ -59,30 +59,10 @@ class TestPause
   end
 end
 
-module WorldInstance
-  def self.world
-    @world ||= create_world(false)
-  end
-
-  def self.logger_adapter
-    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, 4
-  end
-
-  # @param isolated [boolean] - if the adapter is not shared between two test runs: we clear
-  #   the worlrs register there every run to avoid collisions
-  def self.persistence_adapter(isolated = true)
-    db_config = if isolated
-                  db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
-                  @isolated_adapter ||= Dynflow::PersistenceAdapters::Sequel.new(db_config)
-                else
-                  Dynflow::PersistenceAdapters::Sequel.new('sqlite:/')
-                end
-  end
-
-  def self.create_world(isolated = nil)
-    isolated                   = true if isolated.nil?
+module WorldFactory
+  def self.test_world_config
     config                     = Dynflow::Config.new
-    config.persistence_adapter = persistence_adapter(isolated)
+    config.persistence_adapter = persistence_adapter
     config.logger_adapter      = logger_adapter
     config.auto_rescue         = false
     config.exit_on_terminate   = false
@@ -90,16 +70,32 @@ module WorldInstance
     config.auto_terminate      = false
     config.consistency_check   = false
     yield config if block_given?
-    Dynflow::World.new(config).tap do |world|
-      if isolated
-        @isolated_worlds ||= []
-        @isolated_worlds << world
-      end
+    return config
+  end
+
+  # The worlds created by this method are getting terminated after each test run
+  def self.create_world(&block)
+    Dynflow::World.new(test_world_config(&block)).tap do |world|
+      @worlds_to_terminate ||= []
+      @worlds_to_terminate << world
     end
   end
 
+  # This world survives though the whole run of the test suite: careful with it, it can
+  # introduce unnecessary test dependencies
+  def self.logger_adapter
+    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, 4
+  end
+
+  def self.persistence_adapter
+    @persistence_adapter ||= begin
+                               db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
+                               Dynflow::PersistenceAdapters::Sequel.new(db_config)
+                             end
+  end
+
   def self.clean_worlds_register
-    persistence_adapter = WorldInstance.persistence_adapter(true)
+    persistence_adapter = WorldFactory.persistence_adapter
     persistence_adapter.find_worlds({}).each do |w|
       warn "Unexpected world in the regiter: #{ w[:id] }"
       persistence_adapter.pull_envelopes(w[:id])
@@ -108,29 +104,35 @@ module WorldInstance
     end
   end
 
-  def self.terminate_isolated
-    return unless @isolated_worlds
-    @isolated_worlds.map(&:terminate).map(&:wait)
-    @isolated_worlds.clear
+  def self.terminate_worlds
+    return unless @worlds_to_terminate
+    @worlds_to_terminate.map(&:terminate).map(&:wait)
+    @worlds_to_terminate.clear
   end
 
-  def self.terminate_shared
-    @world.terminate.wait if @world
-    @world = nil
-  end
-
-  def world
-    WorldInstance.world
+  module Helpers
+    # allows to create the world inside the tests, using the `connector`
+    # and `persistence adapter` from the test context: usefull to create
+    # multi-world topology for a signle test
+    def create_world(with_executor = true)
+      WorldFactory.create_world do |config|
+        config.connector = connector
+        config.persistence_adapter = persistence_adapter
+        unless with_executor
+          config.executor = false
+        end
+      end
+    end
   end
 end
 
 class MiniTest::Test
   def setup
-    WorldInstance.clean_worlds_register
+    WorldFactory.clean_worlds_register
   end
 
   def teardown
-    WorldInstance.terminate_isolated
+    WorldFactory.terminate_worlds
   end
 end
 
@@ -143,10 +145,6 @@ end
 future_tests = -> do
   ivar_creations  = {}
   non_ready_ivars = {}
-
-  MiniTest.after_run do
-    WorldInstance.terminate_shared
-  end
 
   Concurrent::IVar.singleton_class.send :define_method, :new do |*args, &block|
     super(*args, &block).tap do |ivar|

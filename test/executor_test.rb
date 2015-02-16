@@ -7,7 +7,7 @@ module Dynflow
 
       include PlanAssertions
 
-      let(:world) { WorldInstance.world }
+      let(:world) { WorldFactory.create_world }
 
       let :issues_data do
         [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
@@ -639,7 +639,7 @@ module Dynflow
     end
 
     describe 'termination' do
-      let(:world) { WorldInstance.create_world }
+      let(:world) { WorldFactory.create_world }
 
       it 'waits for currently running actions' do
         $slow_actions_done = 0
