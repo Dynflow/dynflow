@@ -60,6 +60,11 @@ class TestPause
 end
 
 module WorldFactory
+
+  def self.created_worlds
+    @created_worlds ||= []
+  end
+
   def self.test_world_config
     config                     = Dynflow::Config.new
     config.persistence_adapter = persistence_adapter
@@ -76,8 +81,7 @@ module WorldFactory
   # The worlds created by this method are getting terminated after each test run
   def self.create_world(&block)
     Dynflow::World.new(test_world_config(&block)).tap do |world|
-      @worlds_to_terminate ||= []
-      @worlds_to_terminate << world
+      created_worlds << world
     end
   end
 
@@ -105,24 +109,68 @@ module WorldFactory
   end
 
   def self.terminate_worlds
-    return unless @worlds_to_terminate
-    @worlds_to_terminate.map(&:terminate).map(&:wait)
-    @worlds_to_terminate.clear
+    created_worlds.map(&:terminate).map(&:wait)
+    created_worlds.clear
   end
+end
 
-  module Helpers
-    # allows to create the world inside the tests, using the `connector`
-    # and `persistence adapter` from the test context: usefull to create
-    # multi-world topology for a signle test
-    def create_world(with_executor = true)
-      WorldFactory.create_world do |config|
-        config.connector = connector
-        config.persistence_adapter = persistence_adapter
-        unless with_executor
-          config.executor = false
-        end
+module TestHelpers
+  # allows to create the world inside the tests, using the `connector`
+  # and `persistence adapter` from the test context: usefull to create
+  # multi-world topology for a signle test
+  def create_world(with_executor = true)
+    WorldFactory.create_world do |config|
+      config.connector = connector
+      config.persistence_adapter = persistence_adapter
+      unless with_executor
+        config.executor = false
       end
     end
+  end
+
+  # waits for the passed block to return non-nil value and reiterates it while getting false
+  # (till some reasonable timeout). Useful for forcing the tests for some event to occur
+  def wait_for
+    30.times do
+      ret = yield
+      return ret if ret
+      sleep 0.3
+    end
+    return nil
+  end
+
+  # trigger an action, and keep it running while yielding the block
+  def while_executing
+    triggered = client_world.trigger(Support::DummyExample::EventedAction)
+    executor_info = wait_for do
+      if client_world.persistence.load_execution_plan(triggered.id).state == :running
+        client_world.persistence.find_executor_for_plan(triggered.id)
+      end
+    end
+    binding.pry unless executor_info
+    executor = WorldFactory.created_worlds.find { |e| e.id == executor_info.id }
+    yield executor
+    return triggered
+  end
+
+  # finish the plan triggered by the `while_executing` method
+  def finish_the_plan(triggered)
+    wait_for do
+      client_world.persistence.load_execution_plan(triggered.id).state == :running
+    end
+    client_world.event(triggered.id, 2, 'finish')
+    return triggered.finished.value
+  end
+
+  def assert_plan_reexecuted(plan)
+    assert_equal :stopped, plan.state
+    assert_equal :success, plan.result
+    assert_equal plan.execution_history.map(&:name),
+        ['start execution',
+         'terminate execution',
+         'start execution',
+         'finish execution']
+    refute_equal plan.execution_history.first.world_id, plan.execution_history.to_a.last.world_id
   end
 end
 

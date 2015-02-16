@@ -4,14 +4,15 @@ module Dynflow
   module DispatcherTest
     describe "dispatcher" do
 
-      include WorldFactory::Helpers
+      include TestHelpers
 
       let(:persistence_adapter) { WorldFactory.persistence_adapter }
 
       def self.dispatcher_works_with_this_connector
         describe 'connector basics' do
           before do
-            @executors = [executor_world]
+            # just mention the executor to initialize it
+            executor_world
           end
 
           describe 'execution passing' do
@@ -48,15 +49,6 @@ module Dynflow
             end
           end
         end
-
-        def wait_for
-          30.times do
-            ret = yield
-            return ret if ret
-            sleep 0.3
-          end
-          return nil
-        end
       end
 
       def self.supports_dynamic_retry
@@ -73,88 +65,6 @@ module Dynflow
           end
         end
 
-        def while_executing
-          triggered = client_world.trigger(Support::DummyExample::EventedAction)
-          executor_info = wait_for do
-            if client_world.persistence.load_execution_plan(triggered.id).state == :running
-              client_world.persistence.find_executor_for_plan(triggered.id)
-            end
-          end
-          executor = @executors.find { |e| e.id == executor_info.id }
-          yield executor
-          return triggered
-        end
-
-        def finish_the_plan(triggered)
-          wait_for do
-            client_world.persistence.load_execution_plan(triggered.id).state == :running
-          end
-          client_world.event(triggered.id, 2, 'finish')
-          return triggered.finished.value
-        end
-
-        def assert_plan_reexecuted(plan)
-          registered_worlds = client_world.persistence.find_worlds({})
-          terminated_executor = @executors.find { |e| registered_worlds.all? { |w| w.id != e.id } }
-          running_executor = @executors.find { |e| registered_worlds.any? { |w| w.id == e.id } }
-          assert_equal :stopped, plan.state
-          assert_equal :success, plan.result
-          assert_equal plan.execution_history.map { |h| [h.name, h.world_id] },
-              [['start execution', terminated_executor.id],
-               ['terminate execution', terminated_executor.id],
-               ['start execution', running_executor.id],
-               ['finish execution', running_executor.id]]
-        end
-      end
-
-      def self.supports_world_invalidation
-
-        describe 'world invalidation' do
-          it 'removes the world from the register' do
-            client_world.invalidate(executor_world.registered_world)
-            worlds = client_world.persistence.find_worlds({})
-            refute_includes(worlds, executor_world.registered_world)
-          end
-
-          it 'schedules the plans to be run on different executor' do
-            with_invalidation_while_executing(true) do |plan|
-              assert_plan_reexecuted(plan)
-            end
-          end
-
-          it 'when no executor is available, marks the plans as paused' do
-            executor_world_2.terminate.wait
-            with_invalidation_while_executing(false) do |plan|
-              assert_equal :paused, plan.state
-              assert_equal :pending, plan.result
-              assert_equal plan.execution_history.map { |h| [h.name, h.world_id] },
-                  [['start execution', executor_world.id],
-                   ['terminate execution', executor_world.id]]
-            end
-          end
-
-          def with_invalidation_while_executing(finish)
-            triggered = while_executing do |executor|
-              if Connectors::Direct === executor.connector
-                # for better simulation of invalidation with direct executor
-                executor.connector.stop_listening(executor)
-              end
-              client_world.invalidate(executor.registered_world)
-            end
-            plan = if finish
-                     finish_the_plan(triggered)
-                   else
-                     triggered.finished.wait
-                     client_world.persistence.load_execution_plan(triggered.id)
-                   end
-            yield plan
-          ensure
-            # just to workaround state transition checks due to our simulation
-            # of second world being inactive
-            plan.set_state(:running, true)
-            plan.save
-          end
-        end
       end
 
       def self.supports_ping_pong
@@ -203,7 +113,6 @@ module Dynflow
 
         dispatcher_works_with_this_connector
         supports_dynamic_retry
-        supports_world_invalidation
         supports_ping_pong
         handles_no_executor_available
       end
@@ -226,7 +135,6 @@ module Dynflow
 
         dispatcher_works_with_this_connector
         supports_dynamic_retry
-        supports_world_invalidation
         supports_ping_pong
         handles_no_executor_available
       end
