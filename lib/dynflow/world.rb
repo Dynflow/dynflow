@@ -5,24 +5,26 @@ module Dynflow
     include Algebrick::Matching
 
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-        :persistence, :transaction_adapter, :action_classes, :subscription_index, :logger_adapter,
+        :transaction_adapter, :logger_adapter, :coordination_adapter,
+        :persistence, :action_classes, :subscription_index,
         :middleware, :auto_rescue, :clock
 
     def initialize(config)
-      @id                  = SecureRandom.uuid
-      @clock               = Clock.spawn('clock')
-      config_for_world     = Config::ForWorld.new(config, self)
+      @id                   = SecureRandom.uuid
+      @clock                = Clock.spawn('clock')
+      config_for_world      = Config::ForWorld.new(config, self)
       config_for_world.validate
-      @logger_adapter      = config_for_world.logger_adapter
-      @transaction_adapter = config_for_world.transaction_adapter
-      @persistence         = Persistence.new(self, config_for_world.persistence_adapter)
-      @executor            = config_for_world.executor
-      @action_classes      = config_for_world.action_classes
-      @auto_rescue         = config_for_world.auto_rescue
-      @exit_on_terminate   = config_for_world.exit_on_terminate
-      @connector           = config_for_world.connector
-      @middleware          = Middleware::World.new
-      @client_dispatcher   = Dispatcher::ClientDispatcher.spawn("client-dispatcher", self)
+      @logger_adapter       = config_for_world.logger_adapter
+      @transaction_adapter  = config_for_world.transaction_adapter
+      @persistence          = Persistence.new(self, config_for_world.persistence_adapter)
+      @coordination_adapter = config_for_world.coordination_adapter
+      @executor             = config_for_world.executor
+      @action_classes       = config_for_world.action_classes
+      @auto_rescue          = config_for_world.auto_rescue
+      @exit_on_terminate    = config_for_world.exit_on_terminate
+      @connector            = config_for_world.connector
+      @middleware           = Middleware::World.new
+      @client_dispatcher    = Dispatcher::ClientDispatcher.spawn("client-dispatcher", self)
       calculate_subscription_index
 
       if executor
@@ -199,11 +201,17 @@ module Dynflow
     # Invalidate another world, that left some data in the runtime,
     # but it's not really running
     def invalidate(world)
-      old_allocations = persistence.find_executor_allocations(filters: { world_id: world.id } )
-      persistence.delete_world(world)
+      lock_request = CoordinationAdapters::WorldInvalidationLock.new(world)
+      coordination_adapter.lock(lock_request)
+      begin
+        old_allocations = persistence.find_executor_allocations(filters: { world_id: world.id } )
+        persistence.delete_world(world)
 
-      old_allocations.each do |allocation|
-        client_dispatcher.ask([:invalidate_allocation, allocation]).wait
+        old_allocations.each do |allocation|
+          client_dispatcher.ask([:invalidate_allocation, allocation]).wait
+        end
+      ensure
+        coordination_adapter.unlock(lock_request)
       end
     end
 

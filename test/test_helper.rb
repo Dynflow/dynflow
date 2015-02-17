@@ -59,6 +59,29 @@ class TestPause
   end
 end
 
+class CoordiationAdapterWithLog < Dynflow::CoordinationAdapters::Sequel
+  attr_reader :lock_log
+  def initialize(*args)
+    @lock_log = []
+    super
+  end
+
+  def lock(lock_request)
+    @lock_log << "lock #{lock_request.lock_id}"
+    super
+  end
+
+  def unlock(lock_request)
+    @lock_log << "unlock #{lock_request.lock_id}"
+    super
+  end
+
+  def unlock_all(world_id)
+    @lock_log << "unlock all for world #{world_id}"
+    super
+  end
+end
+
 module WorldFactory
 
   def self.created_worlds
@@ -66,14 +89,15 @@ module WorldFactory
   end
 
   def self.test_world_config
-    config                     = Dynflow::Config.new
-    config.persistence_adapter = persistence_adapter
-    config.logger_adapter      = logger_adapter
-    config.auto_rescue         = false
-    config.exit_on_terminate   = false
-    config.auto_execute        = false
-    config.auto_terminate      = false
-    config.consistency_check   = false
+    config                      = Dynflow::Config.new
+    config.persistence_adapter  = persistence_adapter
+    config.logger_adapter       = logger_adapter
+    config.coordination_adapter = coordination_adapter
+    config.auto_rescue          = false
+    config.exit_on_terminate    = false
+    config.auto_execute         = false
+    config.auto_terminate       = false
+    config.consistency_check    = false
     yield config if block_given?
     return config
   end
@@ -96,6 +120,10 @@ module WorldFactory
                                db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
                                Dynflow::PersistenceAdapters::Sequel.new(db_config)
                              end
+  end
+
+  def self.coordination_adapter
+    ->(world, _) { CoordiationAdapterWithLog.new(world) }
   end
 
   def self.clean_worlds_register
@@ -140,7 +168,7 @@ module TestHelpers
   end
 
   # trigger an action, and keep it running while yielding the block
-  def while_executing
+  def while_executing_plan
     triggered = client_world.trigger(Support::DummyExample::EventedAction)
     executor_info = wait_for do
       if client_world.persistence.load_execution_plan(triggered.id).state == :running
@@ -153,7 +181,7 @@ module TestHelpers
     return triggered
   end
 
-  # finish the plan triggered by the `while_executing` method
+  # finish the plan triggered by the `while_executing_plan` method
   def finish_the_plan(triggered)
     wait_for do
       client_world.persistence.load_execution_plan(triggered.id).state == :running
@@ -248,6 +276,29 @@ future_tests = -> do
   end
 
 end.call
+
+class ConcurrentRunTester
+  def initialize
+    @enter_ivar, @exit_ivar = Concurrent::IVar.new, Concurrent::IVar.new
+  end
+
+  def while_executing(&block)
+    @thread = Thread.new do
+      block.call(self)
+    end
+    @enter_ivar.wait(1)
+  end
+
+  def pause
+    @enter_ivar.set(true)
+    @exit_ivar.wait(1)
+  end
+
+  def finish
+    @exit_ivar.set(true)
+    @thread.join
+  end
+end
 
 module PlanAssertions
 

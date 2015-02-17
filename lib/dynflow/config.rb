@@ -53,6 +53,10 @@ module Dynflow
       PersistenceAdapters::Sequel.new('sqlite:/')
     end
 
+    config_attr :coordination_adapter, CoordinationAdapters::Abstract do |world|
+      CoordinationAdapters::Sequel.new(world)
+    end
+
     config_attr :pool_size, Fixnum do
       5
     end

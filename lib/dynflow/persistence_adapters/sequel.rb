@@ -32,6 +32,7 @@ module Dynflow
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     world:               %w(id executor),
                     envelope:            %w(receiver_id),
+                    lock:                %w(id world_id),
                     executor_allocation: %w(world_id execution_plan_id client_world_id request_id) }
 
       def initialize(config)
@@ -146,6 +147,20 @@ module Dynflow
         table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
+      def create_lock(lock_id, world_id)
+        table(:lock).insert(id: lock_id, world_id: world_id)
+      end
+
+      def delete_lock(lock_id)
+        table(:lock).where(id: lock_id).delete
+      end
+
+      def find_locks(options)
+        options = options.dup
+        data_set = filter(:lock, table(:lock), options)
+        return data_set.to_a
+      end
+
       def to_hash
         { execution_plans:      table(:execution_plan).all,
           steps:                table(:step).all,
@@ -162,6 +177,7 @@ module Dynflow
                  step:                :dynflow_steps,
                  world:               :dynflow_worlds,
                  envelope:            :dynflow_envelopes,
+                 lock:                :dynflow_locks,
                  executor_allocation: :dynflow_executor_allocations }
 
       def table(which)

@@ -59,7 +59,7 @@ module Dynflow
 
         describe 'when some executor is terminated and client is notified about the failure' do
           specify 'client passes the work to another executor' do
-            triggered = while_executing { |executor| executor.terminate.wait }
+            triggered = while_executing_plan { |executor| executor.terminate.wait }
             plan = finish_the_plan(triggered)
             assert_plan_reexecuted(plan)
           end
