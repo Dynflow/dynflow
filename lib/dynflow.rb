@@ -27,7 +27,7 @@ module Dynflow
   require 'dynflow/clock'
   require 'dynflow/stateful'
   require 'dynflow/transaction_adapters'
-  require 'dynflow/coordination_adapters'
+  require 'dynflow/coordinator'
   require 'dynflow/persistence'
   require 'dynflow/middleware'
   require 'dynflow/flows'

@@ -1,5 +1,5 @@
 module Dynflow
-  module CoordinationAdapters
+  module CoordinatorAdapters
     class Sequel < Abstract
       def initialize(world)
         super

@@ -1,5 +1,7 @@
+require 'dynflow/coordinator_adapters'
+
 module Dynflow
-  module CoordinationAdapters
+  class Coordinator
 
     class LockRequest
       # Bare minimum to be implemented to aquire the lock.
@@ -31,27 +33,32 @@ module Dynflow
       end
     end
 
-    class Abstract
-      include Algebrick::TypeCheck
+    attr_reader :adapter
 
-      def initialize(world)
-        Type! world, World
-        @world = world
-      end
+    def initialize(world, coordinator_adapter)
+      @world   = world
+      @adapter = coordinator_adapter
+    end
 
-      def lock(lock_request)
-        raise NotImplementedError
-      end
-
-      def unlock(lock_request)
-        raise NotImplementedError
-      end
-
-      # release all locks acquired by some world: needed for world
-      # invalidation: we don't want for it to hold the locks forever
-      def unlock_all(world_id)
-        raise NotImplementedError
+    def lock(lock_request, &block)
+      raise Errors::InactiveWorldError.new(@world) if @world.terminating?
+      adapter.lock(lock_request)
+      if block
+        begin
+          block.call
+        ensure
+          adapter.unlock(lock_request)
+        end
       end
     end
+
+    def unlock(lock_request)
+      adapter.unlock(lock_request)
+    end
+
+    def unlock_all(world_id)
+      adapter.unlock_all(world_id)
+    end
+
   end
 end

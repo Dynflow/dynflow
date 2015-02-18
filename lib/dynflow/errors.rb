@@ -25,6 +25,12 @@ module Dynflow
       end
     end
 
+    class InactiveWorldError < StandardError
+      def initialize(world)
+        super("The world #{world.id} is not active (terminating or terminated)")
+      end
+    end
+
     class PersistenceError < StandardError
       def self.delegate(original_exception)
         self.new("caused by #{original_exception.class}: #{original_exception.message}").tap do |e|

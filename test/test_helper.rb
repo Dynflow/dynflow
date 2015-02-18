@@ -59,7 +59,7 @@ class TestPause
   end
 end
 
-class CoordiationAdapterWithLog < Dynflow::CoordinationAdapters::Sequel
+class CoordiationAdapterWithLog < Dynflow::CoordinatorAdapters::Sequel
   attr_reader :lock_log
   def initialize(*args)
     @lock_log = []
@@ -92,7 +92,7 @@ module WorldFactory
     config                      = Dynflow::Config.new
     config.persistence_adapter  = persistence_adapter
     config.logger_adapter       = logger_adapter
-    config.coordination_adapter = coordination_adapter
+    config.coordinator_adapter = coordinator_adapter
     config.auto_rescue          = false
     config.exit_on_terminate    = false
     config.auto_execute         = false
@@ -122,7 +122,7 @@ module WorldFactory
                              end
   end
 
-  def self.coordination_adapter
+  def self.coordinator_adapter
     ->(world, _) { CoordiationAdapterWithLog.new(world) }
   end
 

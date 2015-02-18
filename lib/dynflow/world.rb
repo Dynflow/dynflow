@@ -5,7 +5,7 @@ module Dynflow
     include Algebrick::Matching
 
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-        :transaction_adapter, :logger_adapter, :coordination_adapter,
+        :transaction_adapter, :logger_adapter, :coordinator,
         :persistence, :action_classes, :subscription_index,
         :middleware, :auto_rescue, :clock
 
@@ -17,7 +17,7 @@ module Dynflow
       @logger_adapter       = config_for_world.logger_adapter
       @transaction_adapter  = config_for_world.transaction_adapter
       @persistence          = Persistence.new(self, config_for_world.persistence_adapter)
-      @coordination_adapter = config_for_world.coordination_adapter
+      @coordinator          = Coordinator.new(self, config_for_world.coordinator_adapter)
       @executor             = config_for_world.executor
       @action_classes       = config_for_world.action_classes
       @auto_rescue          = config_for_world.auto_rescue
@@ -106,10 +106,6 @@ module Dynflow
       end
     end
 
-    def require_executor!
-      raise 'Operation not permitted on a world without assigned executor' unless executor
-    end
-
     def plan(action_class, *args)
       ExecutionPlan.new(self).tap do |execution_plan|
         execution_plan.prepare(action_class)
@@ -182,6 +178,8 @@ module Dynflow
           client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
           client_dispatcher_terminated.wait
 
+          coordinator.unlock_all(registered_world.id)
+
           if @clock
             logger.info "start terminating clock..."
             clock.ask(:terminate!).wait
@@ -198,20 +196,20 @@ module Dynflow
       future
     end
 
+    def terminating?
+      defined?(@terminated)
+    end
+
     # Invalidate another world, that left some data in the runtime,
     # but it's not really running
     def invalidate(world)
-      lock_request = CoordinationAdapters::WorldInvalidationLock.new(world)
-      coordination_adapter.lock(lock_request)
-      begin
+      coordinator.lock(Coordinator::WorldInvalidationLock.new(world)) do
         old_allocations = persistence.find_executor_allocations(filters: { world_id: world.id } )
         persistence.delete_world(world)
 
         old_allocations.each do |allocation|
           client_dispatcher.ask([:invalidate_allocation, allocation]).wait
         end
-      ensure
-        coordination_adapter.unlock(lock_request)
       end
     end
 
@@ -250,7 +248,7 @@ module Dynflow
                           when :running
                             :paused
                           else
-                            raise
+                            raise "unexpected state #{ep.state}"
                           end
           ep.steps.values.each do |step|
             if [:suspended, :running].include?(step.state)
