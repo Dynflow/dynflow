@@ -7,23 +7,28 @@ module Dynflow
         Type! @sequel_adapter, PersistenceAdapters::Sequel
       end
 
-      def lock(lock_request)
+      def acquire(lock)
         begin
-          @sequel_adapter.create_lock(lock_request.lock_id, @world.id)
+          @sequel_adapter.save_lock(lock.to_hash)
         rescue ::Sequel::UniqueConstraintViolation
-          raise Errors::LockError.new(lock_request)
+          raise Errors::LockError.new(lock)
         end
       end
 
-      def unlock(lock_request)
-        @sequel_adapter.delete_lock(lock_request.lock_id)
+      def release(lock)
+        @sequel_adapter.delete_lock(lock.class.name, lock.id)
       end
 
-      def unlock_all(world_id)
-        @sequel_adapter.find_locks(world_id: world_id).map do |lock_info|
-          @sequel_adapter.delete_lock(lock_info[:id])
+      def release_by_owner(owner_id)
+        @sequel_adapter.find_locks(filters: {owner_id: owner_id}).map do |lock_info|
+          @sequel_adapter.delete_lock(lock_info[:class], lock_info[:id])
         end
       end
+
+      def find_locks(filter_options)
+        @sequel_adapter.find_locks(filters: filter_options)
+      end
+
     end
   end
 end

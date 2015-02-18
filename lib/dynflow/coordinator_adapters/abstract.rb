@@ -8,17 +8,21 @@ module Dynflow
         @world = world
       end
 
-      def lock(lock_request)
+      def acquire(lock)
         raise NotImplementedError
       end
 
-      def unlock(lock_request)
+      def release(lock)
         raise NotImplementedError
       end
 
       # release all locks acquired by some world: needed for world
       # invalidation: we don't want for it to hold the locks forever
-      def unlock_all(world_id)
+      def release_by_owner(owner_id)
+        raise NotImplementedError
+      end
+
+      def find_locks(filter_options)
         raise NotImplementedError
       end
     end

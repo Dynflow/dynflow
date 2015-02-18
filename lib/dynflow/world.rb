@@ -178,7 +178,7 @@ module Dynflow
           client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
           client_dispatcher_terminated.wait
 
-          coordinator.unlock_all(registered_world.id)
+          coordinator.release_by_owner(Coordinator::LockByWorld.new(registered_world).owner_id)
 
           if @clock
             logger.info "start terminating clock..."
@@ -203,7 +203,7 @@ module Dynflow
     # Invalidate another world, that left some data in the runtime,
     # but it's not really running
     def invalidate(world)
-      coordinator.lock(Coordinator::WorldInvalidationLock.new(world)) do
+      coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
         old_allocations = persistence.find_executor_allocations(filters: { world_id: world.id } )
         persistence.delete_world(world)
 

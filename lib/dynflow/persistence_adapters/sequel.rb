@@ -32,7 +32,7 @@ module Dynflow
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     world:               %w(id executor),
                     envelope:            %w(receiver_id),
-                    lock:                %w(id world_id),
+                    lock:                %w(id owner_id class),
                     executor_allocation: %w(world_id execution_plan_id client_world_id request_id) }
 
       def initialize(config)
@@ -147,18 +147,20 @@ module Dynflow
         table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
-      def create_lock(lock_id, world_id)
-        table(:lock).insert(id: lock_id, world_id: world_id)
+      def save_lock(value)
+        save :lock, {}, value
       end
 
-      def delete_lock(lock_id)
-        table(:lock).where(id: lock_id).delete
+      def delete_lock(class_name, lock_id)
+        table(:lock).where(class: class_name, id: lock_id).delete
       end
 
       def find_locks(options)
         options = options.dup
         data_set = filter(:lock, table(:lock), options)
-        return data_set.to_a
+        data_set.map do |record|
+          HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
+        end
       end
 
       def to_hash
@@ -295,6 +297,8 @@ module Dynflow
         attempts = 0
         begin
           yield
+        rescue ::Sequel::UniqueConstraintViolation => e
+          raise e
         rescue Exception => e
           attempts += 1
           log(:error, e)

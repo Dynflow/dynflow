@@ -66,18 +66,18 @@ class CoordiationAdapterWithLog < Dynflow::CoordinatorAdapters::Sequel
     super
   end
 
-  def lock(lock_request)
-    @lock_log << "lock #{lock_request.lock_id}"
+  def acquire(lock)
+    @lock_log << "lock #{lock.id}"
     super
   end
 
-  def unlock(lock_request)
-    @lock_log << "unlock #{lock_request.lock_id}"
+  def release(lock)
+    @lock_log << "unlock #{lock.id}"
     super
   end
 
-  def unlock_all(world_id)
-    @lock_log << "unlock all for world #{world_id}"
+  def release_by_owner(owner_id)
+    @lock_log << "unlock all for owner #{owner_id}"
     super
   end
 end
@@ -89,15 +89,15 @@ module WorldFactory
   end
 
   def self.test_world_config
-    config                      = Dynflow::Config.new
-    config.persistence_adapter  = persistence_adapter
-    config.logger_adapter       = logger_adapter
+    config                     = Dynflow::Config.new
+    config.persistence_adapter = persistence_adapter
+    config.logger_adapter      = logger_adapter
     config.coordinator_adapter = coordinator_adapter
-    config.auto_rescue          = false
-    config.exit_on_terminate    = false
-    config.auto_execute         = false
-    config.auto_terminate       = false
-    config.consistency_check    = false
+    config.auto_rescue         = false
+    config.exit_on_terminate   = false
+    config.auto_execute        = false
+    config.auto_terminate      = false
+    config.consistency_check   = false
     yield config if block_given?
     return config
   end

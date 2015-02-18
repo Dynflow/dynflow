@@ -1,8 +1,13 @@
 Sequel.migration do
   change do
     create_table(:dynflow_locks) do
-      column :id, String, primary_key: true
-      column :world_id, String, size: 36, fixed: true
+      column :id, String
+      column :class, String
+      primary_key [:id, :class]
+      index :class
+      column :owner_id, String
+      index :owner_id
+      column :data, String, text: true
     end
   end
 end
