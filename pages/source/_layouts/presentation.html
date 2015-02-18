@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ page.title }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link href="style.css" media="all" rel="stylesheet" type="text/css"/>
+    <link rel="icon" href="{{ page.favicon }}" type="image/x-icon">
+</head>
+<body>
+<script src="{{ page.remarkjs }}" type="text/javascript"></script>
+<script type="text/javascript">
+    var slideshow = remark.create({
+        sourceUrl: '{{ page.slides }}',
+        // Set the slideshow display ratio
+        ratio: '{{ page.screen_ratio }}',
+
+        // Navigation options
+        navigation: {
+            // Enable or disable navigating using scroll
+            // Default: true
+            // Alternatives: false
+            scroll: false,
+
+            // Enable or disable navigation using touch
+            // Default: true
+            // Alternatives: false
+            touch: true,
+
+            // Enable or disable navigation using click
+            // Default: false
+            // Alternatives: true
+            click: false
+        }
+    });
+    // slideshow.togglePresenterMode();
+</script>
+{% include google_analytics.html %}
+</body>
+</html>

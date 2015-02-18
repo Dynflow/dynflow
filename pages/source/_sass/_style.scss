@@ -1,0 +1,93 @@
+@import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+@import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700);
+@import url(http://fonts.googleapis.com/css?family=Droid+Sans:400,700);
+@import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic,700italic);
+
+//@import url(http://fonts.googleapis.com/css?family=Roboto:100:300:400);
+
+body {
+  padding-top: 70px;
+  padding-bottom: 30px;
+  background: rgb(238, 238, 238) url("/images/noise.png");
+}
+
+.label {
+  font-weight: 400;
+  /*font-family: Roboto, "Ubuntu Mono", monospace;*/
+}
+
+.red {
+  color: red;
+}
+
+.post-meta {
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid;
+  border-color: rgba(0, 39, 59, .08);
+}
+
+.post .sharing {
+  margin-top: 30px;
+  border-bottom: 2px solid;
+  border-color: rgba(0, 39, 59, .08);
+  padding-bottom: 10px;
+}
+
+#disqus_thread {
+  margin-top: 50px;
+}
+
+#big_logo {
+  text-align: center;
+  img {
+    padding: 10px;
+    padding-left: auto;
+    padding-right: auto;
+  }
+}
+
+.toc.well {
+  padding-left: 0;
+}
+
+.toc ul {
+  margin-bottom: 0;
+}
+
+pre {
+  font-size: $font-size-base;
+}
+
+
+//.page h1:after {
+//  padding-left: 0.3em;
+//  margin-right: -0.9em;
+//  color: #d5d5d5;
+//  content: "#";
+//}
+//
+//.page h2:after {
+//  padding-left: 0.3em;
+//  margin-right: -1.5em;
+//  color: #d5d5d5;
+//  content: "##";
+//}
+//
+//.page h3:after {
+//  padding-left: 0.3em;
+//  margin-right: -2em;
+//  color: #d5d5d5;
+//  content: "###";
+//}
+//
+//.page h4:after {
+//  padding-left: 0.3em;
+//  margin-right: -2.8em;
+//  color: #d5d5d5;
+//  content: "####";
+//}
+
+
+
+

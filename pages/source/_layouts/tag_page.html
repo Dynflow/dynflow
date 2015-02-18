@@ -1,0 +1,12 @@
+---
+layout: default
+---
+<h2>Tag: {{ page.tag }}</h2>
+
+{% for post in page.posts %}
+{% include post_item.html %}
+{% endfor %}
+
+<p id="tag-cloud">
+    All tags: {{ site | tag_cloud }}
+</p>
