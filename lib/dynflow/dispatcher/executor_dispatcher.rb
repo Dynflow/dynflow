@@ -15,10 +15,10 @@ module Dynflow
 
       def perform_execution(envelope, execution)
         future = Concurrent::IVar.new.with_observer do |_, plan, reason|
-          allocation = Persistence::ExecutorAllocation[@world.id, execution.execution_plan_id, envelope.sender_id, envelope.request_id]
-          @world.persistence.delete_executor_allocation(allocation)
+          execution_lock = Coordinator::ExecutionLock.new(@world, execution.execution_plan_id, envelope.sender_id, envelope.request_id)
+          @world.coordinator.release(execution_lock)
           if plan && plan.state == :running
-            @world.client_dispatcher.tell([:invalidate_allocation, allocation])
+            @world.client_dispatcher.tell([:invalidate_execution_lock, execution_lock])
           elsif reason
             respond(envelope, Failed[reason.message])
           else
@@ -44,12 +44,8 @@ module Dynflow
       end
 
       def allocate_executor(execution_plan_id, client_world_id, request_id)
-        @world.persistence.save_executor_allocation(Persistence::ExecutorAllocation[@world.id, execution_plan_id, client_world_id, request_id])
-      end
-
-      def find_executor(execution_plan_id)
-        @world.persistence.find_executor_for_plan(execution_plan_id) or
-            raise Dynflow::Error, "Could not find an executor for execution plan #{ execution_plan_id }"
+        execution_lock = Coordinator::ExecutionLock.new(@world, execution_plan_id, client_world_id, request_id)
+        @world.coordinator.acquire(execution_lock)
       end
     end
   end

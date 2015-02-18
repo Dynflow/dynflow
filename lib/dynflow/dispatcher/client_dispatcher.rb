@@ -38,15 +38,16 @@ module Dynflow
         end
       end
 
-      def invalidate_allocation(allocation)
-        plan = @world.persistence.load_execution_plan(allocation.execution_plan_id)
-        plan.execution_history.add('terminate execution', allocation.world_id)
+      def invalidate_execution_lock(execution_lock)
+        @world.coordinator.release(execution_lock)
+        plan = @world.persistence.load_execution_plan(execution_lock.execution_plan_id)
+        plan.execution_history.add('terminate execution', execution_lock.world_id)
         plan.update_state(:paused) unless plan.state == :paused
-        dispatch_request(Dispatcher::Execution[allocation.execution_plan_id],
-                         allocation.client_world_id,
-                         allocation.request_id)
+        dispatch_request(Dispatcher::Execution[execution_lock.execution_plan_id],
+                         execution_lock.client_world_id,
+                         execution_lock.request_id)
       rescue Errors::PersistenceError
-        log(Logger::ERROR, "failed to write data while invalidating allocation #{allocation}")
+        log(Logger::ERROR, "failed to write data while invalidating execution lock #{execution_lock}")
       end
 
       def timeout(request_id)
@@ -97,9 +98,10 @@ module Dynflow
       end
 
       def find_executor(execution_plan_id)
-        executor = @world.persistence.find_executor_for_plan(execution_plan_id)
-        if executor
-          executor.id
+        execution_lock = @world.coordinator.find_locks(class: Coordinator::ExecutionLock.name,
+                                                       id: "execution-plan:#{execution_plan_id}").first
+        if execution_lock
+          execution_lock.world_id
         else
           Dispatcher::UnknownWorld
         end

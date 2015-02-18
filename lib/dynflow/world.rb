@@ -178,7 +178,7 @@ module Dynflow
           client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
           client_dispatcher_terminated.wait
 
-          coordinator.release_by_owner(Coordinator::LockByWorld.new(registered_world).owner_id)
+          coordinator.release_by_owner("world:#{registered_world.id}")
 
           if @clock
             logger.info "start terminating clock..."
@@ -204,11 +204,12 @@ module Dynflow
     # but it's not really running
     def invalidate(world)
       coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
-        old_allocations = persistence.find_executor_allocations(filters: { world_id: world.id } )
+        old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
+                                                     owner_id: "world:#{world.id}")
         persistence.delete_world(world)
 
-        old_allocations.each do |allocation|
-          client_dispatcher.ask([:invalidate_allocation, allocation]).wait
+        old_execution_locks.each do |execution_lock|
+          client_dispatcher.ask([:invalidate_execution_lock, execution_lock]).wait
         end
       end
     end

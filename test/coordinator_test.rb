@@ -85,7 +85,7 @@ module Dynflow
               adapter.acquire(lock)
               tester.pause
             end
-            another_adapter.release_by_owner(Coordinator::LockByWorld.new(world).owner_id)
+            another_adapter.release_by_owner("world:#{world.id}")
             another_adapter.acquire(lock) # expected no error raised
             tester.finish
           end

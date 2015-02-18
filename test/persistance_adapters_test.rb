@@ -123,26 +123,6 @@ module Dynflow
       assert_equal [], persistence.find_worlds(filters: { id: world.id })
     end
 
-    def test_executor_allocations
-      prepare_plans
-      world = Persistence::RegisteredWorld['1234', true]
-      persistence.save_world(world)
-
-      executor_allocation = Persistence::ExecutorAllocation[world.id, 'plan1', 'client-world-id', 1]
-      persistence.save_executor_allocation(executor_allocation)
-      executor_allocation_2 = Persistence::ExecutorAllocation[world.id, 'plan2', 'client-world-id', 2]
-      persistence.save_executor_allocation(executor_allocation_2)
-
-      loaded_allocations = persistence.find_executor_allocations(filters: { execution_plan_id: 'plan1' } )
-      assert_equal [executor_allocation], loaded_allocations
-
-      loaded_allocations = persistence.find_executor_allocations(filters: { execution_plan_id: 'plan2' } )
-      assert_equal [executor_allocation_2], loaded_allocations
-
-      persistence.delete_world(world)
-      assert_equal [], persistence.find_executor_allocations(execution_plan_id: 'plan1')
-    end
-
     def test_envelopes
       client_world      = Persistence::RegisteredWorld['5678', false]
       executor_world    = Persistence::RegisteredWorld['1234', true]

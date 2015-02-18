@@ -131,7 +131,6 @@ module WorldFactory
     persistence_adapter.find_worlds({}).each do |w|
       warn "Unexpected world in the regiter: #{ w[:id] }"
       persistence_adapter.pull_envelopes(w[:id])
-      persistence_adapter.delete_executor_allocations(world_id: w[:id])
       persistence_adapter.delete_world(w[:id])
     end
   end
@@ -164,19 +163,19 @@ module TestHelpers
       return ret if ret
       sleep 0.3
     end
-    return nil
+    raise 'waiting for something to happend was not successful'
   end
 
   # trigger an action, and keep it running while yielding the block
   def while_executing_plan
     triggered = client_world.trigger(Support::DummyExample::EventedAction)
-    executor_info = wait_for do
+    executor_lock = wait_for do
       if client_world.persistence.load_execution_plan(triggered.id).state == :running
-        client_world.persistence.find_executor_for_plan(triggered.id)
+        client_world.coordinator.find_locks(class: Dynflow::Coordinator::ExecutionLock.name,
+                                            id: "execution-plan:#{triggered.id}").first
       end
     end
-    binding.pry unless executor_info
-    executor = WorldFactory.created_worlds.find { |e| e.id == executor_info.id }
+    executor = WorldFactory.created_worlds.find { |e| e.id == executor_lock.world_id }
     yield executor
     return triggered
   end

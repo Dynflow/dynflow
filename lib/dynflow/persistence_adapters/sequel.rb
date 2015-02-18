@@ -32,8 +32,7 @@ module Dynflow
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     world:               %w(id executor),
                     envelope:            %w(receiver_id),
-                    lock:                %w(id owner_id class),
-                    executor_allocation: %w(world_id execution_plan_id client_world_id request_id) }
+                    lock:                %w(id owner_id class) }
 
       def initialize(config)
         @db = initialize_db config
@@ -102,30 +101,6 @@ module Dynflow
         delete :world, { id: id }
       end
 
-      def save_executor_allocation(executor_allocation)
-        conditions = { world_id: executor_allocation.world_id,
-                       execution_plan_id: executor_allocation.execution_plan_id}
-        save :executor_allocation, conditions, executor_allocation
-      end
-
-      def find_executor_allocations(options)
-        options = options.dup
-        data_set = filter(:executor_allocation,
-                          order(:executor_allocation,
-                                paginate(table(:executor_allocation), options),
-                                options),
-                          options)
-
-
-        data_set.map do |record|
-          Persistence::ExecutorAllocation[record]
-        end
-      end
-
-      def delete_executor_allocations(options)
-        delete :executor_allocation, options
-      end
-
       def save_envelope(data)
         save :envelope, {}, data
       end
@@ -168,8 +143,7 @@ module Dynflow
           steps:                table(:step).all,
           actions:              table(:action).all,
           worlds:               table(:world).all,
-          envelopes:            table(:envelope).all,
-          executor_allocations: table(:executor_allocation).all}
+          envelopes:            table(:envelope).all }
       end
 
       private
@@ -179,8 +153,7 @@ module Dynflow
                  step:                :dynflow_steps,
                  world:               :dynflow_worlds,
                  envelope:            :dynflow_envelopes,
-                 lock:                :dynflow_locks,
-                 executor_allocation: :dynflow_executor_allocations }
+                 lock:                :dynflow_locks }
 
       def table(which)
         db[TABLES.fetch(which)]

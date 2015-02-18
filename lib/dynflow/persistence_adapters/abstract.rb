@@ -75,18 +75,6 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def save_executor_allocation(executor_allocation)
-        raise NotImplementedError
-      end
-
-      def find_executor_allocations(options)
-        raise NotImplementedError
-      end
-
-      def delete_executor_allocations(options)
-        raise NotImplementedError
-      end
-
       # for debug purposes
       def to_hash
         raise NotImplementedError
