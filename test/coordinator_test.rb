@@ -19,24 +19,20 @@ module Dynflow
           expected_locks = ["lock consistency-check"]
           world.coordinator.adapter.lock_log.must_equal(expected_locks)
         end
-      end
 
-      describe 'on termination' do
-        it 'removes all the locks assigned to the given world' do
-          world.coordinator.acquire(Coordinator::ConsistencyCheckLock.new(world))
-          world.terminate.wait
-          expected_locks = ["lock consistency-check", "unlock all for owner world:#{world.id}"]
-          world.coordinator.adapter.lock_log.must_equal(expected_locks)
+        it 'supports unlocking by owner' do
+          lock = Coordinator::ConsistencyCheckLock.new(world)
+          tester = ConcurrentRunTester.new
+          tester.while_executing do
+            world.coordinator.acquire(lock)
+            tester.pause
+          end
+          world.coordinator.release_by_owner("world:#{world.id}")
+          world.coordinator.acquire(lock) # expected no error raised
+          tester.finish
         end
 
-        it 'prevents new locks to be acquired by the world being terminated' do
-          world.terminate
-          -> do
-            world.coordinator.acquire(Coordinator::ConsistencyCheckLock.new(world))
-          end.must_raise(Errors::InactiveWorldError)
-        end
-
-        it ' deserializes the data from the adapter when searching for locks' do
+        it 'deserializes the data from the adapter when searching for locks' do
           lock = Coordinator::ConsistencyCheckLock.new(world)
           world.coordinator.acquire(lock)
           found_locks = world.coordinator.find_locks(owner_id: lock.owner_id)
@@ -50,6 +46,23 @@ module Dynflow
           another_lock = Coordinator::ConsistencyCheckLock.new(another_world)
           found_locks = world.coordinator.find_locks(owner_id: another_lock.owner_id)
           found_locks.size.must_equal 0
+        end
+      end
+
+      describe 'on termination' do
+        it 'removes all the locks assigned to the given world' do
+          world.coordinator.acquire(Coordinator::ConsistencyCheckLock.new(world))
+          another_world.coordinator.acquire Coordinator::WorldInvalidationLock.new(another_world, another_world)
+          world.terminate.wait
+          expected_locks = ["lock consistency-check", "unlock consistency-check"]
+          world.coordinator.adapter.lock_log.must_equal(expected_locks)
+        end
+
+        it 'prevents new locks to be acquired by the world being terminated' do
+          world.terminate
+          -> do
+            world.coordinator.acquire(Coordinator::ConsistencyCheckLock.new(world))
+          end.must_raise(Errors::InactiveWorldError)
         end
       end
 
@@ -75,18 +88,6 @@ module Dynflow
               tester.pause
             end
             another_adapter.acquire(another_lock) # expected no error raised
-            tester.finish
-          end
-
-          it 'allows unlocking all locks acquired by some world' do
-            lock = Coordinator::ConsistencyCheckLock.new(world)
-            tester = ConcurrentRunTester.new
-            tester.while_executing do
-              adapter.acquire(lock)
-              tester.pause
-            end
-            another_adapter.release_by_owner("world:#{world.id}")
-            another_adapter.acquire(lock) # expected no error raised
             tester.finish
           end
 

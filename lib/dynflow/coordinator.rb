@@ -139,7 +139,7 @@ module Dynflow
     end
 
     def release_by_owner(owner_id)
-      adapter.release_by_owner(owner_id)
+      find_locks(owner_id: owner_id).map { |lock| release(lock) }
     end
 
     def find_locks(filter_options)
