@@ -80,7 +80,17 @@ module Dynflow
     class ExecutorWorld < Record
       def initialize(world)
         super
-        @data[:id] = world.id
+        @data[:id]     = world.id
+        self.active    = !world.terminating?
+      end
+
+      def active?
+        @data[:active]
+      end
+
+      def active=(value)
+        Type! value, Algebrick::Types::Boolean
+        @data[:active] = value
       end
     end
 
@@ -145,10 +155,10 @@ module Dynflow
       end
     end
 
-    class ConsistencyCheckLock < LockByWorld
+    class AutoExecuteLock < LockByWorld
       def initialize(*args)
         super
-        @data[:id] = "consistency-check"
+        @data[:id] = "auto-execute"
       end
     end
 
@@ -218,6 +228,11 @@ module Dynflow
       adapter.create_record(record)
     end
 
+    def update_record(record)
+      Type! record, Record
+      adapter.update_record(record)
+    end
+
     def delete_record(record)
       Type! record, Record
       adapter.delete_record(record)
@@ -229,12 +244,30 @@ module Dynflow
       end
     end
 
-    def find_worlds(executor_only = false, filters = {})
+    def find_worlds(active_executor_only = false, filters = {})
       ret = find_records(filters.merge(class: Coordinator::ExecutorWorld.name))
-      unless executor_only
+      if active_executor_only
+        ret = ret.select(&:active?)
+      else
         ret.concat(find_records(filters.merge(class: Coordinator::ClientWorld.name)))
       end
       ret
+    end
+
+    def register_world(world)
+      Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
+      create_record(world)
+    end
+
+    def delete_world(world)
+      Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
+      delete_record(world)
+    end
+
+    def deactivate_world(world)
+      Type! world, Coordinator::ExecutorWorld
+      world.active = false
+      update_record(world)
     end
   end
 end

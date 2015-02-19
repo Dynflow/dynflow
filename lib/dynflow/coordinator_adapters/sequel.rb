@@ -8,9 +8,13 @@ module Dynflow
       end
 
       def create_record(record)
-        @sequel_adapter.save_coordinator_record(record.to_hash)
+        @sequel_adapter.insert_coordinator_record(record.to_hash)
       rescue ::Sequel::UniqueConstraintViolation
         raise Coordinator::DuplicateRecordError.new(record)
+      end
+
+      def update_record(record)
+        @sequel_adapter.update_coordinator_record(record.class.name, record.id, record.to_hash)
       end
 
       def delete_record(record)

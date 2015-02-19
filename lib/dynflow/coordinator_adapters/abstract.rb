@@ -8,19 +8,11 @@ module Dynflow
         @world = world
       end
 
-      def acquire(lock)
-        raise NotImplementedError
-      end
-
-      def release(lock)
-        raise NotImplementedError
-      end
-
-      def find_locks(filter_options)
-        raise NotImplementedError
-      end
-
       def create_record(record)
+        raise NotImplementedError
+      end
+
+      def update_record(record)
         raise NotImplementedError
       end
 

@@ -31,12 +31,12 @@ module Dynflow
         @executor_dispatcher = Dispatcher::ExecutorDispatcher.spawn("executor-dispatcher", self)
         executor.initialized.wait
       end
-      coordinator.create_record(registered_world)
+      coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
 
       at_exit { self.terminate.wait } if config_for_world.auto_terminate
       self.consistency_check if config_for_world.consistency_check
-      self.execute_planned_execution_plans if config_for_world.auto_execute
+      self.auto_execute if config_for_world.auto_execute
     end
 
     def registered_world
@@ -160,38 +160,43 @@ module Dynflow
     def terminate(future = Concurrent::IVar.new)
       @termination_barrier.synchronize do
         @terminated ||= Concurrent::Promise.execute do
-          # TODO: refactory once we can chain futures (probably after migrating
-          #       to concurrent-ruby promises
-          coordinator.delete_record(registered_world)
+          begin
+            # TODO: refactory once we can chain futures (probably after migrating
+            #       to concurrent-ruby promises
 
-          logger.info "stop listening for new events..."
-          listening_stopped     = connector.stop_listening(self)
-          listening_stopped.wait
+            coordinator.deactivate_world(registered_world) if executor
+            logger.info "stop listening for new events..."
+            listening_stopped     = connector.stop_listening(self)
+            listening_stopped.wait
 
-          if executor
-            logger.info "start terminating executor..."
-            executor.terminate.wait
+            if executor
+              logger.info "start terminating executor..."
+              executor.terminate.wait
 
-            logger.info "start terminating executor dispatcher..."
-            executor_dispatcher.ask(:terminate!).wait
-          end
+              logger.info "start terminating executor dispatcher..."
+              executor_dispatcher.ask(:terminate!).wait
+            end
 
 
-          logger.info "start terminating client dispatcher..."
-          client_dispatcher_terminated = Concurrent::IVar.new
-          client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
-          client_dispatcher_terminated.wait
+            logger.info "start terminating client dispatcher..."
+            client_dispatcher_terminated = Concurrent::IVar.new
+            client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
+            client_dispatcher_terminated.wait
 
-          coordinator.release_by_owner("world:#{registered_world.id}")
+            if @clock
+              logger.info "start terminating clock..."
+              clock.ask(:terminate!).wait
+            end
 
-          if @clock
-            logger.info "start terminating clock..."
-            clock.ask(:terminate!).wait
-          end
+            connector.terminate
 
-          connector.terminate
-          if @exit_on_terminate
-            Kernel.exit
+            coordinator.release_by_owner("world:#{registered_world.id}")
+            coordinator.delete_world(registered_world)
+            if @exit_on_terminate
+              Kernel.exit
+            end
+          rescue => e
+            logger.fatal(e)
           end
         end
       end
@@ -211,67 +216,50 @@ module Dynflow
       coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
         old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
                                                      owner_id: "world:#{world.id}")
-        coordinator.delete_record(world)
+
+        coordinator.deactivate_world(world)
 
         old_execution_locks.each do |execution_lock|
-          client_dispatcher.ask([:invalidate_execution_lock, execution_lock]).wait
+          invalidate_execution_lock(execution_lock)
         end
+
+        coordinator.delete_world(world)
       end
     end
 
-    # Detects execution plans that are marked as running but no executor
-    # handles them (probably result of non-standard executor termination)
-    #
-    # The current implementation expects no execution_plan being actually run
-    # by the executor.
-    #
-    # TODO: persist the running executors in the system, so that we can detect
-    # the orphaned execution plans. The register should be managable by the
-    # console, so that the administrator can unregister dead executors when needed.
-    # After the executor is unregistered, the consistency check should be performed
-    # to fix the orphaned plans as well.
-    def consistency_check
-      abnormal_execution_plans =
-          self.persistence.find_execution_plans filters: { 'state' => %w(planning running) }
-      if abnormal_execution_plans.empty?
-        logger.info 'Clean start.'
-      else
-        format_str = '%36s %10s %10s'
-        message    = ['Abnormal execution plans, process was probably killed.',
-                      'Following ExecutionPlans will be set to paused, ',
-                      'it should be fixed manually by administrator.',
-                      (format format_str, 'ExecutionPlan', 'state', 'result'),
-                      *(abnormal_execution_plans.map do |ep|
-                        format format_str, ep.id, ep.state, ep.result
-                      end)]
+    def invalidate_execution_lock(execution_lock)
+      plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
+      plan.execution_history.add('terminate execution', execution_lock.world_id)
 
-        logger.error message.join("\n")
-
-        abnormal_execution_plans.each do |ep|
-          ep.update_state case ep.state
-                          when :planning
-                            :stopped
-                          when :running
-                            :paused
-                          else
-                            raise "unexpected state #{ep.state}"
-                          end
-          ep.steps.values.each do |step|
-            if [:suspended, :running].include?(step.state)
-              step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
-              step.state = :error
-              step.save
-            end
-          end
+      plan.steps.values.each do |step|
+        if step.state == :running
+          step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
+          step.state = :error
+          step.save
         end
       end
+
+      plan.update_state(:paused) unless plan.state == :paused
+      plan.save
+      coordinator.release(execution_lock)
+      unless plan.error?
+        client_dispatcher.tell([:dispatch_request,
+                                Dispatcher::Execution[execution_lock.execution_plan_id],
+                                execution_lock.client_world_id,
+                                execution_lock.request_id])
+      end
+    rescue Errors::PersistenceError
+      logger.error "failed to write data while invalidating execution lock #{execution_lock}"
     end
 
-    # should be called after World is initialized, SimpleWorld does it automatically
-    def execute_planned_execution_plans
-      planned_execution_plans =
-          self.persistence.find_execution_plans filters: { 'state' => %w(planned) }
-      planned_execution_plans.each { |ep| execute ep.id }
+    # executes plans that are planned/paused and haven't reported any error yet (usually when no executor
+    # was available by the time of planning or terminating)
+    def auto_execute
+      coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
+        planned_execution_plans =
+            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => 'pending' }
+        planned_execution_plans.each { |ep| execute ep.id }
+      end
     end
 
     private

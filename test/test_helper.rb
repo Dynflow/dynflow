@@ -160,16 +160,29 @@ module TestHelpers
     raise 'waiting for something to happend was not successful'
   end
 
+  def executor_id_for_plan(execution_plan_id)
+    if lock = client_world.coordinator.find_locks(class: Dynflow::Coordinator::ExecutionLock.name,
+                                                  id: "execution-plan:#{execution_plan_id}").first
+      lock.world_id
+    end
+  end
+
+  def trigger_waiting_action
+    triggered = client_world.trigger(Support::DummyExample::EventedAction)
+    wait_for { executor_id_for_plan(triggered.id) } # waiting for the plan to be picked by an executor
+    triggered
+  end
+
   # trigger an action, and keep it running while yielding the block
   def while_executing_plan
-    triggered = client_world.trigger(Support::DummyExample::EventedAction)
-    executor_lock = wait_for do
-      if client_world.persistence.load_execution_plan(triggered.id).state == :running
-        client_world.coordinator.find_locks(class: Dynflow::Coordinator::ExecutionLock.name,
-                                            id: "execution-plan:#{triggered.id}").first
-      end
+    triggered = trigger_waiting_action
+
+    executor_id = wait_for do
+      executor_id_for_plan(triggered.id)
     end
-    executor = WorldFactory.created_worlds.find { |e| e.id == executor_lock.world_id }
+
+    executor  = WorldFactory.created_worlds.find { |e| e.id == executor_id }
+    raise "Could not find an executor with id #{executor_id}" unless executor
     yield executor
     return triggered
   end
@@ -259,7 +272,7 @@ future_tests = -> do
   end
 
   # time out all futures by default
-  default_timeout = 1000000000
+  default_timeout = 8
   wait_method     = Concurrent::IVar.instance_method(:wait)
 
   Concurrent::IVar.class_eval do

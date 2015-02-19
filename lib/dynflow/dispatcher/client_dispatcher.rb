@@ -38,18 +38,6 @@ module Dynflow
         end
       end
 
-      def invalidate_execution_lock(execution_lock)
-        @world.coordinator.release(execution_lock)
-        plan = @world.persistence.load_execution_plan(execution_lock.execution_plan_id)
-        plan.execution_history.add('terminate execution', execution_lock.world_id)
-        plan.update_state(:paused) unless plan.state == :paused
-        dispatch_request(Dispatcher::Execution[execution_lock.execution_plan_id],
-                         execution_lock.client_world_id,
-                         execution_lock.request_id)
-      rescue Errors::PersistenceError
-        log(Logger::ERROR, "failed to write data while invalidating execution lock #{execution_lock}")
-      end
-
       def timeout(request_id)
         resolve_tracked_request(request_id, Dynflow::Error.new("Request timeout"))
       end
@@ -60,8 +48,6 @@ module Dynflow
         @tracked_requests.clear
         finish_termination
       end
-
-      private
 
       def dispatch_request(request, client_world_id, request_id)
         executor_id = match request,
@@ -82,6 +68,8 @@ module Dynflow
       rescue => e
         respond(request, Failed[e.message])
       end
+
+      private
 
       def dispatch_response(envelope)
         return unless @tracked_requests.key?(envelope.request_id)

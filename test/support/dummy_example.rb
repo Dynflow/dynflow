@@ -6,6 +6,10 @@ module Support
       def run; end
     end
 
+    class FailingDummy < Dynflow::Action
+      def run; raise 'error'; end
+    end
+
     class Slow < Dynflow::Action
       def plan(seconds)
         sequence do

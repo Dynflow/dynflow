@@ -16,13 +16,15 @@ module Dynflow
       def perform_execution(envelope, execution)
         future = Concurrent::IVar.new.with_observer do |_, plan, reason|
           execution_lock = Coordinator::ExecutionLock.new(@world, execution.execution_plan_id, envelope.sender_id, envelope.request_id)
-          @world.coordinator.release(execution_lock)
           if plan && plan.state == :running
-            @world.client_dispatcher.tell([:invalidate_execution_lock, execution_lock])
-          elsif reason
-            respond(envelope, Failed[reason.message])
+            @world.invalidate_execution_lock(execution_lock)
           else
-            respond(envelope, Done)
+            @world.coordinator.release(execution_lock)
+            if reason
+              respond(envelope, Failed[reason.message])
+            else
+              respond(envelope, Done)
+            end
           end
         end
         allocate_executor(execution.execution_plan_id, envelope.sender_id, envelope.request_id)

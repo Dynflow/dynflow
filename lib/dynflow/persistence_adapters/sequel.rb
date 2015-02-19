@@ -100,8 +100,12 @@ module Dynflow
         table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
-      def save_coordinator_record(value)
+      def insert_coordinator_record(value)
         save :coordinator_record, {}, value
+      end
+
+      def update_coordinator_record(class_name, record_id, value)
+        save :coordinator_record, {class: class_name, :id => record_id}, value
       end
 
       def delete_coordinator_record(class_name, record_id)
