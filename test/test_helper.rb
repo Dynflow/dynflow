@@ -121,12 +121,11 @@ module WorldFactory
     ->(world, _) { CoordiationAdapterWithLog.new(world) }
   end
 
-  def self.clean_worlds_register
+  def self.clean_coordinator_records
     persistence_adapter = WorldFactory.persistence_adapter
-    persistence_adapter.find_worlds({}).each do |w|
-      warn "Unexpected world in the regiter: #{ w[:id] }"
-      persistence_adapter.pull_envelopes(w[:id])
-      persistence_adapter.delete_world(w[:id])
+    persistence_adapter.find_coordinator_records({}).each do |w|
+      warn "Unexpected coordinator record: #{ w }"
+      persistence_adapter.delete_coordinator_record(w[:class], w[:id])
     end
   end
 
@@ -198,7 +197,7 @@ end
 
 class MiniTest::Test
   def setup
-    WorldFactory.clean_worlds_register
+    WorldFactory.clean_coordinator_records
   end
 
   def teardown

@@ -49,28 +49,6 @@ module Dynflow
       adapter.save_step(step.execution_plan_id, step.id, step.to_hash)
     end
 
-    RegisteredWorld = Algebrick.type do
-      fields! id:       String,
-              executor: type { variants TrueClass, FalseClass }
-    end
-
-    def find_worlds(options)
-      adapter.find_worlds(options)
-    end
-
-    def save_world(world)
-      Type! world, RegisteredWorld
-      adapter.save_world(world.id, world.to_hash)
-    end
-
-    def delete_world(world)
-      Type! world, RegisteredWorld
-      adapter.transaction do
-        pull_envelopes(world.id)
-        adapter.delete_world(world.id)
-      end
-    end
-
     def push_envelope(envelope)
       Type! envelope, Dispatcher::Envelope
       adapter.push_envelope(envelope)

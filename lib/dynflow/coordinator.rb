@@ -65,7 +65,29 @@ module Dynflow
       end
 
       def to_s
-        "#{self.class.name}: #{id} by #{owner_id}"
+        "#{self.class.name}: #{id}"
+      end
+
+      def ==(other_object)
+        self.class == other_object.class && self.id == other_object.id
+      end
+
+      def hash
+        [self.class, self.id].hash
+      end
+    end
+
+    class ExecutorWorld < Record
+      def initialize(world)
+        super
+        @data[:id] = world.id
+      end
+    end
+
+    class ClientWorld < Record
+      def initialize(world)
+        super
+        @data[:id] = world.id
       end
     end
 
@@ -91,6 +113,10 @@ module Dynflow
         super
         raise "Can't acquire the lock after deserialization" if @from_hash
         Type! owner_id, String
+      end
+
+      def to_s
+        "#{self.class.name}: #{id} by #{owner_id}"
       end
     end
 
@@ -153,8 +179,7 @@ module Dynflow
 
     attr_reader :adapter
 
-    def initialize(world, coordinator_adapter)
-      @world   = world
+    def initialize(coordinator_adapter)
       @adapter = coordinator_adapter
     end
 
@@ -202,6 +227,14 @@ module Dynflow
       adapter.find_records(filter).map do |record_data|
         Record.from_hash(record_data)
       end
+    end
+
+    def find_worlds(executor_only = false, filters = {})
+      ret = find_records(filters.merge(class: Coordinator::ExecutorWorld.name))
+      unless executor_only
+        ret.concat(find_records(filters.merge(class: Coordinator::ClientWorld.name)))
+      end
+      ret
     end
   end
 end

@@ -17,7 +17,7 @@ module Dynflow
       @logger_adapter       = config_for_world.logger_adapter
       @transaction_adapter  = config_for_world.transaction_adapter
       @persistence          = Persistence.new(self, config_for_world.persistence_adapter)
-      @coordinator          = Coordinator.new(self, config_for_world.coordinator_adapter)
+      @coordinator          = Coordinator.new(config_for_world.coordinator_adapter)
       @executor             = config_for_world.executor
       @action_classes       = config_for_world.action_classes
       @auto_rescue          = config_for_world.auto_rescue
@@ -31,7 +31,7 @@ module Dynflow
         @executor_dispatcher = Dispatcher::ExecutorDispatcher.spawn("executor-dispatcher", self)
         executor.initialized.wait
       end
-      persistence.save_world(registered_world)
+      coordinator.create_record(registered_world)
       @termination_barrier = Mutex.new
 
       at_exit { self.terminate.wait } if config_for_world.auto_terminate
@@ -40,7 +40,11 @@ module Dynflow
     end
 
     def registered_world
-      Persistence::RegisteredWorld[id, !!executor]
+      if executor
+        Coordinator::ExecutorWorld.new(self)
+      else
+        Coordinator::ClientWorld.new(self)
+      end
     end
 
     def logger
@@ -158,7 +162,7 @@ module Dynflow
         @terminated ||= Concurrent::Promise.execute do
           # TODO: refactory once we can chain futures (probably after migrating
           #       to concurrent-ruby promises
-          persistence.delete_world(registered_world)
+          coordinator.delete_record(registered_world)
 
           logger.info "stop listening for new events..."
           listening_stopped     = connector.stop_listening(self)
@@ -203,10 +207,11 @@ module Dynflow
     # Invalidate another world, that left some data in the runtime,
     # but it's not really running
     def invalidate(world)
+      Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
       coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
         old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
                                                      owner_id: "world:#{world.id}")
-        persistence.delete_world(world)
+        coordinator.delete_record(world)
 
         old_execution_locks.each do |execution_lock|
           client_dispatcher.ask([:invalidate_execution_lock, execution_lock]).wait

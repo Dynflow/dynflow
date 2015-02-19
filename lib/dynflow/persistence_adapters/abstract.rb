@@ -63,18 +63,6 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def find_worlds(options)
-        raise NotImplementedError
-      end
-
-      def save_world(id, data)
-        raise NotImplementedError
-      end
-
-      def delete_world(id)
-        raise NotImplementedError
-      end
-
       # for debug purposes
       def to_hash
         raise NotImplementedError

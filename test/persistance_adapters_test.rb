@@ -106,40 +106,21 @@ module Dynflow
       adapter.save_execution_plan('plan1', nil)
     end
 
-    def test_world
-      world = Persistence::RegisteredWorld['1234', true]
-      world_2 = Persistence::RegisteredWorld['4567', true]
-      world_3 = Persistence::RegisteredWorld['8910', false]
-      persistence.save_world(world)
-      persistence.save_world(world_2)
-      persistence.save_world(world_3)
-      loaded_world = persistence.find_worlds(filters: { id: world.id }).first
-      assert_equal loaded_world, world
-      assert_equal [world],
-                   persistence.find_worlds(order_by: :id, filters: { executor: true }, per_page: 1)
-      assert_equal [world_2],
-                   persistence.find_worlds(order_by: :id, filters: { executor: true }, per_page: 1, :desc => true)
-      persistence.delete_world(world)
-      assert_equal [], persistence.find_worlds(filters: { id: world.id })
-    end
-
     def test_envelopes
-      client_world      = Persistence::RegisteredWorld['5678', false]
-      executor_world    = Persistence::RegisteredWorld['1234', true]
-      [executor_world, client_world].each { |w| persistence.save_world(w) }
-      executor_envelope = Dispatcher::Envelope[123, client_world.id, executor_world.id, Dispatcher::Execution['111']]
-      client_envelope   = Dispatcher::Envelope[123, executor_world.id, client_world.id, Dispatcher::Accepted]
+      client_world_id   = '5678'
+      executor_world_id = '1234'
+      executor_envelope = Dispatcher::Envelope[123, client_world_id, executor_world_id, Dispatcher::Execution['111']]
+      client_envelope   = Dispatcher::Envelope[123, executor_world_id, client_world_id, Dispatcher::Accepted]
       envelopes         = [client_envelope, executor_envelope]
 
       envelopes.each { |e| persistence.push_envelope(e) }
 
-      assert_equal [executor_envelope], persistence.pull_envelopes(executor_world.id)
-      assert_equal [client_envelope],   persistence.pull_envelopes(client_world.id)
-      assert_equal [], persistence.pull_envelopes(client_world.id)
-      assert_equal [], persistence.pull_envelopes(executor_world.id)
+      assert_equal [executor_envelope], persistence.pull_envelopes(executor_world_id)
+      assert_equal [client_envelope],   persistence.pull_envelopes(client_world_id)
+      assert_equal [], persistence.pull_envelopes(client_world_id)
+      assert_equal [], persistence.pull_envelopes(executor_world_id)
 
       envelopes.each { |e| persistence.push_envelope(e) }
-      [executor_world, client_world].each { |w| persistence.delete_world(w) }
     end
   end
 

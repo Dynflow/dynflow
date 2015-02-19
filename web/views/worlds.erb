@@ -12,7 +12,7 @@
 <% @worlds.each do |world| %>
   <tr>
     <td><%= h(world.id) %></td>
-    <td><%= h(world.executor) %></td>
+    <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
     <td>
       <a href="<%= url("/worlds/#{world.id}/ping") %>" class="postlink">ping</a>
       <% if world.id == params[:inactive_world_id] %>

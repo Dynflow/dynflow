@@ -131,7 +131,7 @@ module Dynflow
         end
 
         def any_executor
-          executors = @world.persistence.find_worlds(:filters => { :executor => true }, :order_by => :id)
+          executors = @world.coordinator.find_worlds(true)
           @round_robin_counter += 1
           if executors.any?
             @round_robin_counter %= executors.size

@@ -30,7 +30,6 @@ module Dynflow
       META_DATA = { execution_plan:      %w(state result started_at ended_at real_time execution_time),
                     action:              [],
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
-                    world:               %w(id executor),
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class) }
 
@@ -80,27 +79,6 @@ module Dynflow
         save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value
       end
 
-      def find_worlds(options)
-        data_set = filter(:world,
-                          order(:world,
-                                paginate(table(:world),
-                                         options),
-                                options),
-                          options)
-
-        data_set.map do |record|
-          Persistence::RegisteredWorld[record]
-        end
-      end
-
-      def save_world(id, value)
-        save :world, { id: id }, value
-      end
-
-      def delete_world(id)
-        delete :world, { id: id }
-      end
-
       def save_envelope(data)
         save :envelope, {}, data
       end
@@ -142,7 +120,6 @@ module Dynflow
         { execution_plans:      table(:execution_plan).all,
           steps:                table(:step).all,
           actions:              table(:action).all,
-          worlds:               table(:world).all,
           envelopes:            table(:envelope).all }
       end
 
@@ -151,7 +128,6 @@ module Dynflow
       TABLES = { execution_plan:      :dynflow_execution_plans,
                  action:              :dynflow_actions,
                  step:                :dynflow_steps,
-                 world:               :dynflow_worlds,
                  envelope:            :dynflow_envelopes,
                  coordinator_record:  :dynflow_coordinator_records }
 
@@ -217,7 +193,7 @@ module Dynflow
         match value,
               (on Hash do
                  value         = value.with_indifferent_access
-                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
+                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
                end),
               (on Algebrick::Value do
                  meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k.to_sym] }
