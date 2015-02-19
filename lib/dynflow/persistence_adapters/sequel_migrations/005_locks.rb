@@ -1,6 +1,6 @@
 Sequel.migration do
   change do
-    create_table(:dynflow_locks) do
+    create_table(:dynflow_coordinator_records) do
       column :id, String
       column :class, String
       primary_key [:id, :class]
@@ -11,3 +11,4 @@ Sequel.migration do
     end
   end
 end
+

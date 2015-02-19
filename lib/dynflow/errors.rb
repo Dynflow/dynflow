@@ -38,14 +38,5 @@ module Dynflow
         end
       end
     end
-
-    class LockError < Dynflow::Error
-      attr_reader :lock_request
-
-      def initialize(lock_request)
-        @lock_request = lock_request
-        super("Unable to acquire lock #{lock_request}")
-      end
-    end
   end
 end

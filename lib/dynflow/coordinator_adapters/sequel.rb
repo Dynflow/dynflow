@@ -7,22 +7,19 @@ module Dynflow
         Type! @sequel_adapter, PersistenceAdapters::Sequel
       end
 
-      def acquire(lock)
-        begin
-          @sequel_adapter.save_lock(lock.to_hash)
-        rescue ::Sequel::UniqueConstraintViolation
-          raise Errors::LockError.new(lock)
-        end
+      def create_record(record)
+        @sequel_adapter.save_coordinator_record(record.to_hash)
+      rescue ::Sequel::UniqueConstraintViolation
+        raise Coordinator::DuplicateRecordError.new(record)
       end
 
-      def release(lock)
-        @sequel_adapter.delete_lock(lock.class.name, lock.id)
+      def delete_record(record)
+        @sequel_adapter.delete_coordinator_record(record.class.name, record.id)
       end
 
-      def find_locks(filter_options)
-        @sequel_adapter.find_locks(filters: filter_options)
+      def find_records(filter_options)
+        @sequel_adapter.find_coordinator_records(filters: filter_options)
       end
-
     end
   end
 end

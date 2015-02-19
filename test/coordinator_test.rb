@@ -66,45 +66,45 @@ module Dynflow
         end
       end
 
-      def self.it_supports_locking
-        describe 'locking' do
-          it 'prevents acquiring a lock while there is the same id already taken' do
-            lock = Coordinator::ConsistencyCheckLock.new(world)
+      def self.it_supports_global_records
+        describe 'records handling' do
+          it 'prevents saving the same record twice' do
+            record = Coordinator::ConsistencyCheckLock.new(world)
             tester = ConcurrentRunTester.new
             tester.while_executing do
-              adapter.acquire(lock)
+              adapter.create_record(record)
               tester.pause
             end
-            -> { another_adapter.acquire(lock) }.must_raise(Errors::LockError)
+            -> { another_adapter.create_record(record) }.must_raise(Coordinator::DuplicateRecordError)
             tester.finish
           end
 
-          it 'allows acquiring different types of locks' do
-            lock = Coordinator::ConsistencyCheckLock.new(world)
-            another_lock = Coordinator::WorldInvalidationLock.new(world, another_world)
+          it 'allows saving different records' do
+            record = Coordinator::ConsistencyCheckLock.new(world)
+            another_record = Coordinator::WorldInvalidationLock.new(world, another_world)
             tester = ConcurrentRunTester.new
             tester.while_executing do
-              adapter.acquire(lock)
+              adapter.create_record(record)
               tester.pause
             end
-            another_adapter.acquire(another_lock) # expected no error raised
+            another_adapter.create_record(another_record) # expected no error raised
             tester.finish
           end
 
-          it 'allows searching for the locks on various criteria' do
+          it 'allows searching for the records on various criteria' do
             lock = Coordinator::ConsistencyCheckLock.new(world)
-            adapter.acquire(lock)
-            found_locks = adapter.find_locks(owner_id: lock.owner_id)
-            found_locks.size.must_equal 1
-            found_locks.first.must_equal lock.data
+            adapter.create_record(lock)
+            found_records = adapter.find_records(owner_id: lock.owner_id)
+            found_records.size.must_equal 1
+            found_records.first.must_equal lock.data
 
-            found_locks = adapter.find_locks(class: lock.class.name, id: lock.id)
-            found_locks.size.must_equal 1
-            found_locks.first.must_equal lock.data
+            found_records = adapter.find_records(class: lock.class.name, id: lock.id)
+            found_records.size.must_equal 1
+            found_records.first.must_equal lock.data
 
             another_lock = Coordinator::ConsistencyCheckLock.new(another_world)
-            found_locks = adapter.find_locks(owner_id: another_lock.owner_id)
-            found_locks.size.must_equal 0
+            found_records = adapter.find_records(owner_id: another_lock.owner_id)
+            found_records.size.must_equal 0
           end
         end
       end
@@ -112,7 +112,7 @@ module Dynflow
       describe CoordinatorAdapters::Sequel do
         let(:adapter) { CoordinatorAdapters::Sequel.new(world) }
         let(:another_adapter) { CoordinatorAdapters::Sequel.new(another_world) }
-        it_supports_locking
+        it_supports_global_records
       end
     end
   end

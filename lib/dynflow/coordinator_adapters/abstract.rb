@@ -19,6 +19,18 @@ module Dynflow
       def find_locks(filter_options)
         raise NotImplementedError
       end
+
+      def create_record(record)
+        raise NotImplementedError
+      end
+
+      def delete_record(record)
+        raise NotImplementedError
+      end
+
+      def find_records(record)
+        raise NotImplementedError
+      end
     end
   end
 end

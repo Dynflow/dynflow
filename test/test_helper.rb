@@ -66,18 +66,13 @@ class CoordiationAdapterWithLog < Dynflow::CoordinatorAdapters::Sequel
     super
   end
 
-  def acquire(lock)
-    @lock_log << "lock #{lock.id}"
+  def create_record(record)
+    @lock_log << "lock #{record.id}" if record.is_a? Dynflow::Coordinator::Lock
     super
   end
 
-  def release(lock)
-    @lock_log << "unlock #{lock.id}"
-    super
-  end
-
-  def release_by_owner(owner_id)
-    @lock_log << "unlock all for owner #{owner_id}"
+  def delete_record(record)
+    @lock_log << "unlock #{record.id}" if record.is_a? Dynflow::Coordinator::Lock
     super
   end
 end
@@ -265,7 +260,7 @@ future_tests = -> do
   end
 
   # time out all futures by default
-  default_timeout = 8
+  default_timeout = 1000000000
   wait_method     = Concurrent::IVar.instance_method(:wait)
 
   Concurrent::IVar.class_eval do

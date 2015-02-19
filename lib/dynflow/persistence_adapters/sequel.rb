@@ -32,7 +32,7 @@ module Dynflow
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     world:               %w(id executor),
                     envelope:            %w(receiver_id),
-                    lock:                %w(id owner_id class) }
+                    coordinator_record:  %w(id owner_id class) }
 
       def initialize(config)
         @db = initialize_db config
@@ -122,17 +122,17 @@ module Dynflow
         table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
-      def save_lock(value)
-        save :lock, {}, value
+      def save_coordinator_record(value)
+        save :coordinator_record, {}, value
       end
 
-      def delete_lock(class_name, lock_id)
-        table(:lock).where(class: class_name, id: lock_id).delete
+      def delete_coordinator_record(class_name, record_id)
+        table(:coordinator_record).where(class: class_name, id: record_id).delete
       end
 
-      def find_locks(options)
+      def find_coordinator_records(options)
         options = options.dup
-        data_set = filter(:lock, table(:lock), options)
+        data_set = filter(:coordinator_record, table(:coordinator_record), options)
         data_set.map do |record|
           HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
         end
@@ -153,7 +153,7 @@ module Dynflow
                  step:                :dynflow_steps,
                  world:               :dynflow_worlds,
                  envelope:            :dynflow_envelopes,
-                 lock:                :dynflow_locks }
+                 coordinator_record:  :dynflow_coordinator_records }
 
       def table(which)
         db[TABLES.fetch(which)]
