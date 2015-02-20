@@ -48,7 +48,7 @@ body {
 }
 
 .toc.well {
-//  padding-left: 0;
+  //  padding-left: 0;
   h4 {
     margin-top: 0;
   }
@@ -73,8 +73,13 @@ body {
   }
 }
 
-.toc ul {
-  margin-bottom: 0;
+.toc {
+  ul {
+    margin-bottom: 0;
+  }
+  li {
+//    list-style: decimal;
+  }
 }
 
 pre {
@@ -112,6 +117,20 @@ h2 {
 }
 
 h3.nocount:before {
+  content: none;
+  counter-increment: none;
+}
+
+h3 {
+  counter-reset: h4counter;
+}
+
+.countheads ~ h4:before {
+  content: counter(h2counter) "." counter(h3counter) "." counter(h4counter) ".\0000a0\0000a0";
+  counter-increment: h4counter;
+}
+
+h4.nocount:before {
   content: none;
   counter-increment: none;
 }

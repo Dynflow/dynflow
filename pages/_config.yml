@@ -1,6 +1,6 @@
 ---
 name: Dynflow
-url: http://blog.pitr.ch # TODO
+url: http://dynflow.github.io
 markdown: redcarpet
 highlighter: pygments
 
@@ -17,7 +17,7 @@ permalink: /blog/:year/:month/:day/:title/
 
 disqus_short_name: pitr-ch
 twitter_user: pitr_ch
-google_analytics_tracking_id: asd # TODO
+google_analytics_tracking_id: "" # TODO
 
 sass:
   sass_dir: _sass

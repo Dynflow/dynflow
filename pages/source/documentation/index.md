@@ -3,23 +3,44 @@ layout: page
 title: Documentation
 countheads: true
 toc: true
+comments: true
 ---
 
 ## High level overview
 
-*TODO*
+*TODO to be refined*
+
+Dynflow (**DYN**amic work**FLOW**) is a workflow engine
+written in Ruby that allows to:
+
+-   Keep track of the progress of running processes
+-   Run the code asynchronously
+-   Resume the process when something goes wrong, skip some steps when needed
+-   Detect independent parts and run them concurrently
+-   Compose simple actions into more complex scenarios
+-   Extend the workflows from third-party libraries
+-   Keep consistency between local transactional database and
+    external services
+-   Suspend the long-running steps, not blocking the thread pool
+-   Cancel steps when possible
+-   Extend the actions behavior with middlewares
+-   Pick different adapters to provide: storage backend, transactions, or executor implementation
+
+Dynflow has been developed to be able to support orchestration of services in the
+[Katello](http://katello.org) and [Foreman](http://theforeman.org/) projects.
+
 
 ## Glossary
 
 *TODO to be refined*
 
--   **Action** - building block for the workflows: a Ruby class inherited from
-    `Dynflow::Action`. Defines code to be run in plan/run/finalize phase. It has
-    defined input and output data.
+-   **Action** - building block of execution plans, a Ruby class inherited
+    from `Dynflow::Action`, defines code to be run in each phase. 
+-   **Phase** - Each action has three phases: `plan`, `run`, `finalize`.
+-   **Input/Output** - Each action has one. It's a `Hash` of data which is persisted.
 -   **Execution plan** - definition of the workflow: product of the plan phase
 -   **Triggering an action** - entering the plan phase, starting with the plan
     method of the action. The execution follows immediately.
--   **Phase** - (plan step, run step, finalize step).
 -   **Flow** - definition of the run/finalize phase, holding the information
     about steps that can run concurrently/in sequence. Part of execution plan.
 -   **Executor** - service that executes the run and finalize flows based on
@@ -40,8 +61,8 @@ toc: true
 -   Action anatomy
     -   input/output
 -   ~~Actions composition~~
-    -   ~~subscribe/plugins~~
--   Suspending
+-   ~~subscribe/plugins~~
+-   ~~Suspending~~
 -   Polling action
 -   Phases
 -   Console
@@ -116,7 +137,7 @@ class Action < Dynflow::Action
 end
 ```
 
-## Actions composition
+### Action composition
 
 Dynflow is designed to allow easy composition of small building blocks
 called `Action`s. Typically there are actions composing smaller pieces 
@@ -211,6 +232,88 @@ Subscription is designed for extension by plugins, it should **not** be used
 inside a single library/app-module. It would make the process definition 
 hard to follow (all subscribed actions would need to be looked up).
 
+### Suspending
+
+Sometimes action represents tasks taken in different services, 
+(e.g. repository synchronization in [Pulp](http://www.pulpproject.org/)).
+Dynflow tries not to waste computer resources so it offers tools to free 
+threads to work on other actions while waiting on external tasks or events.
+
+Dynflow allows actions to suspend and be woken up on external events. 
+Lets create a simulation of an external service before showing the example
+of suspending action.
+
+```ruby
+class AnExternalService
+  def start_synchronization(report_to)
+    Thread.new do
+      sleep 1
+      report_to << :done
+    end
+  end
+end
+```
+
+The `AnExternalService` can be invoked to `start_synchronization` and it will
+report back a second later to action passed in argument `report_to`. It sends
+event `:done` back by `<<` method.
+
+Lets look at an action example.
+
+```ruby
+class AnAction < Dynflow::Action
+  EXTERNAL_SERVICE = AnExternalService.new
+
+  def plan
+    plan_self
+  end
+
+  def run(event)
+    case event
+    when nil # first run
+      suspend do |suspended_action| 
+        EXTERNAL_SERVICE.start_synchronization suspended_action 
+      end
+    when :done # external task is done
+      output.update success: true
+      # let the run phase finish normally
+    else
+      raise 'unknown event'
+    end
+  end
+end
+```
+Which is then executed as follows:
+
+1.  `AnAction` is triggered 
+1.  It's planned.
+1.  Its `run` phase begins.
+1.  `run` method is invoked with no event (`nil`).
+1.  Matches with case branch initiating the external synchronization.
+1.  Action initializes the synchronization and pass in reference
+    to suspended_action.
+1.  Action is suspended, execution of the run method finishes immediately
+    after `suspend` is called, its block parameter is evaluated right after
+    suspending.
+1.  Action is kept on memory to be woken up when events are received but it does not 
+    block any threads.
+1.  Action receives `:done` event through suspend action reference.
+1.  `run` method is executed again with `:done` event.
+1.  Output is updated with `success: true` and actions finishes `run` phase.
+1.  There is no `finalize` phase, action is done.
+ 
+This event mechanism is quite flexible, it can be used for example to build a 
+[polling action abstraction](https://github.com/Dynflow/dynflow/blob/master/lib/dynflow/action/polling.rb)
+which is a topic for next chapter.
+
+### Polling
+
+Not all services support callbacks to be registered which would allow to wake up suspended
+actions only once at the end when the external task is finished. In that case we often 
+need to poll the service to see if the task is still running or finished.
+
+*TODO*
+
 ## How it works
 
 ### To be added
@@ -227,3 +330,7 @@ hard to follow (all subscribed actions would need to be looked up).
 
 -   Embedded without a DB, like inside CLI tool for a complex installation
 -   reserve resources in planning do not try to do `if`s in run phase
+
+## Comments
+
+**Comments are temporally turned on here for faster feedback.**

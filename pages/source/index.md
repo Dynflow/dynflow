@@ -2,6 +2,7 @@
 layout: page
 title: About
 skip-title: true
+sharing: true
 ---
 
 <div id="big_logo" class="well"><img src="/images/logo-flat.png"></div>
@@ -34,13 +35,20 @@ Dynflow has been developed to be able to support orchestration of services in th
 
 ## Getting started
 
-
 ### Requirements
 
 -   Ruby MRI 1.9.3, 2.0, or 2.1.
 -   JRuby and Rubinius support is on the way.
 
+### Installation
+
+`gem install dynflow`
+
 *TODO*
+
+## Links
+
+-   [Github](https://github.com/dynflow/dynflow)
 
 ## Current status
 
