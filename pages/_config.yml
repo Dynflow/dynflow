@@ -1,0 +1,29 @@
+---
+name: Dynflow
+url: http://dynflow.github.io
+markdown: redcarpet
+highlighter: pygments
+
+source:       ./source
+destination:  ./public
+plugins:      ./plugins
+include:
+- .nojekyll
+
+tag_page_layout: tag_page
+tag_page_dir: tag
+
+permalink: /blog/:year/:month/:day/:title/
+
+disqus_short_name: pitr-ch
+twitter_user: pitr_ch
+google_analytics_tracking_id: "" # TODO
+
+sass:
+  sass_dir: _sass
+  
+redcarpet:
+  extensions: 
+    - with_toc_data
+    - html_toc
+    - strikethrough

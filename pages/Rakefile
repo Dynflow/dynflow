@@ -1,0 +1,15 @@
+require 'rubygems'
+require 'rake'
+
+root = File.dirname __FILE__
+
+desc 'push to Github'
+task :publish do
+  Dir.chdir(root) do
+    system 'jekyll build'
+    Dir.chdir(root + '/public') do
+      system 'git ac -m Update'
+      system 'git push'
+    end
+  end
+end
