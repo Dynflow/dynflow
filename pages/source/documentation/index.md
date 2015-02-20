@@ -59,12 +59,12 @@ Dynflow has been developed to be able to support orchestration of services in th
     -   for keeping consistency between local database and external systems
     -   sub-tasks
 -   Action anatomy
-    -   input/output
+    -   Input/Output
+-   Phases
 -   ~~Actions composition~~
 -   ~~subscribe/plugins~~
 -   ~~Suspending~~
 -   Polling action
--   Phases
 -   Console
 -   Testing
 -   Error handling

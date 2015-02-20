@@ -1,5 +1,6 @@
 ---
 name: Dynflow
+title: Dynflow
 url: http://dynflow.github.io
 markdown: redcarpet
 highlighter: pygments
@@ -15,7 +16,7 @@ tag_page_dir: tag
 
 permalink: /blog/:year/:month/:day/:title/
 
-disqus_short_name: pitr-ch
+disqus_short_name: dynflow
 twitter_user: pitr_ch
 google_analytics_tracking_id: "" # TODO
 
