@@ -1,15 +1,17 @@
 ---
 layout: page
 title: Documentation
+countheads: true
+toc: true
 ---
-
-{{ page.content | fancytoc }}
 
 ## High level overview
 
 *TODO*
 
 ## Glossary
+
+*TODO to be refined*
 
 -   **Action** - building block for the workflows: a Ruby class inherited from
     `Dynflow::Action`. Defines code to be run in plan/run/finalize phase. It has
@@ -37,8 +39,8 @@ title: Documentation
     -   sub-tasks
 -   Action anatomy
     -   input/output
--   Actions composition
-    -   subscribe/plugins
+-   ~~Actions composition~~
+    -   ~~subscribe/plugins~~
 -   Suspending
 -   Polling action
 -   Phases
@@ -53,6 +55,11 @@ title: Documentation
     -   as current user
 
 ### Action anatomy
+
+*TODO to be refined*
+
+-   input/output
+-   it's kind a dirty function
 
 ```ruby
 # every action needs to inherit from Dynflow::Action
@@ -145,8 +152,64 @@ by plugins. For that there are subscriptions.
 `Actions` can subscribe from a plugin, gem, any other library to already
 loaded `Actions`, doing so they extend the planning process with self.
 
--   *TODO example*
--   *TODO* WARN designed for plugins not for internal use
+Lets look at an example starting by definition of a core action
+
+```ruby
+# This action can be extended without doing any 
+# other steps to support it.
+class ACoreAppAction < Dynflow::Action
+  def plan(arguments)
+    plan_self(args: arguments)
+    plan_action(AnotherCoreAppAction, arguments.first)
+  end
+
+  def run
+    puts "Running core action: #{input[:args]}"
+    self.output.update success: true
+  end
+end
+```
+
+followed by an action definition defined in a plugin/gem/etc.
+
+```ruby
+class APluginAction < Dynflow::Action
+  # plan this action whenever ACoreAppAction action is planned
+  def self.subscribe
+    ACoreAppAction
+  end
+
+  def plan(arguments)
+    arguments # are same as in ACoreAppAction#plan
+    plan_self(args: arguments)
+  end
+
+  def run
+    puts "Running plugin action: #{input[:args]}"
+  end
+end
+```
+
+Subscribed actions are planned with same arguments as action they are
+subscribing to which is called `trigger`. Their plan method is called right
+after planning of the triggering action finishes.
+
+It's also possible to access target action and use its output which 
+makes it dependent (running in sequence) on triggering action.
+
+```ruby
+def plan(arguments)
+  plan_self trigger_success: trigger.output[:success]
+end
+
+def run
+  self.output.update 'trigger succeeded' if self.input[:trigger_success]
+end
+```
+
+Subscription is designed for extension by plugins, it should **not** be used
+inside a single library/app-module. It would make the process definition 
+hard to follow (all subscribed actions would need to be looked up).
 
 ## How it works
 
@@ -160,5 +223,7 @@ loaded `Actions`, doing so they extend the planning process with self.
 
 ## Use cases
 
--   Embeded without a DB
--   *TODO*
+*TODO*
+
+-   Embedded without a DB, like inside CLI tool for a complex installation
+-   reserve resources in planning do not try to do `if`s in run phase

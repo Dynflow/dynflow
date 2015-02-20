@@ -7,7 +7,12 @@ module Jekyll
       converter  = Redcarpet::Markdown.new(Redcarpet::Render::HTML_TOC, extensions)
       toc        = converter.render(input)
 
-      '<div class="toc well">' + toc + '</div>' unless toc.empty?
+      <<-HTML unless toc.empty?
+        <div class="toc well" data-spy="affix" data-offset-top="0" data-offset-bottom="0">
+          <h4>Table of content</h4
+          #{toc}
+        </div>
+      HTML
     end
   end
 end

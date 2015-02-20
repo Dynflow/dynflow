@@ -48,7 +48,29 @@ body {
 }
 
 .toc.well {
-  padding-left: 0;
+//  padding-left: 0;
+  h4 {
+    margin-top: 0;
+  }
+
+  @media(min-width: $screen-md) {
+    &.affix {
+      width: 293px;
+    }
+  }
+  @media(min-width: $screen-lg) {
+    &.affix {
+      width: 360px;
+    }
+  }
+}
+
+@media(max-width: ($screen-md - 1)) {
+  .affix {
+    position: static;
+    width: auto;
+    top: 0;
+  }
 }
 
 .toc ul {
@@ -59,35 +81,37 @@ pre {
   font-size: $font-size-base;
 }
 
+/* Switch numbering on by adding class "countheads" to h1 */
+/* Prevent numbering for a single heading via class "nocount" */
 
-//.page h1:after {
-//  padding-left: 0.3em;
-//  margin-right: -0.9em;
-//  color: #d5d5d5;
-//  content: "#";
-//}
-//
-//.page h2:after {
-//  padding-left: 0.3em;
-//  margin-right: -1.5em;
-//  color: #d5d5d5;
-//  content: "##";
-//}
-//
-//.page h3:after {
-//  padding-left: 0.3em;
-//  margin-right: -2em;
-//  color: #d5d5d5;
-//  content: "###";
-//}
-//
-//.page h4:after {
-//  padding-left: 0.3em;
-//  margin-right: -2.8em;
-//  color: #d5d5d5;
-//  content: "####";
-//}
+body {
+  counter-reset: h2counter;
+}
 
+h1 {
+  counter-reset: h2counter;
+}
 
+.countheads ~ h2:before {
+  content: counter(h2counter) ".\0000a0\0000a0";
+  counter-increment: h2counter;
+}
 
+h2.nocount:before {
+  content: none;
+  counter-increment: none;
+}
 
+h2 {
+  counter-reset: h3counter;
+}
+
+.countheads ~ h3:before {
+  content: counter(h2counter) "." counter(h3counter) ".\0000a0\0000a0";
+  counter-increment: h3counter;
+}
+
+h3.nocount:before {
+  content: none;
+  counter-increment: none;
+}
