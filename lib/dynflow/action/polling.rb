@@ -16,6 +16,7 @@ module Dynflow
       else
         raise "unrecognized event #{event}"
       end
+      done? ? on_finish : suspend_and_ping
     end
 
     def done?
@@ -28,6 +29,9 @@ module Dynflow
 
     def poll_external_task
       raise NotImplementedError
+    end
+
+    def on_finish
     end
 
     # External task data. It should return nil when the task has not
@@ -68,7 +72,6 @@ module Dynflow
 
     def initiate_external_action
       self.external_task = invoke_external_task
-      suspend_and_ping unless done?
     end
 
     def resume_external_action
@@ -85,21 +88,19 @@ module Dynflow
       poll_attempts[:total] += 1
       self.external_task = poll_external_task
       poll_attempts[:failed] = 0
-      suspend_and_ping unless done?
     rescue => error
       poll_attempts[:failed] += 1
-      rescue_poll_external_task(error)
+      rescue_external_task(error)
     end
 
     def poll_attempts
       output[:poll_attempts] ||= { total: 0, failed: 0 }
     end
 
-    def rescue_poll_external_task(error)
+    def rescue_external_task(error)
       if poll_attempts[:failed] < poll_max_retries
         action_logger.warn("Polling failed, attempt no. #{poll_attempts[:failed]}, retrying in #{poll_interval}")
         action_logger.warn(error)
-        suspend_and_ping
       else
         raise error
       end
