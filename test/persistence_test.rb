@@ -178,7 +178,7 @@ module Dynflow
           plans = prepare_plans
 
           plans.each do |original|
-            stored = adapter.to_hash.fetch(:execution_plans).find { |ep| ep[:uuid] == original[:id] }
+            stored = adapter.to_hash.fetch(:execution_plans).find { |ep| ep[:uuid].strip == original[:id] }
             stored.each { |k, v| stored[k] = v.to_s if v.is_a? Time }
             adapter.class::META_DATA.fetch(:execution_plan).each do |name|
               stored.fetch(name.to_sym).must_equal original.fetch(name.to_sym)

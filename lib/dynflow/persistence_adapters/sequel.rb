@@ -81,9 +81,9 @@ module Dynflow
       end
 
       def to_hash
-        { execution_plans: table(:execution_plan).all,
-          steps:           table(:step).all,
-          actions:         table(:action).all }
+        { execution_plans: table(:execution_plan).all.to_a,
+          steps:           table(:step).all.to_a,
+          actions:         table(:action).all.to_a }
       end
 
       private
