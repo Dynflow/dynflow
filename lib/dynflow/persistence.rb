@@ -34,8 +34,8 @@ module Dynflow
       end
     end
 
-    def delete_execution_plans(filters)
-      adapter.delete_execution_plans(options)
+    def delete_execution_plans(filters, batch_size = 1000)
+      adapter.delete_execution_plans(filters, batch_size)
     end
 
     def load_execution_plan(id)

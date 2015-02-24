@@ -43,14 +43,14 @@ module Dynflow
         end
       end
 
-      def delete_execution_plans(filters)
+      def delete_execution_plans(filters, batch_size = 1000)
         count = 0
-        filter(table(:execution_plan), filters).each do |plan|
+        filter(table(:execution_plan), filters).each_slice(batch_size) do |plans|
+          uuids = plans.map { |p| p.fetch(:uuid) }
           @db.transaction do
-            table(:step).where(execution_plan_uuid: plan.fetch(:uuid)).delete
-            table(:action).where(execution_plan_uuid: plan.fetch(:uuid)).delete
-            table(:execution_plan).where(uuid: plan.fetch(:uuid)).delete
-            count += 1
+            table(:step).where(execution_plan_uuid: uuids).delete
+            table(:action).where(execution_plan_uuid: uuids).delete
+            count += table(:execution_plan).where(uuid: uuids).delete
           end
         end
         return count
