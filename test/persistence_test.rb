@@ -45,12 +45,22 @@ module Dynflow
       end
 
       def prepare_plans_with_actions
-        prepare_plans.map do |plan|
+        prepare_plans.each do |plan|
           prepare_action(plan[:id])
         end
       end
 
+      def prepare_plans_with_steps
+        prepare_plans_with_actions.map do |plan|
+          prepare_step(plan[:id])
+        end
+      end
+
       def self.it_acts_as_persistence_adapter
+        before do
+          # the tests expect clean field
+          adapter.delete_execution_plans({})
+        end
         describe '#find_execution_plans' do
           it 'supports pagination' do
             prepare_plans
@@ -105,6 +115,27 @@ module Dynflow
 
             adapter.save_execution_plan('plan1', nil)
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
+          end
+        end
+
+        describe '#delete_execution_plans' do
+          it 'deletes selected execution plans, including steps and actions' do
+            prepare_plans_with_steps
+            adapter.delete_execution_plans('uuid' => 'plan1').must_equal 1
+            -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
+            -> { adapter.load_action('plan1', action_data[:id]) }.must_raise KeyError
+            -> { adapter.load_step('plan1', step_data[:id]) }.must_raise KeyError
+
+            # testing that no other plans where affected
+            adapter.load_execution_plan('plan2')
+            adapter.load_action('plan2', action_data[:id])
+            adapter.load_step('plan2', step_data[:id])
+
+            prepare_plans_with_steps
+            adapter.delete_execution_plans('state' => 'paused').must_equal 2
+            -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
+            adapter.load_execution_plan('plan2') # nothing raised
+            -> { adapter.load_execution_plan('plan3') }.must_raise KeyError
           end
         end
 
