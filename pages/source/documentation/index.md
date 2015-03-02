@@ -64,7 +64,7 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   ~~Actions composition~~
 -   ~~subscribe/plugins~~
 -   ~~Suspending~~
--   Polling action
+-   ~~Polling action~~
 -   Console
 -   Testing
 -   Error handling
@@ -321,27 +321,56 @@ class AnAction < Dynflow::Action
   include Dynflow::Action::Polling
 ```
 
-3 methods need to be always implemented: `done?`, `invoke_external_task`, `poll_external_task`.
+There are 3 methods need to be always implemented:
 
 -   `done?` - determines when the task is complete based on external task's data.
 -   `invoke_external_task` - starts the external task.
 -   `poll_external_task` - polls the external task status data and returns a status 
     (JSON serializable data like: `Hash`, `Array`, `String`, etc.) which are stored in action's
     output.
-
-*TODO finish example and `external_task`, `external_task=` methods description*
-   
+    
 ```ruby
   def done?
+    external_task[:progress] == 1
   end
   
   def invoke_external_task
+    triger_the_task_with_rest_call  
   end
   
   def poll_external_task
+    data     = poll_data_with_rest_call
+    progress = calculate_progress data # => a float in 0..1  
+    { progress: progress
+      data:     data }
   end
 end
 ```
+
+This action will do following in run phase:
+
+1.  `invoke_external_task` on first run of the action
+1.  suspends and then periodically:
+    1.  wakes up
+    1.  `poll_external_task`
+    1.  checks if `done?`: 
+        - `true` -> it concludes the run phase
+        - `false` -> it schedules next polling
+    
+There are 2 other methods handling external task data which can optionally overridden:
+
+-   `external_task` - reads the external task's stored data, by default it reads `self.output[:task]`
+-   `external_task=` - writes the the external task's stored data, by default it writes to 
+    `self.output[:task] = value`
+
+There are also other features implemented like:
+
+-   Gradual prolongation of the polling interval.
+-   Retries on a poll failing.
+
+Please see the 
+[`Polling` module](https://github.com/Dynflow/dynflow/blob/master/lib/dynflow/action/polling.rb)
+for more details.
 
 ## How it works
 
