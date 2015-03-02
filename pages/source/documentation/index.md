@@ -74,6 +74,7 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   Short vs. long running actions
 -   Middleware
     -   as current user
+-   SubTasks
 
 ### Action anatomy
 
@@ -312,7 +313,35 @@ Not all services support callbacks to be registered which would allow to wake up
 actions only once at the end when the external task is finished. In that case we often 
 need to poll the service to see if the task is still running or finished.
 
-*TODO*
+For that purpose there is `Polling` module in Dynflow. Any action can be turned into a polling one
+just by including the module.
+
+```ruby
+class AnAction < Dynflow::Action
+  include Dynflow::Action::Polling
+```
+
+3 methods need to be always implemented: `done?`, `invoke_external_task`, `poll_external_task`.
+
+-   `done?` - determines when the task is complete based on external task's data.
+-   `invoke_external_task` - starts the external task.
+-   `poll_external_task` - polls the external task status data and returns a status 
+    (JSON serializable data like: `Hash`, `Array`, `String`, etc.) which are stored in action's
+    output.
+
+*TODO finish example and `external_task`, `external_task=` methods description*
+   
+```ruby
+  def done?
+  end
+  
+  def invoke_external_task
+  end
+  
+  def poll_external_task
+  end
+end
+```
 
 ## How it works
 
