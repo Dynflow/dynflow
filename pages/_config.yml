@@ -18,7 +18,7 @@ permalink: /blog/:year/:month/:day/:title/
 
 disqus_short_name: dynflow
 twitter_user: pitr_ch
-google_analytics_tracking_id: "" # TODO
+google_analytics_tracking_id: # TODO
 
 sass:
   sass_dir: _sass
