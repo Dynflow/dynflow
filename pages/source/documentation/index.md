@@ -58,9 +58,11 @@ Dynflow has been developed to be able to support orchestration of services in th
     -   for orchestrating system/ssh calls
     -   for keeping consistency between local database and external systems
     -   sub-tasks
+-   Creating World
 -   Action anatomy
     -   Input/Output
--   Phases
+    -   Phases
+-   Action dependencies
 -   ~~Actions composition~~
 -   ~~subscribe/plugins~~
 -   ~~Suspending~~
@@ -78,7 +80,159 @@ Dynflow has been developed to be able to support orchestration of services in th
 
 ### Action anatomy
 
-*TODO to be refined*
+Each action can be viewed as a function. It's planned for execution with 
+input, then it's executed producing output quite possibly having side-effects. 
+After that some finalizing steps can be taken. Actions can use outputs of other actions
+as parts of their inputs establishing dependency.
+
+As lightly touched in the previous paragraph there are 3 phases: planning, running, finalizing.
+Planning phase starts by triggering an action.
+
+#### Input and Output
+
+*TODO*
+
+#### Triggering
+
+Any action is triggered by calling:
+
+``` ruby
+world_instance.trigger(AnAction, *args)
+```
+
+which starts immediately planning the action in the same thread and returns after planning.
+
+{% info_block %}
+
+In Foreman and Katello actions are usually triggered by `ForemanTask.async_task` and
+`ForemanTasks.async_task` so following part is not that important if you are using
+`ForemanTasks`.
+
+{% endinfo_block %}
+
+`World#trigger` method returns object of `TriggerResult` type. Which is 
+[Algebrick](http://blog.pitr.ch/projects/algebrick/) variant type where definition follows:
+
+```ruby
+TriggerResult = Algebrick.type do
+  # Returned by #trigger when planning fails.
+  PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
+  # Returned by #trigger when planning is successful but execution fails to start.
+  ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
+  # Returned by #trigger when planning is successful, #future will resolve after
+  # ExecutionPlan is executed.
+  Triggered       = type { fields! execution_plan_id: String, future: Future }
+
+  variants PlaningFailed, ExecutionFailed, Triggered
+end
+```
+
+If you do not know `Algebrick` you can think about these as `Struct`s with types.
+You can see how it's used to distinguish all the possible results 
+[in ForemanTasks module](https://github.com/theforeman/foreman-tasks/blob/master/lib/foreman_tasks.rb#L20-L32).
+
+#### Planning
+
+Planning follows immediately after action is triggered. Planning always uses the tread 
+triggering the action. It starts by executing `plan` method of the action instance passing in 
+arguments from `World#trigger method`
+
+```ruby
+world_instance.trigger(AnAction, *args)
+# executes following
+an_action.plan(*args) # an_action is AnAction
+```
+
+By default `plan` method plans itself if `run` method is present using first argument as input.
+
+```ruby
+class AnAction < Dynflow::Action
+  def run
+    output.update self.input
+  end
+end
+
+world_instance.trigger AnAction, data: 'nothing'
+```
+
+The above will just plan itself copying input to output in run phase.
+
+In most cases the `plan` method is overridden to plan self with transformed arguments and/or 
+to plan other actions. Let's look at the argument transformation first:
+
+```ruby
+class AnAction < Dynflow::Action
+  def plan(any_array)
+    # pick just numbers
+    plan_self numbers: any_array.select { |v| v.is_a? Number }
+  end
+
+  def run
+    # compute sum - simulating a time consuming operation
+    output.update sum: input[:numbers].reduce(&:+) 
+  end
+end
+```
+
+Now let's see an example with action planning:
+
+```ruby
+class SumNumbers < Dynflow::Action
+  def plan(numbers)
+    plan_self numbers: numbers
+  end
+
+  def run
+    output.update sum: input[:numbers].reduce(&:+)
+  end
+end
+
+class SumManyNumbers < Dynflow::Action
+  def plan(numbers)
+    # references to planned actions
+    planned_sub_sum_actions = numbers.each_slice(10).map do |numbers|
+      plan_action SumNumbers, numbers
+    end
+
+    # prepare array of output references where each points to sum in the 
+    # output of particular action
+    sub_sums = planned_sub_sum_actions.map do |action|
+      action.output[:sum]
+    end
+
+    # plan one last action which will sum the sub_sums
+    # it depends on all planned_sub_sum_actions because it uses theirs outputs
+    plan_action SumNumbers, sub_sums
+  end
+end
+
+world_instance.trigger SumManyNumbers, (1..100).to_a
+```
+
+Above example will in parallel sum numbers by slices of 10 values: first action sums `1..10`,
+second action sums `11..20`, ..., tenth action sums `91..100`. After all sub sums are computed
+one final action sums the sub sums into final sum.
+
+{% warning_block %}
+
+This example is here to demonstrate the planning abilities. In reality it paralyzation of 
+compute intensive tasks does not have a positive effect on Dynflow running on MRI. The pool of
+workers may starve. It is not a big issue since Dynflow is mainly used to orchestrate external 
+services.
+
+*TODO add link to detail explanation when available in How it works.*
+
+{% endwarning_block %}
+
+#### Running
+
+*TODO*
+
+#### Finalizing
+
+*TODO*
+
+*TODO bellow to be refined*
 
 -   input/output
 -   it's kind a dirty function
@@ -138,6 +292,10 @@ class Action < Dynflow::Action
 end
 ```
 
+### Action dependencies
+
+*TODO* explain `sequence` and `concurrence`
+
 ### Action composition
 
 Dynflow is designed to allow easy composition of small building blocks
@@ -162,7 +320,7 @@ class CreateInfrastructure < Dynflow::Action
   end
 end
 ```
-Action `CreateInfrastructure` is does not have a `run` method defined, it only
+Action `CreateInfrastructure` does not have a `run` method defined, it only
 defines `plan` action where other actions composed together.
 
 ### Subscriptions
