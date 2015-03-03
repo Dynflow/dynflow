@@ -48,7 +48,6 @@ body {
 }
 
 .toc.well {
-  //  padding-left: 0;
   h4 {
     margin-top: 0;
   }
@@ -73,17 +72,51 @@ body {
   }
 }
 
+pre {
+  font-size: $font-size-base;
+}
+
 .toc {
   ul {
     margin-bottom: 0;
+    padding-left: 0px;
   }
-  li {
-//    list-style: decimal;
+  ul ul {
+    padding-left: 40px;
   }
-}
 
-pre {
-  font-size: $font-size-base;
+  li {
+    list-style: none;
+  }
+
+  counter-reset: l1counter;
+
+  li a:before {
+    content: counter(l1counter) ".\0000a0\0000a0";
+    counter-increment: l1counter;
+  }
+
+  li a {
+    counter-reset: l2counter;
+  }
+
+  li li a:before {
+    content: counter(l1counter) "." counter(l2counter) ".\0000a0\0000a0";
+    counter-increment: l2counter;
+  }
+
+  li li a {
+    counter-reset: l3counter;
+  }
+
+  li li li a:before {
+    content: counter(l1counter) "." counter(l2counter) "." counter(l3counter) ".\0000a0\0000a0";
+    counter-increment: l3counter;
+  }
+
+  li li li a {
+    counter-reset: l4counter;
+  }
 }
 
 /* Switch numbering on by adding class "countheads" to h1 */
@@ -102,11 +135,6 @@ h1 {
   counter-increment: h2counter;
 }
 
-h2.nocount:before {
-  content: none;
-  counter-increment: none;
-}
-
 h2 {
   counter-reset: h3counter;
 }
@@ -116,11 +144,6 @@ h2 {
   counter-increment: h3counter;
 }
 
-h3.nocount:before {
-  content: none;
-  counter-increment: none;
-}
-
 h3 {
   counter-reset: h4counter;
 }
@@ -128,6 +151,16 @@ h3 {
 .countheads ~ h4:before {
   content: counter(h2counter) "." counter(h3counter) "." counter(h4counter) ".\0000a0\0000a0";
   counter-increment: h4counter;
+}
+
+h2.nocount:before {
+  content: none;
+  counter-increment: none;
+}
+
+h3.nocount:before {
+  content: none;
+  counter-increment: none;
 }
 
 h4.nocount:before {
