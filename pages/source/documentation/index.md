@@ -58,7 +58,7 @@ Dynflow has been developed to be able to support orchestration of services in th
     -   for orchestrating system/ssh calls
     -   for keeping consistency between local database and external systems
     -   sub-tasks
--   Creating World
+-   Creating World (what is executor?)
 -   Action anatomy
     -   Input/Output
     -   Phases
@@ -83,14 +83,17 @@ Dynflow has been developed to be able to support orchestration of services in th
 Each action can be viewed as a function. It's planned for execution with 
 input, then it's executed producing output quite possibly having side-effects. 
 After that some finalizing steps can be taken. Actions can use outputs of other actions
-as parts of their inputs establishing dependency.
+as parts of their inputs establishing dependency. Action's state is serialized between each phase
+and survives machine/executor restarts.
 
 As lightly touched in the previous paragraph there are 3 phases: planning, running, finalizing.
 Planning phase starts by triggering an action.
 
 #### Input and Output
 
-*TODO*
+Both input and output are `Hash`es accessible by `Action#input` and `Action#output` methods. They
+need to be serializable to JSON so it should contain only combination of primitive Ruby types
+like: `Hash`, `Array`, `String`, `Integer`, etc.
 
 #### Triggering
 
@@ -134,7 +137,8 @@ You can see how it's used to distinguish all the possible results
 #### Planning
 
 Planning follows immediately after action is triggered. Planning always uses the tread 
-triggering the action. It starts by executing `plan` method of the action instance passing in 
+triggering the action. Planning phase configures actions's input for run phase.
+It starts by executing `plan` method of the action instance passing in 
 arguments from `World#trigger method`
 
 ```ruby
@@ -228,9 +232,14 @@ services.
 
 *TODO*
 
+-   does not touches input just uses it
+-   defines output
+
 #### Finalizing
 
 *TODO*
+
+-   does not touches input or output just uses it
 
 *TODO bellow to be refined*
 
