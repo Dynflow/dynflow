@@ -6,7 +6,14 @@ toc: true
 comments: true
 ---
 
-## High level overview
+{% danger_block %}
+
+Work in progress! It contains a lot of typos, please let us know at the bottom in the comments 
+or submit a PR against [pages branch](https://github.com/dynflow/dynflow/tree/pages). Thanks!
+
+{% enddanger_block %}
+
+## High level overview TODO
 
 *TODO to be refined*
 
@@ -29,8 +36,12 @@ written in Ruby that allows to:
 Dynflow has been developed to be able to support orchestration of services in the
 [Katello](http://katello.org) and [Foreman](http://theforeman.org/) projects.
 
+*TODO*
 
-## Glossary
+-   what problems does Dynflow solve?
+-   maybe a little history
+
+## Glossary TODO
 
 *TODO to be refined*
 
@@ -49,7 +60,7 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   **World** - the universe where the Dynflow runs the code: it holds all
     needed configuration.
 
-##  Examples
+##  Examples TODO
 
 *TODO*
 
@@ -60,33 +71,11 @@ Dynflow has been developed to be able to support orchestration of services in th
 
 ## How to use
 
-### To be added
+### World creation TODO
 
--   Creating World 
-    -   what is executor?
--   Development vs production
--   ~~Action anatomy~~
-    -   ~~Input/Output~~
-    -   ~~Triggering~~
-    -   ~~Planning~~
-    -   Running
-    -   Finalizing
--   Action dependencies
--   Database transactions and Actions
--   ~~Actions composition~~
--   ~~subscribe/plugins~~
--   ~~Suspending~~
--   ~~Polling action~~
--   Console
--   Testing
--   Error handling
-    -   rescue strategy
-    -   resume
--   Short vs. long running actions
--   Middleware
-    -   as current user
--   SubTasks
--   Multiple executors
+-   *include executor definition*
+
+### Development vs production TODO
 
 ### Action anatomy
 
@@ -238,14 +227,14 @@ services.
 
 {% endwarning_block %}
 
-#### Running
+#### Running TODO
 
 *TODO*
 
 -   does not touches input just uses it
 -   defines output
 
-#### Finalizing
+#### Finalizing TODO
 
 *TODO*
 
@@ -311,7 +300,7 @@ class Action < Dynflow::Action
 end
 ```
 
-### Action dependencies
+### Dependencies
 
 As already mentioned, actions can use output of different actions as their input (or just parts).
 When they does it creates dependency between actions.
@@ -444,14 +433,14 @@ though they could be run concurrently.
 {% endwarning_block %}
 
 
-### Database transactions and Actions
+### Database transactions TODO
 
 *TODO*
 
 -   DB should be modified and read only in `plan` and `finalize`
 -   transaction adapters
 
-### Action composition
+### Composition
 
 Dynflow is designed to allow easy composition of small building blocks
 called `Action`s. Typically there are actions composing smaller pieces 
@@ -685,19 +674,36 @@ Please see the
 [`Polling` module](https://github.com/Dynflow/dynflow/blob/master/lib/dynflow/action/polling.rb)
 for more details.
 
-## How it works
+### Error handling TODO
 
-### To be added
+-   rescue strategy
+-   resume
 
--   Action states
--   inter-worlds communication / multi-executors
--   Links to concurrent-ruby/algebrick
--   Thread-pools
--   Suspending -> events
+### Console TODO
 
-## Use cases
+### Testing TODO
 
-*TODO*
+### Short vs. long running actions TODO
+
+### Middleware TODO
+
+-   as current user example
+
+### SubTasks TODO
+
+## How it works TODO
+
+### Action states TODO
+
+### inter-worlds communication / multi-executors TODO
+
+### Links to concurrent-ruby/algebrick TODO
+
+### Thread-pools TODO
+
+### Suspending -> events TODO
+
+## Use cases TODO
 
 -   Embedded without a DB, like inside CLI tool for a complex installation
 -   reserve resources in planning do not try to do `if`s in run phase
