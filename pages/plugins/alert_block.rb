@@ -11,9 +11,9 @@ module Jekyll
       'div'
     end
 
-    HEADER = { 'info' => 'Note',
-               'warning' => 'Warning'
-    }
+    HEADER = { 'info'    => 'Note',
+               'warning' => 'Warning',
+               'danger'  => 'Danger' }
 
     def render_content(context, content)
       super context, content.gsub(/(\A\n+)/, format('\1**%s:** ', HEADER[@alert_type]))
@@ -23,5 +23,5 @@ end
 
 Liquid::Template.register_tag('info_block', Jekyll::AlertBlock)
 Liquid::Template.register_tag('warning_block', Jekyll::AlertBlock)
+Liquid::Template.register_tag('danger_block', Jekyll::AlertBlock)
 # Liquid::Template.register_tag('success_block', Jekyll::AlertBlock)
-# Liquid::Template.register_tag('danger_block', Jekyll::AlertBlock)

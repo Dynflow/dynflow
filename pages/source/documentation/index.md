@@ -49,20 +49,30 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   **World** - the universe where the Dynflow runs the code: it holds all
     needed configuration.
 
+##  Examples
+
+*TODO*
+
+-   for async operations
+-   for orchestrating system/ssh calls
+-   for keeping consistency between local database and external systems
+-   sub-tasks
+
 ## How to use
 
 ### To be added
 
--   Examples
-    -   for async operations
-    -   for orchestrating system/ssh calls
-    -   for keeping consistency between local database and external systems
-    -   sub-tasks
--   Creating World (what is executor?)
--   Action anatomy
-    -   Input/Output
-    -   Phases
+-   Creating World 
+    -   what is executor?
+-   Development vs production
+-   ~~Action anatomy~~
+    -   ~~Input/Output~~
+    -   ~~Triggering~~
+    -   ~~Planning~~
+    -   Running
+    -   Finalizing
 -   Action dependencies
+-   Database transactions and Actions
 -   ~~Actions composition~~
 -   ~~subscribe/plugins~~
 -   ~~Suspending~~
@@ -72,11 +82,11 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   Error handling
     -   rescue strategy
     -   resume
--   Development vs production
 -   Short vs. long running actions
 -   Middleware
     -   as current user
 -   SubTasks
+-   Multiple executors
 
 ### Action anatomy
 
@@ -219,12 +229,12 @@ one final action sums the sub sums into final sum.
 
 {% warning_block %}
 
-This example is here to demonstrate the planning abilities. In reality it paralyzation of 
+This example is here to demonstrate the planning abilities. In reality this paralyzation of 
 compute intensive tasks does not have a positive effect on Dynflow running on MRI. The pool of
 workers may starve. It is not a big issue since Dynflow is mainly used to orchestrate external 
 services.
 
-*TODO add link to detail explanation when available in How it works.*
+*TODO add link to detail explanation in How it works when available.*
 
 {% endwarning_block %}
 
@@ -303,7 +313,143 @@ end
 
 ### Action dependencies
 
-*TODO* explain `sequence` and `concurrence`
+As already mentioned, actions can use output of different actions as their input (or just parts).
+When they does it creates dependency between actions.
+
+```ruby
+def plan
+  first_action  = plan_action AnAction
+  second_action = plan_action AnAction, first_action.output[:a_key_in_output]
+end
+```
+
+`second_action` uses part of the `first_action`'s output 
+therefore it depends on the `first_action`.
+
+If actions are planned without this dependency as follows
+
+```ruby
+def plan
+  first_action  = plan_action AnAction
+  second_action = plan_action AnAction
+end
+```
+
+then they are independent and they are executed concurrently.
+
+There is also other mechanism how to describe dependencies between actions than just
+the one based on output usage. Dynflow user can specify the order between planned 
+actions with DSL methods `sequence` and `concurrence`. Both methods are taking blocks
+and they specify how actions planned inside the block 
+(or inner `sequence` and `concurrence` blocks) should be executed. 
+
+By default `plan` considers it's space as inside `concurrence`. Which means
+
+```ruby
+def plan
+  first_action  = plan_action AnAction
+  second_action = plan_action AnAction
+end
+```
+equals
+
+```ruby
+def plan
+  concurrence do
+    first_action  = plan_action AnAction
+    second_action = plan_action AnAction
+  end
+end
+``` 
+
+You can establish same dependency between `first_action` and `second_action` without 
+using output by using `sequnce`
+
+```ruby
+def plan
+  sequence do
+    first_action  = plan_action AnAction
+    second_action = plan_action AnAction
+  end
+end
+```
+
+As mentioned the `sequence` and `concurrence` methods can be nested and mixed 
+with output usage to create more complex dependencies. Let see commented example:
+
+```ruby
+def plan
+  # Plans 3 actions of type AnAction to be executed in sequence
+  # argument is the index in the sequence.
+  actions_executed_sequentially = sequence do
+    3.times.map { |i| plan_action AnAction, i }
+  end
+
+  # Depends on output of the last action in `actions_executed_sequentially`
+  # so it's added to the above sequence to be executed as 4th.
+  action1 = plan_action AnAction, actions_executed_sequentially.last.output
+
+  # It's planed in default plan's concurrency scope it's executed concurrently
+  # to about four actions.
+  action2 = plan_action AnAction  
+end
+```
+
+The order than will be:
+
+-   concurrently: 
+    -   sequentially:
+        1.  `*actions_executed_sequentially`
+        1.  `action1`
+    -   `action2`
+
+Let's see one more example:
+
+```ruby
+def plan
+  actions = sequence do
+    2.times.map do |i|
+      concurrency do
+        2.times.map { plan_action AnAction, i }
+      end
+    end
+  end
+end
+```
+Which results in order of execution:
+
+-   sequentially:
+    1.  concurrently:
+        -   `actions[0][0]` argument: 0
+        -   `actions[0][1]` argument: 0
+    1.  concurrently:
+        -   `actions[1][0]` argument: 1
+        -   `actions[1][1]` argument: 1
+    
+{% info_block %}
+
+It's on our todo-list to change that to be able to define acyclic-graph of dependencies
+between the actions. `sequence` and `concurrence` methods will then be deprecated and kept
+just for backward compatibility.
+
+{% endinfo_block %}
+
+{% warning_block %}
+
+Internally dependencies are also modeled with objects representing Sequences and Concurrences,
+which makes it weaker than acyclic-graph so in some cases during the dependency resolution
+it may lead into not the most effective execution plan. Some actions will run in sequence even 
+though they could be run concurrently.
+
+{% endwarning_block %}
+
+
+### Database transactions and Actions
+
+*TODO*
+
+-   DB should be modified and read only in `plan` and `finalize`
+-   transaction adapters
 
 ### Action composition
 
