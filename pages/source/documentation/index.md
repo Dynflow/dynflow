@@ -8,8 +8,12 @@ comments: true
 
 {% danger_block %}
 
-Work in progress! It contains a lot of typos, please let us know at the bottom in the comments 
-or submit a PR against [pages branch](https://github.com/dynflow/dynflow/tree/pages). Thanks!
+Work in progress! It contains a lot of tpyos, please let us know. There are comments at the bottom
+or you can submit a PR against [pages branch](https://github.com/dynflow/dynflow/tree/pages). 
+
+Please help with the documentation if you know Dynflow.
+
+Thanks!
 
 {% enddanger_block %}
 
