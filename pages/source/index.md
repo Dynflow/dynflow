@@ -5,7 +5,7 @@ skip-title: true
 sharing: true
 ---
 
-<div id="big_logo" class="well"><img src="/images/logo-flat.png"></div>
+<div id="big_logo" class="well"><img src="/images/logo-long.png"></div>
 
 Dynflow (**DYN**amic work**FLOW**) is a workflow engine
 written in Ruby that allows to:

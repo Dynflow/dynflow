@@ -691,7 +691,7 @@ If you encounter an error during run phase `error!` or usual `raise` can be used
 -   *examples*
 -   *see [testing of testing](https://github.com/Dynflow/dynflow/blob/master/test/testing_test.rb)*
 
-### Short vs. long running actions TODO
+### Short and long running actions TODO
 
 -   *run phase is not designed for CPU heavy computations*
 -   *and for long blocking operations*
@@ -725,7 +725,7 @@ in the action class.
 
 ```ruby
 class AnAction < Dynflow::Action
-  use AnMiddleware, after: AnotherMiddleware
+  use AMiddleware, after: AnotherMiddleware
 end
 ```
 

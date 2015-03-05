@@ -2,8 +2,7 @@ source 'https://rubygems.org'
 
 gem 'rake'
 gem 'jekyll'
-gem 'kramdown'
 gem 'pry'
-gem 'ruby-nuggets'
+gem 'ruby-nuggets' # require by tags plugin
 
 gem 'pry'
