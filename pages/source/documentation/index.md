@@ -98,6 +98,8 @@ Both input and output are `Hash`es accessible by `Action#input` and `Action#outp
 need to be serializable to JSON so it should contain only combination of primitive Ruby types
 like: `Hash`, `Array`, `String`, `Integer`, etc.
 
+*TODO describe input and output specification* 
+
 #### Triggering
 
 Any action is triggered by calling:
@@ -231,78 +233,27 @@ services.
 
 {% endwarning_block %}
 
-#### Running TODO
+Action may access local DB in planning phase, 
+see [Database and Transactions](#database-and-transactions).
 
-*TODO*
+#### Running
 
--   does not touches input just uses it
--   defines output
+Actions has a running phase if there is `run` method implemented. 
+(There may be actions just planning other actions.)
 
-#### Finalizing TODO
+The run method implements the main piece of work done by this action converting 
+input into output. Input is immutable in this phase. It's the right place for all the steps
+which are likely to fail. Action may have side effects.
+Local DB should not be accessed in this phase,
+see [Database and Transactions](#database-and-transactions)
 
-*TODO*
+#### Finalizing
 
--   does not touches input or output just uses it
-
-*TODO bellow to be refined*
-
--   input/output
--   it's kind a dirty function
-
-```ruby
-# every action needs to inherit from Dynflow::Action
-class Action < Dynflow::Action
-
-  # OPTIONAL: the input format for the execution phase of this action
-  # (https://github.com/iNecas/apipie-params for more details.
-  # Validations can be performed against this description (turned off
-  # for now)
-  input_format do
-    param :id, Integer
-    param :name, String
-  end
-
-  # OPTIONAL: every action can produce an output in the execution
-  # phase. This allows to describe the output.
-  output_format do
-    param :uuid, String
-  end
-
-  # OPTIONAL: this specifies that this action should be performed when
-  # AnotherAction is triggered.
-  def self.subscribe
-    AnotherAction
-  end
-
-  # OPTIONAL: executed during the planning phase. It's possible to
-  # specify explicitly the workflow here. By default it schedules just
-  # this action.
-  def plan(object_1, object_2)
-    # +plan_action+ schedules the SubAction to be part of this
-    # workflow
-    # the +object_1+ is passed to the +SubAction#plan+ method.
-    plan_action SubAction, object_1
-    # we can specify, where in the workflow this action should be
-    # placed, as well as prepare the input.
-    plan_self { id: object_2.id, name: object_2.name}
-  end
-
-  # OPTIONAL: run the execution part of this action. Transform the
-  # data from +input+ to +output+. When not specified, the action is
-  # not used in the execution phase.
-  def run
-    output[:uuid] = "#{input[:name]}-#{input[:id]}"
-  end
-
-  # OPTIONAL: finalize the action after the execution phase finishes.
-  # in the +input+ and +output+ attributes are available the data from
-  # execution phase. in the +outputs+ argument, all the execution
-  # phase actions are available, each providing its input and output.
-  def finalize
-    puts output[:uuid]
-  end
-end
-```
+Main purpose of finalization phase is to be able access local DB after action finishes
+successfully, like: indexing based on new data, updating records as fully created, etc. 
+Finalize phase does not modify input or output of the action. 
+Action may access local DB in finalizing phase and must be **idempotent**, 
+see [Database and Transactions](#database-and-transactions).
 
 ### Dependencies
 
@@ -437,12 +388,42 @@ though they could be run concurrently.
 {% endwarning_block %}
 
 
-### Database transactions TODO
+### Database and Transactions
 
-*TODO*
+Dynflow was designed to help with orchestration of other services. 
+The usual execution looks as follows, we use a yum repository as example of a resource.
 
--   DB should be modified and read only in `plan` and `finalize`
--   transaction adapters
+1.  Trigger repository creation, argument is an object describing the repository.
+1.  Planning: The repository is stored in local DB (in the Dynflow hosting application) within the 
+    planning phase. The record is marked as incomplete. 
+1.  Running: The repository creation is initiated in external service with (e.g.) REST call.
+    The phase finishes when the repository creation is done.
+1.  Finalizing: The record in local DB is marked as done.
+
+For that reason there are transactions around whole planning and finalizing phase 
+(all action's plan methods are in one transaction).
+If anything goes wrong in the planning phase any change made during planning to local DB is 
+reverted. Same holds for finalizing, if anything goes wrong, all changes are reverted. Therefore 
+all finalization methods has to be **idempotent**. 
+
+Internally Dynflow uses Sequel as its ORM, but users may choose what they need
+to access they data. There is an interface `TransactionAdapters::Abstract` where its 
+implementations may provide transactions using different ORMs. 
+The most common one probably being `TransactionAdapters::ActiveRecord`.
+
+So in the above example 2. and 4. step would be wrapped in `ActiveRecord` transaction 
+if `TransactionAdapters::ActiveRecord` is used.
+
+Second outcome of the design is convention when actions should be accessing local Database:
+
+-   **allowed** in planning and finalizing phases
+-   **disallowed** in running phase
+
+{% warning_block %}
+
+*TODO warning about AR pool configuration, needs to have sufficient size*
+
+{% endwarning_block %}
 
 ### Composition
 
