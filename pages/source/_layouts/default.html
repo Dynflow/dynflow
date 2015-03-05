@@ -78,16 +78,7 @@
 {% include disqus.html %}
 {% include twitter_sharing.html %}
 {% include google_plus_one.html %}
-
-<script type="text/javascript">
-    $().ready(function () {
-        $('.toc a').on('click', function (e) {
-            var target = $(this).attr('href');
-            $('html,body').animate({scrollTop: $(target).offset().top - 70}, 'normal');
-            e.preventDefault();
-        });
-    });
-</script>
+{% include scroll_to.html %}
 
 </body>
 </html>
