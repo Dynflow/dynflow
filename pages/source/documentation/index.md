@@ -77,9 +77,12 @@ Dynflow has been developed to be able to support orchestration of services in th
 
 ### World creation TODO
 
--   *include executor definition*
+-   *include executor description*
 
 ### Development vs production TODO
+
+-   *In development execution runs in the same process, in production there is an 
+    executor process.*
 
 ### Action anatomy
 
@@ -659,39 +662,119 @@ Please see the
 [`Polling` module](https://github.com/Dynflow/dynflow/blob/master/lib/dynflow/action/polling.rb)
 for more details.
 
-### Error handling TODO
+### Error handling
 
--   rescue strategy
--   resume
+If there is an error in **planning** phase, the error is recorded and raised by `trigger` method.
+
+If there is an error in **running** phase, the execution pauses. You can inspect the error in 
+[console](#console). The error may be intermittent or you may fix the problem manually. After
+that the execution plan can be resumed and it'll continue by rerunning the failed action and 
+continuing with the rest of the actions. During fixing the problem you may also do the steps
+in the actions manually, in that case the failed action can be also marked as skipped. After
+resuming the skipped action is not executed and the execution plan continues with the rest.
+
+If there is an error in **finalizing** phase, whole finalization phase for all the actions is
+rollbacked and can be rerun when the problem is fixed by resuming.
+
+If you encounter an error during run phase `error!` or usual `raise` can be used.
+
+#### Rescue strategy TODO
 
 ### Console TODO
 
+-   *where to access*
+-   *screenshots*
+
 ### Testing TODO
+
+-   *testing helper methods*
+-   *examples*
+-   *see [testing of testing](https://github.com/Dynflow/dynflow/blob/master/test/testing_test.rb)*
 
 ### Short vs. long running actions TODO
 
-### Middleware TODO
+-   *run phase is not designed for CPU heavy computations*
+-   *and for long blocking operations*
+-   *better to suspend, or offload to a service*
 
--   as current user example
+### Middleware
+
+Each action class has chain of middlewares which wrap phases of the action execution.
+It's very similar to rack middlewares.
+To create new middleware inherit from `Dynflow::Middleware` class. It has 5 methods which can be
+overridden: `plan`, `run`, `finalize`, `plan_phase`, `finalize_phase`. Where the default 
+implementation for all the methods looks as following
+
+```ruby
+def plan(*args)
+  pass *args
+end
+```
+
+When overriding user can insert code before and/or after the `pass` method which executes next
+middleware in the chain or the action itself which is at the end of the chain. Most usually the
+`pass` is always called somewhere in the overridden method. There may be some cases when it can
+be omitted, then it'll prevent all following middlewares and action from running.
+
+Some implementation examples: 
+[KeepCurrentUser](https://github.com/theforeman/foreman-tasks/blob/master/app/lib/actions/middleware/keep_current_user.rb),
+[Action::Progress::Calculate](https://github.com/Dynflow/dynflow/blob/master/lib/dynflow/action/progress.rb#L13-L42).
+
+Each Action has a chain of middlewares defined. Middleware can be added by calling `use` 
+in the action class.
+
+```ruby
+class AnAction < Dynflow::Action
+  use AnMiddleware, after: AnotherMiddleware
+end
+```
+
+Method `use` understands 3 option keys:
+
+-   `:before` - makes this middleware to be ordered before a given middleware 
+-   `:after` - makes this middleware to be ordered after a given middleware 
+-   `:replace` - this middleware will replace given middleware
+
+The `:before` and `:after` keys are used to build a graph from the middlewares which is then 
+sorted down with 
+[topological sort](http://ruby-doc.org//stdlib-2.0/libdoc/tsort/rdoc/TSort.html)
+to the chain of middleware execution.
 
 ### SubTasks TODO
+
+-   *when to use?*
+-   *hot to use?*
 
 ## How it works TODO
 
 ### Action states TODO
 
+-   *normal phases and Present phase*
+
 ### inter-worlds communication / multi-executors TODO
 
-### Links to concurrent-ruby/algebrick TODO
+### Used libraries
+
+-   [Algebrick](https://github.com/pitr-ch/algebrick) - Typed structs on steroids based on 
+    algebraic types and pattern matching.
+-   [concurrent-ruby](http://www.concurrent-ruby.com/) - Modern concurrency tools including agents, 
+    futures, promises, thread pools, supervisors, and more. Inspired by Erlang, Clojure, Scala, 
+    Go, Java, JavaScript, and classic concurrency patterns.
 
 ### Thread-pools TODO
+
+-   *how it works now*
+-   *how it'll work*
+-   *gotchas*
+    -   *worker pool sizing*
 
 ### Suspending -> events TODO
 
 ## Use cases TODO
 
--   Embedded without a DB, like inside CLI tool for a complex installation
--   reserve resources in planning do not try to do `if`s in run phase
+-   *Embedded without a DB, like inside CLI tool for a complex installation*
+-   *reserve resources in planning do not try to do `if`s in run phase*
+-   *Projects: katello, foreman, staypuft, fusor*
 
 ## Comments
 
