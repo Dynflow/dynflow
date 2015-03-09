@@ -4,6 +4,7 @@
     {{ post.date | date_to_string }}
     <span class="pull-right">
         <!--<a href="{{ post.url }}#disqus_thread">Comments</a>-->
+        <!--<a href="{{ root_url }}{{ post.url }}#disqus_thread">Comments</a>-->
         Tags: {{ post | tags }}
     </span>
 </p>

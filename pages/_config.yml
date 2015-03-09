@@ -16,6 +16,8 @@ tag_page_dir: tag
 
 permalink: /blog/:year/:month/:day/:title/
 
+favicon: /images/logo-square.png
+
 disqus_short_name: dynflow
 twitter_user: pitr_ch
 google_analytics_tracking_id: UA-60290609-1

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="/images/logo-square.png" type="image/x-icon">
+    <link rel="icon" href="{{ site.favicon }}" type="image/x-icon">
 
     <title>{{ page.title }} - {{ site.name }}</title>
 
@@ -20,7 +20,7 @@
 
     <!-- syntax highlighting CSS -->
     <link rel="stylesheet" href="/css/syntax.css">
-    <link href='{{site.url}}/atom.xml' rel='alternate' title='site_title - Atom' type='application/atom+xml'>
+    <link href='{{ site.url }}/atom.xml' rel='alternate' title='site_title - Atom' type='application/atom+xml'>
 </head>
 <body>
 
@@ -35,36 +35,17 @@
                 <span class="icon-bar"></span>
             </button>
             <a class="navbar-brand" href="/">
-                <img src="/images/logo-square.png">
-                {{ site.name }}
+                {% include menu_brand.html %}
             </a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-                <li><a href="/">About</a></li>
-                <li><a href="/documentation/">Documentation</a></li>
-                <li><a href="/faq/">FAQ</a></li>
-                <li><a href="/media/">Media</a></li>
-                <li><a href="/projects/">Related projects</a></li>
-                <!--<li class="dropdown">-->
-                <!--<a id="drop1" href="/documentation" class="dropdown-toggle" data-toggle="dropdown"-->
-                <!--aria-haspopup="true" role="button" aria-expanded="false">-->
-                <!--Documentation-->
-                <!--<span class="caret"></span>-->
-                <!--</a>-->
-                <!--<ul class="dropdown-menu" role="menu" aria-labelledby="drop1">-->
-                <!--<li role="presentation">-->
-                <!--<a role="menuitem" tabindex="-1" href="/documentation/glossary">Glossary</a>-->
-                <!--</li>-->
-                <!--&lt;!&ndash;<li role="presentation" class="divider"></li>&ndash;&gt;-->
-                <!--</ul>-->
-                <!--</li>-->
+                {% include menu.html %}
             </ul>
-            <!--<ul class="nav navbar-nav navbar-right">-->
-            <!--<li><a class="extra" href="/atom.xml">RSS</a></li>-->
-            <!--</ul>-->
+            <ul class="nav navbar-nav navbar-right">
+                {% include menu_right.html %}
+            </ul>
         </div>
-        <!--/.nav-collapse -->
     </div>
 </nav>
 
