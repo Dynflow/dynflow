@@ -101,6 +101,30 @@ Both input and output are `Hash`es accessible by `Action#input` and `Action#outp
 need to be serializable to JSON so it should contain only combination of primitive Ruby types
 like: `Hash`, `Array`, `String`, `Integer`, etc.
 
+{% info_block %}
+
+You may sometime find these input/output format definitions:
+
+```ruby
+class AnAction < Dynflow::Action
+  input_format do
+    param :id, Integer
+    param :name, String
+  end
+
+  output_format do
+    param :uuid, String
+  end
+end
+```
+
+The format follows [apipie-params](https://github.com/iNecas/apipie-params) for more details.
+Validations of input/output could be performed against this description but it's not turned on.
+
+
+{% endinfo_block %}
+
+
 *TODO describe input and output specification* 
 
 #### Triggering

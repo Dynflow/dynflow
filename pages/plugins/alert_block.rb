@@ -16,7 +16,7 @@ module Jekyll
                'danger'  => 'Danger' }
 
     def render_content(context, content)
-      super context, content.gsub(/(\A\n+)/, format('\1**%s:** ', HEADER[@alert_type]))
+      super context, "**#{HEADER[@alert_type]}** \n" + content
     end
   end
 end

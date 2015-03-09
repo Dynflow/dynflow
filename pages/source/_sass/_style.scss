@@ -83,6 +83,18 @@ pre {
   font-size: $font-size-base;
 }
 
+.alert {
+  > p + .highlight pre {
+    margin-top: 5px;
+    margin-bottom: 0px;
+  }
+
+  > .highlight + p {
+    margin-top: 5px;
+  }
+}
+
+
 .toc {
   ul {
     margin-bottom: 0;
