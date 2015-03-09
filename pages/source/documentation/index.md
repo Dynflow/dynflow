@@ -124,9 +124,6 @@ Validations of input/output could be performed against this description but it's
 
 {% endinfo_block %}
 
-
-*TODO describe input and output specification* 
-
 #### Triggering
 
 Any action is triggered by calling:
@@ -715,11 +712,24 @@ If you encounter an error during run phase `error!` or usual `raise` can be used
 -   *examples*
 -   *see [testing of testing](https://github.com/Dynflow/dynflow/blob/master/test/testing_test.rb)*
 
-### Short and long running actions TODO
+### Long-running actions
 
--   *run phase is not designed for CPU heavy computations*
--   *and for long blocking operations*
--   *better to suspend, or offload to a service*
+Dynflow was designed as an Orchestration tool, parallelization of heavy CPU computation tasks
+was not directly considered. Even with multiple executors single execution plan always runs
+on one executor, so without JRuby it wont scale well (MRI's GIL). However JRuby support
+should be added soon (TODO update when merged).
+
+Another problem with long-running actions are blocked worker. Executor has only a limited pool of
+workers, if more of them become busy it may result in worsen performance.
+
+Blocking actions for long time are also problematic.
+
+Solutions are: 
+
+-   **Using action suspending** - suspending the action until a condition is met, 
+    freeing the worker.
+-   **Offloading computation** - CPU heavy parts can be offloaded to different services 
+    notifying the suspended actions when the computation is done.
 
 ### Middleware
 
@@ -775,7 +785,7 @@ to the chain of middleware execution.
 
 -   *normal phases and Present phase*
 
-### inter-worlds communication / multi-executors TODO
+### Inner-world communication and multi-executors TODO
 
 ### Thread-pools TODO
 
