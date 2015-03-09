@@ -777,14 +777,6 @@ to the chain of middleware execution.
 
 ### inter-worlds communication / multi-executors TODO
 
-### Used libraries
-
--   [Algebrick](https://github.com/pitr-ch/algebrick) - Typed structs on steroids based on 
-    algebraic types and pattern matching.
--   [concurrent-ruby](http://www.concurrent-ruby.com/) - Modern concurrency tools including agents, 
-    futures, promises, thread pools, supervisors, and more. Inspired by Erlang, Clojure, Scala, 
-    Go, Java, JavaScript, and classic concurrency patterns.
-
 ### Thread-pools TODO
 
 -   *how it works now*
