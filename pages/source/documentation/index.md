@@ -683,6 +683,36 @@ Please see the
 [`Polling` module](https://github.com/Dynflow/dynflow/blob/master/lib/dynflow/action/polling.rb)
 for more details.
 
+### States
+
+Each **Action** phase can be in one of the following states:
+
+-   **Pending** - Not yet executed.
+-   **Running** - Action phase is being executed right now.
+-   **Success** - Action phase execution finished successfully.
+-   **Error** - There was an error during execution.
+-   **Suspended** - Only `run` phase, when action sleeps waiting for events to be woken up.
+-   **Skipped** - Failed actions can be marked as skipped allowing rest of the 
+    execution plan to finish successfully.
+-   **Skipping** - Action is marked for skipping but execution plan was not yet 
+    resumed to mark it as Skipped.
+    
+**Execution plan** has following states:
+
+-   **Pending** - Planning did not start yet.
+-   **Planning** - It's being planned.
+-   **Planned** - It've been planned, running phase did not start yet.
+-   **Running** - It's running, `run` and `finalize` phases of actions are executed.
+-   **Paused** - It was paused when running. Happens on error or executor restart. 
+-   **Stopped** - Execution plan is completed.
+
+**Execution plan** also has following results:
+
+-   **Success** - Everything finished without error or skips.
+-   **Warning** - When there are skipped steps.   
+-   **Error** - When one or more actions failed.
+-   **Pending** - Execution plan still runs.
+
 ### Error handling
 
 If there is an error in **planning** phase, the error is recorded and raised by `trigger` method.
@@ -784,6 +814,7 @@ to the chain of middleware execution.
 ### Action states TODO
 
 -   *normal phases and Present phase*
+-   *how to walk the execution plan*
 
 ### Inner-world communication and multi-executors TODO
 
