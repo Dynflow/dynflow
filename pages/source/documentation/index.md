@@ -62,7 +62,8 @@ Dynflow has been developed to be able to support orchestration of services in th
     the execution plan. It can run in the same process as the plan phase or in
     different process (using the remote executor)
 -   **World** - the universe where the Dynflow runs the code: it holds all
-    needed configuration.
+    needed configuration. ?There's only one world per Dynflow process, it holds data 
+    such as ...
 
 ##  Examples TODO
 
@@ -86,8 +87,50 @@ Dynflow has been developed to be able to support orchestration of services in th
 
 ### Action anatomy
 
-Each action can be viewed as a function. It's planned for execution with 
-input, then it's executed producing output quite possibly having side-effects. 
+When action is triggered, Dynflow executes plan method on this action, which
+is responsible for building the plan. It builds the plan by calling plan_action
+and plan_self methods, effectively listing actions that should be run as 
+a part of this plan. In other words, it compiles a list of actions on which 
+method run will be called. Also it's responsible for giving these actions 
+an order. A simple example of such plan action might look like this
+
+```ruby
+# this would plan deletion of files passed as an input array
+def plan(files)
+  files.each do |filename|
+    plan_action MyActions::File::Destroy, filename
+  end
+end
+```
+
+Note that it does not have to be only other actions that are planned to run.
+In fact it's very common that the action plan itself, which means it will
+put it's own run method call in the execution plan. In order to do that
+you can use `plan_self`. This could be used in MyActions::File::Destroy
+used in previous example
+
+```ruby
+class MyActions::File::Destroy < Dynflow::Action
+  def plan(filename)
+    plan_self path: filename
+  end
+
+  def run
+    File.rm(input[:path])
+  end
+end
+```
+
+In example above, it seems that `plan_self` is just shortcut to 
+`plan_action MyActions::File::Destroy, filename` but it's not entirely true.
+Note that plan_action always trigger plan of a given action while plan_self
+plans only the run of Action, so by using plan_action we'd end up in
+endless loop.
+
+Also note, that run method does not take any input. In fact, it can use
+`input` method that refers to arguments, that were used in plan_self.
+
+Similar to the input mentioned above, the run produces output. 
 After that some finalizing steps can be taken. Actions can use outputs of other actions
 as parts of their inputs establishing dependency. Action's state is serialized between each phase
 and survives machine/executor restarts.
@@ -119,7 +162,8 @@ end
 ```
 
 The format follows [apipie-params](https://github.com/iNecas/apipie-params) for more details.
-Validations of input/output could be performed against this description but it's not turned on.
+Validations of input/output could be performed against this description but it's not turned on
+?by default.
 
 
 {% endinfo_block %}
@@ -136,7 +180,7 @@ which starts immediately planning the action in the same thread and returns afte
 
 {% info_block %}
 
-In Foreman and Katello actions are usually triggered by `ForemanTask.async_task` and
+In Foreman and Katello actions are usually triggered by `ForemanTask.sync_task` and
 `ForemanTasks.async_task` so following part is not that important if you are using
 `ForemanTasks`.
 
@@ -144,6 +188,9 @@ In Foreman and Katello actions are usually triggered by `ForemanTask.async_task`
 
 `World#trigger` method returns object of `TriggerResult` type. Which is 
 [Algebrick](http://blog.pitr.ch/projects/algebrick/) variant type where definition follows:
+
+TODO - This example is useless, I'd move it to Advanced or remove it, I'd like to see interaction
+with result object here
 
 ```ruby
 TriggerResult = Algebrick.type do
@@ -176,7 +223,8 @@ world_instance.trigger(AnAction, *args)
 an_action.plan(*args) # an_action is AnAction
 ```
 
-By default `plan` method plans itself if `run` method is present using first argument as input.
+`plan` method is inherited from Dynflow::Action and by default it plans itself if 
+`run` method is present using first argument as input.
 
 ```ruby
 class AnAction < Dynflow::Action
@@ -197,12 +245,12 @@ to plan other actions. Let's look at the argument transformation first:
 class AnAction < Dynflow::Action
   def plan(any_array)
     # pick just numbers
-    plan_self numbers: any_array.select { |v| v.is_a? Number }
+    plan_self :numbers => any_array.select { |v| v.is_a? Number }
   end
 
   def run
     # compute sum - simulating a time consuming operation
-    output.update sum: input[:numbers].reduce(&:+) 
+    output[:sum] = input[:numbers].reduce(&:+) 
   end
 end
 ```
@@ -216,7 +264,7 @@ class SumNumbers < Dynflow::Action
   end
 
   def run
-    output.update sum: input[:numbers].reduce(&:+)
+    output[:sum] = input[:numbers].reduce(&:+)
   end
 end
 
@@ -248,7 +296,7 @@ one final action sums the sub sums into final sum.
 
 {% warning_block %}
 
-This example is here to demonstrate the planning abilities. In reality this paralyzation of 
+This example is here to demonstrate the planning abilities. In reality this parallelization of 
 compute intensive tasks does not have a positive effect on Dynflow running on MRI. The pool of
 workers may starve. It is not a big issue since Dynflow is mainly used to orchestrate external 
 services.
@@ -267,7 +315,7 @@ Actions has a running phase if there is `run` method implemented.
 
 The run method implements the main piece of work done by this action converting 
 input into output. Input is immutable in this phase. It's the right place for all the steps
-which are likely to fail. Action may have side effects.
+which are likely to fail. ?Action may have side effects?.
 Local DB should not be accessed in this phase,
 see [Database and Transactions](#database-and-transactions)
 
@@ -282,7 +330,8 @@ see [Database and Transactions](#database-and-transactions).
 ### Dependencies
 
 As already mentioned, actions can use output of different actions as their input (or just parts).
-When they does it creates dependency between actions.
+When they do it creates dependency between actions, which is automatically detected
+by Dynflow and the execution plan is built accordingly.
 
 ```ruby
 def plan
@@ -331,7 +380,7 @@ end
 ``` 
 
 You can establish same dependency between `first_action` and `second_action` without 
-using output by using `sequnce`
+using output by using `sequence`
 
 ```ruby
 def plan
@@ -478,7 +527,7 @@ defines `plan` action where other actions composed together.
 
 ### Subscriptions
 
-Even though composing actions is quite ease and allows to decompose
+Even though composing actions is quite easy and allows to decompose
 business logic to small pieces it does not directly support extensions
 by plugins. For that there are subscriptions.
 
@@ -513,7 +562,7 @@ class APluginAction < Dynflow::Action
   end
 
   def plan(arguments)
-    arguments # are same as in ACoreAppAction#plan
+    # arguments are same as in ACoreAppAction#plan
     plan_self(args: arguments)
   end
 
@@ -685,7 +734,7 @@ for more details.
 
 ### States
 
-Each **Action** phase can be in one of the following states:
+Each **Action** phase (plan, run, finalize) can be in one of the following states:
 
 -   **Pending** - Not yet executed.
 -   **Running** - Action phase is being executed right now.
@@ -713,9 +762,14 @@ Each **Action** phase can be in one of the following states:
 -   **Error** - When one or more actions failed.
 -   **Pending** - Execution plan still runs.
 
+TODO how do I access such states as a programmer?
+TODO which Action phase states are "finish" and which requires user interaction?
+
 ### Error handling
 
 If there is an error in **planning** phase, the error is recorded and raised by `trigger` method.
+
+?? ^ trigger is a method used to get the action that I'm subscribed to, or does that refer to world trigger?, not really sure what the statement tries to say
 
 If there is an error in **running** phase, the execution pauses. You can inspect the error in 
 [console](#console). The error may be intermittent or you may fix the problem manually. After
@@ -807,7 +861,7 @@ to the chain of middleware execution.
 ### SubTasks TODO
 
 -   *when to use?*
--   *hot to use?*
+-   *how to use?*
 
 ## How it works TODO
 
