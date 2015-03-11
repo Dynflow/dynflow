@@ -3,6 +3,9 @@
 
 ![Build](https://travis-ci.org/Dynflow/dynflow.svg?branch=master)
 
+**Note:** *There is a project page and documentation being build in url <http://http://dynflow.github.io/>.
+It's still work in progress but you may find useful information there.*
+
 Dynflow [DYN(amic work)FLOW] is a workflow engine
 written in Ruby that allows to:
 
