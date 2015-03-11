@@ -12,7 +12,7 @@ written in Ruby that allows to:
 
 -   Keep track of the progress of running processes
 -   Run the code asynchronously
--   Resume the process when something goes wrong, skip some steps when needed
+-   When something goes wrong, pause the process, optionally let user interact, resume the process, skip some steps when needed
 -   Detect independent parts and run them concurrently
 -   Compose simple actions into more complex scenarios
 -   Extend the workflows from third-party libraries
