@@ -124,12 +124,12 @@ end
 
 In example above, it seems that `plan_self` is just shortcut to
 `plan_action MyActions::File::Destroy, filename` but it's not entirely true.
-Note that plan_action always trigger plan of a given action while plan_self
-plans only the run of Action, so by using plan_action we'd end up in
+Note that `plan_action` always trigger `plan` of a given action while `plan_self`
+plans only the `run` of Action, so by using `plan_action` we'd end up in
 endless loop.
 
 Also note, that run method does not take any input. In fact, it can use
-`input` method that refers to arguments, that were used in plan_self.
+`input` method that refers to arguments, that were used in `plan_self`.
 
 Similar to the input mentioned above, the run produces output.
 After that some finalizing steps can be taken. Actions can use outputs of other actions
