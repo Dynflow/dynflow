@@ -2,8 +2,11 @@
 =======
 
 ![Build](https://travis-ci.org/Dynflow/dynflow.svg?branch=master)
+![Issues](https://img.shields.io/github/issues/Dynflow/dynflow.svg?style=flat)
+![Gem version](https://img.shields.io/gem/v/dynflow.svg?style=flat)
+![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)
 
-Dynflow [DYN(amic work)FLOW] is a workflow engine
+[Dynflow [DYN(amic work)FLOW]](http://dynflow.github.io/) is a workflow engine
 written in Ruby that allows to:
 
 * keep track of the progress of running process
@@ -29,6 +32,7 @@ implementations as well).
 
 ![Screenshot](doc/images/screenshot.png)
 
+* [Documentation](http://dynflow.github.io/documentation/)
 * [Current status](#current-status)
 * [How it works](#how-it-works)
 * [Examples](#examples)
