@@ -252,5 +252,112 @@ module Dynflow
       end
 
     end
+
+    describe Action::WithSubPlans do
+
+      class FailureSimulator
+        class << self
+          attr_accessor :fail_in_child_plan, :fail_in_child_run
+
+          def reset!
+            self.fail_in_child_plan = self.fail_in_child_run = false
+          end
+        end
+      end
+
+      class ParentAction < Dynflow::Action
+
+        include Dynflow::Action::WithSubPlans
+
+        def create_sub_plans
+          input[:count].times.map{ trigger(ChildAction) }
+        end
+
+        def resume
+          output[:custom_resume] = true
+          super
+        end
+      end
+
+      class ChildAction < Dynflow::Action
+        def plan
+          if FailureSimulator.fail_in_child_plan
+            raise "Fail in child plan"
+          end
+          super
+        end
+
+        def run
+          if FailureSimulator.fail_in_child_run
+            raise "Fail in child run"
+          end
+        end
+      end
+
+      let(:execution_plan) { world.trigger(ParentAction, count: 2).finished.value }
+
+      before do
+        FailureSimulator.reset!
+      end
+
+      specify "the sub-plan stores the information about its parent" do
+        sub_plans = execution_plan.sub_plans
+        sub_plans.size.must_equal 2
+        sub_plans.each { |sub_plan| sub_plan.caller_execution_plan_id.must_equal execution_plan.id }
+      end
+
+      specify "it saves the information about number for sub plans in the output" do
+        execution_plan.entry_action.output.must_equal('total_count'   => 2,
+                                                      'failed_count'  => 0,
+                                                      'success_count' => 2)
+      end
+
+      specify "when a sub plan fails, the caller action fails as well" do
+        FailureSimulator.fail_in_child_run = true
+        execution_plan.entry_action.output.must_equal('total_count'   => 2,
+                                                      'failed_count'  => 2,
+                                                      'success_count' => 0)
+        execution_plan.state.must_equal :paused
+        execution_plan.result.must_equal :error
+      end
+
+      describe 'resuming' do
+        specify "resuming the action depends on the resume method definition" do
+          FailureSimulator.fail_in_child_plan = true
+          execution_plan.state.must_equal :paused
+          FailureSimulator.fail_in_child_plan = false
+          resumed_plan = world.execute(execution_plan.id).value
+          resumed_plan.entry_action.output[:custom_resume].must_equal true
+        end
+
+        specify "by default, when no sub plans were planned successfully, it call create_sub_plans again" do
+          FailureSimulator.fail_in_child_plan = true
+          execution_plan.state.must_equal :paused
+          FailureSimulator.fail_in_child_plan = false
+          resumed_plan = world.execute(execution_plan.id).value
+          resumed_plan.state.must_equal :stopped
+          resumed_plan.result.must_equal :success
+        end
+
+        specify "by default, when any sub-plan was planned, it succeeds only when the sub-plans were already finished" do
+          FailureSimulator.fail_in_child_run = true
+          execution_plan.state.must_equal :paused
+          sub_plans = execution_plan.sub_plans
+
+          FailureSimulator.fail_in_child_run = false
+          resumed_plan = world.execute(execution_plan.id).value
+          resumed_plan.state.must_equal :paused
+
+          world.execute(sub_plans.first.id).wait
+          resumed_plan = world.execute(execution_plan.id).value
+          resumed_plan.state.must_equal :paused
+
+          sub_plans.drop(1).each { |sub_plan| world.execute(sub_plan.id).wait }
+          resumed_plan = world.execute(execution_plan.id).value
+          resumed_plan.state.must_equal :stopped
+          resumed_plan.result.must_equal :success
+        end
+      end
+    end
   end
 end

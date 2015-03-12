@@ -87,13 +87,13 @@ module PersistenceAdapterTest
              real_time: 0.0, execution_time: 0.0 }
     storage.save_execution_plan('plan1', plan)
 
-    action = { id: 1 }
+    action = { id: 1, caller_execution_plan_id: nil, caller_action_id: nil }
     -> { storage.load_action('plan1', 1) }.must_raise KeyError
 
     storage.save_action('plan1', 1, action)
     storage.load_action('plan1', 1)[:id].must_equal 1
     storage.load_action('plan1', 1)['id'].must_equal 1
-    storage.load_action('plan1', 1).keys.size.must_equal 1
+    storage.load_action('plan1', 1).keys.must_equal %w[id caller_execution_plan_id caller_action_id]
 
     storage.save_action('plan1', 1, nil)
     -> { storage.load_action('plan1', 1) }.must_raise KeyError

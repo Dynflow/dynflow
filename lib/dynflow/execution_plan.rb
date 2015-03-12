@@ -97,12 +97,20 @@ module Dynflow
       result == :error
     end
 
+    def error_in_plan?
+      steps_in_state(:error).any? { |step| step.is_a? Steps::PlanStep }
+    end
+
     def errors
       steps.values.map(&:error).compact
     end
 
     def rescue_strategy
       Type! entry_action.rescue_strategy, Action::Rescue::Strategy
+    end
+
+    def sub_plans
+      persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => self.id })
     end
 
     def rescue_plan_id
@@ -141,9 +149,12 @@ module Dynflow
       @last_step_id += 1
     end
 
-    def prepare(action_class)
+    def prepare(action_class, options = {})
+      options = options.dup
+      caller_action = Type! options.delete(:caller_action), Dynflow::Action, NilClass
+      raise "Unexpected options #{options.keys.inspect}" unless options.empty?
       save
-      @root_plan_step = add_plan_step(action_class)
+      @root_plan_step = add_plan_step(action_class, caller_action)
       @root_plan_step.save
     end
 
@@ -226,9 +237,13 @@ module Dynflow
       current_run_flow.add_and_resolve(@dependency_graph, new_flow) if current_run_flow
     end
 
-    def add_plan_step(action_class, planned_by = nil)
-      add_step(Steps::PlanStep, action_class, generate_action_id, planned_by && planned_by.plan_step_id).tap do |step|
-        step.initialize_action
+    def add_plan_step(action_class, caller_action = nil)
+      add_step(Steps::PlanStep, action_class, generate_action_id).tap do |step|
+        # TODO: to be removed and preferred by the caller_action
+        if caller_action && caller_action.execution_plan_id == self.id
+          @steps[caller_action.plan_step_id].children << step.id
+        end
+        step.initialize_action(caller_action)
       end
     end
 
@@ -312,13 +327,17 @@ module Dynflow
       end
     end
 
+    def caller_execution_plan_id
+      entry_action.caller_execution_plan_id
+    end
+
     private
 
     def persistence
       world.persistence
     end
 
-    def add_step(step_class, action_class, action_id, planned_by_step_id = nil)
+    def add_step(step_class, action_class, action_id)
       step_class.new(self.id,
                      self.generate_step_id,
                      :pending,
@@ -327,7 +346,6 @@ module Dynflow
                      nil,
                      world).tap do |new_step|
         @steps[new_step.id] = new_step
-        @steps[planned_by_step_id].children << new_step.id if planned_by_step_id
       end
     end
 

@@ -91,8 +91,14 @@ module Dynflow
 
     # @return [TriggerResult]
     # blocks until action_class is planned
-    def trigger(action_class, *args)
-      execution_plan = plan(action_class, *args)
+    # if no arguments given, the plan is expected to be returned by a block
+    def trigger(action_class = nil, *args, &block)
+      if action_class.nil?
+        raise 'Neither action_class nor a block given' if block.nil?
+        execution_plan = block.call(self)
+      else
+        execution_plan = plan(action_class, *args)
+      end
       planned        = execution_plan.state == :planned
 
       if planned
@@ -120,6 +126,13 @@ module Dynflow
     def plan(action_class, *args)
       ExecutionPlan.new(self).tap do |execution_plan|
         execution_plan.prepare(action_class)
+        execution_plan.plan(*args)
+      end
+    end
+
+    def plan_with_caller(caller_action, action_class, *args)
+      ExecutionPlan.new(self).tap do |execution_plan|
+        execution_plan.prepare(action_class, caller_action: caller_action)
         execution_plan.plan(*args)
       end
     end
