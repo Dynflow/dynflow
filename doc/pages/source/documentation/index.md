@@ -52,7 +52,9 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   **Action** - building block of execution plans, a Ruby class inherited
     from `Dynflow::Action`, defines code to be run in each phase.
 -   **Phase** - Each action has three phases: `plan`, `run`, `finalize`.
--   **Input/Output** - Each action has one. It's a `Hash` of data which is persisted.
+-   **Input** - A `Hash` of data coming to the action.
+-   **Output* - A `Hash` of data that the action produces. It's
+      persisted and can by used as input of other actions.
 -   **Execution plan** - definition of the workflow: product of the plan phase
 -   **Triggering an action** - entering the plan phase, starting with the plan
     method of the action. The execution follows immediately.
@@ -64,9 +66,20 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   **World** - the universe where the Dynflow runs the code: it holds all
     needed configuration. Usually there's only one world per Dynflow process,
     besides configuration it also holds `Persistence`, `Logger`, `Executor` and
-    all the other objects necessary for action executing.
+    all the other objects necessary for action executing. This concept
+    allows us to avoid globally shared state. Also, the worlds can
+    talk to each other, which is helpful for production and
+    high-availability setups, having multiple worlds on different
+    hosts handling the execution of the execution plans.
 
-##  Examples TODO
+##  Examples
+
+See the
+[examples directory](https://github.com/Dynflow/dynflow/tree/master/examples)
+for the code in action. Running those files (except the
+`example_helper.rb` file) leads to the Dynflow runtime being initialized
+(including the web console where one can explore the features and
+experiment).
 
 *TODO*
 
@@ -145,21 +158,10 @@ Both input and output are `Hash`es accessible by `Action#input` and `Action#outp
 need to be serializable to JSON so it should contain only combination of primitive Ruby types
 like: `Hash`, `Array`, `String`, `Integer`, etc.
 
-The convectional way how to update `input` and `output` is using `Hash#update` method.
-
-```ruby
-output.update success: true
-```
-
-The reason is to avoid accidental data deletion. `update` will leave other keys
-untouched, where
-
-```ruby
-self.output = { success: true }
-```
-
-would delete all other data stored in `output`
-by middlewares or other parts of the action itself.
+One should avoid using `self.output=` directly, since it might delete
+other data stored in the output (potentially by middleware and other
+parts of the action. Therefore it's preferred to use
+`self.output[:key] = 'value'` or `self.output.update(key: 'value')`.
 
 {% info_block %}
 
@@ -178,6 +180,9 @@ class AnAction < Dynflow::Action
 end
 ```
 
+This might me quite handy especially in combination with
+[subscriptions](#subscriptions) functionality.
+
 The format follows [apipie-params](https://github.com/iNecas/apipie-params) for more details.
 Validations of input/output could be performed against this description but it's not turned on
 by default. (It needs to be revisited and updated to be fully functional.)
@@ -186,14 +191,12 @@ by default. (It needs to be revisited and updated to be fully functional.)
 
 #### Triggering
 
+Triggering the action means starting the plan phase, followed by execution immediately.
 Any action is triggered by calling:
 
 ``` ruby
 world_instance.trigger(AnAction, *args)
 ```
-
-which starts immediately planning the action in the same thread and returns after planning.
-
 {% info_block %}
 
 In Foreman and Katello actions are usually triggered by `ForemanTask.sync_task` and
@@ -246,10 +249,10 @@ end
 
 #### Planning
 
-Planning follows immediately after action is triggered. Planning always uses the tread
-triggering the action. Planning phase configures actions's input for run phase.
-It starts by executing `plan` method of the action instance passing in
-arguments from `World#trigger method`
+Planning always uses the thread triggering the action. Planning phase
+configures actions's input for run phase. It starts by executing
+`plan` method of the action instance passing in arguments from
+`World#trigger method`
 
 ```ruby
 world_instance.trigger(AnAction, *args)
@@ -273,7 +276,11 @@ world_instance.trigger AnAction, data: 'nothing'
 The above will just plan itself copying input to output in run phase.
 
 In most cases the `plan` method is overridden to plan self with transformed arguments and/or
-to plan other actions. Let's look at the argument transformation first:
+to plan other actions. In the Rails application, then arguments of the
+plan phase are often the ActiveRecord objects, that are then
+used to produce the inputs for the actions.
+
+Let's look at the argument transformation first:
 
 ```ruby
 class AnAction < Dynflow::Action
@@ -288,6 +295,25 @@ class AnAction < Dynflow::Action
   end
 end
 ```
+
+{% info_block %}
+
+It's considered a good practice to use the just enough data for the
+input for the action to perform the job. That means not too much
+(such as using ActiveRecord's attributes), as it might have
+performance impact as well as causes issues when changing the
+attributes later.
+
+ On the other hand, the input should contain enough data to perform
+the job without needint to reaching to external sources. Therefore,
+instead of passing just the ActiveRecord id and loading the whole
+record again in run phase, just to use some attributes, it's better to
+use these attributes directly as input of the action.
+
+Following theses rules should lead to the best results, both from
+readability and performance point of view.
+
+{% endinfo_block %}
 
 Now let's see an example with action planning:
 
@@ -490,23 +516,25 @@ just for backward compatibility.
 
 Internally dependencies are also modeled with objects representing Sequences and Concurrences,
 which makes it weaker than acyclic-graph so in some cases during the dependency resolution
-it may lead into not the most effective execution plan. Some actions will run in sequence even
-though they could be run concurrently.
+it might not lead into the most effective execution plan. Some actions will run in sequence even
+though they could be run concurrently. This limitation is likely to be
+removed in some of the further releases.
 
 {% endwarning_block %}
-
 
 ### Database and Transactions
 
 Dynflow was designed to help with orchestration of other services.
-The usual execution looks as follows, we use a yum repository as example of a resource.
+The usual execution looks as follows, we use an ActiveRecord User as example of a resource.
 
-1.  Trigger repository creation, argument is an object describing the repository.
-1.  Planning: The repository is stored in local DB (in the Dynflow hosting application) within the
+1.  Trigger user creation, argument is an unsaved ActiveRecord user object
+1.  Planning: The user is stored in local DB (in the Dynflow hosting application) within the
     planning phase. The record is marked as incomplete.
-1.  Running: The repository creation is initiated in external service with (e.g.) REST call.
-    The phase finishes when the repository creation is done.
-1.  Finalizing: The record in local DB is marked as done.
+1.  Running: Operations needed for the user in external services with (e.g.) REST call.
+    The phase finishes when the all the external calls succeeded successfully.
+1. Finalizing: The record in local DB is marked as done: ready to be
+used. Potentially, saving some data that were retrieved in the running
+phase back to the local database.
 
 For that reason there are transactions around whole planning and finalizing phase
 (all action's plan methods are in one transaction).
@@ -525,7 +553,7 @@ if `TransactionAdapters::ActiveRecord` is used.
 Second outcome of the design is convention when actions should be accessing local Database:
 
 -   **allowed** in planning and finalizing phases
--   **disallowed** in running phase
+-   **disallowed** (or at least discouraged) in the running phase
 
 {% warning_block %}
 
