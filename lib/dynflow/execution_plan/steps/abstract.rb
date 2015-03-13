@@ -124,6 +124,10 @@ module Dynflow
         false
       end
 
+      def with_sub_plans?
+        false
+      end
+
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)

@@ -23,6 +23,10 @@ module Dynflow
             self.action_class < Action::Cancellable
       end
 
+      def with_sub_plans?
+        self.action_class < Action::WithSubPlans
+      end
+
       def mark_to_skip
         case self.state
         when :error

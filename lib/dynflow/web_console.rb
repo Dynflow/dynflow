@@ -143,7 +143,7 @@ module Dynflow
       end
 
       def updated_url(new_params)
-        url("?" + Rack::Utils.build_nested_query(params.merge(new_params.stringify_keys)))
+        url(request.path_info + "?" + Rack::Utils.build_nested_query(params.merge(new_params.stringify_keys)))
       end
 
       def paginated_url(delta)
@@ -211,7 +211,7 @@ module Dynflow
         end
       end
 
-      def filtering_options
+      def filtering_options(show_all = false)
         return @filtering_options if @filtering_options
 
         if params[:filters]
@@ -223,12 +223,20 @@ module Dynflow
 
           filters = params[:filters]
         elsif supported_filter?('state')
-          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - ['stopped'] }
+          excluded_states = show_all ? [] : ['stopped']
+          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - excluded_states }
         else
           filters = {}
         end
         @filtering_options = { filters: filters }.with_indifferent_access
         return @filtering_options
+      end
+
+      def find_execution_plans_options(show_all = false)
+        options = HashWithIndifferentAccess.new
+        options.merge!(filtering_options(show_all))
+        options.merge!(pagination_options)
+        options.merge!(ordering_options)
       end
 
       def filter_checkbox(field, values)
@@ -245,14 +253,20 @@ module Dynflow
     end
 
     get('/') do
-      options = HashWithIndifferentAccess.new
-      options.merge!(filtering_options)
-      options.merge!(pagination_options)
-      options.merge!(ordering_options)
+      options = find_execution_plans_options
 
       @plans = world.persistence.find_execution_plans(options)
       erb :index
     end
+
+    get('/:execution_plan_id/actions/:action_id/sub_plans') do |execution_plan_id, action_id|
+      options = find_execution_plans_options(true)
+      options[:filters].update('caller_execution_plan_id' => execution_plan_id,
+                               'caller_action_id' => action_id)
+      @plans = world.persistence.find_execution_plans(options)
+      erb :index
+    end
+
 
     get('/:id') do |id|
       @plan = world.persistence.load_execution_plan(id)
