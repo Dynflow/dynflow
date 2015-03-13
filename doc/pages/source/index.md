@@ -53,10 +53,10 @@ Dynflow has been developed to be able to support orchestration of services in th
 
 ## Current status
 
-![](https://img.shields.io/travis/Dynflow/dynflow/master.svg?style=flat)
-![](https://img.shields.io/github/issues/Dynflow/dynflow.svg?style=flat)
-![](https://img.shields.io/gem/v/dynflow.svg?style=flat)
-![](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)
+![Build](https://img.shields.io/travis/Dynflow/dynflow/master.svg?style=flat)
+![Issues](https://img.shields.io/github/issues/Dynflow/dynflow.svg?style=flat)
+![Gem version](https://img.shields.io/gem/v/dynflow.svg?style=flat)
+![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)
 
 ## Authors
 
