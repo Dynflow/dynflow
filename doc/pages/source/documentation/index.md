@@ -45,9 +45,7 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   what problems does Dynflow solve?
 -   maybe a little history
 
-## Glossary TODO
-
-*TODO to be refined*
+## Glossary
 
 -   **Action** - building block of execution plans, a Ruby class inherited
     from `Dynflow::Action`, defines code to be run in each phase.
@@ -55,14 +53,14 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   **Input** - A `Hash` of data coming to the action.
 -   **Output** - A `Hash` of data that the action produces. It's
     persisted and can be used as input of other actions.
--   **Execution plan** - definition of the workflow: product of the plan phase
+-   **Execution plan** - definition of the workflow: product of the plan phase,
 -   **Triggering an action** - entering the plan phase, starting with the plan
     method of the action. The execution follows immediately.
 -   **Flow** - definition of the `run`/`finalize` phase, holding the information
     about steps that can run concurrently/in sequence. Part of execution plan.
 -   **Executor** - service that executes the run and finalize flows based on
     the execution plan. It can run in the same process as the plan phase or in
-    different process (using the remote executor)
+    different process (using the remote executor).
 -   **World** - the universe where the Dynflow runs the code: it holds all
     needed configuration. Usually there's only one world per Dynflow process,
     besides configuration it also holds `Persistence`, `Logger`, `Executor` and
