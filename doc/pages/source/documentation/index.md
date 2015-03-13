@@ -53,8 +53,8 @@ Dynflow has been developed to be able to support orchestration of services in th
     from `Dynflow::Action`, defines code to be run in each phase.
 -   **Phase** - Each action has three phases: `plan`, `run`, `finalize`.
 -   **Input** - A `Hash` of data coming to the action.
--   **Output* - A `Hash` of data that the action produces. It's
-      persisted and can by used as input of other actions.
+-   **Output** - A `Hash` of data that the action produces. It's
+    persisted and can be used as input of other actions.
 -   **Execution plan** - definition of the workflow: product of the plan phase
 -   **Triggering an action** - entering the plan phase, starting with the plan
     method of the action. The execution follows immediately.
@@ -69,8 +69,8 @@ Dynflow has been developed to be able to support orchestration of services in th
     all the other objects necessary for action executing. This concept
     allows us to avoid globally shared state. Also, the worlds can
     talk to each other, which is helpful for production and
-    high-availability setups, having multiple worlds on different
-    hosts handling the execution of the execution plans.
+    high-availability setups,
+    having multiple worlds on different hosts handle the execution of the execution plans.
 
 ##  Examples
 
@@ -158,10 +158,25 @@ Both input and output are `Hash`es accessible by `Action#input` and `Action#outp
 need to be serializable to JSON so it should contain only combination of primitive Ruby types
 like: `Hash`, `Array`, `String`, `Integer`, etc.
 
-One should avoid using `self.output=` directly, since it might delete
-other data stored in the output (potentially by middleware and other
-parts of the action. Therefore it's preferred to use
-`self.output[:key] = 'value'` or `self.output.update(key: 'value')`.
+
+{% warning_block %}
+
+One should avoid using directly
+
+```ruby
+self.output = { key: data }
+```
+
+It might delete other data stored in the output (potentially by middleware and other
+parts of the action). Therefore it's preferred to use
+
+```ruby
+output.update(key: data, another_key: another_data)
+# or for one key
+output[:key] = data
+```
+
+{% endwarning_block %}
 
 {% info_block %}
 
@@ -191,12 +206,13 @@ by default. (It needs to be revisited and updated to be fully functional.)
 
 #### Triggering
 
-Triggering the action means starting the plan phase, followed by execution immediately.
+Triggering the action means starting the plan phase, followed by immediate execution.
 Any action is triggered by calling:
 
 ``` ruby
 world_instance.trigger(AnAction, *args)
 ```
+
 {% info_block %}
 
 In Foreman and Katello actions are usually triggered by `ForemanTask.sync_task` and
@@ -250,7 +266,7 @@ end
 #### Planning
 
 Planning always uses the thread triggering the action. Planning phase
-configures actions's input for run phase. It starts by executing
+configures action's input for run phase. It starts by executing
 `plan` method of the action instance passing in arguments from
 `World#trigger method`
 
@@ -276,7 +292,7 @@ world_instance.trigger AnAction, data: 'nothing'
 The above will just plan itself copying input to output in run phase.
 
 In most cases the `plan` method is overridden to plan self with transformed arguments and/or
-to plan other actions. In the Rails application, then arguments of the
+to plan other actions. In the Rails application, the arguments of the
 plan phase are often the ActiveRecord objects, that are then
 used to produce the inputs for the actions.
 
@@ -305,7 +321,7 @@ performance impact as well as causes issues when changing the
 attributes later.
 
  On the other hand, the input should contain enough data to perform
-the job without needint to reaching to external sources. Therefore,
+the job without the need for reaching to external sources. Therefore,
 instead of passing just the ActiveRecord id and loading the whole
 record again in run phase, just to use some attributes, it's better to
 use these attributes directly as input of the action.
@@ -532,9 +548,9 @@ The usual execution looks as follows, we use an ActiveRecord User as example of 
     planning phase. The record is marked as incomplete.
 1.  Running: Operations needed for the user in external services with (e.g.) REST call.
     The phase finishes when the all the external calls succeeded successfully.
-1. Finalizing: The record in local DB is marked as done: ready to be
-used. Potentially, saving some data that were retrieved in the running
-phase back to the local database.
+1.  Finalizing: The record in local DB is marked as done: ready to be
+    used. Potentially, saving some data that were retrieved in the running
+    phase back to the local database.
 
 For that reason there are transactions around whole planning and finalizing phase
 (all action's plan methods are in one transaction).
@@ -552,8 +568,8 @@ if `TransactionAdapters::ActiveRecord` is used.
 
 Second outcome of the design is convention when actions should be accessing local Database:
 
--   **allowed** in planning and finalizing phases
--   **disallowed** (or at least discouraged) in the running phase
+-   **allowed** - in planning and finalizing phases
+-   **disallowed** - (or at least discouraged) in the running phase
 
 {% warning_block %}
 
@@ -830,11 +846,11 @@ Each **Action phase** can be in one of the following states:
 
 ### Error handling
 
-If there is an error risen in **planning** phase, the error is recorded in the Action persistence
+If there is an error risen in **planning** phase, the error is recorded and persisted
 and it bubbles up in `World#trigger` method which was used to trigger the action leading to
 this error. If you compare it to errors raised during `run` and `finalize` phase,
-there's the major difference: Those are never bubbling up in `trigger` because they are running
-in executor not in triggering Thread, they are just stored in Action persistence.
+there's the major difference: Those never bubble up in `trigger` because they are running
+in executor not in triggering Thread, they are just recorded and persisted.
 
 If there is an error in **running** phase, the execution pauses. You can inspect the error in
 [console](#console). The error may be intermittent or you may fix the problem manually. After
