@@ -58,7 +58,7 @@ Dynflow has been developed to be able to support orchestration of services in th
 -   **Execution plan** - definition of the workflow: product of the plan phase
 -   **Triggering an action** - entering the plan phase, starting with the plan
     method of the action. The execution follows immediately.
--   **Flow** - definition of the run/finalize phase, holding the information
+-   **Flow** - definition of the `run`/`finalize` phase, holding the information
     about steps that can run concurrently/in sequence. Part of execution plan.
 -   **Executor** - service that executes the run and finalize flows based on
     the execution plan. It can run in the same process as the plan phase or in
@@ -149,8 +149,8 @@ After that some finalizing steps can be taken. Actions can use outputs of other 
 as parts of their inputs establishing dependency. Action's state is serialized between each phase
 and survives machine/executor restarts.
 
-As lightly touched in the previous paragraph there are 3 phases: planning, running, finalizing.
-Planning phase starts by triggering an action.
+As lightly touched in the previous paragraph there are 3 phases: `plan`, `run`, `finalize`.
+Plan phase starts by triggering an action.
 
 #### Input and Output
 
@@ -263,9 +263,9 @@ def self.trigger_task(async, action, *args, &block)
 end
 ```
 
-#### Planning
+#### Plan phase
 
-Planning always uses the thread triggering the action. Planning phase
+Planning always uses the thread triggering the action. Plan phase
 configures action's input for run phase. It starts by executing
 `plan` method of the action instance passing in arguments from
 `World#trigger method`
@@ -381,12 +381,12 @@ services.
 
 {% endwarning_block %}
 
-Action may access local DB in planning phase,
+Action may access local DB in plan phase,
 see [Database and Transactions](#database-and-transactions).
 
-#### Running
+#### Run phase
 
-Actions has a running phase if there is `run` method implemented.
+Actions has a run phase if there is `run` method implemented.
 (There may be actions just planning other actions.)
 
 The run method implements the main piece of work done by this action converting
@@ -396,12 +396,12 @@ calls to other systems, etc.
 Local DB should not be accessed in this phase,
 see [Database and Transactions](#database-and-transactions)
 
-#### Finalizing
+#### Finale phase
 
-Main purpose of finalization phase is to be able access local DB after action finishes
+Main purpose of `finalize` phase is to be able access local DB after action finishes
 successfully, like: indexing based on new data, updating records as fully created, etc.
 Finalize phase does not modify input or output of the action.
-Action may access local DB in finalizing phase and must be **idempotent**,
+Action may access local DB in `finalize` phase and must be **idempotent**,
 see [Database and Transactions](#database-and-transactions).
 
 ### Dependencies
@@ -545,16 +545,16 @@ The usual execution looks as follows, we use an ActiveRecord User as example of 
 
 1.  Trigger user creation, argument is an unsaved ActiveRecord user object
 1.  Planning: The user is stored in local DB (in the Dynflow hosting application) within the
-    planning phase. The record is marked as incomplete.
+    `plan` phase. The record is marked as incomplete.
 1.  Running: Operations needed for the user in external services with (e.g.) REST call.
     The phase finishes when the all the external calls succeeded successfully.
 1.  Finalizing: The record in local DB is marked as done: ready to be
-    used. Potentially, saving some data that were retrieved in the running
+    used. Potentially, saving some data that were retrieved in the `run`
     phase back to the local database.
 
-For that reason there are transactions around whole planning and finalizing phase
+For that reason there are transactions around whole `plan` and `finale` phase
 (all action's plan methods are in one transaction).
-If anything goes wrong in the planning phase any change made during planning to local DB is
+If anything goes wrong in the `plan` phase any change made during planning to local DB is
 reverted. Same holds for finalizing, if anything goes wrong, all changes are reverted. Therefore
 all finalization methods has to be **idempotent**.
 
@@ -568,8 +568,8 @@ if `TransactionAdapters::ActiveRecord` is used.
 
 Second outcome of the design is convention when actions should be accessing local Database:
 
--   **allowed** - in planning and finalizing phases
--   **disallowed** - (or at least discouraged) in the running phase
+-   **allowed** - in `plan` and `finalize` phases
+-   **disallowed** - (or at least discouraged) in the `run` phase
 
 {% warning_block %}
 
@@ -846,20 +846,20 @@ Each **Action phase** can be in one of the following states:
 
 ### Error handling
 
-If there is an error risen in **planning** phase, the error is recorded and persisted
+If there is an error risen in **`plan` phase**, the error is recorded and persisted
 and it bubbles up in `World#trigger` method which was used to trigger the action leading to
 this error. If you compare it to errors raised during `run` and `finalize` phase,
 there's the major difference: Those never bubble up in `trigger` because they are running
 in executor not in triggering Thread, they are just recorded and persisted.
 
-If there is an error in **running** phase, the execution pauses. You can inspect the error in
+If there is an error in **`run` phase**, the execution pauses. You can inspect the error in
 [console](#console). The error may be intermittent or you may fix the problem manually. After
 that the execution plan can be resumed and it'll continue by rerunning the failed action and
 continuing with the rest of the actions. During fixing the problem you may also do the steps
 in the actions manually, in that case the failed action can be also marked as skipped. After
 resuming the skipped action is not executed and the execution plan continues with the rest.
 
-If there is an error in **finalizing** phase, whole finalization phase for all the actions is
+If there is an error in **`finalize` phase**, whole `finalize` phase for all the actions is
 rollbacked and can be rerun when the problem is fixed by resuming.
 
 If you encounter an error during run phase `error!` or usual `raise` can be used.
