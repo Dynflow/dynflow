@@ -99,6 +99,11 @@ experiment).
 
 ### Action anatomy
 
+{% digraph %}
+rankdir=LR
+Trigger -> Plan -> Run -> Finalize
+{% enddigraph %}
+
 When action is triggered, Dynflow executes plan method on this action, which
 is responsible for building the execution plan. It builds the execution plan by calling
 `plan_action` and `plan_self` methods, effectively listing actions that should be run as

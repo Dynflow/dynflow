@@ -33,6 +33,6 @@ redcarpet:
 
 plantuml:
   plantuml_jar: .bin/plantuml.jar   # path to plantuml jar
-  tmp_folder: tmp/plantuml          # tmp folder to put generated image files
+  tmp_folder: tmp                   # tmp folder to put generated image files
   background_color: transparent     # [optional] UML image background color
 #  dot_exe: /usr/local/bin/dot      # [optional] path to Graphviz dot execution
