@@ -1,0 +1,38 @@
+---
+name: Dynflow
+title: Dynflow
+url: http://dynflow.github.io
+markdown: redcarpet
+highlighter: pygments
+
+source:       ./source
+destination:  ./public
+plugins:      ./plugins
+include:
+- .nojekyll
+
+tag_page_layout: tag_page
+tag_page_dir: tag
+
+permalink: /blog/:year/:month/:day/:title/
+
+favicon: /images/logo-square.png
+
+disqus_short_name: dynflow
+twitter_user: pitr_ch
+google_analytics_tracking_id: UA-60290609-1
+
+sass:
+  sass_dir: _sass
+  
+redcarpet:
+  extensions: 
+    - with_toc_data
+    - html_toc
+    - strikethrough
+
+plantuml:
+  plantuml_jar: .bin/plantuml.jar   # path to plantuml jar
+  tmp_folder: tmp/plantuml          # tmp folder to put generated image files
+  background_color: transparent     # [optional] UML image background color
+#  dot_exe: /usr/local/bin/dot      # [optional] path to Graphviz dot execution

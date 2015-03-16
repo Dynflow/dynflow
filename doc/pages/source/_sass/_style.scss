@@ -1,0 +1,172 @@
+@import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+@import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700);
+@import url(http://fonts.googleapis.com/css?family=Droid+Sans:400,700);
+@import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic,700italic);
+
+//@import url(http://fonts.googleapis.com/css?family=Roboto:100:300:400);
+
+body {
+  padding-top: 70px;
+  padding-bottom: 30px;
+  background: rgb(238, 238, 238) url("/images/noise.png");
+}
+
+.label {
+  font-weight: 400;
+  /*font-family: Roboto, "Ubuntu Mono", monospace;*/
+}
+
+.red {
+  color: red;
+}
+
+.post-meta {
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid;
+  border-color: rgba(0, 39, 59, .08);
+}
+
+.post .sharing {
+  margin-top: 30px;
+  border-bottom: 2px solid;
+  border-color: rgba(0, 39, 59, .08);
+  padding-bottom: 10px;
+}
+
+#disqus_thread {
+  margin-top: 50px;
+}
+
+.toc.well {
+  h4 {
+    margin-top: 0;
+  }
+
+  @media(min-width: $screen-md) {
+    &.affix {
+      width: 293px;
+    }
+  }
+  @media(min-width: $screen-lg) {
+    &.affix {
+      width: 360px;
+    }
+  }
+}
+
+@media(max-width: ($screen-md - 1)) {
+  .affix {
+    position: static;
+    width: auto;
+    top: 0;
+  }
+}
+
+pre {
+  font-size: $font-size-base;
+}
+
+.alert {
+  > p + .highlight pre {
+    margin-top: 5px;
+    margin-bottom: 0px;
+  }
+
+  > .highlight + p {
+    margin-top: 5px;
+  }
+}
+
+
+.toc {
+  ul {
+    margin-bottom: 0;
+    padding-left: 0px;
+  }
+  ul ul {
+    padding-left: 40px;
+  }
+
+  li {
+    list-style: none;
+  }
+
+  counter-reset: l1counter;
+
+  li a:before {
+    content: counter(l1counter) ".\0000a0\0000a0";
+    counter-increment: l1counter;
+  }
+
+  li a {
+    counter-reset: l2counter;
+  }
+
+  li li a:before {
+    content: counter(l1counter) "." counter(l2counter) ".\0000a0\0000a0";
+    counter-increment: l2counter;
+  }
+
+  li li a {
+    counter-reset: l3counter;
+  }
+
+  li li li a:before {
+    content: counter(l1counter) "." counter(l2counter) "." counter(l3counter) ".\0000a0\0000a0";
+    counter-increment: l3counter;
+  }
+
+  li li li a {
+    counter-reset: l4counter;
+  }
+}
+
+/* Switch numbering on by adding class "countheads" to h1 */
+/* Prevent numbering for a single heading via class "nocount" */
+
+body {
+  counter-reset: h2counter;
+}
+
+h1 {
+  counter-reset: h2counter;
+}
+
+.countheads ~ h2:before {
+  content: counter(h2counter) ".\0000a0\0000a0";
+  counter-increment: h2counter;
+}
+
+h2 {
+  counter-reset: h3counter;
+}
+
+.countheads ~ h3:before {
+  content: counter(h2counter) "." counter(h3counter) ".\0000a0\0000a0";
+  counter-increment: h3counter;
+}
+
+h3 {
+  counter-reset: h4counter;
+}
+
+.countheads ~ h4:before {
+  content: counter(h2counter) "." counter(h3counter) "." counter(h4counter) ".\0000a0\0000a0";
+  counter-increment: h4counter;
+}
+
+h2.nocount:before {
+  content: none;
+  counter-increment: none;
+}
+
+h3.nocount:before {
+  content: none;
+  counter-increment: none;
+}
+
+h4.nocount:before {
+  content: none;
+  counter-increment: none;
+}
