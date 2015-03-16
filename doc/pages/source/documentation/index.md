@@ -844,11 +844,12 @@ Each **Action phase** can be in one of the following states:
 
 ### Error handling
 
-If there is an error risen in **`plan` phase**, the error is recorded and persisted
-and it bubbles up in `World#trigger` method which was used to trigger the action leading to
-this error. If you compare it to errors raised during `run` and `finalize` phase,
+If there is an error risen in **`plan` phase**, the error is persisted in the Action object 
+for later inspection and it bubbles up in `World#trigger` method which was used to trigger 
+the action leading to this error. 
+If you compare it to errors raised during `run` and `finalize` phase,
 there's the major difference: Those never bubble up in `trigger` because they are running
-in executor not in triggering Thread, they are just recorded and persisted.
+in executor not in triggering Thread, they are just persisted in Action object.
 
 If there is an error in **`run` phase**, the execution pauses. You can inspect the error in
 [console](#console). The error may be intermittent or you may fix the problem manually. After
