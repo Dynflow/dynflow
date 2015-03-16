@@ -6,17 +6,18 @@ module Dynflow
     end
 
     def run(event = nil)
-      case(event)
-      when nil
-        if output[:total_count]
-          resume
-        else
-          initiate
-        end
-      when SubPlanFinished
-        mark_as_done(event.execution_plan_id, event.success)
-        try_to_finish or suspend
-      end
+      match event,
+            (on nil do
+               if output[:total_count]
+                 resume
+               else
+                 initiate
+               end
+             end),
+            (on SubPlanFinished do
+              mark_as_done(event.execution_plan_id, event.success)
+              try_to_finish or suspend
+             end)
     end
 
     def initiate
@@ -25,7 +26,7 @@ module Dynflow
       wait_for_sub_plans(sub_plans)
     end
 
-    # @api override when the logic for the initiation of the subtasks
+    # @abstract when the logic for the initiation of the subtasks
     #      is different from the default one.
     # @returns a triggered task or array of triggered tasks
     # @example
@@ -62,7 +63,7 @@ module Dynflow
 
       planned, failed = sub_plans.partition(&:planned?)
 
-      sub_plan_ids = ((planned + failed).map(&:execution_plan_id))
+      sub_plan_ids = (planned + failed).map(&:execution_plan_id)
 
       output[:total_count] = sub_plan_ids.size
       output[:failed_count] = failed.size
