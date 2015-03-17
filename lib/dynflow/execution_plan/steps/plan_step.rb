@@ -76,14 +76,18 @@ module Dynflow
             hash[:children]
       end
 
-      def initialize_action
+      def initialize_action(caller_action)
         attributes = { execution_plan_id: execution_plan_id,
                        id:                action_id,
                        step:              self,
                        plan_step_id:      self.id,
                        run_step_id:       nil,
                        finalize_step_id:  nil,
-                       phase:             phase}
+                       phase:             phase }
+        if caller_action
+          attributes.update(caller_execution_plan_id: caller_action.execution_plan_id,
+                            caller_action_id:         caller_action.id)
+        end
         @action = action_class.new(attributes, world)
         persistence.save_action(execution_plan_id, @action)
         @action

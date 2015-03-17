@@ -27,7 +27,7 @@ module Dynflow
       end
 
       META_DATA = { execution_plan: %w(state result started_at ended_at real_time execution_time),
-                    action:         [],
+                    action:         %w(caller_execution_plan_id caller_action_id),
                     step:           %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight) }
 
       def initialize(config)
@@ -151,8 +151,18 @@ module Dynflow
       def filter(data_set, options)
         filters = Type! options[:filters], NilClass, Hash
         return data_set if filters.nil?
+        unknown = filters.keys - META_DATA.fetch(:execution_plan) - %w[caller_execution_plan_id caller_action_id]
 
-        unless (unknown = filters.keys - META_DATA.fetch(:execution_plan)).empty?
+        if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
+          raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"
+        end
+
+        if filters.key?('caller_execution_plan_id')
+          data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
+              select_all(TABLES[:execution_plan]).distinct
+        end
+
+        unless (unknown).empty?
           raise ArgumentError, "unkown columns: #{unknown.inspect}"
         end
 
