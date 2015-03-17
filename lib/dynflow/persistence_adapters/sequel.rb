@@ -50,9 +50,7 @@ module Dynflow
                                 options),
                           options)
 
-        data_set.map do |record|
-          HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
-        end
+        data_set.map { |record| load_data(record) }
       end
 
       def load_execution_plan(execution_plan_id)
@@ -87,9 +85,7 @@ module Dynflow
         db.transaction do
           data_set = table(:envelope).where(receiver_id: receiver_id).to_a
 
-          envelopes = data_set.map do |record|
-            Serializable::AlgebrickSerializer.instance.load(record[:data], Dispatcher::Envelope)
-          end
+          envelopes = data_set.map { |record| load_data(record) }
 
           table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
           return envelopes
@@ -115,9 +111,7 @@ module Dynflow
       def find_coordinator_records(options)
         options = options.dup
         data_set = filter(:coordinator_record, table(:coordinator_record), options)
-        data_set.map do |record|
-          HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
-        end
+        data_set.map { |record| load_data(record) }
       end
 
       def to_hash
@@ -182,10 +176,14 @@ module Dynflow
       def load(what, condition)
         table = table(what)
         if (record = with_retry { table.first(condition.symbolize_keys) } )
-          HashWithIndifferentAccess.new MultiJson.load(record[:data])
+          load_data(record)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
+      end
+
+      def load_data(record)
+        HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
       end
 
       def delete(what, condition)
@@ -194,24 +192,12 @@ module Dynflow
 
       def extract_metadata(what, value)
         meta_keys = META_DATA.fetch(what)
-        match value,
-              (on Hash do
-                 value         = value.with_indifferent_access
-                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
-               end),
-              (on Algebrick::Value do
-                 meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k.to_sym] }
-               end)
+        value         = value.with_indifferent_access
+        meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
       end
 
       def dump_data(value)
-        match value,
-              (on Hash do
-                 MultiJson.dump Type!(value, Hash)
-               end),
-              (on Algebrick::Value do
-                 Serializable::AlgebrickSerializer.instance.dump(value)
-               end)
+        MultiJson.dump Type!(value, Hash)
       end
 
       def paginate(data_set, options)

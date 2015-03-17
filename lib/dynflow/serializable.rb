@@ -23,7 +23,7 @@ module Dynflow
     end
 
     def self.check_class_key_present(hash)
-      raise ArgumentError, 'missing :class' unless hash[:class]
+      raise ArgumentError, "missing :class in #{hash.inspect}" unless hash[:class]
     end
 
     def self.constantize(action_name)
@@ -74,24 +74,5 @@ module Dynflow
     end
 
     private_class_method :string_to_time, :hash_to_error
-
-    # TODO: revisit when after enhancing algebrick serialization
-    class AlgebrickSerializer
-
-      include Algebrick::TypeCheck
-
-      def self.instance
-        @instance ||= self.new
-      end
-
-      def dump(object)
-        Base64.encode64(Marshal.dump(object))
-      end
-
-      def load(string, desired_type)
-        object = Marshal.load(Base64.decode64(string))
-        Type! object, desired_type
-      end
-    end
   end
 end

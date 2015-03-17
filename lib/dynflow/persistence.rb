@@ -51,11 +51,15 @@ module Dynflow
 
     def push_envelope(envelope)
       Type! envelope, Dispatcher::Envelope
-      adapter.push_envelope(envelope)
+      adapter.push_envelope(Dynflow.serializer.dump(envelope))
     end
 
     def pull_envelopes(world_id)
-      adapter.pull_envelopes(world_id)
+      adapter.pull_envelopes(world_id).map do |data|
+        envelope = Dynflow.serializer.load(data)
+        Type! envelope, Dispatcher::Envelope
+        envelope
+      end
     end
   end
 end
