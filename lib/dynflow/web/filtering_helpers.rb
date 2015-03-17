@@ -7,7 +7,7 @@ module Dynflow
         end
       end
 
-      def filtering_options
+      def filtering_options(show_all = false)
         return @filtering_options if @filtering_options
 
         if params[:filters]
@@ -19,12 +19,20 @@ module Dynflow
 
           filters = params[:filters]
         elsif supported_filter?('state')
-          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - ['stopped'] }
+          excluded_states = show_all ? [] : ['stopped']
+          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - excluded_states }          
         else
           filters = {}
         end
         @filtering_options = { filters: filters }.with_indifferent_access
         return @filtering_options
+      end
+
+      def find_execution_plans_options(show_all = false)
+        options = HashWithIndifferentAccess.new
+        options.merge!(filtering_options(show_all))
+        options.merge!(pagination_options)
+        options.merge!(ordering_options)
       end
 
       def paginate?

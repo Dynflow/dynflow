@@ -115,7 +115,7 @@ module Dynflow
       end
 
       def updated_url(new_params)
-        url("?" + Rack::Utils.build_nested_query(params.merge(new_params.stringify_keys)))
+        url(request.path_info + "?" + Rack::Utils.build_nested_query(params.merge(new_params.stringify_keys)))
       end
 
       def paginated_url(delta)

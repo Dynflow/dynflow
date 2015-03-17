@@ -21,6 +21,11 @@ module Dynflow
       return Action.from_hash(attributes, step.world)
     end
 
+    def load_action_for_presentation(execution_plan, action_id)
+      attributes = adapter.load_action(execution_plan.id, action_id)
+      Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan), @world)
+    end
+
     def save_action(execution_plan_id, action)
       adapter.save_action(execution_plan_id, action.id, action.to_hash)
     end

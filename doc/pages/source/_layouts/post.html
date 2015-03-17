@@ -1,0 +1,19 @@
+---
+layout: page
+sharing: true
+comments: true
+---
+
+<div class="post">
+
+    <p class=post-meta>
+        {{ page.date | date_to_string }}
+    <span class="pull-right">
+        Tags: {{ page | tags }}
+    </span>
+    </p>
+
+
+    {{ content }}
+
+</div>

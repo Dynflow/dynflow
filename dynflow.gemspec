@@ -5,12 +5,11 @@ require "dynflow/version"
 Gem::Specification.new do |s|
   s.name        = "dynflow"
   s.version     = Dynflow::VERSION
-  s.authors     = ["Ivan Necas"]
+  s.authors     = ["Ivan Necas", "Petr Chalupa"]
   s.email       = ["inecas@redhat.com"]
   s.homepage    = "http://github.com/Dynflow/dynflow"
   s.summary     = "DYNamic workFLOW engine"
-  s.description = "Generate and executed workflows dynamically based "+
-      "on input data and leave it open for others to jump into it as well"
+  s.description = "Ruby workflow/orchestration engine"
   s.license     = "MIT"
 
   s.files         = `git ls-files`.split("\n")

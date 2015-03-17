@@ -1,0 +1,162 @@
+module Dynflow
+  module Action::WithSubPlans
+    SubPlanFinished = Algebrick.type do
+      fields! :execution_plan_id => String,
+              :success           => type { variants TrueClass, FalseClass }
+    end
+
+    def run(event = nil)
+      match event,
+            (on nil do
+               if output[:total_count]
+                 resume
+               else
+                 initiate
+               end
+             end),
+            (on SubPlanFinished do
+              mark_as_done(event.execution_plan_id, event.success)
+              try_to_finish or suspend
+             end)
+    end
+
+    def initiate
+      sub_plans = create_sub_plans
+      sub_plans = Array[sub_plans] unless sub_plans.is_a? Array
+      wait_for_sub_plans(sub_plans)
+    end
+
+    # @abstract when the logic for the initiation of the subtasks
+    #      is different from the default one.
+    # @returns a triggered task or array of triggered tasks
+    # @example
+    #
+    #        def create_sub_plans
+    #          trigger(MyAction, "Hello")
+    #        end
+    #
+    # @example
+    #
+    #        def create_sub_plans
+    #          [trigger(MyAction, "Hello 1"), trigger(MyAction, "Hello 2")]
+    #        end
+    #
+    def create_sub_plans
+      raise NotImplementedError
+    end
+
+    # @api method to be called after all the sub tasks finished
+    def on_finish
+    end
+
+    # Helper for creating sub plans
+    def trigger(*args)
+      world.trigger do
+        world.plan_with_caller(self, *args)
+      end
+    end
+
+    def wait_for_sub_plans(sub_plans)
+      output.update(total_count: 0,
+                    failed_count: 0,
+                    success_count: 0)
+
+      planned, failed = sub_plans.partition(&:planned?)
+
+      sub_plan_ids = (planned + failed).map(&:execution_plan_id)
+
+      output[:total_count] = sub_plan_ids.size
+      output[:failed_count] = failed.size
+
+      if planned.any?
+        notify_on_finish(planned)
+      else
+        check_for_errors!
+      end
+    end
+
+    def try_to_finish
+      if done?
+        check_for_errors!
+        on_finish
+        return true
+      else
+        return false
+      end
+    end
+
+    def resume
+      if sub_plans.all? { |sub_plan| sub_plan.error_in_plan? }
+        initiate
+      else
+        recalculate_counts
+        try_to_finish or fail "Some sub plans are still not finished"
+      end
+    end
+
+    def sub_plans
+      @sub_plans ||= world.persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => execution_plan_id,
+                                                                       'caller_action_id' => self.id } )
+    end
+
+    def notify_on_finish(plans)
+      suspend do |suspended_action|
+        plans.each do |plan|
+          plan.finished.do_then do |value|
+            suspended_action << SubPlanFinished[plan.execution_plan_id,
+                                                value.result == :success]
+          end
+        end
+      end
+    end
+
+    def mark_as_done(plan_id, success)
+      if success
+        output[:success_count] += 1
+      else
+        output[:failed_count] += 1
+      end
+    end
+
+    def done?
+      if counts_set?
+        output[:total_count] - output[:success_count] - output[:failed_count] <= 0
+      else
+        false
+      end
+    end
+
+    def run_progress
+      if counts_set? && output[:total_count] > 0
+        (output[:success_count] + output[:failed_count]).to_f / output[:total_count]
+      else
+        0.1
+      end
+    end
+
+    def recalculate_counts
+      output.update(total_count: 0,
+                    failed_count: 0,
+                    success_count: 0)
+      sub_plans.each do |sub_plan|
+        output[:total_count] += 1
+        if sub_plan.state == :stopped
+          if sub_plan.error?
+            output[:failed_count] += 1
+          else
+            output[:success_count] += 1
+          end
+        end
+      end
+    end
+
+    def counts_set?
+      output[:total_count] && output[:success_count] && output[:failed_count]
+    end
+
+    def check_for_errors!
+      fail "A sub task failed" if output[:failed_count] > 0
+    end
+
+  end
+end

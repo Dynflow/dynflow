@@ -1,0 +1,24 @@
+<script type="text/javascript">
+    $().ready(function () {
+        var scrollTo = function (target) {
+            if (target.charAt(0) == '#' && $(target).length) {
+                $('html,body').animate({scrollTop: $(target).offset().top - 70}, 'normal');
+                return true;
+            } else
+                return false;
+        };
+
+        var callback = function (e) {
+            var target = $(this).attr('href');
+            if (scrollTo(target)) {
+                e.preventDefault();
+                location.hash = target;
+            }
+        };
+
+        $('.toc a').on('click', callback);
+        $('.page a').on('click', callback);
+
+        scrollTo(location.hash);
+    });
+</script>

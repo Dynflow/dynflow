@@ -92,13 +92,13 @@ module Dynflow
                real_time: 0.0, execution_time: 0.0 }
       adapter.save_execution_plan('plan1', plan)
 
-      action = { id: 1 }
+      action = { id: 1, caller_execution_plan_id: nil, caller_action_id: nil }
       -> { adapter.load_action('plan1', 1) }.must_raise KeyError
 
       adapter.save_action('plan1', 1, action)
       adapter.load_action('plan1', 1)[:id].must_equal 1
       adapter.load_action('plan1', 1)['id'].must_equal 1
-      adapter.load_action('plan1', 1).keys.size.must_equal 1
+      adapter.load_action('plan1', 1).keys.must_equal %w[id caller_execution_plan_id caller_action_id]
 
       adapter.save_action('plan1', 1, nil)
       -> { adapter.load_action('plan1', 1) }.must_raise KeyError

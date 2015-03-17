@@ -13,11 +13,15 @@ module Dynflow
       helpers Web::ConsoleHelpers
 
       get('/') do
-        options = HashWithIndifferentAccess.new
-        options.merge!(filtering_options)
-        options.merge!(pagination_options)
-        options.merge!(ordering_options)
+        options = find_execution_plans_options
+        @plans = world.persistence.find_execution_plans(options)
+        erb :index
+      end
 
+      get('/:execution_plan_id/actions/:action_id/sub_plans') do |execution_plan_id, action_id|
+        options = find_execution_plans_options(true)
+        options[:filters].update('caller_execution_plan_id' => execution_plan_id,
+                                 'caller_action_id' => action_id)
         @plans = world.persistence.find_execution_plans(options)
         erb :index
       end

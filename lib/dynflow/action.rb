@@ -22,6 +22,7 @@ module Dynflow
 
     require 'dynflow/action/polling'
     require 'dynflow/action/cancellable'
+    require 'dynflow/action/with_sub_plans'
 
     def self.all_children
       children.values.inject(children.values) do |children, child|
@@ -83,7 +84,8 @@ module Dynflow
     end
 
     attr_reader :world, :phase, :execution_plan_id, :id, :input,
-                :plan_step_id, :run_step_id, :finalize_step_id
+                :plan_step_id, :run_step_id, :finalize_step_id,
+                :caller_execution_plan_id, :caller_action_id
 
     middleware.use Action::Progress::Calculate
 
@@ -101,6 +103,9 @@ module Dynflow
       @finalize_step_id  = Type! attributes.fetch(:finalize_step_id), Integer, NilClass
 
       @execution_plan    = Type!(attributes.fetch(:execution_plan), ExecutionPlan) if phase? Present
+
+      @caller_execution_plan_id  = Type!(attributes.fetch(:caller_execution_plan_id, nil), String, NilClass)
+      @caller_action_id          = Type!(attributes.fetch(:caller_action_id, nil), Integer, NilClass)
 
       getter =-> key, required do
         required ? attributes.fetch(key) : attributes.fetch(key, {})
@@ -138,6 +143,19 @@ module Dynflow
       else
         @output
       end
+    end
+
+    def caller_action
+      plase! Present
+      return nil if @caller_action_id
+      return @caller_action if @caller_action
+
+      caller_execution_plan = if @caller_execution_plan_id == execution_plan.id
+                                execution_plan
+                              else
+                                world.persistence.load_execution_plan(@caller_execution_plan_id)
+                              end
+      @caller_action = world.persistence.load_action_for_presentation(caller_execution_plan, @caller_action_id)
     end
 
     def set_plan_context(execution_plan, trigger, from_subscription)
@@ -209,13 +227,15 @@ module Dynflow
 
     def to_hash
       recursive_to_hash(
-          { class:             self.class.name,
-            execution_plan_id: execution_plan_id,
-            id:                id,
-            plan_step_id:      plan_step_id,
-            run_step_id:       run_step_id,
-            finalize_step_id:  finalize_step_id,
-            input:             input },
+          { class:                     self.class.name,
+            execution_plan_id:         execution_plan_id,
+            id:                        id,
+            plan_step_id:              plan_step_id,
+            run_step_id:               run_step_id,
+            finalize_step_id:          finalize_step_id,
+            caller_execution_plan_id:  caller_execution_plan_id,
+            caller_action_id:          caller_action_id,
+            input:                     input },
           if phase? Run, Finalize, Present
             { output: output }
           end)
