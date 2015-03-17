@@ -52,7 +52,14 @@ module Dynflow
 
     # reload actions classes, intended only for devel
     def reload!
-      @action_classes.map! { |klass| klass.to_s.constantize }
+      # TODO what happens with newly loaded classes
+      @action_classes.map! do |klass|
+        begin
+          klass.to_s.constantize
+        rescue NameError
+          # ignore missing classes
+        end
+      end
       middleware.clear_cache!
       calculate_subscription_index
     end

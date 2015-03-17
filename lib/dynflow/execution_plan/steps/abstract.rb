@@ -31,8 +31,8 @@ module Dynflow
         @execution_time    = Type! execution_time, Numeric
         @real_time         = Type! real_time, Numeric
 
-        @progress_done     = Type! progress_done, Numeric, NilClass
-        @progress_weight   = Type! progress_weight, Numeric, NilClass
+        @progress_done   = Type! progress_done, Numeric, NilClass
+        @progress_weight = Type! progress_weight, Numeric, NilClass
 
         self.state = state.to_sym
 
@@ -155,9 +155,9 @@ module Dynflow
         block.call
       ensure
         @progress_done, @progress_weight = action.calculated_progress
-        @ended_at       = Time.now
-        @execution_time += @ended_at - start
-        @real_time      = @ended_at - @started_at
+        @ended_at                        = Time.now
+        @execution_time                  += @ended_at - start
+        @real_time                       = @ended_at - @started_at
       end
     end
   end
