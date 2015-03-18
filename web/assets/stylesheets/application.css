@@ -65,6 +65,7 @@ table.flow table {
 
 ul.plan-step p.step-label {
   cursor: pointer;
+  margin-bottom: 1em;
 }
 
 table.flow td.success span.step-label {
