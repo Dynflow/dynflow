@@ -6,7 +6,7 @@
 ![Gem version](https://img.shields.io/gem/v/dynflow.svg?style=flat)
 ![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)
 
-**Note:** *There is a project page and documentation being build in url <http://http://dynflow.github.io/>.
+**Note:** *There is a project page and documentation being build in url <http://dynflow.github.io/>.
 It's still work in progress but you may find useful information there. It'll eventually replace 
 this README.*
 
