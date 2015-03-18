@@ -146,6 +146,10 @@ module Dynflow
         rescue SystemCallError, IOError => error
           logger.warn error
           false
+        rescue Errno::ENOENT, Errno::ECONNREFUSED => error # No such file or directory/ Conn. refused
+          logger.warn 'Socket unavailable: Attempting to recreate the socket for the next connection'
+          Dynflow::Listeners::Socket.new(@world, @socket_path)
+          false
         rescue => error
           logger.fatal error
           raise error
