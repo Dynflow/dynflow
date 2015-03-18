@@ -179,6 +179,10 @@ module TestHelpers
       executor_id_for_plan(triggered.id)
     end
 
+    wait_for do
+      client_world.persistence.load_execution_plan(triggered.id).state == :running
+    end
+
     executor  = WorldFactory.created_worlds.find { |e| e.id == executor_id }
     raise "Could not find an executor with id #{executor_id}" unless executor
     yield executor
@@ -248,6 +252,7 @@ future_tests = -> do
         object = ObjectSpace._id2ref(id)
         # the object might get garbage-collected and other one being put on its place
         if object.is_a? Concurrent::IVar
+          object.wait(1)
           object.completed?
         else
           true
@@ -256,6 +261,7 @@ future_tests = -> do
         true
       end
     end
+
     unless non_ready_ivars.empty?
       unified = non_ready_ivars.each_with_object({}) do |(id, _), h|
         backtrace_first    = ivar_creations[id][0]
