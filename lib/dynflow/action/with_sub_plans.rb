@@ -51,9 +51,7 @@ module Dynflow
 
     # Helper for creating sub plans
     def trigger(*args)
-      world.trigger do
-        world.plan_with_caller(self, *args)
-      end
+      world.trigger { world.plan_with_caller(self, *args) }
     end
 
     def wait_for_sub_plans(sub_plans)
@@ -102,9 +100,8 @@ module Dynflow
     def notify_on_finish(plans)
       suspend do |suspended_action|
         plans.each do |plan|
-          plan.finished.do_then do |value|
-            suspended_action << SubPlanFinished[plan.execution_plan_id,
-                                                value.result == :success]
+          Concurrent.dataflow(plan.finished) do |value|
+            suspended_action << SubPlanFinished[value.id, value.result == :success]
           end
         end
       end
