@@ -33,7 +33,7 @@ module Dynflow
       end
 
       let(:persistence_adapter) { WorldFactory.persistence_adapter }
-      let(:shared_connector) { Connectors::Direct.new() }
+      let(:shared_connector) { Connectors::Direct.new }
       let(:connector) { Proc.new { |world| shared_connector.start_listening(world); shared_connector } }
       let(:executor_world) { create_world(true) }
       let(:executor_world_2) { create_world(true) }
@@ -88,6 +88,17 @@ module Dynflow
       end
 
       describe 'auto execute' do
+
+        before do
+          client_world.persistence.find_execution_plans({}).each do |plan|
+            # make sure we don't handle plans from previous tests
+            # TODO: delete the plans instead, once we have
+            # https://github.com/Dynflow/dynflow/pull/141 merged
+            plan.set_state(:stopped, true)
+            plan.save
+          end
+        end
+
         it "prevents from running the auto-execution twice" do
           client_world.auto_execute
           expected_locks = ["lock auto-execute", "unlock auto-execute"]

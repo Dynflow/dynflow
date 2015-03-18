@@ -201,10 +201,11 @@ module Dynflow
       end
 
       def paginate(data_set, options)
-        page     = Integer(options[:page] || 0)
-        per_page = Integer(options[:per_page] || 20)
+        page     = Integer(options[:page]) if options[:page]
+        per_page = Integer(options[:per_page]) if options[:per_page]
 
         if page
+          raise ArgumentError, "page specified without per_page attribute" unless per_page
           data_set.limit per_page, per_page * page
         else
           data_set
