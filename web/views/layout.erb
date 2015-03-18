@@ -1,25 +1,56 @@
 <html>
-  <head>
-    <title>Dynflow Console</title>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="{{ site.favicon }}" type="image/x-icon">
 
-    <script src="<%= url '/vendor/jquery/jquery.js' %>"></script>
+    <title>Dynflow Console</title>
 
     <link rel="stylesheet" type="text/css" href="<%= url '/vendor/bootstrap/css/bootstrap.css' %>">
     <link rel="stylesheet" type="text/css" href="<%= url '/stylesheets/application.css' %>">
 
-    <script src="<%= url '/vendor/google-code-prettify/run_prettify.js' %>"></script>
-
-    <script src="<%= url '/javascripts/application.js' %>"></script>
     <script src="<%= url '/vendor/jquery/jquery.js' %>"></script>
     <script src="<%= url '/vendor/bootstrap/js/bootstrap.js' %>"></script>
+    <script src="<%= url '/vendor/google-code-prettify/run_prettify.js' %>"></script>
+    <script src="<%= url '/javascripts/application.js' %>"></script>
+</head>
+<body>
 
-  </head>
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="/">
+              <img src="/images/logo-square.png"/>
+              Dynflow
+            </a>
+        </div>
+        <div id="navbar" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+              <li><a href="/">Execution plans</a></li>
+              <li><a href="/worlds">Worlds</a></li>
+            </ul>
+            <ul class="nav navbar-nav navbar-right">
+            </ul>
+        </div>
+    </div>
+</nav>
 
-  <body>
+<div class="container">
+
+  <div class="row">
     <% if params[:notice] %>
     <div id="notice" class="alert alert-warning"><%= h(params[:notice]) %></div>
     <% end %>
-
     <%= yield %>
-  </body>
+  </div>
+</div>
+</body>
 </html>
