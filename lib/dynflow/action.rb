@@ -371,9 +371,14 @@ module Dynflow
 
     # DSL for run phase
 
+    def suspended_action
+      phase! Run
+      @suspended_action ||= Action::Suspended.new(self)
+    end
+
     def suspend(&block)
       phase! Run
-      block.call Action::Suspended.new self if block
+      block.call suspended_action if block
       throw SUSPEND, SUSPEND
     end
 
