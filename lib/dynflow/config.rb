@@ -2,21 +2,19 @@ module Dynflow
   class Config
     include Algebrick::TypeCheck
 
-    class << self
-      def config_attr(name, *types, &default)
-        self.send(:define_method, "validate_#{ name }!") do |value|
-          Type! value, *types unless types.empty?
-        end
-        self.send(:define_method, name) do
-          var_name = "@#{ name }"
-          if instance_variable_defined?(var_name)
-            return instance_variable_get(var_name)
-          else
-            return default
-          end
-        end
-        self.send(:attr_writer, name)
+    def self.config_attr(name, *types, &default)
+      self.send(:define_method, "validate_#{ name }!") do |value|
+        Type! value, *types unless types.empty?
       end
+      self.send(:define_method, name) do
+        var_name = "@#{ name }"
+        if instance_variable_defined?(var_name)
+          return instance_variable_get(var_name)
+        else
+          return default
+        end
+      end
+      self.send(:attr_writer, name)
     end
 
     class ForWorld
