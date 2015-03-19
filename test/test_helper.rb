@@ -147,6 +147,14 @@ module TestHelpers
     end
   end
 
+  def connector_polling_interval(world)
+    if world.persistence.adapter.db.class.name == "Sequel::Postgres::Database"
+      5
+    else
+      0.005
+    end
+  end
+
   # waits for the passed block to return non-nil value and reiterates it while getting false
   # (till some reasonable timeout). Useful for forcing the tests for some event to occur
   def wait_for

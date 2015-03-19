@@ -118,7 +118,7 @@ module Dynflow
       end
 
       describe 'database connector - all in one' do
-        let(:connector) { Proc.new { |world| Connectors::Database.new(world, 0.005) } }
+        let(:connector) { Proc.new { |world| Connectors::Database.new(world, connector_polling_interval(world)) } }
         let(:executor_world) { create_world }
         let(:client_world) { executor_world }
 
@@ -127,7 +127,7 @@ module Dynflow
       end
 
       describe 'database connector - multi executor multi client' do
-        let(:connector) { Proc.new { |world| Connectors::Database.new(world, 0.005) } }
+        let(:connector) { Proc.new { |world| Connectors::Database.new(world, connector_polling_interval(world)) } }
         let(:executor_world) { create_world(true) }
         let(:executor_world_2) { create_world(true) }
         let(:client_world) { create_world(false) }
