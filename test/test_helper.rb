@@ -12,7 +12,7 @@ $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
 
 require 'dynflow'
 require 'dynflow/testing'
-require 'pry'
+begin require 'pry'; rescue LoadError; nil end
 
 require 'support/code_workflow_example'
 require 'support/middleware_example'
@@ -111,6 +111,7 @@ module WorldFactory
   def self.persistence_adapter
     @persistence_adapter ||= begin
                                db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
+                               puts "Using database configuration: #{db_config}"
                                Dynflow::PersistenceAdapters::Sequel.new(db_config)
                              end
   end
