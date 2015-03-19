@@ -10,7 +10,7 @@ module Dynflow
           @started  = false
         end
 
-        def enabled?
+        def notify_supported?
           @db.class.name == "Sequel::Postgres::Database"
         end
 
@@ -94,7 +94,7 @@ module Dynflow
         private
 
         def postgres_listen_start
-          @postgres_listener.start if @postgres_listener.enabled? && !@postgres_listener.started?
+          @postgres_listener.start if @postgres_listener.notify_supported? && !@postgres_listener.started?
         end
 
         def postgres_listen_stop
@@ -111,7 +111,7 @@ module Dynflow
 
         def send_envelope(envelope)
           @world.persistence.push_envelope(envelope)
-          if @postgres_listener.enabled?
+          if @postgres_listener.notify_supported?
             @postgres_listener.notify(envelope.receiver_id)
           end
         rescue => e
