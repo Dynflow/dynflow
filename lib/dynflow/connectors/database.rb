@@ -44,7 +44,8 @@ module Dynflow
       class Core < Actor
         attr_reader :polling_interval
 
-        def initialize(polling_interval)
+        def initialize(connector, polling_interval)
+          @connector = connector
           @world = nil
           @executor_round_robin = RoundRobin.new
           @stopped = false
@@ -84,7 +85,7 @@ module Dynflow
             if @stopped
               log(Logger::ERROR, "Envelope #{envelope} received for stopped world")
             else
-              @world.receive(envelope)
+              @connector.receive(@world, envelope)
             end
           else
             send_envelope(update_receiver_id(envelope, world_id))
@@ -137,7 +138,7 @@ module Dynflow
       end
 
       def initialize(world = nil, polling_interval = 1)
-        @core  = Core.spawn('connector-database-core', polling_interval)
+        @core  = Core.spawn('connector-database-core', self, polling_interval)
         start_listening(world) if world
       end
 

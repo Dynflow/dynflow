@@ -162,21 +162,6 @@ module Dynflow
       accepted.fail e
     end
 
-    def receive(envelope)
-      Type! envelope, Dispatcher::Envelope
-      match(envelope.message,
-            (on Dispatcher::Ping do
-               response_envelope = envelope.build_response_envelope(Dispatcher::Pong, self)
-               connector.send(response_envelope)
-             end),
-            (on Dispatcher::Request do
-               executor_dispatcher.tell([:handle_request, envelope])
-             end),
-            (on Dispatcher::Response do
-               client_dispatcher.tell([:dispatch_response, envelope])
-             end))
-    end
-
     def terminate(future = Concurrent::IVar.new)
       @termination_barrier.synchronize do
         @terminated ||= Concurrent::Promise.execute do

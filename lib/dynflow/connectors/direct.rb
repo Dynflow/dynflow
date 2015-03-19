@@ -4,7 +4,8 @@ module Dynflow
 
       class Core < Actor
 
-        def initialize
+        def initialize(connector)
+          @connector = connector
           @worlds = {}
           @executor_round_robin = RoundRobin.new
         end
@@ -22,7 +23,7 @@ module Dynflow
 
         def handle_envelope(envelope)
           if world = find_receiver(envelope)
-            world.receive(envelope)
+            @connector.receive(world, envelope)
           else
             log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
           end
@@ -42,7 +43,7 @@ module Dynflow
       end
 
       def initialize(world = nil)
-        @core  = Core.spawn('connector-direct-core')
+        @core  = Core.spawn('connector-direct-core', self)
         start_listening(world) if world
       end
 
