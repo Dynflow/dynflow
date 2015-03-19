@@ -21,6 +21,7 @@ module Dynflow
   class Error < StandardError
   end
 
+  require 'dynflow/round_robin'
   require 'dynflow/actor'
   require 'dynflow/errors'
   require 'dynflow/serializer'

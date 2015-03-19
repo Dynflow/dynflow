@@ -6,15 +6,17 @@ module Dynflow
 
         def initialize
           @worlds = {}
-          @round_robin_counter = 0
+          @executor_round_robin = RoundRobin.new
         end
 
         def start_listening(world)
           @worlds[world.id] = world
+          @executor_round_robin.add(world) if world.executor
         end
 
         def stop_listening(world)
           @worlds.delete(world.id)
+          @executor_round_robin.delete(world) if world.executor
           terminate! if @worlds.empty?
         end
 
@@ -30,26 +32,12 @@ module Dynflow
 
         def find_receiver(envelope)
           receiver = if Dispatcher::AnyExecutor === envelope.receiver_id
-                       executors[inc_round_robin_counter]
+                       @executor_round_robin.next
                      else
                        @worlds[envelope.receiver_id]
                      end
           raise Dynflow::Error, "No executor available" unless receiver
           return receiver
-        end
-
-        def executors
-          @worlds.values.find_all(&:executor)
-        end
-
-        def inc_round_robin_counter
-          @round_robin_counter += 1
-          executors_size = executors.size
-          if executors_size > 0
-            @round_robin_counter %= executors_size
-          else
-            @round_robin_counter = 0
-          end
         end
       end
 

@@ -581,28 +581,6 @@ module Dynflow
 
       end
 
-      describe 'Pool::RoundRobin' do
-        let(:rr) { Dynflow::Executors::Parallel::Pool::RoundRobin.new }
-        it do
-          rr.next.must_be_nil
-          rr.next.must_be_nil
-          rr.must_be_empty
-          rr.add 1
-          rr.next.must_equal 1
-          rr.next.must_equal 1
-          rr.add 2
-          rr.next.must_equal 2
-          rr.next.must_equal 1
-          rr.next.must_equal 2
-          rr.delete 1
-          rr.next.must_equal 2
-          rr.next.must_equal 2
-          rr.delete 2
-          rr.next.must_be_nil
-          rr.must_be_empty
-        end
-      end
-
       describe 'Pool::JobStorage' do
         FakeStep ||= Struct.new(:execution_plan_id)
 

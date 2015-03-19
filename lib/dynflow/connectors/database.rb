@@ -46,7 +46,7 @@ module Dynflow
 
         def initialize(polling_interval)
           @world = nil
-          @round_robin_counter = 0
+          @executor_round_robin = RoundRobin.new
           @stopped = false
           @polling_interval = polling_interval
         end
@@ -124,21 +124,15 @@ module Dynflow
 
         def find_receiver(envelope)
           if Dispatcher::AnyExecutor === envelope.receiver_id
-            any_executor
+            any_executor.id
           else
             envelope.receiver_id
           end
         end
 
         def any_executor
-          executors = @world.coordinator.find_worlds(true)
-          @round_robin_counter += 1
-          if executors.any?
-            @round_robin_counter %= executors.size
-            executors[@round_robin_counter].id
-          else
-            raise Dynflow::Error, "No executor available"
-          end
+          @executor_round_robin.data = @world.coordinator.find_worlds(true)
+          @executor_round_robin.next or raise Dynflow::Error, "No executor available"
         end
       end
 

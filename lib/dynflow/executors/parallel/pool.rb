@@ -2,34 +2,6 @@ module Dynflow
   module Executors
     class Parallel < Abstract
       class Pool < Actor
-        class RoundRobin
-          def initialize
-            @data   = []
-            @cursor = 0
-          end
-
-          def add(item)
-            @data.push item
-            self
-          end
-
-          def delete(item)
-            @data.delete item
-            self
-          end
-
-          def next
-            @cursor = 0 if @cursor > @data.size-1
-            @data[@cursor]
-          ensure
-            @cursor += 1
-          end
-
-          def empty?
-            @data.empty?
-          end
-        end
-
         class JobStorage
           def initialize
             @round_robin = RoundRobin.new
