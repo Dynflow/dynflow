@@ -19,6 +19,7 @@ module Dynflow
         end
 
         def start
+          @started = true
           @thread = Thread.new do
             @db.listen("world:#{ @world_id }", :loop => true) do
               if @started
@@ -28,7 +29,6 @@ module Dynflow
               end
             end
           end
-          @started = true
         end
 
         def notify(world_id)
