@@ -7,7 +7,7 @@ module Dynflow
           @core     = core
           @db       = db
           @world_id = world_id
-          @started  = false
+          @started  = Concurrent::Event.new
         end
 
         def notify_supported?
@@ -15,14 +15,14 @@ module Dynflow
         end
 
         def started?
-          !!@started
+          @started.set?
         end
 
         def start
-          @started = true
+          @started.set
           @thread = Thread.new do
             @db.listen("world:#{ @world_id }", :loop => true) do
-              if @started
+              if started?
                 @core << :check_inbox
               else
                 break # the listener is stopped: don't continue listening
@@ -36,7 +36,7 @@ module Dynflow
         end
 
         def stop
-          @started = false
+          @started.reset
           notify(@world_id)
         end
       end
