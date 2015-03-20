@@ -242,34 +242,16 @@ future_tests = -> do
   Concurrent::IVar.singleton_class.send :define_method, :new do |*args, &block|
     super(*args, &block).tap do |ivar|
       ivar_creations[ivar.object_id]  = caller(3)
-      non_ready_ivars[ivar.object_id] = true
-    end
-  end
-
-  original_method = Concurrent::IVar.instance_method :complete
-  Concurrent::IVar.send :define_method, :complete do |*args|
-    begin
-      original_method.bind(self).call *args
-    ensure
-      non_ready_ivars.delete self.object_id
     end
   end
 
   MiniTest.after_run do
-    non_ready_ivars.delete_if do |id, _|
-      begin
-        object = ObjectSpace._id2ref(id)
-        # the object might get garbage-collected and other one being put on its place
-        if object.is_a? Concurrent::IVar
-          object.wait(1)
-          object.completed?
-        else
-          true
-        end
-      rescue RangeError
-        true
+    non_ready_ivars = ObjectSpace.each_object(Concurrent::IVar).map do |ivar|
+      ivar.wait(1)
+      unless ivar.completed?
+        ivar.object_id
       end
-    end
+    end.compact
 
     unless non_ready_ivars.empty?
       unified = non_ready_ivars.each_with_object({}) do |(id, _), h|
