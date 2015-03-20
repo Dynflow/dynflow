@@ -245,6 +245,15 @@ future_tests = -> do
     end
   end
 
+  original_method = Concurrent::IVar.instance_method :complete
+  Concurrent::IVar.send :define_method, :complete do |*args|
+    begin
+      original_method.bind(self).call *args
+    ensure
+      ivar_creations.delete(self.object_id)
+    end
+  end
+
   MiniTest.after_run do
     non_ready_ivars = ObjectSpace.each_object(Concurrent::IVar).map do |ivar|
       ivar.wait(1)
@@ -252,6 +261,9 @@ future_tests = -> do
         ivar.object_id
       end
     end.compact
+
+    # make sure to include the ids that were garbage-collected already
+    non_ready_ivars = (non_ready_ivars + ivar_creations.keys).uniq
 
     unless non_ready_ivars.empty?
       unified = non_ready_ivars.each_with_object({}) do |(id, _), h|
