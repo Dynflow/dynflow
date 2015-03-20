@@ -14,6 +14,7 @@ module Dynflow
       private
 
       def perform_execution(envelope, execution)
+        allocate_executor(execution.execution_plan_id, envelope.sender_id, envelope.request_id)
         future = Concurrent::IVar.new.with_observer do |_, plan, reason|
           execution_lock = Coordinator::ExecutionLock.new(@world, execution.execution_plan_id, envelope.sender_id, envelope.request_id)
           if plan && plan.state == :running
@@ -27,7 +28,6 @@ module Dynflow
             end
           end
         end
-        allocate_executor(execution.execution_plan_id, envelope.sender_id, envelope.request_id)
         @world.executor.execute(execution.execution_plan_id, future)
         respond(envelope, Accepted)
       rescue Dynflow::Error => e
