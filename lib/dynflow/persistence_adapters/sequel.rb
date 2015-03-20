@@ -36,11 +36,24 @@ module Dynflow
       end
 
       def find_execution_plans(options = {})
-        data_set = filter(order(paginate(table(:execution_plan), options), options), options)
+        data_set = filter(order(paginate(table(:execution_plan), options), options), options[:filters])
 
         data_set.map do |record|
           HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
         end
+      end
+
+      def delete_execution_plans(filters, batch_size = 1000)
+        count = 0
+        filter(table(:execution_plan), filters).each_slice(batch_size) do |plans|
+          uuids = plans.map { |p| p.fetch(:uuid) }
+          @db.transaction do
+            table(:step).where(execution_plan_uuid: uuids).delete
+            table(:action).where(execution_plan_uuid: uuids).delete
+            count += table(:execution_plan).where(uuid: uuids).delete
+          end
+        end
+        return count
       end
 
       def load_execution_plan(execution_plan_id)
@@ -68,9 +81,9 @@ module Dynflow
       end
 
       def to_hash
-        { execution_plans: table(:execution_plan).all,
-          steps:           table(:step).all,
-          actions:         table(:action).all }
+        { execution_plans: table(:execution_plan).all.to_a,
+          steps:           table(:step).all.to_a,
+          actions:         table(:action).all.to_a }
       end
 
       private
@@ -148,10 +161,10 @@ module Dynflow
         data_set.order_by options[:desc] ? ::Sequel.desc(order_by) : order_by
       end
 
-      def filter(data_set, options)
-        filters = Type! options[:filters], NilClass, Hash
+      def filter(data_set, filters)
+        Type! filters, NilClass, Hash
         return data_set if filters.nil?
-        unknown = filters.keys - META_DATA.fetch(:execution_plan) - %w[caller_execution_plan_id caller_action_id]
+        unknown = filters.keys - META_DATA.fetch(:execution_plan) - %w[uuid caller_execution_plan_id caller_action_id]
 
         if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
           raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"

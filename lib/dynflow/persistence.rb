@@ -34,6 +34,10 @@ module Dynflow
       end
     end
 
+    def delete_execution_plans(filters, batch_size = 1000)
+      adapter.delete_execution_plans(filters, batch_size)
+    end
+
     def load_execution_plan(id)
       execution_plan_hash = adapter.load_execution_plan(id)
       ExecutionPlan.new_from_hash(execution_plan_hash, @world)
