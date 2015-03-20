@@ -70,13 +70,13 @@ module Dynflow
       def self.supports_ping_pong
         describe 'ping/pong' do
           it 'succeeds when the world is available' do
-            ping_response = client_world.ping(executor_world.id, 0.1).wait
+            ping_response = client_world.ping(executor_world.id, 0.5).wait
             assert ping_response.fulfilled?
           end
 
           it 'time-outs when the world is not responding' do
             executor_world.terminate.wait
-            ping_response = client_world.ping(executor_world.id, 0.1).wait
+            ping_response = client_world.ping(executor_world.id, 0.5).wait
             assert ping_response.rejected?
           end
         end
