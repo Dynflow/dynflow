@@ -69,8 +69,6 @@ module Dynflow
         respond(request, Failed[e.message])
       end
 
-      private
-
       def dispatch_response(envelope)
         return unless @tracked_requests.key?(envelope.request_id)
         match envelope.message,
@@ -84,6 +82,8 @@ module Dynflow
                resolve_tracked_request(envelope.request_id)
              end)
       end
+
+      private
 
       def find_executor(execution_plan_id)
         execution_lock = @world.coordinator.find_locks(class: Coordinator::ExecutionLock.name,
