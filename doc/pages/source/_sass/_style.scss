@@ -55,6 +55,10 @@ body {
   }
 }
 
+.page p img {
+  max-width: 100%;
+}
+
 @media(max-width: ($screen-md - 1)) {
   .affix {
     position: static;
