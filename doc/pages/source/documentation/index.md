@@ -1042,7 +1042,7 @@ frame "client world" {
   component [client dispatcher] as ClientClientDispatcher
   [ClientCoordinator] -down-> ClientCoordinatorAdapter
   [ClientConnector] -down-> ClientConnectorAdapter
-  [ClientPersistence] -down-> ClientPersistenceAdapter
+  [ClientPersistence] -down--> ClientPersistenceAdapter
   [ClientClientDispatcher] --> [ClientConnector]
   [ClientClientDispatcher] --> [ClientCoordinator]
   client -down--> [ClientClientDispatcher]
@@ -1053,8 +1053,8 @@ frame "executor world" {
 interface adapter as PersistenceAdapter
 interface adapter as CoordinatorAdapter
 interface adapter as ConnectorAdapter
-[coordinator] -up-> CoordinatorAdapter
-[connector] -up-> ConnectorAdapter
+[coordinator] -up--> CoordinatorAdapter
+[connector] -up--> ConnectorAdapter
 [persistence] -up-> PersistenceAdapter
 [connector] <-- [client dispatcher]
 [connector] <-- [executor dispatcher]
@@ -1105,7 +1105,7 @@ frame "client world" {
   component [client dispatcher] as ClientClientDispatcher
   [ClientCoordinator] -down-> ClientCoordinatorAdapter
   [ClientConnector] -down-> ClientConnectorAdapter
-  [ClientPersistence] -down-> ClientPersistenceAdapter
+  [ClientPersistence] -down--> ClientPersistenceAdapter
   [ClientClientDispatcher] --> [ClientConnector]
   [ClientClientDispatcher] --> [ClientCoordinator]
   client -down--> [ClientClientDispatcher]
@@ -1116,8 +1116,8 @@ frame "executor world" {
 interface adapter as PersistenceAdapter
 interface adapter as CoordinatorAdapter
 interface adapter as ConnectorAdapter
-[coordinator] -up-> CoordinatorAdapter
-[connector] -up-> ConnectorAdapter
+[coordinator] -up--> CoordinatorAdapter
+[connector] -up--> ConnectorAdapter
 [persistence] -up-> PersistenceAdapter
 [connector] <-- [client dispatcher]
 [connector] <-- [executor dispatcher]
