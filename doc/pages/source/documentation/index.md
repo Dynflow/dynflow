@@ -124,7 +124,7 @@ end
 
 Note that it does not have to be only other actions that are planned to run.
 In fact it's very common that the action plan itself, which means it will
-put it's own `run` method call in the execution plan. In order to do that
+put its own `run` method call in the execution plan. In order to do that
 you can use `plan_self`. This could be used in MyActions::File::Destroy
 used in previous example
 
@@ -442,7 +442,7 @@ actions with DSL methods `sequence` and `concurrence`. Both methods are taking b
 and they specify how actions planned inside the block
 (or inner `sequence` and `concurrence` blocks) should be executed.
 
-By default `plan` considers it's space as inside `concurrence`. Which means
+By default `plan` considers its space as inside `concurrence`. Which means
 
 ```ruby
 def plan
@@ -966,7 +966,7 @@ support](https://github.com/Dynflow/dynflow/pull/139)
 
 The world represents the Dynflow's run-time and it acts as an external
 interface. It holds all the configuration and sub-components needed for the
-Dynflow to perform it's job.
+Dynflow to perform its job.
 
 The Dynflow worlds is composed of the following sub-components:
 
@@ -1024,7 +1024,7 @@ high-available (in active-active mode).
 There might be multiple client as well as executor worlds in the
 Dynflow infrastructure.
 
-The executor world has still it's own client dispatcher, so that it
+The executor world has still its own client dispatcher, so that it
 can act as a client for triggering other execution plans (useful in
 [sub-plans](#sub-plans) feature).
 
@@ -1190,7 +1190,7 @@ note over "Client Dispatcher": IVar fullfilled
 {% endplantuml %}
 
 1) the client prepares an execution plan, saves it into persistence
-and passes it's id to the client dispatcher
+and passes its id to the client dispatcher
 
 2) the client dispatcher creates an
 [IVar](http://www.rubydoc.info/github/ruby-concurrency/concurrent-ruby/Concurrent/IVar)
