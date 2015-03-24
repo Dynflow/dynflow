@@ -4,5 +4,4 @@ gem 'rake'
 gem 'jekyll'
 gem 'pry'
 gem 'ruby-nuggets' # require by tags plugin
-
-gem 'pry'
+gem 'therubyracer'
