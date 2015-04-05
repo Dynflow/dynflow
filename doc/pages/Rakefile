@@ -17,9 +17,10 @@ task :publish do
       system 'git fetch --all'
       system 'git reset --hard origin/master'
     end
-    system 'jekyll build'
+    sh 'jekyll build'
     Dir.chdir(root + '/public') do
-      system 'git ac -m Update'
+      system 'git add -A .'
+      system 'git commit -m Update'
       system 'git push'
     end
   end
