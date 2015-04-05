@@ -92,10 +92,12 @@ experiment).
 
 -   *include executor description*
 
-### Development vs production TODO
+### Development vs production
 
 -   *In development execution runs in the same process, in production there is an
     executor process.*
+
+*TODO*
 
 ### Action anatomy
 
@@ -122,7 +124,7 @@ end
 
 Note that it does not have to be only other actions that are planned to run.
 In fact it's very common that the action plan itself, which means it will
-put it's own `run` method call in the execution plan. In order to do that
+put its own `run` method call in the execution plan. In order to do that
 you can use `plan_self`. This could be used in MyActions::File::Destroy
 used in previous example
 
@@ -440,7 +442,7 @@ actions with DSL methods `sequence` and `concurrence`. Both methods are taking b
 and they specify how actions planned inside the block
 (or inner `sequence` and `concurrence` blocks) should be executed.
 
-By default `plan` considers it's space as inside `concurrence`. Which means
+By default `plan` considers its space as inside `concurrence`. Which means
 
 ```ruby
 def plan
@@ -943,19 +945,342 @@ sorted down with
 [topological sort](http://ruby-doc.org//stdlib-2.0/libdoc/tsort/rdoc/TSort.html)
 to the chain of middleware execution.
 
-### SubTasks TODO
+### Sub-plans
 
 -   *when to use?*
 -   *how to use?*
 
 ## How it works TODO
 
+{% info_block %}
+This part is based on the current work-in-progress on [multi-executors
+support](https://github.com/Dynflow/dynflow/pull/139)
+{% endinfo_block %}
+
 ### Action states TODO
 
 -   *normal phases and Present phase*
 -   *how to walk the execution plan*
 
-### Inner-world communication and multi-executors TODO
+### The world anatomy
+
+The world represents the Dynflow's run-time and it acts as an external
+interface. It holds all the configuration and sub-components needed for the
+Dynflow to perform its job.
+
+The Dynflow worlds is composed of the following sub-components:
+
+1. **persistence** - provides the durability functionality: see
+[persistence](#persistence)
+1. **coordinator** - provides the coordination between worlds: see [coordinator](#coordinator)
+1. **connector** - provides messages passing between worlds: see [connector](#connector)
+1. **executor** - the run-time itself executing the execution plan. Not
+every worlds has to have the executor present (there might be pure
+client worlds: useful in production, see [develpment vs. production](#development-vs-production).
+1. **client dispatcher** - responsible for communication between
+client requests and other worlds
+1. **executor dispatcher** - responsible for getting requests from
+other worlds and sending the responses
+
+{% plantuml %}
+
+actor client
+
+frame "world" {
+interface adapter as PersistenceAdapter
+interface adapter as CoordinatorAdapter
+interface adapter as ConnectorAdapter
+[coordinator] -up-> CoordinatorAdapter
+[connector] -up-> ConnectorAdapter
+[persistence] -up-> PersistenceAdapter
+[connector] <-- [client dispatcher]
+[connector] <-- [executor dispatcher]
+[executor] <-- [executor dispatcher]
+[coordinator] <-- [client dispatcher]
+[coordinator] <-- [executor dispatcher]
+[persistence] <-- [executor]
+client -left--> [client dispatcher]
+client -left--> [persistence]
+}
+
+{% endplantuml %}
+
+The underlying technologies are hidden behind adapters abstraction,
+which allows choosing the right technology for the job, while keeping
+the rest of the Dynflow intact.
+
+### Client world vs. executor world
+
+In the simplest case, the world handles both the client requests and
+the execution itself. This is useful for small all-in-one deployments
+and development.
+
+In production, however, one might want to separate
+the client worlds (often running in the web-server process or client
+library) and the executor worlds (running as part of standalone
+service). This setup makes the execution more stable and
+high-available (in active-active mode).
+
+There might be multiple client as well as executor worlds in the
+Dynflow infrastructure.
+
+The executor world has still its own client dispatcher, so that it
+can act as a client for triggering other execution plans (useful in
+[sub-plans](#sub-plans) feature).
+
+{% plantuml %}
+
+actor client
+
+frame "client world" {
+  interface adapter as ClientPersistenceAdapter
+  interface adapter as ClientCoordinatorAdapter
+  interface adapter as ClientConnectorAdapter
+  component [coordinator] as ClientCoordinator
+  component [persistence] as ClientPersistence
+  component [connector] as ClientConnector
+  component [client dispatcher] as ClientClientDispatcher
+  [ClientCoordinator] -down-> ClientCoordinatorAdapter
+  [ClientConnector] -down-> ClientConnectorAdapter
+  [ClientPersistence] -down--> ClientPersistenceAdapter
+  [ClientClientDispatcher] --> [ClientConnector]
+  [ClientClientDispatcher] --> [ClientCoordinator]
+  client -down--> [ClientClientDispatcher]
+  client -down--> [ClientPersistence]
+}
+
+frame "executor world" {
+interface adapter as PersistenceAdapter
+interface adapter as CoordinatorAdapter
+interface adapter as ConnectorAdapter
+[coordinator] -up--> CoordinatorAdapter
+[connector] -up--> ConnectorAdapter
+[persistence] -up-> PersistenceAdapter
+[connector] <-- [client dispatcher]
+[connector] <-- [executor dispatcher]
+[executor] <-- [executor dispatcher]
+[coordinator] <-- [client dispatcher]
+[coordinator] <-- [executor dispatcher]
+[persistence] <-- [executor]
+}
+
+database "Database" as Database
+ClientPersistenceAdapter -down- Database
+Database -down- PersistenceAdapter
+
+node "Synchronization\nservice" as SyncService
+ClientCoordinatorAdapter -down- SyncService
+SyncService -down- CoordinatorAdapter
+
+node "Message\nbus" as MessageBus
+ClientConnectorAdapter -down- MessageBus
+MessageBus -down- ConnectorAdapter
+
+{% endplantuml %}
+
+### Single-database model
+
+Dynflow recognizes different expectations from the underlying
+technologies from the persistence (durability), coordinator (real-time
+synchronization) and connector (transport).
+
+However, we also realize that for many use-cases, a single shared
+database is just enough infrastructure the user needs for the job.
+Forcing using different technologies would mean just useless overhead.
+
+Therefore, it's possible to use a single shared SQL database to do
+all the work.
+
+{% plantuml %}
+
+actor client
+
+frame "client world" {
+  interface adapter as ClientPersistenceAdapter
+  interface adapter as ClientCoordinatorAdapter
+  interface adapter as ClientConnectorAdapter
+  component [coordinator] as ClientCoordinator
+  component [persistence] as ClientPersistence
+  component [connector] as ClientConnector
+  component [client dispatcher] as ClientClientDispatcher
+  [ClientCoordinator] -down-> ClientCoordinatorAdapter
+  [ClientConnector] -down-> ClientConnectorAdapter
+  [ClientPersistence] -down--> ClientPersistenceAdapter
+  [ClientClientDispatcher] --> [ClientConnector]
+  [ClientClientDispatcher] --> [ClientCoordinator]
+  client -down--> [ClientClientDispatcher]
+  client -down--> [ClientPersistence]
+}
+
+frame "executor world" {
+interface adapter as PersistenceAdapter
+interface adapter as CoordinatorAdapter
+interface adapter as ConnectorAdapter
+[coordinator] -up--> CoordinatorAdapter
+[connector] -up--> ConnectorAdapter
+[persistence] -up-> PersistenceAdapter
+[connector] <-- [client dispatcher]
+[connector] <-- [executor dispatcher]
+[executor] <-- [executor dispatcher]
+[coordinator] <-- [client dispatcher]
+[coordinator] <-- [executor dispatcher]
+[persistence] <-- [executor]
+}
+
+database "Database" as Database
+ClientPersistenceAdapter -down- Database
+Database -down- PersistenceAdapter
+
+ClientCoordinatorAdapter -down- Database
+Database -down- CoordinatorAdapter
+
+ClientConnectorAdapter -down- Database
+Database -down- ConnectorAdapter
+
+{% endplantuml %}
+
+{% info_block %}
+
+Something as simple as sqlite is enough for getting the Dynlfow
+up-and-running and getting something done.
+
+For the best connector results, it's recommended to use PostgreSQL, as
+Dynflow can utilize the
+[listen/notify](http://www.postgresql.org/docs/9.0/static/sql-notify.html)
+feature for better response times.
+
+ {% endinfo_block %}
+
+### Inner-world communication
+
+{% plantuml %}
+participant "Connector" as ClientConnector
+participant "Connector" as ExecutorConnector
+
+box "Client World"
+  participant Client
+  participant "Client Dispatcher"
+  participant "ClientConnector"
+end box
+
+box "Executor World"
+  participant "ExecutorConnector"
+  participant "Executor Dispatcher"
+  participant Executor
+end box
+
+autonumber
+Client -> "Client Dispatcher" : publish_request\nexecution_plan_id
+"Client Dispatcher" --> Client : IVar
+"Client Dispatcher" -> "ClientConnector" : send\nEnvelope[Execution]
+"ClientConnector" -> "ExecutorConnector" : handle_envelope\nEnvelope[Execution]
+"ExecutorConnector" -> "Executor Dispatcher" : handle_request\nEnvelope[Execution]
+"Executor Dispatcher" -> Executor : execute\nexecution_plan_id
+note over Executor: executing…
+activate Executor
+"Executor Dispatcher" -> ExecutorConnector : send\nEnvelope[Accepted]
+"ExecutorConnector" -> "ClientConnector" : handle_envelope\nEnvelope[Accepted]
+"ClientConnector" -> "Client Dispatcher" : dispatch_response\nEnvelope[Accepted]
+Executor -> "Executor Dispatcher" : finished
+deactivate Executor
+"Executor Dispatcher" -> ExecutorConnector : send\nEnvelope[Finished]
+"ExecutorConnector" -> "ClientConnector" : handle_envelope\nEnvelope[Finished]
+"ClientConnector" -> "Client Dispatcher" : dispatch_response\nEnvelope[Finished]
+note over "Client Dispatcher": IVar fullfilled
+{% endplantuml %}
+
+1) the client prepares an execution plan, saves it into persistence
+and passes its id to the client dispatcher
+
+2) the client dispatcher creates an
+[IVar](http://www.rubydoc.info/github/ruby-concurrency/concurrent-ruby/Concurrent/IVar)
+that represents the future value of the execution plan after it
+finishes execution. The client can use this value to wait for the
+execution plan to finish or hook other procedures on the finish-time.
+
+3) the client dispatcher creates an envelope (see
+[connector](#connector) for more details), containing the request for
+execution, with ``receiver id`` set to ``AnyExecutor``
+
+4) the connector uses some scheduling algorithm to choose what executor to send the request to and
+replaces the ``AnyExecutor`` with it. It sends the envelope the the
+chosen executor.
+
+5) the connector on the executor side receives the envelope and asks
+the executor dispatcher to handle it
+
+6) the executor dispatcher acquires the lock on the execution plan and
+initiates the execution. In the mean-time, it lets the client know
+that the work was accepted (there might be additional logic on the
+client to handle a timeout after the work was not accepted)
+
+7 - 9) the connector layer propagates the ``Accepted`` response back
+to client
+
+10) the executor finishes execution
+
+11 - 12) the connector layer propagates the ``Finished`` response
+
+13) the client dispatcher resolves the original ``IVar``, so that the
+client is able to find out about the finished execution.
+
+The behavior is the same even in the "one world" scenario: in that
+case this world is participating both on the client and the executor
+side, connected through a direct in-memory connector.
+
+### Persistence
+
+The persistence making sure that the serialized states of the
+execution plans are persisted for recovery and status tracking. The
+execution plan data are stored in it, with the actual state.
+
+Unlike coordinator, the all the persisted data don't have to be
+available for all the worlds at the same time: every world needs just
+the data that it is actively working on. Also, all the data don't have to
+be fully synchronized between worlds (as long as the up-to-date data
+about relevant execution plans are available for the world).
+
+### Connector
+
+Provides messages passing between worlds. The message has a form of
+envelope of the following structure:
+
+* **sender id** - the id of the world that produced the envelope
+* **receiver id** - the id of the world that should receive the
+    message, or ``AnyExecutor``, when load-balancing
+* **request id** - the client-unique id used for pairing the
+  request - response at the client
+* **message** - the body of the message: the connector doesn't care
+    about that as long as it's serializable
+
+#### Load-balancing
+
+The connector is responsible for spreading the load across the
+executor worlds. It's determined by the ``AnyExecutor`` value at the
+``request id`` field. The implementation available in the
+current version uses a simple round-robin algorithm for this purpose.
+
+### Coordinator
+
+This component (especially important in a multi-executor setup): Makes
+sure no two executors are executing the same execution plan at the
+same time (a.k.a locking). It also provides the information
+about the worlds available in the system (the worlds register). Unlike
+the persistence, it's not required to persist the data (could be
+recalculated), but it needs to provide a globally shared state.
+
+The main type of objects the coordinator works with is a record which
+consists of:
+
+* type - the type of the record
+* id - the id of the record (unique in scope of a type)
+* data - data in arbitrary format, based on the type
+
+There is a special type of record called ``lock``, that keeps the owner
+information as well. It's used for keeping information about what
+executor is actively working on what execution plan: the executor is
+not allowed to start executing the unless it has successfully acquired
+a lock for it.
 
 ### Thread-pools TODO
 
