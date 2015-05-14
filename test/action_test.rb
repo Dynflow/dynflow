@@ -266,14 +266,18 @@ module Dynflow
 
         it 'allows increasing poll interval in a time' do
           TestPollingAction.config.poll_intervals = [1, 2]
-          TestPollingAction.config.attempts_before_next_interval = 1
+          TestPollingAction.config.attempts_before_next_interval = 2
 
           action   = run_action plan
-          next_ping(action).when.must_equal 1
+          pings = []
+          pings << next_ping(action)
           progress_action_time action
-          next_ping(action).when.must_equal 2
+          pings << next_ping(action)
           progress_action_time action
-          next_ping(action).when.must_equal 2
+          pings << next_ping(action)
+          progress_action_time action
+          (pings[1].when - pings[0].when).must_be_close_to 1
+          (pings[2].when - pings[1].when).must_be_close_to 2
         end
       end
 
