@@ -1,5 +1,11 @@
+require 'dynflow/action/timeouts'
+
 module Dynflow
   module Action::Polling
+
+    def self.included(base)
+      base.send :include, Action::Timeouts
+    end
 
     Poll = Algebrick.atom
 
@@ -13,6 +19,9 @@ module Dynflow
         end
       when Poll
         poll_external_task_with_rescue
+      when Action::Timeouts::Timeout
+        process_timeout
+        suspend
       else
         raise "unrecognized event #{event}"
       end
