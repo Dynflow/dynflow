@@ -78,7 +78,7 @@ module Dynflow
       PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
       # Returned by #trigger when planning is successful, #future will resolve after
       # ExecutionPlan is executed.
-      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::IVar }
+      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Edge::Future }
 
       variants PlaningFailed, Triggered
     end
@@ -116,7 +116,7 @@ module Dynflow
       planned        = execution_plan.state == :planned
 
       if planned
-        done = execute(execution_plan.id, Concurrent::IVar.new)
+        done = execute(execution_plan.id, Concurrent.future)
         Triggered[execution_plan.id, done]
       else
         PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
@@ -137,22 +137,23 @@ module Dynflow
       end
     end
 
-    # @return [Concurrent::IVar] containing execution_plan when finished
+    # @return [Concurrent::Edge::Future] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, done = Concurrent::IVar.new)
+    def execute(execution_plan_id, done = Concurrent.future)
       publish_request(Dispatcher::Execution[execution_plan_id], done, true)
     end
 
-    def event(execution_plan_id, step_id, event, done = Concurrent::IVar.new)
+    def event(execution_plan_id, step_id, event, done = Concurrent.future)
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
     end
 
-    def ping(world_id, timeout, done = Concurrent::IVar.new)
+    def ping(world_id, timeout, done = Concurrent.future)
       publish_request(Dispatcher::Ping[world_id], done, false, timeout)
     end
 
     def publish_request(request, done, wait_for_accepted, timeout = nil)
-      accepted = Concurrent::IVar.new.with_observer do |_, value, reason|
+      accepted = Concurrent.future
+      accepted.rescue do |reason|
         done.fail reason if reason
       end
       client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
@@ -162,7 +163,7 @@ module Dynflow
       accepted.fail e
     end
 
-    def terminate(future = Concurrent::IVar.new)
+    def terminate(future = Concurrent.future)
       @termination_barrier.synchronize do
         @terminated ||= Concurrent::Promise.execute do
           begin
@@ -184,7 +185,7 @@ module Dynflow
 
 
             logger.info "start terminating client dispatcher..."
-            client_dispatcher_terminated = Concurrent::IVar.new
+            client_dispatcher_terminated = Concurrent.future
             client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
             client_dispatcher_terminated.wait
 
@@ -206,7 +207,7 @@ module Dynflow
         end
       end
 
-      @terminated.then { future.set true }
+      @terminated.then { future.success true }
       future
     end
 

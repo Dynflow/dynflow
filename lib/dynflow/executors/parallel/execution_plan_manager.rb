@@ -10,7 +10,7 @@ module Dynflow
         def initialize(world, execution_plan, future)
           @world                 = Type! world, World
           @execution_plan        = Type! execution_plan, ExecutionPlan
-          @future                = Type! future, Concurrent::IVar
+          @future                = Type! future, Concurrent::Edge::Future
           @running_steps_manager = RunningStepsManager.new(world)
 
           unless [:planned, :paused].include? execution_plan.state

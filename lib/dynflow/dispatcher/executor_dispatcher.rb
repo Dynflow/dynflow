@@ -15,18 +15,18 @@ module Dynflow
 
       def perform_execution(envelope, execution)
         allocate_executor(execution.execution_plan_id, envelope.sender_id, envelope.request_id)
-        future = Concurrent::IVar.new.with_observer do |_, plan, reason|
-          execution_lock = Coordinator::ExecutionLock.new(@world, execution.execution_plan_id, envelope.sender_id, envelope.request_id)
-          if plan && plan.state == :running
+        execution_lock = Coordinator::ExecutionLock.new(@world, execution.execution_plan_id, envelope.sender_id, envelope.request_id)
+        future = Concurrent.future
+        future.then do |plan|
+          if plan.state == :running
             @world.invalidate_execution_lock(execution_lock)
           else
             @world.coordinator.release(execution_lock)
-            if reason
-              respond(envelope, Failed[reason.message])
-            else
-              respond(envelope, Done)
-            end
+            respond(envelope, Done)
           end
+        end.rescue do |reason|
+          @world.coordinator.release(execution_lock)
+          respond(envelope, Failed[reason.message])
         end
         @world.executor.execute(execution.execution_plan_id, future)
         respond(envelope, Accepted)
@@ -35,12 +35,11 @@ module Dynflow
       end
 
       def perform_event(envelope, event_request)
-        future = Concurrent::IVar.new.with_observer do |_, _, reason|
-          if reason
-            respond(envelope, Failed[reason.message])
-          else
-            respond(envelope, Done)
-          end
+        future = Concurrent.future
+        future.then do
+          respond(envelope, Done)
+        end.rescue do |reason|
+          respond(envelope, Failed[reason.message])
         end
         @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
       end

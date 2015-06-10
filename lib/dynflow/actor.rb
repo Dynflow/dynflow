@@ -17,10 +17,10 @@ module Dynflow
     # and calls corresponding method on the context to do so
     class PoliteTermination < Concurrent::Actor::Behaviour::Abstract
       def on_envelope(envelope)
-        message, terminated_ivar = envelope
+        message, terminated_future = envelope
         if :start_termination == message
-          context.start_termination(terminated_ivar)
-          envelope.ivar.set true if !envelope.ivar.nil?
+          context.start_termination(terminated_future)
+          envelope.future.success true if !envelope.future.nil?
           Concurrent::Actor::Behaviour::MESSAGE_PROCESSED
         else
           pass envelope
@@ -30,12 +30,12 @@ module Dynflow
 
     include Algebrick::Matching
 
-    def start_termination(ivar)
-      @terminated = ivar
+    def start_termination(future)
+      @terminated = future
     end
 
     def finish_termination
-      @terminated.set(true)
+      @terminated.success(true)
       reference.ask(:terminate!)
     end
 
@@ -44,13 +44,13 @@ module Dynflow
     end
 
     def behaviour_definition
-      [*Concurrent::Actor::Behaviour.base,
-       [Concurrent::Actor::Behaviour::Buffer, []],
-       [Concurrent::Actor::Behaviour::SetResults, [:just_log]],
-       [Concurrent::Actor::Behaviour::Awaits, []],
-       [PoliteTermination, []],
-       [Concurrent::Actor::Behaviour::ExecutesContext, []],
-       [Concurrent::Actor::Behaviour::ErrorsOnUnknownMessage, []]]
+      [*Concurrent::Actor::Behaviour.base(:just_log),
+       Concurrent::Actor::Behaviour::Buffer,
+       [Concurrent::Actor::Behaviour::SetResults, :just_log],
+       Concurrent::Actor::Behaviour::Awaits,
+       PoliteTermination,
+       Concurrent::Actor::Behaviour::ExecutesContext,
+       Concurrent::Actor::Behaviour::ErrorsOnUnknownMessage]
     end
   end
 end

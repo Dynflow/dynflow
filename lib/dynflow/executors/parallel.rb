@@ -40,10 +40,10 @@ module Dynflow
         super(world)
         @core = Core.spawn name:        'parallel-executor-core',
                            args:        [world, pool_size],
-                           initialized: @core_initialized = Concurrent::IVar.new
+                           initialized: @core_initialized = Concurrent.future
       end
 
-      def execute(execution_plan_id, finished = Concurrent::IVar.new)
+      def execute(execution_plan_id, finished = Concurrent.future)
         @core.ask([:handle_execution, execution_plan_id, finished]).value!
         finished
       rescue Concurrent::Actor::ActorTerminated => error
@@ -55,12 +55,12 @@ module Dynflow
         raise e
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
+      def event(execution_plan_id, step_id, event, future = Concurrent.future)
         @core.ask([:handle_event, Event[execution_plan_id, step_id, event, future]])
         future
       end
 
-      def terminate(future = Concurrent::IVar.new)
+      def terminate(future = Concurrent.future)
         @core.tell([:start_termination, future])
         future
       end

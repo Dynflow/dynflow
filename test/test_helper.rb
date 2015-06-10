@@ -24,8 +24,8 @@ require 'support/test_execution_log'
 class TestPause
 
   def self.setup
-    @pause = Concurrent::IVar.new
-    @ready = Concurrent::IVar.new
+    @pause = Concurrent.future
+    @ready = Concurrent.future
   end
 
   def self.teardown
@@ -40,7 +40,7 @@ class TestPause
     elsif @ready.completed?
       raise 'you can pause only once'
     else
-      @ready.set(true)
+      @ready.success(true)
       @pause.wait
     end
   end
@@ -50,7 +50,7 @@ class TestPause
     if @pause
       @ready.wait # wait till we are paused
       yield
-      @pause.set(true) # resume the run
+      @pause.success(true) # resume the run
     else
       raise 'the TestPause class was not setup'
     end
@@ -229,12 +229,7 @@ class MiniTest::Test
   end
 end
 
-Concurrent.configuration.auto_terminate = false
-MiniTest.after_run do
-  Concurrent.finalize_global_executors
-end
-
-# ensure there are no unresolved IVars at the end or being GCed
+# ensure there are no unresolved futures at the end or being GCed
 future_tests = -> do
   ivar_creations  = {}
   non_ready_ivars = {}
@@ -288,27 +283,30 @@ future_tests = -> do
     end
   end
 
-end.call
+end
+
+# TODO: convert the future test to work with Edge::Future
+#future_test.call
 
 class ConcurrentRunTester
   def initialize
-    @enter_ivar, @exit_ivar = Concurrent::IVar.new, Concurrent::IVar.new
+    @enter_future, @exit_future = Concurrent.future, Concurrent.future
   end
 
   def while_executing(&block)
     @thread = Thread.new do
       block.call(self)
     end
-    @enter_ivar.wait(1)
+    @enter_future.wait(1)
   end
 
   def pause
-    @enter_ivar.set(true)
-    @exit_ivar.wait(1)
+    @enter_future.success(true)
+    @exit_future.wait(1)
   end
 
   def finish
-    @exit_ivar.set(true)
+    @exit_future.success(true)
     @thread.join
   end
 end

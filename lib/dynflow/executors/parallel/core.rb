@@ -49,7 +49,7 @@ module Dynflow
         def start_termination(*args)
           super
           logger.info 'shutting down Core ...'
-          @pool.tell([:start_termination, Concurrent::IVar.new])
+          @pool.tell([:start_termination, Concurrent.future])
         end
 
         def finish_termination
@@ -157,7 +157,7 @@ module Dynflow
 
         def set_future(manager)
           @plan_ids_in_rescue.delete(manager.execution_plan.id)
-          manager.future.set manager.execution_plan
+          manager.future.success manager.execution_plan
         end
 
         def start_executing(manager)

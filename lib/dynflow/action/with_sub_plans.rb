@@ -100,8 +100,10 @@ module Dynflow
     def notify_on_finish(plans)
       suspend do |suspended_action|
         plans.each do |plan|
-          Concurrent.dataflow(plan.finished) do |value|
-            suspended_action << SubPlanFinished[value.id, value.result == :success]
+          plan.finished.then do |value|
+            suspended_action << SubPlanFinished[plan.id, value.result == :success]
+          end.rescue do
+            suspended_action << SubPlanFinished[plan.id, false]
           end
         end
       end

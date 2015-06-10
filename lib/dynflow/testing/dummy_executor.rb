@@ -8,7 +8,7 @@ module Dynflow
         @events_to_process = []
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent::IVar.new)
+      def event(execution_plan_id, step_id, event, future = Concurrent.future)
         @events_to_process << [execution_plan_id, step_id, event, future]
       end
 
@@ -16,7 +16,7 @@ module Dynflow
         events = @events_to_process.dup
         clear
         events.each do |execution_plan_id, step_id, event, future|
-          future.set true
+          future.success true
           world.action.execute event
         end
       end

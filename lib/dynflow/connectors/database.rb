@@ -7,7 +7,7 @@ module Dynflow
           @core     = core
           @db       = db
           @world_id = world_id
-          @started  = Concurrent::Event.new
+          @started  = Concurrent.event
         end
 
         def notify_supported?
@@ -15,11 +15,11 @@ module Dynflow
         end
 
         def started?
-          @started.set?
+          @started.completed?
         end
 
         def start
-          @started.set
+          @started.success(true)
           @thread = Thread.new do
             @db.listen("world:#{ @world_id }", :loop => true) do
               if started?

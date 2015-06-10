@@ -10,7 +10,7 @@ module Dynflow
 
     def run
       with_lock_file do
-        terminated = Concurrent::IVar.new
+        terminated = Concurrent.future
         trap('SIGINT') { @world.terminate terminated }
         terminated.wait
         @listener.terminate.wait
