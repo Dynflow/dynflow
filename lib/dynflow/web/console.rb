@@ -34,7 +34,7 @@ module Dynflow
       post('/worlds/:id/ping') do |id|
         timeout = 5
         ping_response = world.ping(id, timeout).wait
-        if ping_response.rejected?
+        if ping_response.failed?
           response = "failed: #{ping_response.reason.message}"
           inactive_world_id = id
         else

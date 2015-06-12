@@ -39,7 +39,7 @@ module Dynflow
               plan   = result.finished.value!
               step   = plan.steps.values.first
               future = client_world.event(plan.id, step.id, 'finish').wait
-              assert future.rejected?
+              assert future.failed?
             end
 
             it 'succeeds when executor acts as client' do
@@ -71,13 +71,13 @@ module Dynflow
         describe 'ping/pong' do
           it 'succeeds when the world is available' do
             ping_response = client_world.ping(executor_world.id, 0.5).wait
-            assert ping_response.fulfilled?
+            assert ping_response.success?
           end
 
           it 'time-outs when the world is not responding' do
             executor_world.terminate.wait
             ping_response = client_world.ping(executor_world.id, 0.5).wait
-            assert ping_response.rejected?
+            assert ping_response.failed?
           end
         end
       end
@@ -89,7 +89,7 @@ module Dynflow
           executor_world_2.terminate.wait
           result = client_world.trigger(Support::DummyExample::Dummy)
           result.finished.wait
-          assert result.finished.rejected?
+          assert result.finished.failed?
           assert_match(/No executor available/, result.finished.reason.message)
         end
       end
