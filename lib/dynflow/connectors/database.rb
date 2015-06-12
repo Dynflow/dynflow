@@ -10,8 +10,8 @@ module Dynflow
           @started  = Concurrent.event
         end
 
-        def notify_supported?
-          @db.class.name == "Sequel::Postgres::Database"
+        def self.notify_supported?(db)
+          db.class.name == "Sequel::Postgres::Database"
         end
 
         def started?
@@ -59,7 +59,6 @@ module Dynflow
         def start_listening(world)
           @world = world
           @stopped = false
-          @postgres_listener ||= PostgresListerner.new(self, @world.id, @world.persistence.adapter.db)
           postgres_listen_start
           self << :periodic_check_inbox
         end
@@ -95,11 +94,14 @@ module Dynflow
         private
 
         def postgres_listen_start
-          @postgres_listener.start if @postgres_listener.notify_supported? && !@postgres_listener.started?
+          if PostgresListerner.notify_supported?(@world.persistence.adapter.db)
+            @postgres_listener ||= PostgresListerner.new(self, @world.id, @world.persistence.adapter.db)
+            @postgres_listener.start unless @postgres_listener.started?
+          end
         end
 
         def postgres_listen_stop
-          @postgres_listener.stop if @postgres_listener.started?
+          @postgres_listener.stop if @postgres_listener
         end
 
         def receive_envelopes
@@ -112,7 +114,7 @@ module Dynflow
 
         def send_envelope(envelope)
           @world.persistence.push_envelope(envelope)
-          if @postgres_listener.notify_supported?
+          if @postgres_listener
             @postgres_listener.notify(envelope.receiver_id)
           end
         rescue => e
