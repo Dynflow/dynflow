@@ -180,7 +180,9 @@ module Dynflow
               executor.terminate.wait
 
               logger.info "start terminating executor dispatcher..."
-              executor_dispatcher.ask(:terminate!).wait
+              executor_dispatcher_terminated = Concurrent.future
+              executor_dispatcher.ask([:start_termination, executor_dispatcher_terminated])
+              executor_dispatcher_terminated.wait
             end
 
 

@@ -20,6 +20,8 @@ require 'support/rescue_example'
 require 'support/dummy_example'
 require 'support/test_execution_log'
 
+Concurrent.disable_executor_auto_termination!
+
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
 
@@ -229,55 +231,59 @@ class MiniTest::Test
   end
 end
 
-# ensure there are no unresolved futures at the end or being GCed
-future_tests = -> do
-  ivar_creations  = {}
-  non_ready_ivars = {}
+# ensure there are no unresolved events at the end or being GCed
+events_test = -> do
+  event_creations  = {}
+  non_ready_events = {}
 
-  Concurrent::IVar.singleton_class.send :define_method, :new do |*args, &block|
-    super(*args, &block).tap do |ivar|
-      ivar_creations[ivar.object_id]  = caller(3)
+  Concurrent::Edge::Event.singleton_class.send :define_method, :new do |*args, &block|
+    super(*args, &block).tap do |event|
+      event_creations[event.object_id]  = caller(4)
     end
   end
 
-  original_method = Concurrent::IVar.instance_method :complete
-  Concurrent::IVar.send :define_method, :complete do |*args|
-    begin
-      original_method.bind(self).call *args
-    ensure
-      ivar_creations.delete(self.object_id)
+  [Concurrent::Edge::Event, Concurrent::Edge::Future].each do |future_class|
+    original_complete_method = future_class.instance_method :complete
+    future_class.send :define_method, :complete do |*args|
+      begin
+        original_complete_method.bind(self).call(*args)
+      ensure
+        event_creations.delete(self.object_id)
+      end
     end
   end
 
   MiniTest.after_run do
-    non_ready_ivars = ObjectSpace.each_object(Concurrent::IVar).map do |ivar|
-      ivar.wait(1)
-      unless ivar.completed?
-        ivar.object_id
+    Concurrent::Actor.root.ask!(:terminate!)
+
+    non_ready_events = ObjectSpace.each_object(Concurrent::Edge::Event).map do |event|
+      event.wait(1)
+      unless event.completed?
+        event.object_id
       end
     end.compact
 
     # make sure to include the ids that were garbage-collected already
-    non_ready_ivars = (non_ready_ivars + ivar_creations.keys).uniq
+    non_ready_events = (non_ready_events + event_creations.keys).uniq
 
-    unless non_ready_ivars.empty?
-      unified = non_ready_ivars.each_with_object({}) do |(id, _), h|
-        backtrace_first    = ivar_creations[id][0]
-        h[backtrace_first] ||= []
-        h[backtrace_first] << id
+    unless non_ready_events.empty?
+      unified = non_ready_events.each_with_object({}) do |(id, _), h|
+        backtrace_key = event_creations[id].hash
+        h[backtrace_key] ||= []
+        h[backtrace_key] << id
       end
-      raise("there were #{non_ready_ivars.size} non_ready_futures:\n" +
-                unified.map do |backtrace, ids|
-                  "--- #{ids.size}: #{ids}\n#{ivar_creations[ids.first].join("\n")}"
+      raise("there were #{non_ready_events.size} non_ready_events:\n" +
+            unified.map do |_, ids|
+                  "--- #{ids.size}: #{ids}\n#{event_creations[ids.first].join("\n")}"
                 end.join("\n"))
     end
   end
 
   # time out all futures by default
   default_timeout = 8
-  wait_method     = Concurrent::IVar.instance_method(:wait)
+  wait_method     = Concurrent::Edge::Event.instance_method(:wait)
 
-  Concurrent::IVar.class_eval do
+  Concurrent::Edge::Event.class_eval do
     define_method :wait do |timeout = nil|
       wait_method.bind(self).call(timeout || default_timeout)
     end
@@ -285,8 +291,7 @@ future_tests = -> do
 
 end
 
-# TODO: convert the future test to work with Edge::Future
-#future_test.call
+events_test.call
 
 class ConcurrentRunTester
   def initialize
