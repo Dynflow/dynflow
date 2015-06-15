@@ -9,8 +9,8 @@ rvm:
 
 env:
   matrix:
-    - "DB=mysql"
-    - "DB=postgresql"
+    - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test"
+    - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test"
     - "DB=sqlite3"
 
 install:

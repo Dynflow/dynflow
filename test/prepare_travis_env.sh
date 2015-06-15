@@ -13,12 +13,10 @@ case $DB in
     mysql)
         sed -i 's/:mysql//'g $BUNDLE_CONFIG
         mysql -e 'create database travis_ci_test;'
-        export DB_CONN_STRING='mysql2://root@localhost/travis_ci_test'
     ;;
     postgresql)
         sed -i 's/:postgresql//'g $BUNDLE_CONFIG
         psql -c 'create database travis_ci_test;' -U postgres
-        export DB_CONN_STRING='postgres://postgres@localhost/travis_ci_test'
     ;;
     sqlite3)
         # the tests are by default using sqlite3: do nothing
