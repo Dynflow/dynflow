@@ -34,6 +34,11 @@ module Dynflow
                     coordinator_record:  %w(id owner_id class) }
 
       def initialize(config)
+        config = config.dup
+        @additional_responsibilities = { coordinator: true, connector: true }
+        if config.is_a?(Hash) && config.key?(:additional_responsibilities)
+          @additional_responsibilities.merge!(config.delete(:additional_responsibilities))
+        end
         @db = initialize_db config
         migrate_db
       end
@@ -90,11 +95,19 @@ module Dynflow
         save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value
       end
 
+      def connector_feature!
+        unless @additional_responsibilities[:connector]
+          raise "The sequel persistence adapter connector feature used but not enabled in additional_features"
+        end
+      end
+
       def save_envelope(data)
+        connector_feature!
         save :envelope, {}, data
       end
 
       def pull_envelopes(receiver_id)
+        connector_feature!
         db.transaction do
           data_set = table(:envelope).where(receiver_id: receiver_id).to_a
 
@@ -106,22 +119,33 @@ module Dynflow
       end
 
       def push_envelope(envelope)
+        connector_feature!
         table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
+      def coordinator_feature!
+        unless @additional_responsibilities[:coordinator]
+          raise "The sequel persistence adapter coordinator feature used but not enabled in additional_features"
+        end
+      end
+
       def insert_coordinator_record(value)
+        coordinator_feature!
         save :coordinator_record, {}, value
       end
 
       def update_coordinator_record(class_name, record_id, value)
+        coordinator_feature!
         save :coordinator_record, {class: class_name, :id => record_id}, value
       end
 
       def delete_coordinator_record(class_name, record_id)
+        coordinator_feature!
         table(:coordinator_record).where(class: class_name, id: record_id).delete
       end
 
       def find_coordinator_records(options)
+        coordinator_feature!
         options = options.dup
         data_set = filter(:coordinator_record, table(:coordinator_record), options[:filters])
         data_set.map { |record| load_data(record) }
