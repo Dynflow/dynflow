@@ -18,7 +18,7 @@ module Dynflow
         def stop_listening(world)
           @worlds.delete(world.id)
           @executor_round_robin.delete(world) if world.executor
-          terminate! if @worlds.empty?
+          reference.tell(:terminate!) if @worlds.empty?
         end
 
         def handle_envelope(envelope)

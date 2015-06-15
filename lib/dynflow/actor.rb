@@ -36,7 +36,7 @@ module Dynflow
 
     def finish_termination
       @terminated.success(true)
-      reference.ask(:terminate!)
+      reference.tell(:terminate!)
     end
 
     def terminating?
