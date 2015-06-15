@@ -8,6 +8,8 @@ rvm:
   - "2.2.0"
 
 env:
+  global:
+    - "TESTOPTS=--verbose"
   matrix:
     - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test"
     - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test"
