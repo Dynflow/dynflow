@@ -7,7 +7,7 @@ module Dynflow
           @core     = core
           @db       = db
           @world_id = world_id
-          @started  = Concurrent.event
+          @started  = Concurrent::AtomicReference.new
         end
 
         def self.notify_supported?(db)
@@ -15,11 +15,11 @@ module Dynflow
         end
 
         def started?
-          @started.completed?
+          @started.get
         end
 
         def start
-          @started.success(true)
+          @started.set true
           @thread = Thread.new do
             @db.listen("world:#{ @world_id }", :loop => true) do
               if started?
@@ -36,7 +36,7 @@ module Dynflow
         end
 
         def stop
-          @started.reset
+          @started.set false
           notify(@world_id)
         end
       end
