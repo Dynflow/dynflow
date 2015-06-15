@@ -97,8 +97,9 @@ module Dynflow
 
       def progress_action_time action
         Match! action.phase, Action::Run
-        action.world.clock.progress
-        action.world.executor.progress
+        if action.world.clock.progress
+          return action.world.executor.progress
+        end
       end
     end
   end
