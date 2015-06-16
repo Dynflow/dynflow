@@ -34,7 +34,12 @@ module Dynflow
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
 
-      at_exit { self.terminate.wait } if config_for_world.auto_terminate
+      if config_for_world.auto_terminate
+        at_exit do
+          @exit_on_terminate = false # make sure we don't terminate twice
+          self.terminate.wait
+        end
+      end
       self.consistency_check if config_for_world.consistency_check
       self.auto_execute if config_for_world.auto_execute
     end
@@ -200,13 +205,12 @@ module Dynflow
 
             coordinator.release_by_owner("world:#{registered_world.id}")
             coordinator.delete_world(registered_world)
-            if @exit_on_terminate
-              Kernel.exit
-            end
             true
           rescue => e
             logger.fatal(e)
           end
+        end.on_completion do
+          Kernel.exit if @exit_on_terminate
         end
       end
 
