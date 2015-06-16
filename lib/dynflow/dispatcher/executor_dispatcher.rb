@@ -67,8 +67,14 @@ module Dynflow
       end
 
       def on_finish
+        raise "Dispatcher terminating: no new work can be started" if terminating?
         future = Concurrent.future
-        @current_futures << (yield future).on_completion! { reference.tell([:finish_execution, future]) }
+        callbacks_future = yield future
+        # we track currently running futures to make sure to not
+        # terminate until the execution is finished (including
+        # cleaning of locks etc)
+        @current_futures << callbacks_future
+        callbacks_future.on_completion! { reference.tell([:finish_execution, callbacks_future]) }
         return future
       end
 
