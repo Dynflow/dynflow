@@ -68,9 +68,7 @@ module Dynflow
 
       def on_finish
         future = Concurrent.future
-        @current_futures << (yield future)
-            .then { reference.tell([:finish_execution, future]) }
-            .rescue { reference.tell([:finish_execution, future]) }
+        @current_futures << (yield future).on_completion! { reference.tell([:finish_execution, future]) }
         return future
       end
 

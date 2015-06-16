@@ -115,9 +115,7 @@ module Support
                      world.clock.ping suspended_action, input[:timeout], "timeout"
                    end
 
-                   sub_plan.finished.then do
-                     suspended_action << 'finish'
-                   end
+                   sub_plan.finished.on_success! { suspended_action << 'finish' }
                  end
                end),
               (on 'finish' do
