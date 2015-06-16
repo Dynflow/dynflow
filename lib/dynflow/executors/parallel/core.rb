@@ -29,7 +29,7 @@ module Dynflow
             feed_pool execution_plan_manager.event(event)
             true
           else
-            raise Dynflow::Error, "no manager for #{event.execution_plan_id}:#{event.step_id}"
+            raise Dynflow::Error, "no manager for #{event.inspect}"
           end
         rescue Dynflow::Error => e
           event.result.fail e.message
