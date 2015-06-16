@@ -165,7 +165,7 @@ module Dynflow
 
     def terminate(future = Concurrent.future)
       @termination_barrier.synchronize do
-        @terminated ||= Concurrent::Promise.execute do
+        @terminated ||= Concurrent.future do
           begin
             # TODO: refactory once we can chain futures (probably after migrating
             #       to concurrent-ruby promises
@@ -203,13 +203,14 @@ module Dynflow
             if @exit_on_terminate
               Kernel.exit
             end
+            true
           rescue => e
             logger.fatal(e)
           end
         end
       end
 
-      @terminated.then { future.success true }
+      @terminated.on_completion { |result| future.complete(*result) }
       future
     end
 
