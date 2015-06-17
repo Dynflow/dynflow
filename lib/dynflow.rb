@@ -42,6 +42,5 @@ module Dynflow
   require 'dynflow/world'
   require 'dynflow/connectors'
   require 'dynflow/dispatcher'
-  require 'dynflow/daemon'
   require 'dynflow/config'
 end
