@@ -139,7 +139,14 @@ module Dynflow
         end
       end
 
-      def initialize(world = nil, polling_interval = 1)
+      def initialize(world = nil, polling_interval = nil)
+        polling_interval ||= begin
+                               if world && PostgresListerner.notify_supported?(world.persistence.adapter.db)
+                                 30 # when the notify is supported, we don't need that much polling
+                               else
+                                 1
+                               end
+                             end
         @core  = Core.spawn('connector-database-core', self, polling_interval)
         start_listening(world) if world
       end
