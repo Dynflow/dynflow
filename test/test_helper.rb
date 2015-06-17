@@ -243,8 +243,8 @@ events_test = -> do
   end
 
   [Concurrent::Edge::Event, Concurrent::Edge::Future].each do |future_class|
-    original_complete_method = future_class.instance_method :complete
-    future_class.send :define_method, :complete do |*args|
+    original_complete_method = future_class.instance_method :complete_with
+    future_class.send :define_method, :complete_with do |*args|
       begin
         original_complete_method.bind(self).call(*args)
       ensure

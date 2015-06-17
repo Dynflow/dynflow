@@ -214,7 +214,7 @@ module Dynflow
         end
       end
 
-      @terminated.on_completion { |result| future.complete(*result) }
+      @terminated.tangle(future)
       future
     end
 

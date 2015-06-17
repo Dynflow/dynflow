@@ -38,7 +38,8 @@ module Dynflow
               result = client_world.trigger(Support::CodeWorkflowExample::Dummy, { :text => "dummy" })
               plan   = result.finished.value!
               step   = plan.steps.values.first
-              future = client_world.event(plan.id, step.id, 'finish').wait
+              future = client_world.event(plan.id, step.id, 'finish')
+              future.wait
               assert future.failed?
             end
 
@@ -70,13 +71,15 @@ module Dynflow
       def self.supports_ping_pong
         describe 'ping/pong' do
           it 'succeeds when the world is available' do
-            ping_response = client_world.ping(executor_world.id, 0.5).wait
+            ping_response = client_world.ping(executor_world.id, 0.5)
+            ping_response.wait
             assert ping_response.success?
           end
 
           it 'time-outs when the world is not responding' do
             executor_world.terminate.wait
-            ping_response = client_world.ping(executor_world.id, 0.5).wait
+            ping_response = client_world.ping(executor_world.id, 0.5)
+            ping_response.wait
             assert ping_response.failed?
           end
         end
