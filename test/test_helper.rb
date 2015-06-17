@@ -92,7 +92,6 @@ module WorldFactory
     config.exit_on_terminate   = false
     config.auto_execute        = false
     config.auto_terminate      = false
-    config.consistency_check   = false
     yield config if block_given?
     return config
   end

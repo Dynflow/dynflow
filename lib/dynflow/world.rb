@@ -40,7 +40,6 @@ module Dynflow
           self.terminate.wait
         end
       end
-      self.consistency_check if config_for_world.consistency_check
       self.auto_execute if config_for_world.auto_execute
     end
 

@@ -83,10 +83,6 @@ module Dynflow
       true
     end
 
-    config_attr :consistency_check, Algebrick::Types::Boolean do
-      true
-    end
-
     config_attr :action_classes do
       Action.all_children
     end
