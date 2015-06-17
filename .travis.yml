@@ -11,9 +11,12 @@ env:
   global:
     - "TESTOPTS=--verbose"
   matrix:
-    - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test"
-    - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test"
-    - "DB=sqlite3"
+    - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test CONCURRENT_RUBY_EXT=true"
+    - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test CONCURRENT_RUBY_EXT=true"
+    - "DB=sqlite3 CONCURRENT_RUBY_EXT=true"
+    - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test CONCURRENT_RUBY_EXT=false"
+    - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test CONCURRENT_RUBY_EXT=false"
+    - "DB=sqlite3 CONCURRENT_RUBY_EXT=false"
 
 install:
   - test/prepare_travis_env.sh

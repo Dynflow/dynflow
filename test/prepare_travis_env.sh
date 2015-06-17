@@ -6,7 +6,7 @@ BUNDLE_CONFIG=.bundle/config
 mkdir -p $(dirname $BUNDLE_CONFIG)
 cat <<EOF > $BUNDLE_CONFIG
 ---
-BUNDLE_WITHOUT: pry:mysql:postgresql
+BUNDLE_WITHOUT: pry:mysql:postgresql:concurrent_ruby_ext
 EOF
 
 case $DB in
@@ -26,5 +26,10 @@ case $DB in
     exit 1
     ;;
 esac
+
+if [ "$CONCURRENT_RUBY_EXT" = "true" ]; then
+  echo "Enabling concurrent-ruby-ext"
+  sed -i 's/:concurrent_ruby_ext//'g $BUNDLE_CONFIG
+fi
 
 bundle install
