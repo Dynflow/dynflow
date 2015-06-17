@@ -3,7 +3,7 @@ module Dynflow
     module Assertions
       # assert that +assert_actioned_plan+ was planned by +action+ with arguments +plan_input+
       # alternatively plan-input can be asserted with +block+
-      def assert_action_planed_with(action, planned_action_class, *plan_input, &block)
+      def assert_action_planned_with(action, planned_action_class, *plan_input, &block)
         found_classes = assert_action_planed(action, planned_action_class)
         found         = found_classes.select do |a|
           if plan_input.empty?
@@ -20,7 +20,7 @@ module Dynflow
       end
 
       # assert that +assert_actioned_plan+ was planned by +action+
-      def assert_action_planed(action, planned_action_class)
+      def assert_action_planned(action, planned_action_class)
         Match! action.phase, Action::Plan
         Match! action.state, :success
         found = action.execution_plan.planned_plan_steps.
@@ -30,7 +30,7 @@ module Dynflow
         found
       end
 
-      def refute_action_planed(action, planned_action_class)
+      def refute_action_planned(action, planned_action_class)
         Match! action.phase, Action::Plan
         Match! action.state, :success
         found = action.execution_plan.planned_plan_steps.
@@ -39,6 +39,10 @@ module Dynflow
         assert(found.empty?, "Action #{planned_action_class} was planned")
         found
       end
+
+      alias :assert_action_planed_with :assert_action_planned_with
+      alias :assert_action_planed :assert_action_planned
+      alias :refute_action_planed :refute_action_planned
 
       # assert that +action+ has run-phase planned
       def assert_run_phase(action, input = nil, &block)

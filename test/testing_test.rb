@@ -20,8 +20,8 @@ module Dynflow
         action.state.must_equal :success
         assert_run_phase action
         assert_finalize_phase action
-        assert_action_planed action, CWE::DummySuspended
-        refute_action_planed action, CWE::DummyAnotherTrigger
+        assert_action_planned action, CWE::DummySuspended
+        refute_action_planned action, CWE::DummyAnotherTrigger
       end
 
       specify 'stub_plan_action' do
@@ -103,11 +103,11 @@ module Dynflow
           refute_run_phase action
           refute_finalize_phase action
 
-          assert_action_planed action, CWE::Ci
-          assert_action_planed_with action, CWE::Review do |_, name, _|
+          assert_action_planned action, CWE::Ci
+          assert_action_planned_with action, CWE::Review do |_, name, _|
             name == 'Morfeus'
           end
-          assert_action_planed_with action, CWE::Review, sha, 'Neo', true
+          assert_action_planned_with action, CWE::Review, sha, 'Neo', true
         end
       end
 
