@@ -26,6 +26,12 @@ module Dynflow
         erb :index
       end
 
+      get('/status') do
+        # TODO: create a separate page for the overall status, linking
+        # to the more detailed pages
+        redirect to '/worlds'
+      end
+
       get('/worlds') do
         @worlds = world.coordinator.find_worlds
         erb :worlds
