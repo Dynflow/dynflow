@@ -1,7 +1,7 @@
 require_relative 'test_helper'
 
 ENV['RACK_ENV'] = 'test'
-require 'dynflow/web_console'
+require 'dynflow/web'
 
 require 'rack/test'
 
@@ -19,7 +19,7 @@ module Dynflow
 
     let :app do
       world = self.world
-      Dynflow::WebConsole.setup do
+      Dynflow::Web.setup do
         set :world, world
       end
     end
