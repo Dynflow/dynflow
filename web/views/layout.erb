@@ -3,7 +3,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" href="{{ site.favicon }}" type="image/x-icon">
+    <link rel="icon" href="<%= url '/images/logo-square.png' %>" type="image/x-icon">
 
     <title>Dynflow Console</title>
 
@@ -27,15 +27,15 @@
                 <span class="icon-bar"></span>
                 <span class="icon-bar"></span>
             </button>
-            <a class="navbar-brand" href="/">
-              <img src="/images/logo-square.png"/>
+            <a class="navbar-brand" href="<%= url '/' %>">
+              <img src="<%= url '/images/logo-square.png' %>"/>
               Dynflow
             </a>
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
-              <li><a href="/">Execution plans</a></li>
-              <li><a href="/worlds">Worlds</a></li>
+              <li><a href="<%= url '/' %>">Execution plans</a></li>
+              <li><a href="<%= url '/worlds' %>">Worlds</a></li>
             </ul>
             <ul class="nav navbar-nav navbar-right">
             </ul>
