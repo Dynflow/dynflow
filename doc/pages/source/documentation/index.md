@@ -488,7 +488,7 @@ def plan
   # so it's added to the above sequence to be executed as 4th.
   action1 = plan_action AnAction, actions_executed_sequentially.last.output
 
-  # It's planed in default plan's concurrency scope it's executed concurrently
+  # It's planned in default plan's concurrency scope it's executed concurrently
   # to about four actions.
   action2 = plan_action AnAction
 end
