@@ -38,6 +38,8 @@ module Dynflow
     end
 
     def self.new_from_hash(value)
+      value ||= [] # for compatibility with tasks before the
+      # introduction of execution history
       self.new(value.map { |hash| Event[hash] })
     end
   end
