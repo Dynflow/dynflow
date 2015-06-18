@@ -246,6 +246,12 @@ module Dynflow
       @step.state
     end
 
+    # @override to define more descriptive state information for the
+    # action: used in Dynflow console
+    def humanized_state
+      state.to_s
+    end
+
     def error
       phase! Executable
       @step.error

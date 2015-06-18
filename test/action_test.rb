@@ -91,6 +91,32 @@ module Dynflow
       end
     end
 
+    describe '#humanized_state' do
+      include WorldInstance
+      include Testing
+
+      class ActionWithHumanizedState < Dynflow::Action
+        def run(event = nil)
+          suspend unless event
+        end
+
+        def humanized_state
+          case state
+          when :suspended
+            "waiting"
+          else
+            super
+          end
+        end
+      end
+
+      it 'is customizable from an action' do
+        plan   = create_and_plan_action ActionWithHumanizedState, {}
+        action = run_action(plan)
+        action.humanized_state.must_equal "waiting"
+      end
+    end
+
     describe 'polling action' do
       CWE = Support::CodeWorkflowExample
       include Dynflow::Testing

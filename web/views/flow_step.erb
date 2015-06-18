@@ -6,7 +6,7 @@
 
 <span class="step-label">
   <%= h(step.id) %>: <%= h(step.action_class.name) %>
-  (<%= h(step.state) %>)
+  (<%= h(action.humanized_state) %>)
   <% unless step.state == :pending %>
     [ <%= duration_to_s(step.real_time) %> / <%= duration_to_s(step.execution_time) %> ]
   <% end %>
