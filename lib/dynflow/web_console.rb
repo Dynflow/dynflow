@@ -1,6 +1,6 @@
 require 'dynflow'
 require 'pp'
-require 'sinatra'
+require 'sinatra/base'
 require 'yaml'
 
 module Dynflow
