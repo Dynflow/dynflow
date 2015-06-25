@@ -50,7 +50,7 @@ module Dynflow
       end
 
       post('/worlds/:id/invalidate') do |id|
-        invalidated_world = world.persistence.find_worlds(false, id: id).first
+        invalidated_world = world.coordinator.find_worlds(false, id: id).first
         unless invalidated_world
           response = "World #{id} not found"
         else
