@@ -202,7 +202,8 @@ module TestHelpers
   # finish the plan triggered by the `while_executing_plan` method
   def finish_the_plan(triggered)
     wait_for do
-      client_world.persistence.load_execution_plan(triggered.id).state == :running
+      client_world.persistence.load_execution_plan(triggered.id).state == :running &&
+        client_world.persistence.load_step(triggered.id, 2, client_world).state == :suspended
     end
     client_world.event(triggered.id, 2, 'finish')
     return triggered.finished.value
