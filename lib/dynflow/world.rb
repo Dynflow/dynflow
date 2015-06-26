@@ -11,7 +11,7 @@ module Dynflow
 
     def initialize(config)
       @id                   = SecureRandom.uuid
-      @clock                = Clock.spawn('clock')
+      @clock                = spawn_and_wait(Clock, 'clock')
       config_for_world      = Config::ForWorld.new(config, self)
       config_for_world.validate
       @logger_adapter       = config_for_world.logger_adapter
@@ -24,11 +24,11 @@ module Dynflow
       @exit_on_terminate    = config_for_world.exit_on_terminate
       @connector            = config_for_world.connector
       @middleware           = Middleware::World.new
-      @client_dispatcher    = Dispatcher::ClientDispatcher.spawn("client-dispatcher", self)
+      @client_dispatcher    = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
       calculate_subscription_index
 
       if executor
-        @executor_dispatcher = Dispatcher::ExecutorDispatcher.spawn("executor-dispatcher", self)
+        @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self)
         executor.initialized.wait
       end
       coordinator.register_world(registered_world)
@@ -296,6 +296,13 @@ module Dynflow
           logger.error e
         end
       end
+    end
+
+    def spawn_and_wait(klass, name, *args)
+      initialized = Concurrent.future
+      actor = klass.spawn(name: name, args: args, initialized: initialized)
+      initialized.wait
+      return actor
     end
 
   end
