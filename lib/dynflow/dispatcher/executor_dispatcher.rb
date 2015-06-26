@@ -27,7 +27,7 @@ module Dynflow
             end
           end.rescue do |reason|
             @world.coordinator.release(execution_lock)
-            respond(envelope, Failed[reason.message])
+            respond(envelope, Failed[reason.to_s])
           end
         end
         @world.executor.execute(execution.execution_plan_id, future)
@@ -42,7 +42,7 @@ module Dynflow
           f.then do
             respond(envelope, Done)
           end.rescue do |reason|
-            respond(envelope, Failed[reason.message])
+            respond(envelope, Failed[reason.to_s])
           end
         end
         @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
@@ -69,7 +69,7 @@ module Dynflow
       def on_finish
         raise "Dispatcher terminating: no new work can be started" if terminating?
         future = Concurrent.future
-        callbacks_future = yield future
+        callbacks_future = (yield future).rescue { |reason| @world.logger.error("Unexpected fail on future #{reason}") }
         # we track currently running futures to make sure to not
         # terminate until the execution is finished (including
         # cleaning of locks etc)

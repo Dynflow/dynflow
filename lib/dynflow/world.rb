@@ -179,9 +179,6 @@ module Dynflow
             run_before_termination_hooks
 
             coordinator.deactivate_world(registered_world) if executor
-            logger.info "stop listening for new events..."
-            listening_stopped     = connector.stop_listening(self)
-            listening_stopped.wait
 
             if executor
               logger.info "start terminating executor..."
@@ -193,18 +190,19 @@ module Dynflow
               executor_dispatcher_terminated.wait
             end
 
-
             logger.info "start terminating client dispatcher..."
             client_dispatcher_terminated = Concurrent.future
             client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
             client_dispatcher_terminated.wait
 
+            logger.info "stop listening for new events..."
+            connector.stop_listening(self).wait
+            connector.terminate
+
             if @clock
               logger.info "start terminating clock..."
               clock.ask(:terminate!).wait
             end
-
-            connector.terminate
 
             coordinator.release_by_owner("world:#{registered_world.id}")
             coordinator.delete_world(registered_world)

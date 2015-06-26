@@ -14,7 +14,7 @@ module Dynflow
         end
 
         def terminate
-          pending_work = @events.clear.values.flatten
+          pending_work = @events.clear.values.flatten(1)
           pending_work.each do |w|
             if Work::Event === w
               w.event.result.fail UnprocessableEvent.new("dropping due to termination")
