@@ -33,6 +33,7 @@ module Dynflow
       end
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
+      @before_termination_hooks = Queue.new
 
       if config_for_world.auto_terminate
         at_exit do
@@ -41,6 +42,10 @@ module Dynflow
         end
       end
       self.auto_execute if config_for_world.auto_execute
+    end
+
+    def before_termination(&block)
+      @before_termination_hooks << block
     end
 
     def registered_world
@@ -171,8 +176,7 @@ module Dynflow
       @termination_barrier.synchronize do
         @terminated ||= Concurrent.future do
           begin
-            # TODO: refactory once we can chain futures (probably after migrating
-            #       to concurrent-ruby promises
+            run_before_termination_hooks
 
             coordinator.deactivate_world(registered_world) if executor
             logger.info "stop listening for new events..."
@@ -284,6 +288,16 @@ module Dynflow
               index[subscribed_class.to_s.constantize] << klass
             end
           end.tap { |o| o.freeze }
+    end
+
+    def run_before_termination_hooks
+      until @before_termination_hooks.empty?
+        begin
+          @before_termination_hooks.pop.call
+        rescue => e
+          logger.error e
+        end
+      end
     end
 
   end

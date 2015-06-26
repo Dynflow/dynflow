@@ -633,6 +633,25 @@ module Dynflow
         end
       end
 
+      describe 'before_termination hooks' do
+        it 'runs before temination hooks' do
+          hook_run = false
+          world.before_termination { hook_run = true }
+          world.terminate.wait
+          assert hook_run
+        end
+
+        it 'continues when some hook fails' do
+          run_hooks, failed_hooks = [], []
+          world.before_termination { run_hooks << 1 }
+          world.before_termination { run_hooks << 2; failed_hooks << 2; raise 'error' }
+          world.before_termination { run_hooks << 3 }
+          world.terminate.wait
+          run_hooks.must_equal [1, 2, 3]
+          failed_hooks.must_equal [2]
+        end
+      end
+
       it 'does not accept new work' do
         assert world.terminate.wait
         result = world.trigger(Support::DummyExample::Slow, 0.02)
