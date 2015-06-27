@@ -63,7 +63,11 @@ module Dynflow
           self << :periodic_check_inbox
         end
 
-        def stop_listening(world)
+        def stop_receiving_new_work
+          @world.coordinator.deactivate_world(@world.registered_world)
+        end
+
+        def stop_listening
           @stopped = true
           postgres_listen_stop
         end
@@ -155,16 +159,16 @@ module Dynflow
         @core.ask([:start_listening, world])
       end
 
-      def stop_listening(world)
-        @core.ask([:stop_listening, world])
+      def stop_receiving_new_work(_)
+        @core.ask(:stop_receiving_new_work).wait
+      end
+
+      def stop_listening(_)
+        @core.ask(:stop_listening).then { @core.ask(:terminate!) }.wait
       end
 
       def send(envelope)
         @core.ask([:handle_envelope, envelope])
-      end
-
-      def terminate
-        @core.ask(:terminate!)
       end
     end
   end

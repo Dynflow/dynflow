@@ -178,9 +178,10 @@ module Dynflow
           begin
             run_before_termination_hooks
 
-            coordinator.deactivate_world(registered_world) if executor
 
             if executor
+              connector.stop_receiving_new_work(self)
+
               logger.info "start terminating executor..."
               executor.terminate.wait
 
@@ -196,8 +197,7 @@ module Dynflow
             client_dispatcher_terminated.wait
 
             logger.info "stop listening for new events..."
-            connector.stop_listening(self).wait
-            connector.terminate
+            connector.stop_listening(self)
 
             if @clock
               logger.info "start terminating clock..."

@@ -15,6 +15,10 @@ module Dynflow
           @executor_round_robin.add(world) if world.executor
         end
 
+        def stop_receiving_new_work(world)
+          @executor_round_robin.delete(world)
+        end
+
         def stop_listening(world)
           @worlds.delete(world.id)
           @executor_round_robin.delete(world) if world.executor
@@ -51,16 +55,16 @@ module Dynflow
         @core.ask([:start_listening, world])
       end
 
+      def stop_receiving_new_work(world)
+        @core.ask([:stop_receiving_new_work, world]).wait
+      end
+
       def stop_listening(world)
-        @core.ask([:stop_listening, world])
+        @core.ask([:stop_listening, world]).wait
       end
 
       def send(envelope)
         @core.ask([:handle_envelope, envelope])
-      end
-
-      def terminate
-        # The core terminates itself when last world stops listening
       end
     end
   end
