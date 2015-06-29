@@ -1,3 +1,5 @@
+require 'socket'
+
 module Dynflow
   class Config
     include Algebrick::TypeCheck
@@ -85,6 +87,10 @@ module Dynflow
 
     config_attr :action_classes do
       Action.all_children
+    end
+
+    config_attr :meta do
+      { 'hostname' => Socket.gethostname, 'pid' => Process.pid }
     end
 
     def validate(config_for_world)

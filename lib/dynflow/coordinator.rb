@@ -77,10 +77,21 @@ module Dynflow
       end
     end
 
-    class ExecutorWorld < Record
+    class WorldRecord < Record
       def initialize(world)
         super
         @data[:id]     = world.id
+        @data[:meta]   = world.meta
+      end
+
+      def meta
+        @data[:meta]
+      end
+    end
+
+    class ExecutorWorld < WorldRecord
+      def initialize(world)
+        super
         self.active    = !world.terminating?
       end
 
@@ -94,11 +105,7 @@ module Dynflow
       end
     end
 
-    class ClientWorld < Record
-      def initialize(world)
-        super
-        @data[:id] = world.id
-      end
+    class ClientWorld < WorldRecord
     end
 
     class Lock < Record

@@ -7,7 +7,7 @@ module Dynflow
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
         :transaction_adapter, :logger_adapter, :coordinator,
         :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock
+        :middleware, :auto_rescue, :clock, :meta
 
     def initialize(config)
       @id                   = SecureRandom.uuid
@@ -25,6 +25,7 @@ module Dynflow
       @connector            = config_for_world.connector
       @middleware           = Middleware::World.new
       @client_dispatcher    = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @meta                 = config_for_world.meta
       calculate_subscription_index
 
       if executor

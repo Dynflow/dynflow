@@ -49,6 +49,14 @@ module Dynflow
         end
       end
 
+      def show_world(world_id)
+        if registered_world = world.coordinator.find_worlds(false, id: world_id).first
+          "%{world_id} %{world_meta}" % { world_id: world_id, world_meta: registered_world.meta.inspect }
+        else
+          world_id
+        end
+      end
+
       def show_action_data(label, value)
         value_html = prettyprint(value)
         if !value_html.empty?

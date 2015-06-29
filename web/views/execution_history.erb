@@ -11,7 +11,7 @@
   <tr>
     <td><%= h(event.name) %></td>
     <td><%= h(Time.at(event.time).utc) %></td>
-    <td><%= h(event.world_id) %></td>
+    <td><%= h(show_world(event.world_id)) %></td>
   </tr>
 <% end %>
 </table>
