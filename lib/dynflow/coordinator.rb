@@ -62,6 +62,8 @@ module Dynflow
       def validate!
         Type! id,       String
         Type! @data,     Hash
+        raise "The record id %{s} too large" % id if id.size > 100
+        raise "The record class name %{s} too large" % self.class.name if self.class.name.size > 100
       end
 
       def to_s
