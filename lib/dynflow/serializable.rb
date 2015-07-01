@@ -23,7 +23,7 @@ module Dynflow
     end
 
     def self.check_class_key_present(hash)
-      raise ArgumentError, 'missing :class' unless hash[:class]
+      raise ArgumentError, "missing :class in #{hash.inspect}" unless hash[:class]
     end
 
     def self.constantize(action_name)
@@ -74,6 +74,5 @@ module Dynflow
     end
 
     private_class_method :string_to_time, :hash_to_error
-
   end
 end

@@ -5,7 +5,8 @@ module Dynflow
     describe ExecutionPlan do
 
       include PlanAssertions
-      include WorldInstance
+
+      let(:world) { WorldFactory.create_world }
 
       let :issues_data do
         [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },

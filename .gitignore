@@ -5,3 +5,5 @@ Gemfile.lock
 .bin
 .bundle
 .idea
+.ruby-version
+examples/remote_executor_db.sqlite

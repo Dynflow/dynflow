@@ -30,10 +30,8 @@
 <% end %>
 </table>
 <% if paginate? %>
-  <div class="pagination">
-    <ul>
-      <li><a href="<%= paginated_url(-1) %>">Prev</a></li>
-      <li><a href="<%= paginated_url(+1) %>">Next</a></li>
-    </ul>
-  </div>
+  <ul class="pagination">
+    <li><a href="<%= paginated_url(-1) %>">&laquo; Prev</a></li>
+    <li><a href="<%= paginated_url(+1) %>">Next &raquo;</a></li>
+  </ul>
 <% end %>

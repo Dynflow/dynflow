@@ -6,16 +6,19 @@ module Dynflow
       attr_accessor :logger
 
       def register_world(world)
-        @worlds ||= Set.new
-        @worlds << world
+        @logger ||= world.logger
       end
 
       def log(level, message)
-        (@worlds.first && @worlds.first.logger).send(level, message)
+        logger.send(level, message) if logger
       end
 
       def pagination?
         false
+      end
+
+      def transaction
+        raise NotImplementedError
       end
 
       def filtering_by
@@ -70,6 +73,14 @@ module Dynflow
 
       # for debug purposes
       def to_hash
+        raise NotImplementedError
+      end
+
+      def pull_envelopes(receiver_id)
+        raise NotImplementedError
+      end
+
+      def push_envelope(envelope)
         raise NotImplementedError
       end
     end

@@ -2,7 +2,8 @@ require_relative 'test_helper'
 
 module Dynflow
   describe 'action' do
-    include WorldInstance
+
+    let(:world) { WorldFactory.create_world }
 
     describe Action::Missing do
 
@@ -47,7 +48,6 @@ module Dynflow
     end
 
     describe Action::Present do
-      include WorldInstance
 
       let :execution_plan do
         result = world.trigger(Support::CodeWorkflowExample::IncomingIssues, issues_data)
@@ -92,7 +92,6 @@ module Dynflow
     end
 
     describe '#humanized_state' do
-      include WorldInstance
       include Testing
 
       class ActionWithHumanizedState < Dynflow::Action

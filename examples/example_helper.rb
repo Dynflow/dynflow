@@ -8,9 +8,15 @@ class ExampleHelper
       @world ||= create_world
     end
 
-    def create_world(options = {})
-      options = default_world_options.merge(options)
-      Dynflow::SimpleWorld.new(options)
+    def create_world
+      config = Dynflow::Config.new
+      config.persistence_adapter = persistence_adapter
+      config.logger_adapter      = logger_adapter
+      config.auto_rescue         = false
+      yield config if block_given?
+      Dynflow::World.new(config).tap do |world|
+        puts "World #{world.id} started..."
+      end
     end
 
     def persistence_conn_string
@@ -21,22 +27,17 @@ class ExampleHelper
       Dynflow::PersistenceAdapters::Sequel.new persistence_conn_string
     end
 
-    def default_world_options
-      { logger_adapter: logger_adapter,
-        persistence_adapter: persistence_adapter }
-    end
-
     def logger_adapter
       Dynflow::LoggerAdapters::Simple.new $stderr, 4
     end
 
 
     def run_web_console(world = ExampleHelper.world)
-      require 'dynflow/web_console'
-      dynflow_console = Dynflow::WebConsole.setup do
+      require 'dynflow/web'
+      dynflow_console = Dynflow::Web.setup do
         set :world, world
       end
-      dynflow_console.run!
+      Rack::Server.new(:app => dynflow_console, :Port => 4567).start
     end
 
     # for simulation of the execution failing for the first time
@@ -52,5 +53,11 @@ class ExampleHelper
     def nothing_should_fail!
       @should_fail = false
     end
+
+    def terminate
+      @world.terminate.wait if @world
+    end
   end
 end
+
+at_exit { ExampleHelper.terminate }

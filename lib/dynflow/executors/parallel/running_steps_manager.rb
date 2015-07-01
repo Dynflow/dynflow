@@ -14,7 +14,7 @@ module Dynflow
         end
 
         def terminate
-          pending_work = @events.clear.values.flatten
+          pending_work = @events.clear.values.flatten(1)
           pending_work.each do |w|
             if Work::Event === w
               w.event.result.fail UnprocessableEvent.new("dropping due to termination")
@@ -34,7 +34,7 @@ module Dynflow
         def done(step)
           Type! step, ExecutionPlan::Steps::RunStep
           @events.shift(step.id).tap do |work|
-            work.event.result.resolve true if Work::Event === work
+            work.event.result.success true if Work::Event === work
           end
 
           if step.state == :suspended
@@ -50,6 +50,13 @@ module Dynflow
             @running_steps.delete(step.id)
             return false, nil
           end
+        end
+
+        def try_to_terminate
+          @running_steps.delete_if do |_, step|
+            step.state != :running
+          end
+          return @running_steps.empty?
         end
 
         # @returns [Work, nil]

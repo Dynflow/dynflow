@@ -21,7 +21,9 @@ Gem::Specification.new do |s|
   s.add_dependency "activesupport"
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
-  s.add_dependency "algebrick", '~> 0.4.0'
+  s.add_dependency "algebrick", '~> 0.7.0'
+  s.add_dependency "concurrent-ruby", '~> 0.9.0.pre3'
+  s.add_dependency "concurrent-ruby-edge"
 
   s.add_development_dependency "rack-test"
   s.add_development_dependency "minitest"

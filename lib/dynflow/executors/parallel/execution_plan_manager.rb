@@ -10,17 +10,18 @@ module Dynflow
         def initialize(world, execution_plan, future)
           @world                 = Type! world, World
           @execution_plan        = Type! execution_plan, ExecutionPlan
-          @future                = Type! future, Future
+          @future                = Type! future, Concurrent::Edge::Future
           @running_steps_manager = RunningStepsManager.new(world)
 
           unless [:planned, :paused].include? execution_plan.state
             raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
           end
+          execution_plan.execution_history.add('start execution', @world.id)
           execution_plan.update_state(:running)
         end
 
         def start
-          raise "The future was already set" if @future.ready?
+          raise "The future was already set" if @future.completed?
           start_run or start_finalize or finish
         end
 
@@ -73,9 +74,6 @@ module Dynflow
 
         def terminate
           @running_steps_manager.terminate
-          unless @execution_plan.state == :paused
-            @execution_plan.update_state(:paused)
-          end
         end
 
         private
@@ -102,6 +100,7 @@ module Dynflow
         end
 
         def finish
+          execution_plan.execution_history.add('finish execution', @world.id)
           @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
           return no_work
         end

@@ -1,15 +1,10 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class Worker < MicroActor
+      class Worker < Actor
+
         def initialize(pool, transaction_adapter)
-          super(pool.logger, pool, transaction_adapter)
-        end
-
-        private
-
-        def delayed_initialize(pool, transaction_adapter)
-          @pool                = pool
+          @pool                = Type! pool, Concurrent::Actor::Reference
           @transaction_adapter = Type! transaction_adapter, TransactionAdapters::Abstract
         end
 
@@ -23,9 +18,9 @@ module Dynflow
                   sequential_manager.finalize
                  end)
         rescue Errors::PersistenceError => e
-          @pool << e
+          @pool.tell([:handle_persistence_error, e])
         ensure
-          @pool << WorkerDone[work: message, worker: self]
+          @pool.tell([:worker_done, reference, message])
           @transaction_adapter.cleanup
         end
       end

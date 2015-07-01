@@ -1,0 +1,17 @@
+<table class="table">
+  <thead>
+    <tr>
+      <th>event</th>
+      <th>time</th>
+      <th>world</th>
+    </tr>
+  </thead>
+
+<% @plan.execution_history.each do |event| %>
+  <tr>
+    <td><%= h(event.name) %></td>
+    <td><%= h(Time.at(event.time).utc) %></td>
+    <td><%= h(show_world(event.world_id)) %></td>
+  </tr>
+<% end %>
+</table>

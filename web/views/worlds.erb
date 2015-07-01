@@ -1,0 +1,26 @@
+<h1>List of worlds</h1>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Meta</th>
+      <th>Executor?</th>
+      <th></th>
+    </tr>
+  </thead>
+
+<% @worlds.each do |world| %>
+  <tr>
+    <td><%= h(world.id) %></td>
+    <td><%= h(world.meta) %></td>
+    <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
+    <td>
+      <a href="<%= url("/worlds/#{world.id}/ping") %>" class="postlink">ping</a>
+      <% if world.id == params[:inactive_world_id] %>
+        <a href="<%= url("/worlds/#{world.id}/invalidate") %>" class="postlink">invalidate</a>
+      <% end %>
+    </td>
+  </tr>
+<% end %>
+</table>

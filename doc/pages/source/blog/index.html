@@ -1,0 +1,12 @@
+---
+layout: page
+title: Posts
+---
+
+{% for post in site.posts %}
+{% include post_item.html %}
+{% endfor %}
+
+<p id="tag-cloud">
+    All tags: {{ site | tag_cloud }}
+</p>

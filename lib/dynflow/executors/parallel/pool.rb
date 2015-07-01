@@ -1,33 +1,7 @@
 module Dynflow
   module Executors
     class Parallel < Abstract
-      class Pool < MicroActor
-        class RoundRobin
-          def initialize
-            @data   = []
-            @cursor = 0
-          end
-
-          def add(item)
-            @data.push item
-            self
-          end
-
-          def delete(item)
-            @data.delete item
-            self
-          end
-
-          def next
-            @cursor = 0 if @cursor > @data.size-1
-            @data[@cursor].tap { @cursor += 1 }
-          end
-
-          def empty?
-            @data.empty?
-          end
-        end
-
+      class Pool < Actor
         class JobStorage
           def initialize
             @round_robin = RoundRobin.new
@@ -62,43 +36,39 @@ module Dynflow
         end
 
         def initialize(core, pool_size, transaction_adapter)
-          super(core.logger, core, pool_size, transaction_adapter)
+          @executor_core = core
+          @pool_size     = pool_size
+          @free_workers  = Array.new(pool_size) { |i| Worker.spawn("worker-#{i}", reference, transaction_adapter) }
+          @jobs          = JobStorage.new
+        end
+
+        def schedule_work(work)
+          @jobs.add work
+          distribute_jobs
+        end
+
+        def worker_done(worker, step)
+          @executor_core.tell([:finish_step, step])
+          @free_workers << worker
+          distribute_jobs
+        end
+
+        def handle_persistence_error(error)
+          @executor_core.tell(:handle_persistence_error, error)
+        end
+
+        def start_termination(*args)
+          super
+          try_to_terminate
         end
 
         private
 
-        def delayed_initialize(core, pool_size, transaction_adapter)
-          @core         = core
-          @pool_size    = pool_size
-          @free_workers = Array.new(pool_size) { Worker.new(self, transaction_adapter) }
-          @jobs         = JobStorage.new
-        end
-
-        def on_message(message)
-          match message,
-                (on ~Work do |work|
-                  @jobs.add work
-                  distribute_jobs
-                 end),
-                (on WorkerDone.(~any, ~any) do |step, worker|
-                  @core << PoolDone[step]
-                  @free_workers << worker
-                  distribute_jobs
-                 end),
-                (on Errors::PersistenceError do
-                   @core << message
-                 end)
-        end
-
-        def termination
-          try_to_terminate
-        end
-
         def try_to_terminate
           if terminating? && @free_workers.size == @pool_size
-            @free_workers.map { |worker| worker.ask(Terminate) }.each(&:wait)
-            @core << PoolTerminated
-            terminate!
+            @free_workers.map { |worker| worker.ask(:terminate!) }.map(&:wait)
+            @executor_core.tell(:finish_termination)
+            finish_termination
           end
         end
 

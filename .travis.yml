@@ -4,7 +4,22 @@ language:
 rvm:
   - "1.9.3"
   - "2.0.0"
-  - "2.1.0"
+  - "2.1.5"
+  - "2.2.0"
+
+env:
+  global:
+    - "TESTOPTS=--verbose"
+  matrix:
+    - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test CONCURRENT_RUBY_EXT=true"
+    - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test CONCURRENT_RUBY_EXT=true"
+    - "DB=sqlite3 CONCURRENT_RUBY_EXT=true"
+    - "DB=mysql DB_CONN_STRING=mysql2://root@localhost/travis_ci_test CONCURRENT_RUBY_EXT=false"
+    - "DB=postgresql DB_CONN_STRING=postgres://postgres@localhost/travis_ci_test CONCURRENT_RUBY_EXT=false"
+    - "DB=sqlite3 CONCURRENT_RUBY_EXT=false"
+
+install:
+  - test/prepare_travis_env.sh
 
 script:
   - bundle exec rake test

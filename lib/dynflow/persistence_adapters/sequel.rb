@@ -8,6 +8,7 @@ module Dynflow
 
     class Sequel < Abstract
       include Algebrick::TypeCheck
+      include Algebrick::Matching
 
       MAX_RETRIES = 10
       RETRY_DELAY = 1
@@ -26,26 +27,40 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      META_DATA = { execution_plan: %w(state result started_at ended_at real_time execution_time),
-                    action:         %w(caller_execution_plan_id caller_action_id),
-                    step:           %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight) }
+      META_DATA = { execution_plan:      %w(state result started_at ended_at real_time execution_time),
+                    action:              %w(caller_execution_plan_id caller_action_id),
+                    step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
+                    envelope:            %w(receiver_id),
+                    coordinator_record:  %w(id owner_id class) }
 
       def initialize(config)
+        config = config.dup
+        @additional_responsibilities = { coordinator: true, connector: true }
+        if config.is_a?(Hash) && config.key?(:additional_responsibilities)
+          @additional_responsibilities.merge!(config.delete(:additional_responsibilities))
+        end
         @db = initialize_db config
         migrate_db
       end
 
-      def find_execution_plans(options = {})
-        data_set = filter(order(paginate(table(:execution_plan), options), options), options[:filters])
+      def transaction(&block)
+        db.transaction(&block)
+      end
 
-        data_set.map do |record|
-          HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
-        end
+      def find_execution_plans(options = {})
+        options[:order_by] ||= :started_at
+        data_set = filter(:execution_plan,
+                          order(:execution_plan,
+                                paginate(table(:execution_plan), options),
+                                options),
+                          options[:filters])
+
+        data_set.map { |record| load_data(record) }
       end
 
       def delete_execution_plans(filters, batch_size = 1000)
         count = 0
-        filter(table(:execution_plan), filters).each_slice(batch_size) do |plans|
+        filter(:execution_plan, table(:execution_plan), filters).each_slice(batch_size) do |plans|
           uuids = plans.map { |p| p.fetch(:uuid) }
           @db.transaction do
             table(:step).where(execution_plan_uuid: uuids).delete
@@ -80,17 +95,76 @@ module Dynflow
         save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value
       end
 
+      def connector_feature!
+        unless @additional_responsibilities[:connector]
+          raise "The sequel persistence adapter connector feature used but not enabled in additional_features"
+        end
+      end
+
+      def save_envelope(data)
+        connector_feature!
+        save :envelope, {}, data
+      end
+
+      def pull_envelopes(receiver_id)
+        connector_feature!
+        db.transaction do
+          data_set = table(:envelope).where(receiver_id: receiver_id).to_a
+
+          envelopes = data_set.map { |record| load_data(record) }
+
+          table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
+          return envelopes
+        end
+      end
+
+      def push_envelope(envelope)
+        connector_feature!
+        table(:envelope).insert(prepare_record(:envelope, envelope))
+      end
+
+      def coordinator_feature!
+        unless @additional_responsibilities[:coordinator]
+          raise "The sequel persistence adapter coordinator feature used but not enabled in additional_features"
+        end
+      end
+
+      def insert_coordinator_record(value)
+        coordinator_feature!
+        save :coordinator_record, {}, value
+      end
+
+      def update_coordinator_record(class_name, record_id, value)
+        coordinator_feature!
+        save :coordinator_record, {class: class_name, :id => record_id}, value
+      end
+
+      def delete_coordinator_record(class_name, record_id)
+        coordinator_feature!
+        table(:coordinator_record).where(class: class_name, id: record_id).delete
+      end
+
+      def find_coordinator_records(options)
+        coordinator_feature!
+        options = options.dup
+        data_set = filter(:coordinator_record, table(:coordinator_record), options[:filters])
+        data_set.map { |record| load_data(record) }
+      end
+
       def to_hash
-        { execution_plans: table(:execution_plan).all.to_a,
-          steps:           table(:step).all.to_a,
-          actions:         table(:action).all.to_a }
+        { execution_plans:      table(:execution_plan).all.to_a,
+          steps:                table(:step).all.to_a,
+          actions:              table(:action).all.to_a,
+          envelopes:            table(:envelope).all.to_a }
       end
 
       private
 
-      TABLES = { execution_plan: :dynflow_execution_plans,
-                 action:         :dynflow_actions,
-                 step:           :dynflow_steps }
+      TABLES = { execution_plan:      :dynflow_execution_plans,
+                 action:              :dynflow_actions,
+                 step:                :dynflow_steps,
+                 envelope:            :dynflow_envelopes,
+                 coordinator_record:  :dynflow_coordinator_records }
 
       def table(which)
         db[TABLES.fetch(which)]
@@ -108,18 +182,22 @@ module Dynflow
         ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
+      def prepare_record(table_name, value, base = {})
+        record = base.dup
+        if table(table_name).columns.include?(:data)
+          record[:data] = dump_data(value)
+        end
+        record.merge! extract_metadata(table_name, value)
+        record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
+        record
+      end
+
       def save(what, condition, value)
         table           = table(what)
-        existing_record = with_retry { table.first condition }
+        existing_record = with_retry { table.first condition } unless condition.empty?
 
         if value
-          value         = value.with_indifferent_access
-          record        = existing_record || condition
-          record[:data] = MultiJson.dump Type!(value, Hash)
-          meta_data     = META_DATA.fetch(what).inject({}) { |h, k| h.update k.to_sym => value.fetch(k) }
-          record.merge! meta_data
-          record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
-
+          record = prepare_record(what, value, (existing_record || condition))
           if existing_record
             with_retry { table.where(condition).update(record) }
           else
@@ -135,47 +213,71 @@ module Dynflow
       def load(what, condition)
         table = table(what)
         if (record = with_retry { table.first(condition.symbolize_keys) } )
-          HashWithIndifferentAccess.new MultiJson.load(record[:data])
+          load_data(record)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
       end
 
+      def load_data(record)
+        HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
+      end
+
+      def delete(what, condition)
+        table(what).where(condition.symbolize_keys).delete
+      end
+
+      def extract_metadata(what, value)
+        meta_keys = META_DATA.fetch(what)
+        value         = value.with_indifferent_access
+        meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
+      end
+
+      def dump_data(value)
+        MultiJson.dump Type!(value, Hash)
+      end
+
       def paginate(data_set, options)
-        page     = Integer(options[:page] || 0)
-        per_page = Integer(options[:per_page] || 20)
+        page     = Integer(options[:page]) if options[:page]
+        per_page = Integer(options[:per_page]) if options[:per_page]
 
         if page
+          raise ArgumentError, "page specified without per_page attribute" unless per_page
           data_set.limit per_page, per_page * page
         else
           data_set
         end
       end
 
-      def order(data_set, options)
-        order_by = (options[:order_by] || :started_at).to_s
-        unless META_DATA.fetch(:execution_plan).include? order_by
+      def order(what, data_set, options)
+        order_by = (options[:order_by]).to_s
+        return data_set if order_by.empty?
+        unless META_DATA.fetch(what).include? order_by
           raise ArgumentError, "unknown column #{order_by.inspect}"
         end
         order_by = order_by.to_sym
         data_set.order_by options[:desc] ? ::Sequel.desc(order_by) : order_by
       end
 
-      def filter(data_set, filters)
+      def filter(what, data_set, filters)
         Type! filters, NilClass, Hash
         return data_set if filters.nil?
-        unknown = filters.keys - META_DATA.fetch(:execution_plan) - %w[uuid caller_execution_plan_id caller_action_id]
 
-        if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
-          raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"
+        unknown = filters.keys.map(&:to_s) - META_DATA.fetch(what)
+        if what == :execution_plan
+          unknown -= %w[uuid caller_execution_plan_id caller_action_id]
+
+          if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
+            raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"
+          end
+
+          if filters.key?('caller_execution_plan_id')
+            data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
+                select_all(TABLES[:execution_plan]).distinct
+          end
         end
 
-        if filters.key?('caller_execution_plan_id')
-          data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
-              select_all(TABLES[:execution_plan]).distinct
-        end
-
-        unless (unknown).empty?
+        unless unknown.empty?
           raise ArgumentError, "unkown columns: #{unknown.inspect}"
         end
 
@@ -186,6 +288,8 @@ module Dynflow
         attempts = 0
         begin
           yield
+        rescue ::Sequel::UniqueConstraintViolation => e
+          raise e
         rescue Exception => e
           attempts += 1
           log(:error, e)

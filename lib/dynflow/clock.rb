@@ -1,7 +1,7 @@
 module Dynflow
   require 'set'
 
-  class Clock < MicroActor
+  class Clock < Actor
 
     include Algebrick::Types
 
@@ -40,23 +40,7 @@ module Dynflow
                Pill = type { fields Float }
     end
 
-    def ping(who, time, with_what = nil, where = :<<)
-      Type! time, Time, Numeric
-      time  = Time.now + time if time.is_a? Numeric
-      timer = Timer[who, time, with_what.nil? ? Algebrick::Types::None : Some[Object][with_what], where]
-      if terminated?
-        Thread.new do
-          sleep [timer.when - Time.now, 0].max
-          timer.apply
-        end
-      else
-        self << timer
-      end
-    end
-
-    private
-
-    def delayed_initialize
+    def initialize
       @timers        = SortedSet.new
       @sleeping_pill = None
       @sleep_barrier = Mutex.new
@@ -64,26 +48,31 @@ module Dynflow
       Thread.pass until @sleep_barrier.locked? || @sleeper.status == 'sleep'
     end
 
-    def termination
-      @sleeper.kill
-      super
+    def default_reference_class
+      ClockReference
     end
 
-    def on_message(message)
-      match message,
-            Tick >-> do
-              run_ready_timers
-              sleep_to first_timer
-            end,
-            ~Timer >-> timer do
-              @timers.add timer
-              if @timers.size == 1
-                sleep_to timer
-              else
-                wakeup if timer == first_timer
-              end
-            end
+    def on_event(event)
+      if event == :terminated
+        @sleeper.kill
+      end
     end
+
+    def tick
+      run_ready_timers
+      sleep_to first_timer
+    end
+
+    def add_timer(timer)
+      @timers.add timer
+      if @timers.size == 1
+        sleep_to timer
+      else
+        wakeup if timer == first_timer
+      end
+    end
+
+    private
 
     def run_ready_timers
       while first_timer && first_timer.when <= Time.now
@@ -122,12 +111,28 @@ module Dynflow
           pill           = @sleeping_pill
           @sleeping_pill = Took
           @sleep_barrier.sleep pill.value
-          self << Tick
+          reference.tell(:tick)
         end
       end
     end
-
   end
+
+  class ClockReference < Concurrent::Actor::Reference
+    include Algebrick::Types
+
+    def ping(who, time, with_what = nil, where = :<<)
+      Type! time, Time, Numeric
+      time  = Time.now + time if time.is_a? Numeric
+      timer = Clock::Timer[who, time, with_what.nil? ? Algebrick::Types::None : Some[Object][with_what], where]
+      # if self.ask!(:terminated?) # FIXME not thread safe
+      #   Thread.new do
+      #     sleep [timer.when - Time.now, 0].max
+      #     timer.apply
+      #   end
+      # else
+      self.tell([:add_timer, timer])
+      # end
+    end
+  end
+
 end
-
-

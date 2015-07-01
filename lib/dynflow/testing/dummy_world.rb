@@ -30,7 +30,7 @@ module Dynflow
         []
       end
 
-      def event(execution_plan_id, step_id, event, future = Future.new)
+      def event(execution_plan_id, step_id, event, future = Concurrent.future)
         executor.event execution_plan_id, step_id, event, future
       end
 

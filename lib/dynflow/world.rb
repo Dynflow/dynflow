@@ -1,41 +1,60 @@
+# -*- coding: utf-8 -*-
 module Dynflow
   class World
     include Algebrick::TypeCheck
+    include Algebrick::Matching
 
-    attr_reader :executor, :persistence, :transaction_adapter, :action_classes, :subscription_index,
-                :logger_adapter, :options, :middleware, :auto_rescue
+    attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
+        :transaction_adapter, :logger_adapter, :coordinator,
+        :persistence, :action_classes, :subscription_index,
+        :middleware, :auto_rescue, :clock, :meta
 
-    def initialize(options_hash = {})
-      @options             = default_options.merge options_hash
-      @logger_adapter      = Type! option_val(:logger_adapter), LoggerAdapters::Abstract
-      @transaction_adapter = Type! option_val(:transaction_adapter), TransactionAdapters::Abstract
-      persistence_adapter  = Type! option_val(:persistence_adapter), PersistenceAdapters::Abstract
-      @persistence         = Persistence.new(self, persistence_adapter)
-      @executor            = Type! option_val(:executor), Executors::Abstract
-      @action_classes      = option_val(:action_classes)
-      @auto_rescue         = option_val(:auto_rescue)
-      @exit_on_terminate   = option_val(:exit_on_terminate)
-      @middleware          = Middleware::World.new
+    def initialize(config)
+      @id                   = SecureRandom.uuid
+      @clock                = spawn_and_wait(Clock, 'clock')
+      config_for_world      = Config::ForWorld.new(config, self)
+      config_for_world.validate
+      @logger_adapter       = config_for_world.logger_adapter
+      @transaction_adapter  = config_for_world.transaction_adapter
+      @persistence          = Persistence.new(self, config_for_world.persistence_adapter)
+      @coordinator          = Coordinator.new(config_for_world.coordinator_adapter)
+      @executor             = config_for_world.executor
+      @action_classes       = config_for_world.action_classes
+      @auto_rescue          = config_for_world.auto_rescue
+      @exit_on_terminate    = config_for_world.exit_on_terminate
+      @connector            = config_for_world.connector
+      @middleware           = Middleware::World.new
+      @client_dispatcher    = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @meta                 = config_for_world.meta
       calculate_subscription_index
 
-      executor.initialized.wait
+      if executor
+        @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self)
+        executor.initialized.wait
+      end
+      coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
-      @clock_barrier       = Mutex.new
+      @before_termination_hooks = Queue.new
 
-      transaction_adapter.check self
+      if config_for_world.auto_terminate
+        at_exit do
+          @exit_on_terminate = false # make sure we don't terminate twice
+          self.terminate.wait
+        end
+      end
+      self.auto_execute if config_for_world.auto_execute
     end
 
-    def default_options
-      @default_options ||=
-          { action_classes:    Action.all_children,
-            logger_adapter:    LoggerAdapters::Simple.new,
-            executor:          -> world { Executors::Parallel.new(world, options[:pool_size]) },
-            exit_on_terminate: true,
-            auto_rescue:       true }
+    def before_termination(&block)
+      @before_termination_hooks << block
     end
 
-    def clock
-      @clock_barrier.synchronize { @clock ||= Clock.new(logger) }
+    def registered_world
+      if executor
+        Coordinator::ExecutorWorld.new(self)
+      else
+        Coordinator::ClientWorld.new(self)
+      end
     end
 
     def logger
@@ -52,7 +71,14 @@ module Dynflow
 
     # reload actions classes, intended only for devel
     def reload!
-      @action_classes.map! { |klass| klass.to_s.constantize }
+      # TODO what happens with newly loaded classes
+      @action_classes = @action_classes.map do |klass|
+        begin
+          klass.to_s.constantize
+        rescue NameError
+          nil # ignore missing classes
+        end
+      end.compact
       middleware.clear_cache!
       calculate_subscription_index
     end
@@ -60,22 +86,20 @@ module Dynflow
     TriggerResult = Algebrick.type do
       # Returned by #trigger when planning fails.
       PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
-      # Returned by #trigger when planning is successful but execution fails to start.
-      ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
       # Returned by #trigger when planning is successful, #future will resolve after
       # ExecutionPlan is executed.
-      Triggered       = type { fields! execution_plan_id: String, future: Future }
+      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Edge::Future }
 
-      variants PlaningFailed, ExecutionFailed, Triggered
+      variants PlaningFailed, Triggered
     end
 
     module TriggerResult
       def planned?
-        match self, PlaningFailed => false, ExecutionFailed => true, Triggered => true
+        match self, PlaningFailed => false, Triggered => true
       end
 
       def triggered?
-        match self, PlaningFailed => false, ExecutionFailed => false, Triggered => true
+        match self, PlaningFailed => false, Triggered => true
       end
 
       def id
@@ -102,25 +126,11 @@ module Dynflow
       planned        = execution_plan.state == :planned
 
       if planned
-        begin
-          Triggered[execution_plan.id, execute(execution_plan.id)]
-        rescue => exception
-          ExecutionFailed[execution_plan.id, exception]
-        end
+        done = execute(execution_plan.id, Concurrent.future)
+        Triggered[execution_plan.id, done]
       else
         PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
       end
-    end
-
-    def event(execution_plan_id, step_id, event, future = Future.new)
-      # we do this to avoid unresolved future when getting into
-      # the executor mailbox right at the termination.
-      # TODO: concurrent-ruby dead letter routing should make this
-      # more elegant
-      raise Dynflow::Error, "terminating world is not accepting events" if terminating?
-      executor.event execution_plan_id, step_id, event, future
-    rescue => e
-      future.fail e
     end
 
     def plan(action_class, *args)
@@ -137,84 +147,134 @@ module Dynflow
       end
     end
 
-    # @return [Future] containing execution_plan when finished
+    # @return [Concurrent::Edge::Future] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, finished = Future.new)
-      executor.execute execution_plan_id, finished
+    def execute(execution_plan_id, done = Concurrent.future)
+      publish_request(Dispatcher::Execution[execution_plan_id], done, true)
     end
 
-    def terminate(future = Future.new)
+    def event(execution_plan_id, step_id, event, done = Concurrent.future)
+      publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
+    end
+
+    def ping(world_id, timeout, done = Concurrent.future)
+      publish_request(Dispatcher::Ping[world_id], done, false, timeout)
+    end
+
+    def publish_request(request, done, wait_for_accepted, timeout = nil)
+      accepted = Concurrent.future
+      accepted.rescue do |reason|
+        done.fail reason if reason
+      end
+      client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
+      accepted.wait if wait_for_accepted
+      done
+    rescue => e
+      accepted.fail e
+    end
+
+    def terminate(future = Concurrent.future)
       @termination_barrier.synchronize do
-        if @executor_terminated.nil?
-          @executor_terminated = Future.new
-          @clock_terminated    = Future.new
-          executor.terminate(@executor_terminated).
-              do_then { clock.ask(MicroActor::Terminate, @clock_terminated) }
-          if @exit_on_terminate
-            future.do_then { Kernel.exit }
+        @terminated ||= Concurrent.future do
+          begin
+            run_before_termination_hooks
+
+
+            if executor
+              connector.stop_receiving_new_work(self)
+
+              logger.info "start terminating executor..."
+              executor.terminate.wait
+
+              logger.info "start terminating executor dispatcher..."
+              executor_dispatcher_terminated = Concurrent.future
+              executor_dispatcher.ask([:start_termination, executor_dispatcher_terminated])
+              executor_dispatcher_terminated.wait
+            end
+
+            logger.info "start terminating client dispatcher..."
+            client_dispatcher_terminated = Concurrent.future
+            client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
+            client_dispatcher_terminated.wait
+
+            logger.info "stop listening for new events..."
+            connector.stop_listening(self)
+
+            if @clock
+              logger.info "start terminating clock..."
+              clock.ask(:terminate!).wait
+            end
+
+            coordinator.release_by_owner("world:#{registered_world.id}")
+            coordinator.delete_world(registered_world)
+            true
+          rescue => e
+            logger.fatal(e)
           end
+        end.on_completion do
+          Kernel.exit if @exit_on_terminate
         end
       end
-      Future.join([@executor_terminated, @clock_terminated], future)
+
+      @terminated.tangle(future)
+      future
     end
 
     def terminating?
-      !!@executor_terminated
+      defined?(@terminated)
     end
 
-    # Detects execution plans that are marked as running but no executor
-    # handles them (probably result of non-standard executor termination)
-    #
-    # The current implementation expects no execution_plan being actually run
-    # by the executor.
-    #
-    # TODO: persist the running executors in the system, so that we can detect
-    # the orphaned execution plans. The register should be managable by the
-    # console, so that the administrator can unregister dead executors when needed.
-    # After the executor is unregistered, the consistency check should be performed
-    # to fix the orphaned plans as well.
-    def consistency_check
-      abnormal_execution_plans =
-          self.persistence.find_execution_plans filters: { 'state' => %w(planning running) }
-      if abnormal_execution_plans.empty?
-        logger.info 'Clean start.'
-      else
-        format_str = '%36s %10s %10s'
-        message    = ['Abnormal execution plans, process was probably killed.',
-                      'Following ExecutionPlans will be set to paused, ',
-                      'it should be fixed manually by administrator.',
-                      (format format_str, 'ExecutionPlan', 'state', 'result'),
-                      *(abnormal_execution_plans.map do |ep|
-                        format format_str, ep.id, ep.state, ep.result
-                      end)]
+    # Invalidate another world, that left some data in the runtime,
+    # but it's not really running
+    def invalidate(world)
+      Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
+      coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
+        old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
+                                                     owner_id: "world:#{world.id}")
 
-        logger.error message.join("\n")
+        coordinator.deactivate_world(world)
 
-        abnormal_execution_plans.each do |ep|
-          ep.update_state case ep.state
-                          when :planning
-                            :stopped
-                          when :running
-                            :paused
-                          else
-                            raise
-                          end
-          ep.steps.values.each do |step|
-            if [:suspended, :running].include?(step.state)
-              step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
-              step.state = :error
-              step.save
-            end
-          end
+        old_execution_locks.each do |execution_lock|
+          invalidate_execution_lock(execution_lock)
         end
+
+        coordinator.delete_world(world)
       end
     end
 
-    # should be called after World is initialized, SimpleWorld does it automatically
-    def execute_planned_execution_plans
-      planned_execution_plans =
-          self.persistence.find_execution_plans filters: { 'state' => %w(planned) }
-      planned_execution_plans.each { |ep| execute ep.id }
+    def invalidate_execution_lock(execution_lock)
+      plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
+      plan.execution_history.add('terminate execution', execution_lock.world_id)
+
+      plan.steps.values.each do |step|
+        if step.state == :running
+          step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
+          step.state = :error
+          step.save
+        end
+      end
+
+      plan.update_state(:paused) unless plan.state == :paused
+      plan.save
+      coordinator.release(execution_lock)
+      unless plan.error?
+        client_dispatcher.tell([:dispatch_request,
+                                Dispatcher::Execution[execution_lock.execution_plan_id],
+                                execution_lock.client_world_id,
+                                execution_lock.request_id])
+      end
+    rescue Errors::PersistenceError
+      logger.error "failed to write data while invalidating execution lock #{execution_lock}"
+    end
+
+    # executes plans that are planned/paused and haven't reported any error yet (usually when no executor
+    # was available by the time of planning or terminating)
+    def auto_execute
+      coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
+        planned_execution_plans =
+            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => 'pending' }
+        planned_execution_plans.each { |ep| execute ep.id }
+      end
     end
 
     private
@@ -229,13 +289,22 @@ module Dynflow
           end.tap { |o| o.freeze }
     end
 
-    def option_val(key)
-      val = options.fetch(key)
-      if val.is_a? Proc
-        options[key] = val.call(self)
-      else
-        val
+    def run_before_termination_hooks
+      until @before_termination_hooks.empty?
+        begin
+          @before_termination_hooks.pop.call
+        rescue => e
+          logger.error e
+        end
       end
     end
+
+    def spawn_and_wait(klass, name, *args)
+      initialized = Concurrent.future
+      actor = klass.spawn(name: name, args: args, initialized: initialized)
+      initialized.wait
+      return actor
+    end
+
   end
 end

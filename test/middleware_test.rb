@@ -4,7 +4,7 @@ module Dynflow
   module MiddlewareTest
 
     describe 'Middleware' do
-      let(:world) { WorldInstance.world }
+      let(:world) { WorldFactory.create_world }
       let(:log) { Support::MiddlewareExample::LogMiddleware.log }
 
       before do
@@ -39,7 +39,7 @@ module Dynflow
 
       describe "world.middleware" do
         let(:world_with_middleware) do
-          WorldInstance.create_world.tap do |world|
+          WorldFactory.create_world.tap do |world|
             world.middleware.use(Support::MiddlewareExample::AnotherLogRunMiddleware)
           end
         end
@@ -68,7 +68,7 @@ module Dynflow
 
         describe "after" do
           let(:world_with_middleware) do
-            WorldInstance.create_world.tap do |world|
+            WorldFactory.create_world.tap do |world|
               world.middleware.use(Support::MiddlewareExample::AnotherLogRunMiddleware,
                                    after: Support::MiddlewareExample::LogRunMiddleware)
 
@@ -96,7 +96,7 @@ module Dynflow
       end
 
       it "allows access the running action" do
-        world = WorldInstance.create_world
+        world = WorldFactory.create_world
         world.middleware.use(Support::MiddlewareExample::ObservingMiddleware,
                              replace: Support::MiddlewareExample::LogRunMiddleware)
         world.trigger(Support::MiddlewareExample::Action, message: 'hello').finished.wait

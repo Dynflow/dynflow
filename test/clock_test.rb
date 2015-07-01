@@ -5,10 +5,9 @@ clock_class = Dynflow::Clock
 
 describe clock_class do
 
-  let(:clock) { clock_class.new Logger.new($stderr) }
+  let(:clock) { clock_class.spawn 'clock' }
 
   it 'refuses who without #<< method' do
-    clock.initialized.wait
     -> { clock.ping Object.new, 0.1, :pong }.must_raise TypeError
     clock.ping [], 0.1, :pong
   end
@@ -16,7 +15,6 @@ describe clock_class do
 
   it 'pongs' do
     q = Queue.new
-    clock.initialized.wait
     start = Time.now
 
     clock.ping q, 0.1, o = Object.new
@@ -27,7 +25,6 @@ describe clock_class do
 
   it 'pongs on expected times' do
     q = Queue.new
-    clock.initialized.wait
     start = Time.now
 
     clock.ping q, 0.3, :a
@@ -43,7 +40,6 @@ describe clock_class do
   end
 
   it 'works under stress' do
-    clock.initialized.wait
     threads = Array.new(4) do
       Thread.new do
         q     = Queue.new

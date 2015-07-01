@@ -185,6 +185,23 @@ module Dynflow
             end
           end
         end
+
+        it "supports connector's needs for exchaning envelopes" do
+          client_world_id   = '5678'
+          executor_world_id = '1234'
+          envelope_hash = ->(envelope) { Dynflow.serializer.dump(envelope).with_indifferent_access }
+          executor_envelope = envelope_hash.call(Dispatcher::Envelope[123, client_world_id, executor_world_id, Dispatcher::Execution['111']])
+          client_envelope   = envelope_hash.call(Dispatcher::Envelope[123, executor_world_id, client_world_id, Dispatcher::Accepted])
+          envelopes         = [client_envelope, executor_envelope]
+
+          envelopes.each { |e| adapter.push_envelope(e) }
+
+          assert_equal [executor_envelope], adapter.pull_envelopes(executor_world_id)
+          assert_equal [client_envelope],   adapter.pull_envelopes(client_world_id)
+          assert_equal [], adapter.pull_envelopes(client_world_id)
+          assert_equal [], adapter.pull_envelopes(executor_world_id)
+        end
+
       end
     end
   end

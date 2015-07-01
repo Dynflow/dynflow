@@ -12,60 +12,22 @@ $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
 
 require 'dynflow'
 require 'dynflow/testing'
-require 'pry'
+begin require 'pry'; rescue LoadError; nil end
 
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'
+require 'support/dummy_example'
+require 'support/test_execution_log'
 
-class TestExecutionLog
-
-  include Enumerable
-
-  def initialize
-    @log = []
-  end
-
-  def <<(action)
-    @log << [action.class, action.input]
-  end
-
-  def log
-    @log
-  end
-
-  def each(&block)
-    @log.each(&block)
-  end
-
-  def size
-    @log.size
-  end
-
-  def self.setup
-    @run, @finalize = self.new, self.new
-  end
-
-  def self.teardown
-    @run, @finalize = nil, nil
-  end
-
-  def self.run
-    @run || []
-  end
-
-  def self.finalize
-    @finalize || []
-  end
-
-end
+Concurrent.disable_executor_auto_termination!
 
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
 
   def self.setup
-    @pause = Dynflow::Future.new
-    @ready = Dynflow::Future.new
+    @pause = Concurrent.future
+    @ready = Concurrent.future
   end
 
   def self.teardown
@@ -77,10 +39,10 @@ class TestPause
   def self.pause
     if !@pause
       raise 'the TestPause class was not setup'
-    elsif @ready.ready?
+    elsif @ready.completed?
       raise 'you can pause only once'
     else
-      @ready.resolve(true)
+      @ready.success(true)
       @pause.wait
     end
   end
@@ -90,125 +52,269 @@ class TestPause
     if @pause
       @ready.wait # wait till we are paused
       yield
-      @pause.resolve(true) # resume the run
+      @pause.success(true) # resume the run
     else
       raise 'the TestPause class was not setup'
     end
   end
 end
 
-module WorldInstance
-  def self.world
-    @world ||= create_world
+class CoordiationAdapterWithLog < Dynflow::CoordinatorAdapters::Sequel
+  attr_reader :lock_log
+  def initialize(*args)
+    @lock_log = []
+    super
   end
 
-  def self.remote_world
-    return @remote_world if @remote_world
-    @listener, @remote_world = create_remote_world world
-    @remote_world
+  def create_record(record)
+    @lock_log << "lock #{record.id}" if record.is_a? Dynflow::Coordinator::Lock
+    super
   end
 
+  def delete_record(record)
+    @lock_log << "unlock #{record.id}" if record.is_a? Dynflow::Coordinator::Lock
+    super
+  end
+end
+
+module WorldFactory
+
+  def self.created_worlds
+    @created_worlds ||= []
+  end
+
+  def self.test_world_config
+    config                     = Dynflow::Config.new
+    config.persistence_adapter = persistence_adapter
+    config.logger_adapter      = logger_adapter
+    config.coordinator_adapter = coordinator_adapter
+    config.auto_rescue         = false
+    config.exit_on_terminate   = false
+    config.auto_execute        = false
+    config.auto_terminate      = false
+    yield config if block_given?
+    return config
+  end
+
+  # The worlds created by this method are getting terminated after each test run
+  def self.create_world(&block)
+    Dynflow::World.new(test_world_config(&block)).tap do |world|
+      created_worlds << world
+    end
+  end
+
+  # This world survives though the whole run of the test suite: careful with it, it can
+  # introduce unnecessary test dependencies
   def self.logger_adapter
     @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, 4
   end
 
-  def self.create_world(options = {})
-    options = { pool_size: 5,
-                persistence_adapter: Dynflow::PersistenceAdapters::Sequel.new('sqlite:/'),
-                transaction_adapter: Dynflow::TransactionAdapters::None.new,
-                exit_on_terminate: false,
-                logger_adapter: logger_adapter,
-                auto_rescue: false }.merge(options)
-    Dynflow::World.new(options)
+  def self.persistence_adapter
+    @persistence_adapter ||= begin
+                               db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
+                               puts "Using database configuration: #{db_config}"
+                               Dynflow::PersistenceAdapters::Sequel.new(db_config)
+                             end
   end
 
-  def self.create_remote_world(world)
-    @counter    ||= 0
-    socket_path = Dir.tmpdir + "/dynflow_remote_#{@counter+=1}"
-    listener    = Dynflow::Listeners::Socket.new world, socket_path
-    world       = Dynflow::World.new(
-        logger_adapter:      logger_adapter,
-        auto_terminate:      false,
-        exit_on_terminate:   false,
-        persistence_adapter: -> remote_world { world.persistence.adapter },
-        transaction_adapter: Dynflow::TransactionAdapters::None.new,
-        executor:            -> remote_world do
-          Dynflow::Executors::RemoteViaSocket.new(remote_world, socket_path)
-        end)
-    return listener, world
+  def self.coordinator_adapter
+    ->(world, _) { CoordiationAdapterWithLog.new(world) }
   end
 
-  def self.terminate
-    remote_world.terminate.wait if @remote_world
-    world.terminate.wait if @world
-
-    @remote_world = @world = nil
+  def self.clean_coordinator_records
+    persistence_adapter = WorldFactory.persistence_adapter
+    persistence_adapter.find_coordinator_records({}).each do |w|
+      warn "Unexpected coordinator record: #{ w }"
+      persistence_adapter.delete_coordinator_record(w[:class], w[:id])
+    end
   end
 
-  def world
-    WorldInstance.world
-  end
-
-  def remote_world
-    WorldInstance.remote_world
+  def self.terminate_worlds
+    created_worlds.map(&:terminate).map(&:wait)
+    created_worlds.clear
   end
 end
 
-# ensure there are no unresolved Futures at the end or being GCed
-future_tests =-> do
-  future_creations  = {}
-  non_ready_futures = {}
-
-  MiniTest.after_run do
-    WorldInstance.terminate
-    futures = ObjectSpace.each_object(Dynflow::Future).select { |f| !f.ready? }
-    unless futures.empty?
-      raise "there are unready futures:\n" +
-                futures.map { |f| "#{f}\n#{future_creations[f.object_id]}" }.join("\n")
-    end
-  end
-
-  Dynflow::Future.singleton_class.send :define_method, :new do |*args, &block|
-    super(*args, &block).tap do |f|
-      future_creations[f.object_id]  = caller(3)
-      non_ready_futures[f.object_id] = f
-    end
-  end
-
-  set_method = Dynflow::Future.instance_method :set
-  Dynflow::Future.send :define_method, :set do |*args|
-    begin
-      set_method.bind(self).call *args
-    ensure
-      non_ready_futures.delete self.object_id
-    end
-  end
-
-  MiniTest.after_run do
-    unless non_ready_futures.empty?
-      unified = non_ready_futures.each_with_object({}) do |(id, _), h|
-        backtrace_first    = future_creations[id][0]
-        h[backtrace_first] ||= []
-        h[backtrace_first] << id
+module TestHelpers
+  # allows to create the world inside the tests, using the `connector`
+  # and `persistence adapter` from the test context: usefull to create
+  # multi-world topology for a signle test
+  def create_world(with_executor = true)
+    WorldFactory.create_world do |config|
+      config.connector = connector
+      config.persistence_adapter = persistence_adapter
+      unless with_executor
+        config.executor = false
       end
-      raise("there were #{non_ready_futures.size} non_ready_futures:\n" +
-                unified.map do |backtrace, ids|
-                  "--- #{ids.size}: #{ids}\n#{future_creations[ids.first].join("\n")}"
+    end
+  end
+
+  def connector_polling_interval(world)
+    if world.persistence.adapter.db.class.name == "Sequel::Postgres::Database"
+      5
+    else
+      0.005
+    end
+  end
+
+  # waits for the passed block to return non-nil value and reiterates it while getting false
+  # (till some reasonable timeout). Useful for forcing the tests for some event to occur
+  def wait_for
+    30.times do
+      ret = yield
+      return ret if ret
+      sleep 0.3
+    end
+    raise 'waiting for something to happend was not successful'
+  end
+
+  def executor_id_for_plan(execution_plan_id)
+    if lock = client_world.coordinator.find_locks(class: Dynflow::Coordinator::ExecutionLock.name,
+                                                  id: "execution-plan:#{execution_plan_id}").first
+      lock.world_id
+    end
+  end
+
+  def trigger_waiting_action
+    triggered = client_world.trigger(Support::DummyExample::EventedAction)
+    wait_for { executor_id_for_plan(triggered.id) } # waiting for the plan to be picked by an executor
+    triggered
+  end
+
+  # trigger an action, and keep it running while yielding the block
+  def while_executing_plan
+    triggered = trigger_waiting_action
+
+    executor_id = wait_for do
+      executor_id_for_plan(triggered.id)
+    end
+
+    wait_for do
+      client_world.persistence.load_execution_plan(triggered.id).state == :running
+    end
+
+    executor  = WorldFactory.created_worlds.find { |e| e.id == executor_id }
+    raise "Could not find an executor with id #{executor_id}" unless executor
+    yield executor
+    return triggered
+  end
+
+  # finish the plan triggered by the `while_executing_plan` method
+  def finish_the_plan(triggered)
+    wait_for do
+      client_world.persistence.load_execution_plan(triggered.id).state == :running &&
+        client_world.persistence.load_step(triggered.id, 2, client_world).state == :suspended
+    end
+    client_world.event(triggered.id, 2, 'finish')
+    return triggered.finished.value
+  end
+
+  def assert_plan_reexecuted(plan)
+    assert_equal :stopped, plan.state
+    assert_equal :success, plan.result
+    assert_equal plan.execution_history.map(&:name),
+        ['start execution',
+         'terminate execution',
+         'start execution',
+         'finish execution']
+    refute_equal plan.execution_history.first.world_id, plan.execution_history.to_a.last.world_id
+  end
+end
+
+class MiniTest::Test
+  def setup
+    WorldFactory.clean_coordinator_records
+  end
+
+  def teardown
+    WorldFactory.terminate_worlds
+  end
+end
+
+# ensure there are no unresolved events at the end or being GCed
+events_test = -> do
+  event_creations  = {}
+  non_ready_events = {}
+
+  Concurrent::Edge::Event.singleton_class.send :define_method, :new do |*args, &block|
+    super(*args, &block).tap do |event|
+      event_creations[event.object_id]  = caller(4)
+    end
+  end
+
+  [Concurrent::Edge::Event, Concurrent::Edge::Future].each do |future_class|
+    original_complete_method = future_class.instance_method :complete_with
+    future_class.send :define_method, :complete_with do |*args|
+      begin
+        original_complete_method.bind(self).call(*args)
+      ensure
+        event_creations.delete(self.object_id)
+      end
+    end
+  end
+
+  MiniTest.after_run do
+    Concurrent::Actor.root.ask!(:terminate!)
+
+    non_ready_events = ObjectSpace.each_object(Concurrent::Edge::Event).map do |event|
+      event.wait(1)
+      unless event.completed?
+        event.object_id
+      end
+    end.compact
+
+    # make sure to include the ids that were garbage-collected already
+    non_ready_events = (non_ready_events + event_creations.keys).uniq
+
+    unless non_ready_events.empty?
+      unified = non_ready_events.each_with_object({}) do |(id, _), h|
+        backtrace_key = event_creations[id].hash
+        h[backtrace_key] ||= []
+        h[backtrace_key] << id
+      end
+      raise("there were #{non_ready_events.size} non_ready_events:\n" +
+            unified.map do |_, ids|
+                  "--- #{ids.size}: #{ids}\n#{event_creations[ids.first].join("\n")}"
                 end.join("\n"))
     end
   end
 
   # time out all futures by default
   default_timeout = 8
-  wait_method     = Dynflow::Future.instance_method(:wait)
+  wait_method     = Concurrent::Edge::Event.instance_method(:wait)
 
-  Dynflow::Future.class_eval do
+  Concurrent::Edge::Event.class_eval do
     define_method :wait do |timeout = nil|
       wait_method.bind(self).call(timeout || default_timeout)
     end
   end
 
-end.call
+end
+
+events_test.call
+
+class ConcurrentRunTester
+  def initialize
+    @enter_future, @exit_future = Concurrent.future, Concurrent.future
+  end
+
+  def while_executing(&block)
+    @thread = Thread.new do
+      block.call(self)
+    end
+    @enter_future.wait(1)
+  end
+
+  def pause
+    @enter_future.success(true)
+    @exit_future.wait(1)
+  end
+
+  def finish
+    @exit_future.success(true)
+    @thread.join
+  end
+end
 
 module PlanAssertions
 
