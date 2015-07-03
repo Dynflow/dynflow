@@ -70,7 +70,7 @@ module Dynflow
     end
 
     config_attr :auto_rescue, Algebrick::Types::Boolean do
-      false
+      true
     end
 
     config_attr :exit_on_terminate, Algebrick::Types::Boolean do
