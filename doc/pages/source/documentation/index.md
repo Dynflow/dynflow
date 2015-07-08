@@ -69,6 +69,8 @@ Dynflow has been developed to be able to support orchestration of services in th
     talk to each other, which is helpful for production and
     high-availability setups,
     having multiple worlds on different hosts handle the execution of the execution plans.
+    If you're still confused and come from RoR world, think about it as similar thing 
+    that is Rails object for Ruby on Rails framework.
 
 ##  Examples
 
