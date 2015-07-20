@@ -7,7 +7,7 @@ module Dynflow
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
         :transaction_adapter, :logger_adapter, :coordinator,
         :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock, :meta
+        :middleware, :auto_rescue, :clock, :meta, :scheduler
 
     def initialize(config)
       @id                   = SecureRandom.uuid
@@ -25,7 +25,9 @@ module Dynflow
       @connector            = config_for_world.connector
       @middleware           = Middleware::World.new
       @client_dispatcher    = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @scheduler            = try_spawn_scheduler(config_for_world)
       @meta                 = config_for_world.meta
+      @meta['scheduler']    = true if @scheduler
       calculate_subscription_index
 
       if executor
@@ -43,6 +45,7 @@ module Dynflow
         end
       end
       self.auto_execute if config_for_world.auto_execute
+      @scheduler.start if @scheduler
     end
 
     def before_termination(&block)
@@ -90,16 +93,22 @@ module Dynflow
       # ExecutionPlan is executed.
       Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Edge::Future }
 
-      variants PlaningFailed, Triggered
+      Scheduled       = type { fields! execution_plan_id: String }
+
+      variants PlaningFailed, Triggered, Scheduled
     end
 
     module TriggerResult
       def planned?
-        match self, PlaningFailed => false, Triggered => true
+        match self, PlaningFailed => false, Triggered => true, Scheduled => false
       end
 
       def triggered?
-        match self, PlaningFailed => false, Triggered => true
+        match self, PlaningFailed => false, Triggered => true, Scheduled => false
+      end
+
+      def scheduled?
+        match self, PlaningFailed => false, Triggered => false, Scheduled => true
       end
 
       def id
@@ -131,6 +140,20 @@ module Dynflow
       else
         PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
       end
+    end
+
+    def schedule(action_class, schedule_options, *args)
+      raise 'No action_class given' if action_class.nil?
+      execution_plan = ExecutionPlan.new self
+      execution_plan.schedule(action_class, {}, schedule_options, *args)
+      scheduled_plan = ScheduledPlan.new(self,
+                                         execution_plan.id,
+                                         schedule_options[:start_at],
+                                         schedule_options.fetch(:start_before, nil),
+                                         args,
+                                         execution_plan.entry_action.serializer)
+      persistence.save_scheduled_plan(scheduled_plan)
+      Scheduled[execution_plan.id]
     end
 
     def plan(action_class, *args)
@@ -179,6 +202,10 @@ module Dynflow
           begin
             run_before_termination_hooks
 
+            if scheduler
+              logger.info "start terminating scheduler..."
+              scheduler.terminate.wait
+            end
 
             if executor
               connector.stop_receiving_new_work(self)
@@ -275,6 +302,14 @@ module Dynflow
             self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => 'pending' }
         planned_execution_plans.each { |ep| execute ep.id }
       end
+    end
+
+    def try_spawn_scheduler(config_for_world)
+      return nil if !executor || config_for_world.scheduler.nil?
+      coordinator.acquire(Coordinator::SchedulerLock.new(self))
+      config_for_world.scheduler
+    rescue Coordinator::LockError => e
+      nil
     end
 
     private

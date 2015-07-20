@@ -282,6 +282,17 @@ module Dynflow
       recursion.(input)
     end
 
+    def execute_schedule(schedule_options, *args)
+      world.middleware.execute(:schedule, self, schedule_options, *args) do
+        @serializer = schedule(schedule_options, *args)
+      end
+    end
+
+    def serializer
+      raise "The action must be scheduled in order to access the serializer" if @serializer.nil?
+      @serializer
+    end
+
     protected
 
     def state=(state)
@@ -296,6 +307,10 @@ module Dynflow
     def save_state
       phase! Executable
       @step.save
+    end
+
+    def schedule(schedule_options, *args)
+      Serializers::Noop.new
     end
 
     # @override to implement the action's *Plan phase* behaviour.

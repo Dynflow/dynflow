@@ -107,6 +107,8 @@ module Dynflow
           "success"
         when :error
           "important"
+        else
+          "default"
         end
       end
 

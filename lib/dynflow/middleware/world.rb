@@ -14,7 +14,7 @@ module Dynflow
     end
 
     def execute(method, action_or_class, *args, &block)
-      Match! method, :plan, :run, :finalize, :plan_phase, :finalize_phase
+      Match! method, :schedule, :plan, :run, :finalize, :plan_phase, :finalize_phase
       if Child? action_or_class, Dynflow::Action
         action = nil
         action_class = action_or_class

@@ -85,6 +85,12 @@ module Dynflow
       true
     end
 
+    config_attr :scheduler, Schedulers::Abstract, NilClass do |world|
+      options = { :poll_interval => 15,
+                  :time_source => -> { Time.now.utc } }
+      Schedulers::Polling.new(world, options)
+    end
+
     config_attr :action_classes do
       Action.all_children
     end

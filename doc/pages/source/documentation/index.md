@@ -123,7 +123,7 @@ end
 ```
 
 Note that it does not have to be only other actions that are planned to run.
-In fact it's very common that the action plan itself, which means it will
+In fact it's very common that the action plans itself, which means it will
 put its own `run` method call in the execution plan. In order to do that
 you can use `plan_self`. This could be used in MyActions::File::Destroy
 used in previous example
@@ -142,7 +142,7 @@ end
 
 In example above, it seems that `plan_self` is just shortcut to
 `plan_action MyActions::File::Destroy, filename` but it's not entirely true.
-Note that `plan_action` always trigger `plan` of a given action while `plan_self`
+Note that `plan_action` always triggers `plan` of a given action while `plan_self`
 plans only the `run` of Action, so by using `plan_action` we'd end up in
 endless loop.
 
@@ -235,6 +235,8 @@ TriggerResult = Algebrick.type do
   PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
   # Returned by #trigger when planning is successful but execution fails to start.
   ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
+  # Returned by #schedule when scheduling succeeded.
+  Scheduled       = type { fields! execution_plan_id: String }
   # Returned by #trigger when planning is successful, #future will resolve after
   # ExecutionPlan is executed.
   Triggered       = type { fields! execution_plan_id: String, future: Future }
@@ -267,6 +269,37 @@ def self.trigger_task(async, action, *args, &block)
         end)
 end
 ```
+
+#### Scheduling
+
+Scheduling an action means setting it up to be triggered at set time in future.
+Any action can be scheduled by calling:
+
+```ruby
+world_instance.schedule(AnAction,
+                        { start_at: Time.now + 360, start_before: Time.now + 400 },
+                        *args)
+```
+
+This snippet of code would schedule `AnAction` with arguments `args` to be executed
+in the time interval between `start_at` and `start_before`. Setting `start_before` to `nil`
+would schedule this action without the timeout limit.
+
+When an action is scheduled, an execution plan object is created with state set
+to `scheduled`, but it doesn't run the the plan phase yet, the planning happens
+when the `start_at` time comes. If the planning doesn't happen in time
+(e.g. after `start_before`), the execution plan is marked as failed
+(its state is set to `stopped` and result to `error`).
+
+Since the `args` have to be saved, there must be a mechanism to safely serialize and deserialize them
+in order to make them survive being saved in a database. This is handled by a serializer.
+Different serializers can be set per action by overriding its `schedule` method.
+
+Planning of the scheduled plans is handled by `Scheduler`, an object which
+periodically checks for scheduled execution plans and plans them. Scheduled execution
+plans don't do anything by themselves, they just wait to be picked up and planned by a Scheduler.
+It means that if no scheduler is present, their planning will be delayed until a scheduler
+is spawned.
 
 #### Plan phase
 
@@ -319,7 +352,7 @@ end
 
 {% info_block %}
 
-It's considered a good practice to use the just enough data for the
+It's considered a good practice to use just enough data for the
 input for the action to perform the job. That means not too much
 (such as using ActiveRecord's attributes), as it might have
 performance impact as well as causes issues when changing the
@@ -488,8 +521,8 @@ def plan
   # so it's added to the above sequence to be executed as 4th.
   action1 = plan_action AnAction, actions_executed_sequentially.last.output
 
-  # It's planned in default plan's concurrency scope it's executed concurrently
-  # to about four actions.
+  # It's planned in default plan's concurrency scope so it's executed concurrently
+  # with the other four actions.
   action2 = plan_action AnAction
 end
 ```
@@ -557,7 +590,7 @@ The usual execution looks as follows, we use an ActiveRecord User as example of 
     used. Potentially, saving some data that were retrieved in the `run`
     phase back to the local database.
 
-For that reason there are transactions around whole `plan` and `finale` phase
+For that reason there are transactions around whole `plan` and `finalize` phase
 (all action's plan methods are in one transaction).
 If anything goes wrong in the `plan` phase any change made during planning to local DB is
 reverted. Same holds for finalizing, if anything goes wrong, all changes are reverted. Therefore
@@ -833,6 +866,7 @@ Each **Action phase** can be in one of the following states:
 **Execution plan** has following states:
 
 -   **Pending** - Planning did not start yet.
+-   **Scheduled** - Scheduled for later execution, not yet planned.
 -   **Planning** - It's being planned.
 -   **Planned** - It've been planned, running phase did not start yet.
 -   **Running** - It's running, `run` and `finalize` phases of actions are executed.
@@ -851,12 +885,12 @@ Each **Action phase** can be in one of the following states:
 
 ### Error handling
 
-If there is an error risen in **`plan` phase**, the error is persisted in the Action object 
-for later inspection and it bubbles up in `World#trigger` method which was used to trigger 
-the action leading to this error. 
+If an error is raised in **`plan` phase**, it is persisted in the Action object
+for later inspection and it bubbles up in `World#trigger` method which was used to trigger
+the action leading to this error.
 If you compare it to errors raised during `run` and `finalize` phase,
-there's the major difference: Those never bubble up in `trigger` because they are running
-in executor not in triggering Thread, they are just persisted in Action object.
+there's one major difference: Those never bubble up in `trigger` because they are running
+in executor not in triggering Thread, they are persisted just in the Action object.
 
 If there is an error in **`run` phase**, the execution pauses. You can inspect the error in
 [console](#console). The error may be intermittent or you may fix the problem manually. After
@@ -981,6 +1015,7 @@ client worlds: useful in production, see [develpment vs. production](#developmen
 client requests and other worlds
 1. **executor dispatcher** - responsible for getting requests from
 other worlds and sending the responses
+1. **scheduler** - responsible for planning and exectuion of scheduled tasks
 
 {% plantuml %}
 
@@ -1234,7 +1269,7 @@ The persistence making sure that the serialized states of the
 execution plans are persisted for recovery and status tracking. The
 execution plan data are stored in it, with the actual state.
 
-Unlike coordinator, the all the persisted data don't have to be
+Unlike coordinator, all the persisted data don't have to be
 available for all the worlds at the same time: every world needs just
 the data that it is actively working on. Also, all the data don't have to
 be fully synchronized between worlds (as long as the up-to-date data

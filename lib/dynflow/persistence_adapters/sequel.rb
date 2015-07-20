@@ -31,7 +31,8 @@ module Dynflow
                     action:              %w(caller_execution_plan_id caller_action_id),
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     envelope:            %w(receiver_id),
-                    coordinator_record:  %w(id owner_id class) }
+                    coordinator_record:  %w(id owner_id class),
+                    scheduled:           %w(execution_plan_uuid start_at start_before args_serializer)}
 
       def initialize(config)
         config = config.dup
@@ -54,7 +55,6 @@ module Dynflow
                                 paginate(table(:execution_plan), options),
                                 options),
                           options[:filters])
-
         data_set.map { |record| load_data(record) }
       end
 
@@ -77,6 +77,33 @@ module Dynflow
 
       def save_execution_plan(execution_plan_id, value)
         save :execution_plan, { uuid: execution_plan_id }, value
+      end
+
+      def delete_scheduled_plans(filters, batch_size = 1000)
+        count = 0
+        filter(:scheduled, table(:scheduled), filters).each_slice(batch_size) do |plans|
+          uuids = plans.map { |p| p.fetch(:execution_plan_uuid) }
+          @db.transaction do
+            count += table(:scheduled).where(execution_plan_uuid: uuids).delete
+          end
+        end
+        count
+      end
+
+      def find_past_scheduled_plans(time)
+        table(:scheduled)
+          .where('start_at <= ?', time)
+          .order_by(:start_at)
+          .all
+          .map { |plan| load_data(plan) }
+      end
+
+      def load_scheduled_plan(execution_plan_id)
+        load :scheduled, execution_plan_uuid: execution_plan_id
+      end
+
+      def save_scheduled_plan(execution_plan_id, value)
+        save :scheduled, { execution_plan_uuid: execution_plan_id }, value
       end
 
       def load_step(execution_plan_id, step_id)
@@ -164,7 +191,8 @@ module Dynflow
                  action:              :dynflow_actions,
                  step:                :dynflow_steps,
                  envelope:            :dynflow_envelopes,
-                 coordinator_record:  :dynflow_coordinator_records }
+                 coordinator_record:  :dynflow_coordinator_records,
+                 scheduled:           :dynflow_scheduled_plans }
 
       def table(which)
         db[TABLES.fetch(which)]
