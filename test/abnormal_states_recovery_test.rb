@@ -146,6 +146,59 @@ module Dynflow
           plan.execution_history.map { |h| [h.name, h.world_id] }.must_equal(expected_history)
         end
       end
+
+      describe '#worlds_validity_check' do
+        describe 'the auto_validity_check is enabled' do
+          let :invalid_world do
+            Coordinator::ClientWorld.new(OpenStruct.new(id: '123', meta: {}))
+          end
+
+          let :client_world do
+            create_world(false)
+          end
+
+          let :world_with_auto_validity_check do
+            create_world do |config|
+              config.auto_validity_check = true
+              config.validity_check_timeout = 0.2
+            end
+          end
+
+          it 'performs the validity check on world creation if auto_validity_check enabled' do
+            client_world.coordinator.register_world(invalid_world)
+            client_world.coordinator.find_worlds(false, id: invalid_world.id).wont_be_empty
+            world_with_auto_validity_check
+            client_world.coordinator.find_worlds(false, id: invalid_world.id).must_be_empty
+          end
+
+          it 'by default, the auto_validity_check is enabled only for executor words' do
+            create_world(false).auto_validity_check.must_equal false
+            create_world(true).auto_validity_check.must_equal true
+          end
+
+          it 'reports the validation status' do
+            client_world.coordinator.register_world(invalid_world)
+            results = client_world.worlds_validity_check
+            client_world.coordinator.find_worlds(false, id: invalid_world.id).must_be_empty
+
+            _, state = results.find { |world, state| world.id == invalid_world.id }
+            state.must_equal :invalidated
+
+            _, state = results.find { |world, state| world.id == client_world.id }
+            state.must_equal :valid
+          end
+
+          it 'allows checking only, without actual invalidation' do
+            client_world.coordinator.register_world(invalid_world)
+            results = client_world.worlds_validity_check(false)
+            client_world.coordinator.find_worlds(false, id: invalid_world.id).wont_be_empty
+
+            _, state = results.find { |world, state| world.id == invalid_world.id }
+            state.must_equal :invalid
+          end
+        end
+      end
+
     end
   end
 end
