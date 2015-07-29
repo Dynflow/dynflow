@@ -300,8 +300,8 @@ module Dynflow
       logger.error "failed to write data while invalidating execution lock #{execution_lock}"
     end
 
-    def worlds_validity_check(auto_invalidate = true)
-      worlds = coordinator.find_worlds(false)
+    def worlds_validity_check(auto_invalidate = true, worlds_filter = {})
+      worlds = coordinator.find_worlds(false, worlds_filter)
 
       world_checks = worlds.reduce({}) do |hash, world|
         hash.update(world => ping(world.id, self.validity_check_timeout))
@@ -311,23 +311,26 @@ module Dynflow
       results = {}
       world_checks.each do |world, check|
         if check.success?
-          results[world] = :valid
+          result = :valid
         else
           if auto_invalidate
             begin
               invalidate(world)
-              results[world] = :invalidated
+              result = :invalidated
             rescue => e
-              results[world] = e.message
+              result = e.message
             end
           else
-            results[world] = :invalid
+            result = :invalid
           end
         end
+        results[world.id] = result
       end
-      unless results.empty?
-        logger.error "invalid worlds have been found #{results.inspect}"
+
+      unless results.values.all? { |result| result == :valid }
+        logger.error "invalid worlds found #{results.inspect}"
       end
+
       return results
     end
 

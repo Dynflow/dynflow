@@ -153,6 +153,10 @@ module Dynflow
             Coordinator::ClientWorld.new(OpenStruct.new(id: '123', meta: {}))
           end
 
+          let :invalid_world_2 do
+            Coordinator::ClientWorld.new(OpenStruct.new(id: '456', meta: {}))
+          end
+
           let :client_world do
             create_world(false)
           end
@@ -181,11 +185,9 @@ module Dynflow
             results = client_world.worlds_validity_check
             client_world.coordinator.find_worlds(false, id: invalid_world.id).must_be_empty
 
-            _, state = results.find { |world, state| world.id == invalid_world.id }
-            state.must_equal :invalidated
+            results[invalid_world.id].must_equal :invalidated
 
-            _, state = results.find { |world, state| world.id == client_world.id }
-            state.must_equal :valid
+            results[client_world.id].must_equal :valid
           end
 
           it 'allows checking only, without actual invalidation' do
@@ -193,8 +195,17 @@ module Dynflow
             results = client_world.worlds_validity_check(false)
             client_world.coordinator.find_worlds(false, id: invalid_world.id).wont_be_empty
 
-            _, state = results.find { |world, state| world.id == invalid_world.id }
-            state.must_equal :invalid
+            results[invalid_world.id].must_equal :invalid
+          end
+
+          it 'allows to filter the worlds to run the check on' do
+            client_world.coordinator.register_world(invalid_world)
+            client_world.coordinator.register_world(invalid_world_2)
+            client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size.must_equal 2
+
+            results = client_world.worlds_validity_check(true, :id => invalid_world.id)
+            results.must_equal(invalid_world.id =>  :invalidated)
+            client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size.must_equal 1
           end
         end
       end

@@ -1,5 +1,10 @@
 <h1>List of worlds</h1>
 
+<ul>
+  <li><a href="<%= url("/worlds/check") %>" class="postlink">check status</a>: see potentially invalid worlds</li>
+  <li><a href="<%= url("/worlds/check?invalidate=true") %>" class="postlink">check and invalidate</a>: invalidate the worlds that don't respond</li>
+</ul>
+
 <table class="table">
   <thead>
     <tr>
@@ -16,9 +21,20 @@
     <td><%= h(world.meta) %></td>
     <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
     <td>
-      <a href="<%= url("/worlds/#{world.id}/ping") %>" class="postlink">ping</a>
-      <% if world.id == params[:inactive_world_id] %>
-        <a href="<%= url("/worlds/#{world.id}/invalidate") %>" class="postlink">invalidate</a>
+      <% validation_result = @validation_results[world.id] if @validation_results %>
+
+      <% unless validation_result == :invalidated %>
+        <a href="<%= url("/worlds/#{world.id}/check") %>" class="postlink">check</a>
+      <% end %>
+
+      <% if validation_result %>
+        <% if validation_result == :invalid %>
+          <a href="<%= url("/worlds/#{world.id}/check?invalidate=true") %>" class="postlink">invalidate</a>
+        <% end %>
+
+        <span class="label label-<%= validation_result_css_class(validation_result) %>">
+          <%= h(validation_result) %>
+        </span>
       <% end %>
     </td>
   </tr>
