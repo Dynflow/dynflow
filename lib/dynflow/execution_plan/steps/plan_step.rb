@@ -51,7 +51,7 @@ module Dynflow
       end
 
       def self.state_transitions
-        @state_transitions ||= { pending:   [:running],
+        @state_transitions ||= { pending:   [:running, :error],
                                  running:   [:success, :error],
                                  success:   [],
                                  suspended: [],
@@ -74,6 +74,10 @@ module Dynflow
             hash[:execution_time],
             hash[:real_time],
             hash[:children]
+      end
+
+      def load_action
+        @action = @world.persistence.load_action(self)
       end
 
       def initialize_action(caller_action)

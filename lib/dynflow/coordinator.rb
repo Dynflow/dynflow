@@ -157,6 +157,13 @@ module Dynflow
 
     end
 
+    class SchedulerLock < LockByWorld
+      def initialize(world)
+        super
+        @data[:id] = "scheduler"
+      end
+    end
+
     class WorldInvalidationLock < LockByWorld
       def initialize(world, invalidated_world)
         super(world)

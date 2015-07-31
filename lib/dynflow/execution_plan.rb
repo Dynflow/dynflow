@@ -16,11 +16,12 @@ module Dynflow
                 :started_at, :ended_at, :execution_time, :real_time, :execution_history
 
     def self.states
-      @states ||= [:pending, :planning, :planned, :running, :paused, :stopped]
+      @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
     end
 
     def self.state_transitions
-      @state_transitions ||= { pending:  [:planning],
+      @state_transitions ||= { pending:  [:scheduled, :planning],
+                               scheduled: [:planning, :stopped],
                                planning: [:planned, :stopped],
                                planned:  [:running],
                                running:  [:paused, :stopped],
@@ -72,7 +73,7 @@ module Dynflow
         @started_at = Time.now
       when :stopped
         @ended_at       = Time.now
-        @real_time      = @ended_at - @started_at
+        @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
       else
         # ignore
@@ -149,6 +150,17 @@ module Dynflow
     def generate_step_id
       @last_step_id ||= 0
       @last_step_id += 1
+    end
+
+    def schedule(action_class, options, schedule_options, *args)
+      prepare(action_class, options)
+      execution_history.add("schedule", @world.id)
+      update_state :scheduled
+      entry_action.execute_schedule(schedule_options, args)
+    end
+
+    def schedule_record
+      @schedule_record ||= persistence.load_scheduled_plan(id)
     end
 
     def prepare(action_class, options = {})

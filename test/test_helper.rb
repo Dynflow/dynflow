@@ -88,6 +88,7 @@ module WorldFactory
     config.persistence_adapter = persistence_adapter
     config.logger_adapter      = logger_adapter
     config.coordinator_adapter = coordinator_adapter
+    config.scheduler           = nil
     config.auto_rescue         = false
     config.exit_on_terminate   = false
     config.auto_execute        = false
