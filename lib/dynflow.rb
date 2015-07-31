@@ -9,7 +9,7 @@ require 'concurrent-edge'
 
 logger                          = Logger.new($stderr)
 logger.level                    = Logger::INFO
-Concurrent.configuration.logger = lambda do |level, progname, message = nil, &block|
+Concurrent.global_logger = lambda do |level, progname, message = nil, &block|
   logger.add level, message, progname, &block
 end
 
