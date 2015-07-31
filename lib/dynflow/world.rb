@@ -7,33 +7,37 @@ module Dynflow
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
         :transaction_adapter, :logger_adapter, :coordinator,
         :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock, :meta, :scheduler
+        :middleware, :auto_rescue, :clock, :meta, :scheduler, :auto_validity_check, :validity_check_timeout
 
     def initialize(config)
-      @id                   = SecureRandom.uuid
-      @clock                = spawn_and_wait(Clock, 'clock')
-      config_for_world      = Config::ForWorld.new(config, self)
+      @id                     = SecureRandom.uuid
+      @clock                  = spawn_and_wait(Clock, 'clock')
+      config_for_world        = Config::ForWorld.new(config, self)
       config_for_world.validate
-      @logger_adapter       = config_for_world.logger_adapter
-      @transaction_adapter  = config_for_world.transaction_adapter
-      @persistence          = Persistence.new(self, config_for_world.persistence_adapter)
-      @coordinator          = Coordinator.new(config_for_world.coordinator_adapter)
-      @executor             = config_for_world.executor
-      @action_classes       = config_for_world.action_classes
-      @auto_rescue          = config_for_world.auto_rescue
-      @exit_on_terminate    = config_for_world.exit_on_terminate
-      @connector            = config_for_world.connector
-      @middleware           = Middleware::World.new
-      @client_dispatcher    = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
-      @scheduler            = try_spawn_scheduler(config_for_world)
-      @meta                 = config_for_world.meta
-      @meta['scheduler']    = true if @scheduler
+      @logger_adapter         = config_for_world.logger_adapter
+      @transaction_adapter    = config_for_world.transaction_adapter
+      @persistence            = Persistence.new(self, config_for_world.persistence_adapter)
+      @coordinator            = Coordinator.new(config_for_world.coordinator_adapter)
+      @executor               = config_for_world.executor
+      @action_classes         = config_for_world.action_classes
+      @auto_rescue            = config_for_world.auto_rescue
+      @exit_on_terminate      = config_for_world.exit_on_terminate
+      @connector              = config_for_world.connector
+      @middleware             = Middleware::World.new
+      @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @meta                   = config_for_world.meta
+      @auto_validity_check    = config_for_world.auto_validity_check
+      @validity_check_timeout = config_for_world.validity_check_timeout
       calculate_subscription_index
 
       if executor
         @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self)
         executor.initialized.wait
       end
+      self.worlds_validity_check if auto_validity_check
+      @scheduler            = try_spawn_scheduler(config_for_world)
+      @meta                 = config_for_world.meta
+      @meta['scheduler']    = true if @scheduler
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new
@@ -256,13 +260,15 @@ module Dynflow
     def invalidate(world)
       Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
       coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
-        old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
-                                                     owner_id: "world:#{world.id}")
+        if world.is_a? Coordinator::ExecutorWorld
+          old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
+                                                       owner_id: "world:#{world.id}")
 
-        coordinator.deactivate_world(world)
+          coordinator.deactivate_world(world)
 
-        old_execution_locks.each do |execution_lock|
-          invalidate_execution_lock(execution_lock)
+          old_execution_locks.each do |execution_lock|
+            invalidate_execution_lock(execution_lock)
+          end
         end
 
         coordinator.delete_world(world)
@@ -292,6 +298,40 @@ module Dynflow
       end
     rescue Errors::PersistenceError
       logger.error "failed to write data while invalidating execution lock #{execution_lock}"
+    end
+
+    def worlds_validity_check(auto_invalidate = true, worlds_filter = {})
+      worlds = coordinator.find_worlds(false, worlds_filter)
+
+      world_checks = worlds.reduce({}) do |hash, world|
+        hash.update(world => ping(world.id, self.validity_check_timeout))
+      end
+      world_checks.values.each(&:wait)
+
+      results = {}
+      world_checks.each do |world, check|
+        if check.success?
+          result = :valid
+        else
+          if auto_invalidate
+            begin
+              invalidate(world)
+              result = :invalidated
+            rescue => e
+              result = e.message
+            end
+          else
+            result = :invalid
+          end
+        end
+        results[world.id] = result
+      end
+
+      unless results.values.all? { |result| result == :valid }
+        logger.error "invalid worlds found #{results.inspect}"
+      end
+
+      return results
     end
 
     # executes plans that are planned/paused and haven't reported any error yet (usually when no executor

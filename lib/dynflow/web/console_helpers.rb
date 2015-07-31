@@ -1,6 +1,14 @@
 module Dynflow
   module Web
     module ConsoleHelpers
+      def validation_result_css_class(result)
+        if result == :valid
+          "success"
+        else
+          "danger"
+        end
+      end
+
       def prettify_value(value)
         YAML.dump(value)
       end

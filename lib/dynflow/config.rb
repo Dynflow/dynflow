@@ -73,6 +73,14 @@ module Dynflow
       false
     end
 
+    config_attr :auto_validity_check, Algebrick::Types::Boolean do |world, config|
+      !!config.executor
+    end
+
+    config_attr :validity_check_timeout, Fixnum do
+      5
+    end
+
     config_attr :exit_on_terminate, Algebrick::Types::Boolean do
       true
     end

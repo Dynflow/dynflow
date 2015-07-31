@@ -37,31 +37,16 @@ module Dynflow
         erb :worlds
       end
 
-      post('/worlds/:id/ping') do |id|
-        timeout = 5
-        ping_response = world.ping(id, timeout).wait
-        if ping_response.failed?
-          response = "failed: #{ping_response.reason.message}"
-          inactive_world_id = id
-        else
-          response = 'pong'
-        end
-        redirect(url "/worlds?notice=#{url_encode(response)}&inactive_world_id=#{inactive_world_id}")
+      post('/worlds/check') do
+        @worlds = world.coordinator.find_worlds
+        @validation_results = world.worlds_validity_check(params[:invalidate])
+        erb :worlds
       end
 
-      post('/worlds/:id/invalidate') do |id|
-        invalidated_world = world.coordinator.find_worlds(false, id: id).first
-        unless invalidated_world
-          response = "World #{id} not found"
-        else
-          begin
-            world.invalidate(invalidated_world)
-            response = "World #{invalidated_world.id} invalidated"
-          rescue => e
-            response = "World invalidation failed: #{e.message}"
-          end
-        end
-        redirect(url "/worlds?notice=#{url_encode(response)}")
+      post('/worlds/:id/check') do |id|
+        @worlds = world.coordinator.find_worlds
+        @validation_results = world.worlds_validity_check(params[:invalidate], id: params[:id])
+        erb :worlds
       end
 
       get('/:id') do |id|
