@@ -70,7 +70,7 @@ module Dynflow
     end
 
     config_attr :auto_rescue, Algebrick::Types::Boolean do
-      false
+      true
     end
 
     config_attr :auto_validity_check, Algebrick::Types::Boolean do |world, config|
