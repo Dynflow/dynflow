@@ -20,7 +20,7 @@ require 'support/rescue_example'
 require 'support/dummy_example'
 require 'support/test_execution_log'
 
-Concurrent.disable_executor_auto_termination!
+Concurrent.disable_at_exit_handlers!
 
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
