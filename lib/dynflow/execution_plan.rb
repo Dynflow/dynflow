@@ -323,6 +323,7 @@ module Dynflow
     # @return [0..1] the percentage of the progress. See Action::Progress for more
     # info
     def progress
+      return 0 if [:pending, :planning, :scheduled].include?(state)
       flow_step_ids         = run_flow.all_step_ids + finalize_flow.all_step_ids
       plan_done, plan_total = flow_step_ids.reduce([0.0, 0]) do |(done, total), step_id|
         step = self.steps[step_id]

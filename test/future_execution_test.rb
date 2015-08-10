@@ -10,6 +10,7 @@ module Dynflow
       describe 'action scheduling' do
 
         before do
+          @start_at = Time.now.utc + 180
           world.persistence.delete_scheduled_plans(:execution_plan_uuid => [])
         end
 
@@ -24,8 +25,11 @@ module Dynflow
         end
         let(:execution_plan) { plan.execution_plan }
 
+        it 'returns the progress as 0' do
+          execution_plan.progress.must_equal 0
+        end
+
         it 'schedules the action' do
-          @start_at = Time.now.utc + 180
           execution_plan.steps.count.must_equal 1
           plan.start_at.inspect.must_equal (@start_at).inspect
           history_names.call(execution_plan).must_equal ['schedule']
@@ -40,7 +44,6 @@ module Dynflow
         end
 
         it 'scheduled plans can be planned and executed' do
-          @start_at = Time.now.utc + 180
           execution_plan.state.must_equal :scheduled
           plan.plan
           execution_plan.state.must_equal :planned
@@ -55,7 +58,6 @@ module Dynflow
         end
 
         it 'expired plans can be failed' do
-          @start_at = Time.now.utc + 180
           plan.timeout
           execution_plan.state.must_equal :stopped
           execution_plan.result.must_equal :error
