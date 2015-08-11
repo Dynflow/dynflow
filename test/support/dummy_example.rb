@@ -6,6 +6,26 @@ module Support
       def run; end
     end
 
+    class MySerializer < Dynflow::Serializers::Abstract
+      def serialize
+        if args.first == :fail
+          raise 'Enforced serializer failure'
+        end
+        args
+      end
+
+      def deserialize
+        serialized_args
+      end
+    end
+
+    class DummyCustomScheuleSerializer < Dynflow::Action
+      def schedule(schedule_options, *args)
+        MySerializer.new(args)
+      end
+      def run; end
+    end
+
     class FailingDummy < Dynflow::Action
       def run; raise 'error'; end
     end

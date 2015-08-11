@@ -149,14 +149,7 @@ module Dynflow
     def schedule(action_class, schedule_options, *args)
       raise 'No action_class given' if action_class.nil?
       execution_plan = ExecutionPlan.new self
-      execution_plan.schedule(action_class, {}, schedule_options, *args)
-      scheduled_plan = ScheduledPlan.new(self,
-                                         execution_plan.id,
-                                         schedule_options[:start_at],
-                                         schedule_options.fetch(:start_before, nil),
-                                         args,
-                                         execution_plan.entry_action.serializer)
-      persistence.save_scheduled_plan(scheduled_plan)
+      execution_plan.schedule(action_class, schedule_options, *args)
       Scheduled[execution_plan.id]
     end
 

@@ -5,12 +5,11 @@ module Dynflow
 
     attr_reader :execution_plan_uuid, :start_at, :start_before, :args
 
-    def initialize(world, execution_plan_uuid, start_at, start_before, args = [], args_serializer = nil)
+    def initialize(world, execution_plan_uuid, start_at, start_before, args_serializer)
       @world               = Type! world, World
       @execution_plan_uuid = Type! execution_plan_uuid, String
       @start_at            = Type! start_at, Time
       @start_before        = Type! start_before, Time, NilClass
-      @args                = Type! args, Array
       @args_serializer     = Type! args_serializer, Serializers::Abstract
     end
 
@@ -22,7 +21,7 @@ module Dynflow
       execution_plan.root_plan_step.load_action
       execution_plan.generate_action_id
       execution_plan.generate_step_id
-      execution_plan.plan(*@args)
+      execution_plan.plan(*@args_serializer.perform_deserialization!)
     end
 
     def timeout
@@ -45,18 +44,17 @@ module Dynflow
        recursive_to_hash :execution_plan_uuid => @execution_plan_uuid,
                          :start_at            => time_to_str(@start_at),
                          :start_before        => time_to_str(@start_before),
-                         :args                => @args_serializer.serialize(*@args),
+                         :args                => @args_serializer.serialized_args,
                          :args_serializer     => @args_serializer.class.name
     end
 
     # @api private
     def self.new_from_hash(world, hash, *args)
-      serializer = hash[:args_serializer].constantize.new
+      serializer = hash[:args_serializer].constantize.new(nil, hash[:args])
       self.new(world,
                hash[:execution_plan_uuid],
                string_to_time(hash[:start_at]),
                string_to_time(hash[:start_before]),
-               serializer.deserialize(hash[:args]),
                serializer)
     rescue NameError => e
       error(e.message)

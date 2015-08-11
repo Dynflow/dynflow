@@ -283,8 +283,12 @@ module Dynflow
     end
 
     def execute_schedule(schedule_options, *args)
-      world.middleware.execute(:schedule, self, schedule_options, *args) do
-        @serializer = schedule(schedule_options, *args)
+      with_error_handling(true) do
+        world.middleware.execute(:schedule, self, schedule_options, *args) do
+          @serializer = schedule(schedule_options, *args).tap do |serializer|
+            serializer.perform_serialization!
+          end
+        end
       end
     end
 
@@ -310,7 +314,7 @@ module Dynflow
     end
 
     def schedule(schedule_options, *args)
-      Serializers::Noop.new
+      Serializers::Noop.new(args)
     end
 
     # @override to implement the action's *Plan phase* behaviour.
@@ -411,7 +415,7 @@ module Dynflow
     end
 
     def with_error_handling(propagate_error = nil, &block)
-      raise "wrong state #{self.state}" unless [:skipping, :running].include?(self.state)
+      raise "wrong state #{self.state}" unless [:scheduling, :skipping, :running].include?(self.state)
 
       begin
         catch(ERROR) { block.call }
@@ -422,6 +426,8 @@ module Dynflow
       end
 
       case self.state
+      when :scheduling
+        self.state = :pending
       when :running
         self.state = :success
       when :skipping

@@ -100,6 +100,8 @@ module Dynflow
 
       def load_scheduled_plan(execution_plan_id)
         load :scheduled, execution_plan_uuid: execution_plan_id
+      rescue KeyError
+        return nil
       end
 
       def save_scheduled_plan(execution_plan_id, value)

@@ -29,6 +29,15 @@ module Dynflow
           execution_plan.progress.must_equal 0
         end
 
+        it 'marks the plan as failed when issues in serialied phase' do
+          world.persistence.delete_execution_plans({})
+          e = proc { world.schedule(::Support::DummyExample::DummyCustomScheuleSerializer, { :start_at => @start_at }, :fail) }.must_raise RuntimeError
+          e.message.must_equal 'Enforced serializer failure'
+          plan = world.persistence.find_execution_plans(page: 0, per_page: 1, order_by: :ended_at, desc: true).first
+          plan.state.must_equal :stopped
+          plan.result.must_equal :error
+        end
+
         it 'schedules the action' do
           execution_plan.steps.count.must_equal 1
           plan.start_at.inspect.must_equal (@start_at).inspect
@@ -101,8 +110,11 @@ module Dynflow
         end
         let(:simulated_use) do
           lambda do |serializer_class, input|
-            serializer = serializer_class.new
-            serializer.deserialize(save_and_load.call(serializer.serialize *input))
+            serializer = serializer_class.new(input)
+            serializer.perform_serialization!
+            serializer = serializer_class.new(nil, serializer.serialized_args)
+            serializer.perform_deserialization!
+            serializer.args
           end
         end
 

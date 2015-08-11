@@ -65,6 +65,7 @@ module Dynflow
 
     def load_scheduled_plan(execution_plan_id)
       hash = adapter.load_scheduled_plan(execution_plan_id)
+      return nil unless hash
       ScheduledPlan.new_from_hash(@world, hash)
     end
 
