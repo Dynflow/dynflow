@@ -15,7 +15,7 @@ module Dynflow
         end
 
         let(:world) { WorldFactory.create_world }
-        let(:plan) do
+        let(:scheduled_plan) do
           scheduled = world.schedule(::Support::DummyExample::Dummy, { :start_at => @start_at })
           scheduled.must_be :scheduled?
           world.persistence.load_scheduled_plan(scheduled.execution_plan_id)
@@ -23,7 +23,7 @@ module Dynflow
         let(:history_names) do
           ->(execution_plan) { execution_plan.execution_history.map(&:name) }
         end
-        let(:execution_plan) { plan.execution_plan }
+        let(:execution_plan) { scheduled_plan.execution_plan }
 
         it 'returns the progress as 0' do
           execution_plan.progress.must_equal 0
@@ -40,13 +40,13 @@ module Dynflow
 
         it 'schedules the action' do
           execution_plan.steps.count.must_equal 1
-          plan.start_at.inspect.must_equal (@start_at).inspect
+          scheduled_plan.start_at.inspect.must_equal (@start_at).inspect
           history_names.call(execution_plan).must_equal ['schedule']
         end
 
         it 'finds scheduled plans' do
           @start_at = Time.now.utc - 100
-          plan
+          scheduled_plan
           past_scheduled_plans = world.persistence.find_past_scheduled_plans(@start_at + 10)
           past_scheduled_plans.length.must_equal 1
           past_scheduled_plans.first.execution_plan_uuid.must_equal execution_plan.id
@@ -54,12 +54,12 @@ module Dynflow
 
         it 'scheduled plans can be planned and executed' do
           execution_plan.state.must_equal :scheduled
-          plan.plan
+          scheduled_plan.plan
           execution_plan.state.must_equal :planned
           execution_plan.result.must_equal :pending
           assert_planning_success execution_plan
           history_names.call(execution_plan).must_equal ['schedule']
-          executed = plan.execute
+          executed = scheduled_plan.execute
           executed.wait
           executed.value.state.must_equal :stopped
           executed.value.result.must_equal :success
@@ -67,7 +67,7 @@ module Dynflow
         end
 
         it 'expired plans can be failed' do
-          plan.timeout
+          scheduled_plan.timeout
           execution_plan.state.must_equal :stopped
           execution_plan.result.must_equal :error
           execution_plan.errors.first.message.must_match /could not be started before set time/
@@ -105,9 +105,6 @@ module Dynflow
       end
 
       describe 'serializers' do
-        let(:save_and_load) do
-          ->(thing) { MultiJson.load(MultiJson.dump(thing)) }
-        end
         let(:simulated_use) do
           lambda do |serializer_class, input|
             serializer = serializer_class.new(input)

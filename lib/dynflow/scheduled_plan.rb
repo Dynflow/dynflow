@@ -3,7 +3,7 @@ module Dynflow
 
     include Algebrick::TypeCheck
 
-    attr_reader :execution_plan_uuid, :start_at, :start_before, :args
+    attr_reader :execution_plan_uuid, :start_at, :start_before
 
     def initialize(world, execution_plan_uuid, start_at, start_before, args_serializer)
       @world               = Type! world, World
@@ -44,13 +44,13 @@ module Dynflow
        recursive_to_hash :execution_plan_uuid => @execution_plan_uuid,
                          :start_at            => time_to_str(@start_at),
                          :start_before        => time_to_str(@start_before),
-                         :args                => @args_serializer.serialized_args,
+                         :serialized_args     => @args_serializer.serialized_args,
                          :args_serializer     => @args_serializer.class.name
     end
 
     # @api private
     def self.new_from_hash(world, hash, *args)
-      serializer = hash[:args_serializer].constantize.new(nil, hash[:args])
+      serializer = hash[:args_serializer].constantize.new(nil, hash[:serialized_args])
       self.new(world,
                hash[:execution_plan_uuid],
                string_to_time(hash[:start_at]),
