@@ -63,6 +63,7 @@ module Dynflow
         filter(:execution_plan, table(:execution_plan), filters).each_slice(batch_size) do |plans|
           uuids = plans.map { |p| p.fetch(:uuid) }
           @db.transaction do
+            table(:scheduled).where(execution_plan_uuid: uuids).delete
             table(:step).where(execution_plan_uuid: uuids).delete
             table(:action).where(execution_plan_uuid: uuids).delete
             count += table(:execution_plan).where(uuid: uuids).delete
