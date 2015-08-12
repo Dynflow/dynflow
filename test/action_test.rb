@@ -348,7 +348,7 @@ module Dynflow
         include Dynflow::Action::WithSubPlans
 
         def create_sub_plans
-          input[:count].times.map{ trigger(ChildAction) }
+          input[:count].times.map { trigger(ChildAction, suspend: input[:suspend]) }
         end
 
         def resume
@@ -358,16 +358,21 @@ module Dynflow
       end
 
       class ChildAction < Dynflow::Action
-        def plan
+        include Dynflow::Action::Cancellable
+
+        def plan(input)
           if FailureSimulator.fail_in_child_plan
             raise "Fail in child plan"
           end
           super
         end
 
-        def run
+        def run(event = nil)
           if FailureSimulator.fail_in_child_run
             raise "Fail in child run"
+          end
+          if input[:suspend] && !(event == Dynflow::Action::Cancellable::Cancel)
+            suspend
           end
         end
       end
@@ -436,6 +441,24 @@ module Dynflow
           resumed_plan.result.must_equal :success
         end
       end
+
+      describe 'cancelling' do
+        include TestHelpers
+
+        it "sends the cancel event to all actions that are running and support cancelling" do
+          triggered_plan = world.trigger(ParentAction, count: 2, suspend: true)
+          plan = wait_for do
+            plan = world.persistence.load_execution_plan(triggered_plan.id)
+            if plan.cancellable?
+              plan
+            end
+          end
+          plan.cancel
+          triggered_plan.finished.wait
+          triggered_plan.finished.value.state.must_equal :stopped
+          triggered_plan.finished.value.result.must_equal :success
+        end
+     end
     end
   end
 end

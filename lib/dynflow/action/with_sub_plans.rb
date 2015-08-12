@@ -1,5 +1,7 @@
 module Dynflow
   module Action::WithSubPlans
+    include Dynflow::Action::Cancellable
+
     SubPlanFinished = Algebrick.type do
       fields! :execution_plan_id => String,
               :success           => type { variants TrueClass, FalseClass }
@@ -17,6 +19,9 @@ module Dynflow
             (on SubPlanFinished do
               mark_as_done(event.execution_plan_id, event.success)
               try_to_finish or suspend
+             end),
+            (on Action::Cancellable::Cancel do
+               cancel!
              end)
     end
 
@@ -47,6 +52,11 @@ module Dynflow
 
     # @api method to be called after all the sub tasks finished
     def on_finish
+    end
+
+    def cancel!
+      sub_plans('state' => 'running').each(&:cancel)
+      suspend
     end
 
     # Helper for creating sub plans
@@ -92,9 +102,9 @@ module Dynflow
       end
     end
 
-    def sub_plans
+    def sub_plans(filter = {})
       @sub_plans ||= world.persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => execution_plan_id,
-                                                                       'caller_action_id' => self.id } )
+                                                                       'caller_action_id' => self.id }.merge(filter) )
     end
 
     def notify_on_finish(plans)
