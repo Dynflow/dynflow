@@ -68,9 +68,9 @@ module Dynflow
         plan = world.persistence.load_execution_plan(id)
         cancel_events = plan.cancel
         if cancel_events.empty?
-          redirect(url "/#{plan.id}?notice=#{url_encode('No cancellable steps')}")
+          redirect(url "/#{plan.id}?notice=#{url_encode('Not possible to cancel at the moment')}")
         else
-          redirect(url "/#{plan.id}?notice=#{url_encode("#{cancel_events.size} steps were asked to cancel")}")
+          redirect(url "/#{plan.id}?notice=#{url_encode("The cancel event has been propagated")}")
         end
       end
 

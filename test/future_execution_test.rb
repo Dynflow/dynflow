@@ -44,6 +44,16 @@ module Dynflow
           history_names.call(execution_plan).must_equal ['schedule']
         end
 
+        it 'allows cancelling the scheduled plan' do
+          execution_plan.state.must_equal :scheduled
+          execution_plan.cancellable?.must_equal true
+          execution_plan.cancel.each(&:wait)
+          execution_plan = world.persistence.load_execution_plan(self.execution_plan.id)
+          execution_plan.state.must_equal :stopped
+          execution_plan.result.must_equal :error
+          execution_plan.schedule_record.must_equal nil
+        end
+
         it 'finds scheduled plans' do
           @start_at = Time.now.utc - 100
           scheduled_plan
