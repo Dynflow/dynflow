@@ -11,7 +11,7 @@ module Dynflow
     end
 
     def cancel!
-      NotImplementedError
+      raise NotImplementedError
     end
   end
 end

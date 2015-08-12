@@ -203,6 +203,23 @@ module Dynflow
       update_state(error? ? :stopped : :planned)
     end
 
+    def cancel
+      steps_to_cancel.map do |step|
+        world.event(id, step.id, ::Dynflow::Action::Cancellable::Cancel)
+      end
+    end
+
+    def cancellable?
+      return false unless state == :running
+      steps_to_cancel.any?
+    end
+
+    def steps_to_cancel
+      steps_in_state(:running, :suspended).find_all do |step|
+        step.action(self).is_a?(::Dynflow::Action::Cancellable)
+      end
+    end
+
     def skip(step)
       steps_to_skip = steps_to_skip(step).each(&:mark_to_skip)
       self.save
