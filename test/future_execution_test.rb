@@ -10,11 +10,12 @@ module Dynflow
       describe 'action scheduling' do
 
         before do
+          @start_at = Time.now.utc + 180
           world.persistence.delete_scheduled_plans(:execution_plan_uuid => [])
         end
 
         let(:world) { WorldFactory.create_world }
-        let(:plan) do
+        let(:scheduled_plan) do
           scheduled = world.schedule(::Support::DummyExample::Dummy, { :start_at => @start_at })
           scheduled.must_be :scheduled?
           world.persistence.load_scheduled_plan(scheduled.execution_plan_id)
@@ -22,32 +23,43 @@ module Dynflow
         let(:history_names) do
           ->(execution_plan) { execution_plan.execution_history.map(&:name) }
         end
-        let(:execution_plan) { plan.execution_plan }
+        let(:execution_plan) { scheduled_plan.execution_plan }
+
+        it 'returns the progress as 0' do
+          execution_plan.progress.must_equal 0
+        end
+
+        it 'marks the plan as failed when issues in serialied phase' do
+          world.persistence.delete_execution_plans({})
+          e = proc { world.schedule(::Support::DummyExample::DummyCustomScheduleSerializer, { :start_at => @start_at }, :fail) }.must_raise RuntimeError
+          e.message.must_equal 'Enforced serializer failure'
+          plan = world.persistence.find_execution_plans(page: 0, per_page: 1, order_by: :ended_at, desc: true).first
+          plan.state.must_equal :stopped
+          plan.result.must_equal :error
+        end
 
         it 'schedules the action' do
-          @start_at = Time.now.utc + 180
           execution_plan.steps.count.must_equal 1
-          plan.start_at.inspect.must_equal (@start_at).inspect
+          scheduled_plan.start_at.inspect.must_equal (@start_at).inspect
           history_names.call(execution_plan).must_equal ['schedule']
         end
 
         it 'finds scheduled plans' do
           @start_at = Time.now.utc - 100
-          plan
+          scheduled_plan
           past_scheduled_plans = world.persistence.find_past_scheduled_plans(@start_at + 10)
           past_scheduled_plans.length.must_equal 1
           past_scheduled_plans.first.execution_plan_uuid.must_equal execution_plan.id
         end
 
         it 'scheduled plans can be planned and executed' do
-          @start_at = Time.now.utc + 180
           execution_plan.state.must_equal :scheduled
-          plan.plan
+          scheduled_plan.plan
           execution_plan.state.must_equal :planned
           execution_plan.result.must_equal :pending
           assert_planning_success execution_plan
           history_names.call(execution_plan).must_equal ['schedule']
-          executed = plan.execute
+          executed = scheduled_plan.execute
           executed.wait
           executed.value.state.must_equal :stopped
           executed.value.result.must_equal :success
@@ -55,8 +67,7 @@ module Dynflow
         end
 
         it 'expired plans can be failed' do
-          @start_at = Time.now.utc + 180
-          plan.timeout
+          scheduled_plan.timeout
           execution_plan.state.must_equal :stopped
           execution_plan.result.must_equal :error
           execution_plan.errors.first.message.must_match /could not be started before set time/
@@ -97,10 +108,15 @@ module Dynflow
         let(:save_and_load) do
           ->(thing) { MultiJson.load(MultiJson.dump(thing)) }
         end
+
         let(:simulated_use) do
           lambda do |serializer_class, input|
-            serializer = serializer_class.new
-            serializer.deserialize(save_and_load.call(serializer.serialize *input))
+            serializer = serializer_class.new(input)
+            serializer.perform_serialization!
+            serialized_args = save_and_load.call(serializer.serialized_args)
+            serializer = serializer_class.new(nil, serialized_args)
+            serializer.perform_deserialization!
+            serializer.args
           end
         end
 

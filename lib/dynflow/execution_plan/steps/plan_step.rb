@@ -35,6 +35,13 @@ module Dynflow
         super.merge recursive_to_hash(:children => children)
       end
 
+      def schedule(schedule_options, args)
+        @action.execute_schedule(schedule_options, *args)
+        @action.serializer
+      ensure
+        save
+      end
+
       # @return [Action]
       def execute(execution_plan, trigger, from_subscription, *args)
         unless @action
@@ -51,12 +58,13 @@ module Dynflow
       end
 
       def self.state_transitions
-        @state_transitions ||= { pending:   [:running, :error],
-                                 running:   [:success, :error],
-                                 success:   [],
-                                 suspended: [],
-                                 skipped:   [],
-                                 error:     [] }
+        @state_transitions ||= { scheduling: [:pending, :error],
+                                 pending:    [:running, :error],
+                                 running:    [:success, :error],
+                                 success:    [],
+                                 suspended:  [],
+                                 skipped:    [],
+                                 error:      [] }
       end
 
 
@@ -80,7 +88,7 @@ module Dynflow
         @action = @world.persistence.load_action(self)
       end
 
-      def initialize_action(caller_action)
+      def initialize_action(caller_action = nil)
         attributes = { execution_plan_id: execution_plan_id,
                        id:                action_id,
                        step:              self,

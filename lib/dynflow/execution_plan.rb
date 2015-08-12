@@ -20,7 +20,7 @@ module Dynflow
     end
 
     def self.state_transitions
-      @state_transitions ||= { pending:  [:scheduled, :planning],
+      @state_transitions ||= { pending:  [:stopped, :scheduled, :planning],
                                scheduled: [:planning, :stopped],
                                planning: [:planned, :stopped],
                                planned:  [:running],
@@ -152,11 +152,19 @@ module Dynflow
       @last_step_id += 1
     end
 
-    def schedule(action_class, options, schedule_options, *args)
-      prepare(action_class, options)
+    def schedule(action_class, schedule_options, *args)
+      save
+      @root_plan_step = add_scheduling_step(action_class)
       execution_history.add("schedule", @world.id)
-      update_state :scheduled
-      entry_action.execute_schedule(schedule_options, args)
+      serializer = root_plan_step.schedule(schedule_options, args)
+      scheduled_plan = ScheduledPlan.new(@world,
+                                         id,
+                                         schedule_options[:start_at],
+                                         schedule_options.fetch(:start_before, nil),
+                                         serializer)
+      persistence.save_scheduled_plan(scheduled_plan)
+    ensure
+      update_state(error? ? :stopped : :scheduled)
     end
 
     def schedule_record
@@ -251,6 +259,12 @@ module Dynflow
       current_run_flow.add_and_resolve(@dependency_graph, new_flow) if current_run_flow
     end
 
+    def add_scheduling_step(action_class)
+      add_step(Steps::PlanStep, action_class, generate_action_id, :scheduling).tap do |step|
+        step.initialize_action
+      end
+    end
+
     def add_plan_step(action_class, caller_action = nil)
       add_step(Steps::PlanStep, action_class, generate_action_id).tap do |step|
         # TODO: to be removed and preferred by the caller_action
@@ -323,6 +337,7 @@ module Dynflow
     # @return [0..1] the percentage of the progress. See Action::Progress for more
     # info
     def progress
+      return 0 if [:pending, :planning, :scheduled].include?(state)
       flow_step_ids         = run_flow.all_step_ids + finalize_flow.all_step_ids
       plan_done, plan_total = flow_step_ids.reduce([0.0, 0]) do |(done, total), step_id|
         step = self.steps[step_id]
@@ -353,10 +368,10 @@ module Dynflow
       world.persistence
     end
 
-    def add_step(step_class, action_class, action_id)
+    def add_step(step_class, action_class, action_id, state = :pending)
       step_class.new(self.id,
                      self.generate_step_id,
-                     :pending,
+                     state,
                      action_class,
                      action_id,
                      nil,

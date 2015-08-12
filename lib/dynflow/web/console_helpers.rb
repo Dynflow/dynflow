@@ -114,7 +114,7 @@ module Dynflow
         when :success
           "success"
         when :error
-          "important"
+          "danger"
         else
           "default"
         end

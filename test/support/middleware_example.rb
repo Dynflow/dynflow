@@ -80,7 +80,7 @@ module Support
 
       def schedule(schedule_options, *args)
         log 'schedule'
-        Dynflow::Serializers::Noop.new
+        Dynflow::Serializers::Noop.new(args)
       end
 
       def plan(input)

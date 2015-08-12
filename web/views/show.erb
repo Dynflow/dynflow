@@ -11,7 +11,7 @@
   <%= h(@plan.result) %>
 </p>
 
-<% if @plan.state == :scheduled %>
+<% if @plan.state == :scheduled && @plan.schedule_record %>
   <p>
     <b>Start at:</b>
     <%= h(@plan.schedule_record.start_at) %>

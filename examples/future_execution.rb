@@ -12,13 +12,13 @@ class CustomPassedObject
 end
 
 class CustomPassedObjectSerializer < ::Dynflow::Serializers::Abstract
-  def serialize(*args)
+  def serialize
     object = args.first
     # Serialized output can be anything that is representable as JSON: Array, Hash...
     { :id => object.id, :name => object.name }
   end
 
-  def deserialize(serialized_args)
+  def deserialize
     # Deserialized output must be an Array
     [CustomPassedObject.new(serialized_args[:id], serialized_args[:name])]
   end
@@ -27,7 +27,7 @@ end
 class DelayedAction < Dynflow::Action
 
   def schedule(schedule_options, *args)
-    CustomPassedObjectSerializer.new
+    CustomPassedObjectSerializer.new(args)
   end
 
   def plan(passed_object)
