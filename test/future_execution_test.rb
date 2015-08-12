@@ -31,7 +31,7 @@ module Dynflow
 
         it 'marks the plan as failed when issues in serialied phase' do
           world.persistence.delete_execution_plans({})
-          e = proc { world.schedule(::Support::DummyExample::DummyCustomScheuleSerializer, { :start_at => @start_at }, :fail) }.must_raise RuntimeError
+          e = proc { world.schedule(::Support::DummyExample::DummyCustomScheduleSerializer, { :start_at => @start_at }, :fail) }.must_raise RuntimeError
           e.message.must_equal 'Enforced serializer failure'
           plan = world.persistence.find_execution_plans(page: 0, per_page: 1, order_by: :ended_at, desc: true).first
           plan.state.must_equal :stopped

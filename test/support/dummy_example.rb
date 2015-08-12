@@ -19,7 +19,7 @@ module Support
       end
     end
 
-    class DummyCustomScheuleSerializer < Dynflow::Action
+    class DummyCustomScheduleSerializer < Dynflow::Action
       def schedule(schedule_options, *args)
         MySerializer.new(args)
       end
