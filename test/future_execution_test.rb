@@ -105,11 +105,16 @@ module Dynflow
       end
 
       describe 'serializers' do
+        let(:save_and_load) do
+          ->(thing) { MultiJson.load(MultiJson.dump(thing)) }
+        end
+
         let(:simulated_use) do
           lambda do |serializer_class, input|
             serializer = serializer_class.new(input)
             serializer.perform_serialization!
-            serializer = serializer_class.new(nil, serializer.serialized_args)
+            serialized_args = save_and_load.call(serializer.serialized_args)
+            serializer = serializer_class.new(nil, serialized_args)
             serializer.perform_deserialization!
             serializer.args
           end
