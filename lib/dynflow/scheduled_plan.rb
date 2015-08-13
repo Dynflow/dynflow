@@ -34,11 +34,11 @@ module Dynflow
       execution_plan.root_plan_step.save
       execution_plan.execution_history.add history_entry, @world.id unless history_entry.nil?
       execution_plan.update_state :stopped
-      @world.persistence.delete_scheduled_plans(:execution_plan_uuid => execution_plan.id)
     end
 
     def cancel
-      error("Scheudled task cancelled", "Scheduled task cancelled")
+      error("Scheduled task cancelled", "Scheduled task cancelled")
+      @world.persistence.delete_scheduled_plans(:execution_plan_uuid => execution_plan.id)
       return true
     end
 
