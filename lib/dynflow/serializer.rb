@@ -19,7 +19,7 @@ module Dynflow
         end
 
         if (type_name = other[ARBITRARY_TYPE_KEY] || other[ARBITRARY_TYPE_KEY.to_s])
-          type = type_name.constantize rescue nil
+          type = Utils.constantize(type_name) rescue nil
           if type && type.respond_to?(:from_hash)
             return type.from_hash other
           end

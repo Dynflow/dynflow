@@ -243,7 +243,7 @@ module Dynflow
 
       def load(what, condition)
         table = table(what)
-        if (record = with_retry { table.first(condition.symbolize_keys) } )
+        if (record = with_retry { table.first(Utils.symbolize_keys(condition)) } )
           load_data(record)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
@@ -251,11 +251,11 @@ module Dynflow
       end
 
       def load_data(record)
-        HashWithIndifferentAccess.new(MultiJson.load(record[:data]))
+        Utils.indifferent_hash(MultiJson.load(record[:data]))
       end
 
       def delete(what, condition)
-        table(what).where(condition.symbolize_keys).delete
+        table(what).where(Utils.symbolize_keys(condition)).delete
       end
 
       def extract_metadata(what, value)
@@ -312,7 +312,7 @@ module Dynflow
           raise ArgumentError, "unkown columns: #{unknown.inspect}"
         end
 
-        data_set.where filters.symbolize_keys
+        data_set.where Utils.symbolize_keys(filters)
       end
 
       def with_retry

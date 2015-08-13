@@ -118,7 +118,7 @@ module Dynflow
         let(:runned_action) { run_action planned_action }
 
         it 'plans' do
-          planned_action.input.must_equal input.stringify_keys
+          planned_action.input.must_equal Utils.stringify_keys(input)
           assert_run_phase planned_action, { commit: "sha", reviewer: "name", result: true}
           refute_finalize_phase planned_action
 

@@ -81,7 +81,7 @@ module Dynflow
       # TODO what happens with newly loaded classes
       @action_classes = @action_classes.map do |klass|
         begin
-          klass.to_s.constantize
+          Utils.constantize(klass.to_s)
         rescue NameError
           nil # ignore missing classes
         end
@@ -352,7 +352,7 @@ module Dynflow
           action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
             next unless klass.subscribe
             Array(klass.subscribe).each do |subscribed_class|
-              index[subscribed_class.to_s.constantize] << klass
+              index[Utils.constantize(subscribed_class.to_s)] << klass
             end
           end.tap { |o| o.freeze }
     end

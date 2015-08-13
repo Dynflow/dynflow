@@ -56,7 +56,7 @@ module Dynflow
 
     # @api private
     def self.new_from_hash(world, hash, *args)
-      serializer = hash[:args_serializer].constantize.new(nil, hash[:serialized_args])
+      serializer = Utils.constantize(hash[:args_serializer]).new(nil, hash[:serialized_args])
       self.new(world,
                hash[:execution_plan_uuid],
                string_to_time(hash[:start_at]),
