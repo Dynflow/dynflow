@@ -6,7 +6,7 @@ module Dynflow
     def self.dereference(object, persistence)
       case object
       when Hash
-        object.reduce(HashWithIndifferentAccess.new) do |h, (key, val)|
+        object.reduce(Utils.indifferent_hash({})) do |h, (key, val)|
           h.update(key => dereference(val, persistence))
         end
       when Array
@@ -25,7 +25,7 @@ module Dynflow
         if value[:class] == self.to_s
           new_from_hash(value)
         else
-          value.reduce(HashWithIndifferentAccess.new) do |h, (key, val)|
+          value.reduce(Utils.indifferent_hash({})) do |h, (key, val)|
             h.update(key => deserialize(val))
           end
         end

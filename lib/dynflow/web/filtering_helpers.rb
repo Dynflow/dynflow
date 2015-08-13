@@ -24,7 +24,7 @@ module Dynflow
         else
           filters = {}
         end
-        @filtering_options = { filters: filters }.with_indifferent_access
+        @filtering_options = Utils.indifferent_hash(filters: filters)
         return @filtering_options
       end
 

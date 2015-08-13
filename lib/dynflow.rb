@@ -2,7 +2,6 @@ require 'apipie-params'
 require 'algebrick'
 require 'thread'
 require 'set'
-require 'active_support/core_ext/hash/indifferent_access'
 require 'base64'
 require 'concurrent'
 require 'concurrent-edge'
@@ -22,6 +21,7 @@ module Dynflow
   class Error < StandardError
   end
 
+  require 'dynflow/utils'
   require 'dynflow/round_robin'
   require 'dynflow/actor'
   require 'dynflow/errors'

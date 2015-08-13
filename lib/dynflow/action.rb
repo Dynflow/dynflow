@@ -1,5 +1,3 @@
-require 'active_support/inflector'
-
 module Dynflow
   class Action < Serializable
 
@@ -127,13 +125,13 @@ module Dynflow
     def input=(hash)
       Type! hash, Hash
       phase! Plan
-      @input = hash.with_indifferent_access
+      @input = Utils.indifferent_hash(hash)
     end
 
     def output=(hash)
       Type! hash, Hash
       phase! Run
-      @output = hash.with_indifferent_access
+      @output = Utlis.indifferent_hash(hash)
     end
 
     def output
