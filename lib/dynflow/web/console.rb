@@ -64,6 +64,16 @@ module Dynflow
         end
       end
 
+      post('/:id/cancel') do |id|
+        plan = world.persistence.load_execution_plan(id)
+        cancel_events = plan.cancel
+        if cancel_events.empty?
+          redirect(url "/#{plan.id}?notice=#{url_encode('Not possible to cancel at the moment')}")
+        else
+          redirect(url "/#{plan.id}?notice=#{url_encode("The cancel event has been propagated")}")
+        end
+      end
+
       post('/:id/skip/:step_id') do |id, step_id|
         plan = world.persistence.load_execution_plan(id)
         step = plan.steps[step_id.to_i]

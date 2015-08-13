@@ -203,6 +203,31 @@ module Dynflow
       update_state(error? ? :stopped : :planned)
     end
 
+    # sends the cancel event to all currently running and cancellable steps.
+    # if the plan is just scheduled, it cancels it (and returns an one-item
+    # array with the future value of the cancel result)
+    def cancel
+      if state == :scheduled
+        [Concurrent.future.tap { |f| f.success schedule_record.cancel }]
+      else
+        steps_to_cancel.map do |step|
+          world.event(id, step.id, ::Dynflow::Action::Cancellable::Cancel)
+        end
+      end
+    end
+
+    def cancellable?
+      return true if state == :scheduled
+      return false unless state == :running
+      steps_to_cancel.any?
+    end
+
+    def steps_to_cancel
+      steps_in_state(:running, :suspended).find_all do |step|
+        step.action(self).is_a?(::Dynflow::Action::Cancellable)
+      end
+    end
+
     def skip(step)
       steps_to_skip = steps_to_skip(step).each(&:mark_to_skip)
       self.save

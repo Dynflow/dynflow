@@ -4,6 +4,9 @@
   <% if @plan.state == :paused %>
     <a href="<%= url("/#{@plan.id}/resume") %>" class="postlink">Resume</a>
   <% end %>
+  <% if @plan.cancellable? %>
+    <a href="<%= url("/#{@plan.id}/cancel") %>" class="postlink">Cancel</a>
+  <% end %>
 </p>
 
 <p>

@@ -36,6 +36,12 @@ module Dynflow
       execution_plan.update_state :stopped
     end
 
+    def cancel
+      error("Scheduled task cancelled", "Scheduled task cancelled")
+      @world.persistence.delete_scheduled_plans(:execution_plan_uuid => execution_plan.id)
+      return true
+    end
+
     def execute
       @world.execute(execution_plan.id)
     end

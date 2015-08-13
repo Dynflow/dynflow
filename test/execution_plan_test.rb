@@ -245,6 +245,28 @@ module Dynflow
         end
       end
 
+      describe '#cancel' do
+        include TestHelpers
+
+        let :execution_plan do
+          world.plan(Support::CodeWorkflowExample::CancelableSuspended, { text: 'cancel-external' })
+        end
+
+        it 'cancels' do
+          finished = world.execute(execution_plan.id)
+          plan = wait_for do
+            plan = world.persistence.load_execution_plan(execution_plan.id)
+            if plan.cancellable?
+              plan
+            end
+          end
+          cancel_events = plan.cancel
+          cancel_events.size.must_equal 1
+          cancel_events.each(&:wait)
+          finished.wait
+        end
+      end
+
       describe 'accessing actions results' do
         let :execution_plan do
           world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
