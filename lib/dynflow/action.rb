@@ -131,7 +131,7 @@ module Dynflow
     def output=(hash)
       Type! hash, Hash
       phase! Run
-      @output = Utlis.indifferent_hash(hash)
+      @output = Utils.indifferent_hash(hash)
     end
 
     def output
