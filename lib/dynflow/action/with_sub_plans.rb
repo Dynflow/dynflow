@@ -67,7 +67,8 @@ module Dynflow
     def wait_for_sub_plans(sub_plans)
       output.update(total_count: 0,
                     failed_count: 0,
-                    success_count: 0)
+                    success_count: 0,
+                    pending_count: 0)
 
       planned, failed = sub_plans.partition(&:planned?)
 
@@ -75,6 +76,7 @@ module Dynflow
 
       output[:total_count] = sub_plan_ids.size
       output[:failed_count] = failed.size
+      output[:pending_count] = planned.size
 
       if planned.any?
         notify_on_finish(planned)
@@ -123,6 +125,7 @@ module Dynflow
       else
         output[:failed_count] += 1
       end
+      output[:pending_count] -= 1
     end
 
     def done?
@@ -144,7 +147,8 @@ module Dynflow
     def recalculate_counts
       output.update(total_count: 0,
                     failed_count: 0,
-                    success_count: 0)
+                    success_count: 0,
+                    pending_count: 0)
       sub_plans.each do |sub_plan|
         output[:total_count] += 1
         if sub_plan.state == :stopped
@@ -153,12 +157,14 @@ module Dynflow
           else
             output[:success_count] += 1
           end
+        else
+          output[:pending_count] += 1
         end
       end
     end
 
     def counts_set?
-      output[:total_count] && output[:success_count] && output[:failed_count]
+      output[:total_count] && output[:success_count] && output[:failed_count] && output[:pending_count]
     end
 
     def check_for_errors!
