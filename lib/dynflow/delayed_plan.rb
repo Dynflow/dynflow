@@ -1,5 +1,5 @@
 module Dynflow
-  class ScheduledPlan < Serializable
+  class DelayedPlan < Serializable
 
     include Algebrick::TypeCheck
 
@@ -37,8 +37,8 @@ module Dynflow
     end
 
     def cancel
-      error("Scheduled task cancelled", "Scheduled task cancelled")
-      @world.persistence.delete_scheduled_plans(:execution_plan_uuid => execution_plan.id)
+      error("Delayed task cancelled", "Delayed task cancelled")
+      @world.persistence.delete_delayed_plans(:execution_plan_uuid => execution_plan.id)
       return true
     end
 

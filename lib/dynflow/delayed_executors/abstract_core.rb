@@ -1,5 +1,5 @@
 module Dynflow
-  module Schedulers
+  module DelayedExecutors
     class AbstractCore < Actor
 
       include Algebrick::TypeCheck
@@ -19,7 +19,7 @@ module Dynflow
         @time_source = options.fetch(:time_source, -> { Time.now.utc })
       end
 
-      def check_schedule
+      def check_delayed_plans
         raise NotImplementedError
       end
 
@@ -29,9 +29,9 @@ module Dynflow
         @time_source.call()
       end
 
-      def scheduled_execution_plans(time)
+      def delayed_execution_plans(time)
         with_error_handling([]) do
-          world.persistence.find_past_scheduled_plans(time)
+          world.persistence.find_past_delayed_plans(time)
         end
       end
 
@@ -42,9 +42,9 @@ module Dynflow
         error_retval
       end
 
-      def process(scheduled_plans, check_time)
+      def process(delayed_plans, check_time)
         processed_plan_uuids = []
-        scheduled_plans.each do |plan|
+        delayed_plans.each do |plan|
           with_error_handling do
             if !plan.start_before.nil? && plan.start_before < check_time
               @logger.debug "Failing plan #{plan.execution_plan_uuid}"
@@ -57,7 +57,7 @@ module Dynflow
             processed_plan_uuids << plan.execution_plan_uuid
           end
         end
-        world.persistence.delete_scheduled_plans(:execution_plan_uuid => processed_plan_uuids) unless processed_plan_uuids.empty?
+        world.persistence.delete_delayed_plans(:execution_plan_uuid => processed_plan_uuids) unless processed_plan_uuids.empty?
       end
 
     end

@@ -14,14 +14,14 @@
   <%= h(@plan.result) %>
 </p>
 
-<% if @plan.state == :scheduled && @plan.schedule_record %>
+<% if @plan.state == :scheduled && @plan.delay_record %>
   <p>
     <b>Start at:</b>
-    <%= h(@plan.schedule_record.start_at) %>
+    <%= h(@plan.delay_record.start_at) %>
   </p>
   <p>
     <b>Start before:</b>
-    <%= h(@plan.schedule_record.start_before || "-") %>
+    <%= h(@plan.delay_record.start_before || "-") %>
   </p>
 <% end %>
 

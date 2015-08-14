@@ -1,9 +1,9 @@
 module Dynflow
-  module Schedulers
+  module DelayedExecutors
     class Polling < Abstract
 
       def core_class
-        Dynflow::Schedulers::PollingCore
+        Dynflow::DelayedExecutors::PollingCore
       end
 
     end
@@ -17,15 +17,15 @@ module Dynflow
       end
 
       def start
-        check_schedule
+        check_delayed_plans
       end
 
-      def check_schedule
+      def check_delayed_plans
         check_time = time
-        plans = scheduled_execution_plans(check_time)
+        plans = delayed_execution_plans(check_time)
         process plans, check_time
 
-        world.clock.ping(self, poll_interval, :check_schedule)
+        world.clock.ping(self, poll_interval, :check_delayed_plans)
       end
     end
   end

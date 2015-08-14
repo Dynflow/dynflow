@@ -21,7 +21,7 @@ module Dynflow
       @stack.action or raise "the action is not available"
     end
 
-    def schedule(*args)
+    def delay(*args)
       pass(*args)
     end
 

@@ -26,7 +26,7 @@ end
 
 class DelayedAction < Dynflow::Action
 
-  def schedule(schedule_options, *args)
+  def delay(delay_options, *args)
     CustomPassedObjectSerializer.new(args)
   end
 
@@ -49,9 +49,9 @@ if $0 == __FILE__
 
   object = CustomPassedObject.new(1, 'CPS')
 
-  past_plan = ExampleHelper.world.schedule(DelayedAction, { :start_at => past, :start_before => past }, object)
-  near_future_plan = ExampleHelper.world.schedule(DelayedAction, { :start_at => near_future, :start_before => future }, object)
-  future_plan = ExampleHelper.world.schedule(DelayedAction, { :start_at => future }, object)
+  past_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => past, :start_before => past }, object)
+  near_future_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => near_future, :start_before => future }, object)
+  future_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => future }, object)
 
   puts <<-MSG.gsub(/^.*\|/, '')
     |
@@ -61,9 +61,9 @@ if $0 == __FILE__
     |  This example shows the future execution functionality of Dynflow, which allows to plan actions to be executed at set time.
     |
     |  Execution plans:
-    |    #{past_plan.id} is scheduled to execute before #{past} and should timeout on the first run of the scheduler.
-    |    #{near_future_plan.id} is scheduled to execute at #{near_future} and should run successfully.
-    |    #{future_plan.id} is scheduled to execute at #{future} and should run successfully.
+    |    #{past_plan.id} is "delayed" to execute before #{past} and should timeout on the first run of the scheduler.
+    |    #{near_future_plan.id} is delayed to execute at #{near_future} and should run successfully.
+    |    #{future_plan.id} is delayed to execute at #{future} and should run successfully.
     |
     |  Visit http://localhost:4567 to see their status.
     |

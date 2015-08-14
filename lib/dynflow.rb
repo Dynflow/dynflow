@@ -36,7 +36,7 @@ module Dynflow
   require 'dynflow/flows'
   require 'dynflow/execution_history'
   require 'dynflow/execution_plan'
-  require 'dynflow/scheduled_plan'
+  require 'dynflow/delayed_plan'
   require 'dynflow/action'
   require 'dynflow/executors'
   require 'dynflow/logger_adapters'
@@ -44,6 +44,6 @@ module Dynflow
   require 'dynflow/connectors'
   require 'dynflow/dispatcher'
   require 'dynflow/serializers'
-  require 'dynflow/schedulers'
+  require 'dynflow/delayed_executors'
   require 'dynflow/config'
 end

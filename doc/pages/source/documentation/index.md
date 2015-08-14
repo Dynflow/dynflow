@@ -235,7 +235,7 @@ TriggerResult = Algebrick.type do
   PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
   # Returned by #trigger when planning is successful but execution fails to start.
   ExecutionFailed = type { fields! execution_plan_id: String, error: Exception }
-  # Returned by #schedule when scheduling succeeded.
+  # Returned by #delay when scheduling succeeded.
   Scheduled       = type { fields! execution_plan_id: String }
   # Returned by #trigger when planning is successful, #future will resolve after
   # ExecutionPlan is executed.
@@ -273,19 +273,19 @@ end
 #### Scheduling
 
 Scheduling an action means setting it up to be triggered at set time in future.
-Any action can be scheduled by calling:
+Any action can be delayed by calling:
 
 ```ruby
-world_instance.schedule(AnAction,
-                        { start_at: Time.now + 360, start_before: Time.now + 400 },
-                        *args)
+world_instance.delay(AnAction,
+                     { start_at: Time.now + 360, start_before: Time.now + 400 },
+                     *args)
 ```
 
-This snippet of code would schedule `AnAction` with arguments `args` to be executed
+This snippet of code would delay `AnAction` with arguments `args` to be executed
 in the time interval between `start_at` and `start_before`. Setting `start_before` to `nil`
-would schedule this action without the timeout limit.
+would delay execution of this action without the timeout limit.
 
-When an action is scheduled, an execution plan object is created with state set
+When an action is delayed, an execution plan object is created with state set
 to `scheduled`, but it doesn't run the the plan phase yet, the planning happens
 when the `start_at` time comes. If the planning doesn't happen in time
 (e.g. after `start_before`), the execution plan is marked as failed
@@ -293,12 +293,12 @@ when the `start_at` time comes. If the planning doesn't happen in time
 
 Since the `args` have to be saved, there must be a mechanism to safely serialize and deserialize them
 in order to make them survive being saved in a database. This is handled by a serializer.
-Different serializers can be set per action by overriding its `schedule` method.
+Different serializers can be set per action by overriding its `delay` method.
 
-Planning of the scheduled plans is handled by `Scheduler`, an object which
-periodically checks for scheduled execution plans and plans them. Scheduled execution
-plans don't do anything by themselves, they just wait to be picked up and planned by a Scheduler.
-It means that if no scheduler is present, their planning will be delayed until a scheduler
+Planning of the delayed plans is handled by `DelayedExecutor`, an object which
+periodically checks for delayed execution plans and plans them. Scheduled execution
+plans don't do anything by themselves, they just wait to be picked up and planned by a DelayedExecutor.
+It means that if no DelayedExecutor is present, their planning will be delayed until a scheduler
 is spawned.
 
 #### Plan phase
@@ -1015,7 +1015,7 @@ client worlds: useful in production, see [develpment vs. production](#developmen
 client requests and other worlds
 1. **executor dispatcher** - responsible for getting requests from
 other worlds and sending the responses
-1. **scheduler** - responsible for planning and exectuion of scheduled tasks
+1. **delayed executor** - responsible for planning and exectuion of scheduled tasks
 
 {% plantuml %}
 

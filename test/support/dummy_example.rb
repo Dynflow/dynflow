@@ -19,8 +19,8 @@ module Support
       end
     end
 
-    class DummyCustomScheduleSerializer < Dynflow::Action
-      def schedule(schedule_options, *args)
+    class DummyCustomDelaySerializer < Dynflow::Action
+      def delay(delay_options, *args)
         MySerializer.new(args)
       end
       def run; end

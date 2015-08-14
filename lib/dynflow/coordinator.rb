@@ -157,10 +157,10 @@ module Dynflow
 
     end
 
-    class SchedulerLock < LockByWorld
+    class DelayedExecutorLock < LockByWorld
       def initialize(world)
         super
-        @data[:id] = "scheduler"
+        @data[:id] = "delayed-executor"
       end
     end
 

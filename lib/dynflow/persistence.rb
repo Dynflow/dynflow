@@ -49,24 +49,24 @@ module Dynflow
       adapter.save_execution_plan(execution_plan.id, execution_plan.to_hash)
     end
 
-    def find_past_scheduled_plans(time)
-      adapter.find_past_scheduled_plans(time).map do |plan|
-        ScheduledPlan.new_from_hash(@world, plan)
+    def find_past_delayed_plans(time)
+      adapter.find_past_delayed_plans(time).map do |plan|
+        DelayedPlan.new_from_hash(@world, plan)
       end
     end
 
-    def delete_scheduled_plans(filters, batch_size = 1000)
-      adapter.delete_scheduled_plans(filters, batch_size)
+    def delete_delayed_plans(filters, batch_size = 1000)
+      adapter.delete_delayed_plans(filters, batch_size)
     end
 
-    def save_scheduled_plan(schedule)
-      adapter.save_scheduled_plan(schedule.execution_plan_uuid, schedule.to_hash)
+    def save_delayed_plan(delayed_plan)
+      adapter.save_delayed_plan(delayed_plan.execution_plan_uuid, delayed_plan.to_hash)
     end
 
-    def load_scheduled_plan(execution_plan_id)
-      hash = adapter.load_scheduled_plan(execution_plan_id)
+    def load_delayed_plan(execution_plan_id)
+      hash = adapter.load_delayed_plan(execution_plan_id)
       return nil unless hash
-      ScheduledPlan.new_from_hash(@world, hash)
+      DelayedPlan.new_from_hash(@world, hash)
     end
 
     def load_step(execution_plan_id, step_id, world)

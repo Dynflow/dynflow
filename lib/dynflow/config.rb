@@ -93,10 +93,10 @@ module Dynflow
       true
     end
 
-    config_attr :scheduler, Schedulers::Abstract, NilClass do |world|
+    config_attr :delayed_executor, DelayedExecutors::Abstract, NilClass do |world|
       options = { :poll_interval => 15,
                   :time_source => -> { Time.now.utc } }
-      Schedulers::Polling.new(world, options)
+      DelayedExecutors::Polling.new(world, options)
     end
 
     config_attr :action_classes do

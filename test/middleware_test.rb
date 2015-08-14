@@ -12,13 +12,13 @@ module Dynflow
       end
 
       it "wraps the action method calls" do
-        schedule = world.schedule(Support::MiddlewareExample::LoggingAction, { :start_at => Time.now.utc - 60 }, {})
-        plan = world.persistence.load_scheduled_plan schedule.execution_plan_id
+        delay = world.delay(Support::MiddlewareExample::LoggingAction, { :start_at => Time.now.utc - 60 }, {})
+        plan = world.persistence.load_delayed_plan delay.execution_plan_id
         plan.plan
         plan.execute.wait
-        log.must_equal %w[LogMiddleware::before_schedule
-                          schedule
-                          LogMiddleware::after_schedule
+        log.must_equal %w[LogMiddleware::before_delay
+                          delay
+                          LogMiddleware::after_delay
                           LogMiddleware::before_plan_phase
                           LogMiddleware::before_plan
                           plan

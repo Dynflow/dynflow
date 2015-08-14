@@ -7,7 +7,7 @@ module Dynflow
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
         :transaction_adapter, :logger_adapter, :coordinator,
         :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock, :meta, :scheduler, :auto_validity_check, :validity_check_timeout
+        :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout
 
     def initialize(config)
       @id                     = SecureRandom.uuid
@@ -35,9 +35,9 @@ module Dynflow
         executor.initialized.wait
       end
       self.worlds_validity_check if auto_validity_check
-      @scheduler            = try_spawn_scheduler(config_for_world)
-      @meta                 = config_for_world.meta
-      @meta['scheduler']    = true if @scheduler
+      @delayed_executor         = try_spawn_delayed_executor(config_for_world)
+      @meta                     = config_for_world.meta
+      @meta['delayed_executor'] = true if @delayed_executor
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new
@@ -49,7 +49,7 @@ module Dynflow
         end
       end
       self.auto_execute if config_for_world.auto_execute
-      @scheduler.start if @scheduler
+      @delayed_executor.start if @delayed_executor
     end
 
     def before_termination(&block)
@@ -146,10 +146,10 @@ module Dynflow
       end
     end
 
-    def schedule(action_class, schedule_options, *args)
+    def delay(action_class, delay_options, *args)
       raise 'No action_class given' if action_class.nil?
       execution_plan = ExecutionPlan.new self
-      execution_plan.schedule(action_class, schedule_options, *args)
+      execution_plan.delay(action_class, delay_options, *args)
       Scheduled[execution_plan.id]
     end
 
@@ -199,9 +199,9 @@ module Dynflow
           begin
             run_before_termination_hooks
 
-            if scheduler
-              logger.info "start terminating scheduler..."
-              scheduler.terminate.wait
+            if delayed_executor
+              logger.info "start terminating delayed_executor..."
+              delayed_executor.terminate.wait
             end
 
             if executor
@@ -337,10 +337,10 @@ module Dynflow
       end
     end
 
-    def try_spawn_scheduler(config_for_world)
-      return nil if !executor || config_for_world.scheduler.nil?
-      coordinator.acquire(Coordinator::SchedulerLock.new(self))
-      config_for_world.scheduler
+    def try_spawn_delayed_executor(config_for_world)
+      return nil if !executor || config_for_world.delayed_executor.nil?
+      coordinator.acquire(Coordinator::DelayedExecutorLock.new(self))
+      config_for_world.delayed_executor
     rescue Coordinator::LockError => e
       nil
     end

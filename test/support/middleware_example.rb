@@ -14,10 +14,10 @@ module Support
         LogMiddleware.log << "#{self.class.name[/\w+$/]}::#{message}"
       end
 
-      def schedule(*args)
-        log 'before_schedule'
+      def delay(*args)
+        log 'before_delay'
         pass *args
-        log 'after_schedule'
+        log 'after_delay'
       end
 
       def plan(args)
@@ -78,8 +78,8 @@ module Support
         LogMiddleware.log << message
       end
 
-      def schedule(schedule_options, *args)
-        log 'schedule'
+      def delay(delay_options, *args)
+        log 'delay'
         Dynflow::Serializers::Noop.new(args)
       end
 
