@@ -20,16 +20,16 @@ module Dynflow
           filters = params[:filters]
         elsif supported_filter?('state')
           excluded_states = show_all ? [] : ['stopped']
-          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - excluded_states }          
+          filters = { 'state' => ExecutionPlan.states.map(&:to_s) - excluded_states }
         else
           filters = {}
         end
-        @filtering_options = { filters: filters }.with_indifferent_access
+        @filtering_options = Utils.indifferent_hash(filters: filters)
         return @filtering_options
       end
 
       def find_execution_plans_options(show_all = false)
-        options = HashWithIndifferentAccess.new
+        options = Utils.indifferent_hash({})
         options.merge!(filtering_options(show_all))
         options.merge!(pagination_options)
         options.merge!(ordering_options)

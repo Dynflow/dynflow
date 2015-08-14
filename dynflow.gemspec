@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 1.9.3'
 
-  s.add_dependency "activesupport"
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
   s.add_dependency "algebrick", '~> 0.7.0'

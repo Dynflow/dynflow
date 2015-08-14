@@ -49,7 +49,7 @@ module Dynflow
         Match! action.phase, Action::Plan
         Match! action.state, :success
         action.execution_plan.planned_run_steps.must_include action
-        action.input.must_equal input.stringify_keys if input
+        action.input.must_equal Utils.stringify_keys(input) if input
         block.call action.input if block
       end
 

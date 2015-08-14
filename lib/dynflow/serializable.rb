@@ -27,7 +27,7 @@ module Dynflow
     end
 
     def self.constantize(action_name)
-      action_name.constantize
+      Utils.constantize(action_name)
     end
 
     private_class_method :check_class_matching, :check_class_key_present

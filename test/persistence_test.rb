@@ -148,7 +148,7 @@ module Dynflow
             prepare_action('plan1')
             loaded_action = adapter.load_action('plan1', action_id)
             loaded_action[:id].must_equal action_id
-            loaded_action.must_equal(action_data.stringify_keys)
+            loaded_action.must_equal(Utils.stringify_keys(action_data))
 
             adapter.save_action('plan1', action_id, nil)
             -> { adapter.load_action('plan1', action_id) }.must_raise KeyError
@@ -164,7 +164,7 @@ module Dynflow
             prepare_step('plan1')
             loaded_step = adapter.load_step('plan1', step_id)
             loaded_step[:id].must_equal step_id
-            loaded_step.must_equal(step_data.stringify_keys)
+            loaded_step.must_equal(Utils.stringify_keys(step_data))
           end
         end
       end
@@ -189,7 +189,7 @@ module Dynflow
         it "supports connector's needs for exchaning envelopes" do
           client_world_id   = '5678'
           executor_world_id = '1234'
-          envelope_hash = ->(envelope) { Dynflow.serializer.dump(envelope).with_indifferent_access }
+          envelope_hash = ->(envelope) { Dynflow::Utils.indifferent_hash(Dynflow.serializer.dump(envelope)) }
           executor_envelope = envelope_hash.call(Dispatcher::Envelope[123, client_world_id, executor_world_id, Dispatcher::Execution['111']])
           client_envelope   = envelope_hash.call(Dispatcher::Envelope[123, executor_world_id, client_world_id, Dispatcher::Accepted])
           envelopes         = [client_envelope, executor_envelope]

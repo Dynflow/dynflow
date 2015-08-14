@@ -41,7 +41,7 @@ module Dynflow
 
       def initialize(*args)
         @data ||= {}
-        @data = @data.merge(class: self.class.name).with_indifferent_access
+        @data = Utils.indifferent_hash(@data.merge(class: self.class.name))
       end
 
       def from_hash(hash)
