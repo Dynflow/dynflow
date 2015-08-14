@@ -55,19 +55,19 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def find_past_scheduled_plans(options = {})
+      def find_past_delayed_plans(options = {})
         raise NotImplementedError
       end
 
-      def delete_scheduled_plans(filters, batch_size = 1000)
+      def delete_delayed_plans(filters, batch_size = 1000)
         raise NotImplementedError
       end
 
-      def load_scheduled_plan(execution_plan_id)
+      def load_delayed_plan(execution_plan_id)
         raise NotImplementedError
       end
 
-      def save_scheduled_plan(execution_plan_id, value)
+      def save_delayed_plan(execution_plan_id, value)
         raise NotImplementedError
       end
 

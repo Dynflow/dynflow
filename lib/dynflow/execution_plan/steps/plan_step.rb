@@ -35,8 +35,8 @@ module Dynflow
         super.merge recursive_to_hash(:children => children)
       end
 
-      def schedule(schedule_options, args)
-        @action.execute_schedule(schedule_options, *args)
+      def delay(delay_options, args)
+        @action.execute_delay(delay_options, *args)
         @action.serializer
       ensure
         save

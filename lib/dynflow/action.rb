@@ -280,10 +280,10 @@ module Dynflow
       recursion.(input)
     end
 
-    def execute_schedule(schedule_options, *args)
+    def execute_delay(delay_options, *args)
       with_error_handling(true) do
-        world.middleware.execute(:schedule, self, schedule_options, *args) do
-          @serializer = schedule(schedule_options, *args).tap do |serializer|
+        world.middleware.execute(:delay, self, delay_options, *args) do
+          @serializer = delay(delay_options, *args).tap do |serializer|
             serializer.perform_serialization!
           end
         end
@@ -291,7 +291,7 @@ module Dynflow
     end
 
     def serializer
-      raise "The action must be scheduled in order to access the serializer" if @serializer.nil?
+      raise "The action must be delayed in order to access the serializer" if @serializer.nil?
       @serializer
     end
 
@@ -311,7 +311,7 @@ module Dynflow
       @step.save
     end
 
-    def schedule(schedule_options, *args)
+    def delay(delay_options, *args)
       Serializers::Noop.new(args)
     end
 

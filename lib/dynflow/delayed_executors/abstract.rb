@@ -1,5 +1,5 @@
 module Dynflow
-  module Schedulers
+  module DelayedExecutors
     class Abstract
 
       attr_reader :core
@@ -26,7 +26,7 @@ module Dynflow
 
       def spawn
         Concurrent.future.tap do |initialized|
-          @core = core_class.spawn name: 'scheduler',
+          @core = core_class.spawn name: 'delayed-executor',
                                    args: [@world, @options],
                                    initialized: initialized
         end

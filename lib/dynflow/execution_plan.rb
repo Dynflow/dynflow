@@ -152,23 +152,23 @@ module Dynflow
       @last_step_id += 1
     end
 
-    def schedule(action_class, schedule_options, *args)
+    def delay(action_class, delay_options, *args)
       save
       @root_plan_step = add_scheduling_step(action_class)
-      execution_history.add("schedule", @world.id)
-      serializer = root_plan_step.schedule(schedule_options, args)
-      scheduled_plan = ScheduledPlan.new(@world,
+      execution_history.add("delay", @world.id)
+      serializer = root_plan_step.delay(delay_options, args)
+      delayed_plan = DelayedPlan.new(@world,
                                          id,
-                                         schedule_options[:start_at],
-                                         schedule_options.fetch(:start_before, nil),
+                                         delay_options[:start_at],
+                                         delay_options.fetch(:start_before, nil),
                                          serializer)
-      persistence.save_scheduled_plan(scheduled_plan)
+      persistence.save_delayed_plan(delayed_plan)
     ensure
       update_state(error? ? :stopped : :scheduled)
     end
 
-    def schedule_record
-      @schedule_record ||= persistence.load_scheduled_plan(id)
+    def delay_record
+      @delay_record ||= persistence.load_delayed_plan(id)
     end
 
     def prepare(action_class, options = {})
@@ -208,7 +208,7 @@ module Dynflow
     # array with the future value of the cancel result)
     def cancel
       if state == :scheduled
-        [Concurrent.future.tap { |f| f.success schedule_record.cancel }]
+        [Concurrent.future.tap { |f| f.success delay_record.cancel }]
       else
         steps_to_cancel.map do |step|
           world.event(id, step.id, ::Dynflow::Action::Cancellable::Cancel)
