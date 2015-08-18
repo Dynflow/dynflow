@@ -111,6 +111,22 @@ module Support
       end
     end
 
+    class AnotherObservingMiddleware < ObservingMiddleware
+
+      def delay(*args)
+        pass(*args).tap do
+          log("delay#set-input:#{action.world.id}")
+          action.input[:message] = action.world.id
+        end
+      end
+
+      def plan(*args)
+        log("plan#input:#{action.input[:message]}")
+        pass(*args)
+      end
+
+    end
+
     class Action < Dynflow::Action
       middleware.use LogRunMiddleware
 

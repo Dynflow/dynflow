@@ -37,6 +37,7 @@ module Dynflow
 
       def delay(delay_options, args)
         @action.execute_delay(delay_options, *args)
+        persistence.save_action(execution_plan_id, @action)
         @action.serializer
       ensure
         save

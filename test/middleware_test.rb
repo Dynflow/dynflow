@@ -110,6 +110,21 @@ module Dynflow
                           run
                           output#message:finished]
       end
+
+      it "allows modification of the running action when delaying execution" do
+        world = WorldFactory.create_world
+        world.middleware.use(Support::MiddlewareExample::AnotherObservingMiddleware,
+                             replace: Support::MiddlewareExample::LogRunMiddleware)
+        delay = world.delay(Support::MiddlewareExample::Action, { :start_at => Time.now - 60 })
+        plan = world.persistence.load_delayed_plan delay.execution_plan_id
+        plan.plan
+        plan.execute.wait
+        log.must_equal ["delay#set-input:#{world.id}",
+                        "plan#input:#{world.id}",
+                        "input#message:#{world.id}",
+                        'run',
+                        'output#message:finished']
+      end
     end
   end
 end
