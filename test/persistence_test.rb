@@ -8,7 +8,8 @@ module Dynflow
       let :execution_plans_data do
         [{ id: 'plan1', state: 'paused' },
          { id: 'plan2', state: 'stopped' },
-         { id: 'plan3', state: 'paused' }]
+         { id: 'plan3', state: 'paused' },
+         { id: 'plan4', state: 'paused' }]
       end
 
       let :action_data do
@@ -132,7 +133,7 @@ module Dynflow
             adapter.load_step('plan2', step_data[:id])
 
             prepare_plans_with_steps
-            adapter.delete_execution_plans('state' => 'paused').must_equal 2
+            adapter.delete_execution_plans('state' => 'paused').must_equal 3
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
             adapter.load_execution_plan('plan2') # nothing raised
             -> { adapter.load_execution_plan('plan3') }.must_raise KeyError
@@ -165,6 +166,21 @@ module Dynflow
             loaded_step = adapter.load_step('plan1', step_id)
             loaded_step[:id].must_equal step_id
             loaded_step.must_equal(Utils.stringify_keys(step_data))
+          end
+        end
+
+        describe '#find_past_delayed_plans' do
+          it 'finds plans with start_before in past' do
+            start_time = Time.now
+            prepare_plans
+            fmt =->(time) { time.strftime('%Y-%m-%d %H:%M:%S') }
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :start_at => fmt.call(start_time + 60), :start_before => fmt.call(start_time - 60))
+            adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :start_at => fmt.call(start_time - 60))
+            adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :start_at => fmt.call(start_time + 60))
+            adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :start_at => fmt.call(start_time - 60), :start_before => fmt.call(start_time - 60))
+            plans = adapter.find_past_delayed_plans(start_time)
+            plans.length.must_equal 3
+            plans.map { |plan| plan[:execution_plan_uuid] }.must_equal %w(plan2 plan4 plan1)
           end
         end
       end

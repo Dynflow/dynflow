@@ -93,7 +93,7 @@ module Dynflow
 
       def find_past_delayed_plans(time)
         table(:delayed)
-          .where('start_at <= ?', time)
+          .where('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time)
           .order_by(:start_at)
           .all
           .map { |plan| load_data(plan) }
