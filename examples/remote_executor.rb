@@ -91,7 +91,7 @@ if $0 == __FILE__
     puts <<MSG
 The observer starting…. You can see what's going on there
 MSG
-   RemoteExecutorExample.run_observer
+    RemoteExecutorExample.run_observer
   when 'server'
     puts <<MSG
 The server is starting…. You can send the work to it by running:
@@ -99,7 +99,7 @@ The server is starting…. You can send the work to it by running:
    #{$0} client
 
 MSG
-   RemoteExecutorExample.run_server
+    RemoteExecutorExample.run_server
   when 'client'
     RemoteExecutorExample.run_client
   else

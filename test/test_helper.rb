@@ -12,13 +12,17 @@ $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
 
 require 'dynflow'
 require 'dynflow/testing'
-begin require 'pry'; rescue LoadError; nil end
-
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'
 require 'support/dummy_example'
 require 'support/test_execution_log'
+
+begin
+  require 'pry'
+rescue LoadError
+  puts "Pry not installed. Skipping."
+end
 
 Concurrent.disable_at_exit_handlers!
 

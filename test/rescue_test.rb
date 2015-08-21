@@ -123,27 +123,27 @@ module Dynflow
 
         describe 'of plan with skips' do
 
-           let :execution_plan do
-             execute(Example::ComplexActionWithSkip, :error_on_run)
-           end
+          let :execution_plan do
+            execute(Example::ComplexActionWithSkip, :error_on_run)
+          end
 
-           it 'skips the action and continues automatically' do
-             execution_plan.state.must_equal :stopped
-             execution_plan.result.must_equal :warning
-           end
+          it 'skips the action and continues automatically' do
+            execution_plan.state.must_equal :stopped
+            execution_plan.result.must_equal :warning
+          end
 
         end
 
         describe 'of plan faild on auto-rescue' do
 
-           let :execution_plan do
-             execute(Example::ActionWithSkip, 1, :error_on_skip)
-           end
+          let :execution_plan do
+            execute(Example::ActionWithSkip, 1, :error_on_skip)
+          end
 
-           it 'tryied to rescue only once' do
-             execution_plan.state.must_equal :paused
-             execution_plan.result.must_equal :error
-           end
+          it 'tryied to rescue only once' do
+            execution_plan.state.must_equal :paused
+            execution_plan.result.must_equal :error
+          end
 
         end
 
@@ -153,10 +153,10 @@ module Dynflow
              execute(Example::ComplexActionWithoutSkip, :error_on_run)
            end
 
-           it 'skips the action and continues automatically' do
-             execution_plan.state.must_equal :paused
-             execution_plan.result.must_equal :error
-           end
+          it 'skips the action and continues automatically' do
+            execution_plan.state.must_equal :paused
+            execution_plan.result.must_equal :error
+          end
 
         end
 

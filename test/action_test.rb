@@ -445,21 +445,21 @@ module Dynflow
       end
 
       describe 'cancelling' do
-        include TestHelpers
+       include TestHelpers
 
-        it "sends the cancel event to all actions that are running and support cancelling" do
-          triggered_plan = world.trigger(ParentAction, count: 2, suspend: true)
-          plan = wait_for do
-            plan = world.persistence.load_execution_plan(triggered_plan.id)
-            if plan.cancellable?
-              plan
-            end
-          end
-          plan.cancel
-          triggered_plan.finished.wait
-          triggered_plan.finished.value.state.must_equal :stopped
-          triggered_plan.finished.value.result.must_equal :success
-        end
+       it "sends the cancel event to all actions that are running and support cancelling" do
+         triggered_plan = world.trigger(ParentAction, count: 2, suspend: true)
+         plan = wait_for do
+           plan = world.persistence.load_execution_plan(triggered_plan.id)
+           if plan.cancellable?
+             plan
+           end
+         end
+         plan.cancel
+         triggered_plan.finished.wait
+         triggered_plan.finished.value.state.must_equal :stopped
+         triggered_plan.finished.value.result.must_equal :success
+       end
      end
     end
   end

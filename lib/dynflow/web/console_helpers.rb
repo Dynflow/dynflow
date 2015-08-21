@@ -17,7 +17,7 @@ module Dynflow
         value = prettyprint_references(value)
         if value
           pretty_value = prettify_value(value)
-            <<-HTML
+          <<-HTML
               <pre class="prettyprint lang-yaml">#{h(pretty_value)}</pre>
             HTML
         else
@@ -68,7 +68,7 @@ module Dynflow
       def show_action_data(label, value)
         value_html = prettyprint(value)
         if !value_html.empty?
-            <<-HTML
+          <<-HTML
               <p>
                 <b>#{h(label)}</b>
             #{value_html}

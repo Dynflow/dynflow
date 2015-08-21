@@ -17,3 +17,7 @@ end
 group :mysql do
   gem "mysql2"
 end
+
+group :lint do
+  gem 'rubocop', '0.33.0'
+end
