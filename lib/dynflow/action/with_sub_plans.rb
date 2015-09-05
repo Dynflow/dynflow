@@ -17,8 +17,8 @@ module Dynflow
                end
              end),
             (on SubPlanFinished do
-              mark_as_done(event.execution_plan_id, event.success)
-              try_to_finish or suspend
+               mark_as_done(event.execution_plan_id, event.success)
+               try_to_finish or suspend
              end),
             (on Action::Cancellable::Cancel do
                cancel!
