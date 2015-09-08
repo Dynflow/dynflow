@@ -20,19 +20,19 @@ module Dynflow
       end
 
       def perform_serialization!
-        @serialized_args = serialize
+        @serialized_args = args.map { |arg| serialize arg }
       end
 
       def perform_deserialization!
         raise "@serialized_args not set" if @serialized_args.nil?
-        @args = deserialize
+        @args = serialized_args.map { |arg| deserialize arg }
       end
 
-      def serialize
+      def serialize(arg)
         raise NotImplementedError
       end
 
-      def deserialize
+      def deserialize(arg)
         raise NotImplementedError
       end
 
