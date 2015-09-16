@@ -1,11 +1,9 @@
 require 'bundler/setup'
+require 'minitest/reporters'
 require 'minitest/autorun'
 require 'minitest/spec'
 
-if ENV['RM_INFO']
-  require 'minitest/reporters'
-  MiniTest::Reporters.use!
-end
+MiniTest::Reporters.use! if ENV['RM_INFO']
 
 load_path = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path

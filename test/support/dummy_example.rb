@@ -6,16 +6,10 @@ module Support
       def run; end
     end
 
-    class MySerializer < Dynflow::Serializers::Abstract
-      def serialize
-        if args.first == :fail
-          raise 'Enforced serializer failure'
-        end
-        args
-      end
-
-      def deserialize
-        serialized_args
+    class MySerializer < Dynflow::Serializers::Noop
+      def serialize(arg)
+        raise 'Enforced serializer failure' if arg == :fail
+        super arg
       end
     end
 
