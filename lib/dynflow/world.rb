@@ -34,7 +34,10 @@ module Dynflow
         @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self)
         executor.initialized.wait
       end
-      self.worlds_validity_check if auto_validity_check
+      if auto_validity_check
+        self.worlds_validity_check
+        self.locks_validity_check
+      end
       @delayed_executor         = try_spawn_delayed_executor(config_for_world)
       @meta                     = config_for_world.meta
       @meta['delayed_executor'] = true if @delayed_executor
@@ -229,7 +232,6 @@ module Dynflow
               clock.ask(:terminate!).wait
             end
 
-            coordinator.release_by_owner("world:#{registered_world.id}")
             coordinator.delete_world(registered_world)
             true
           rescue => e
@@ -325,6 +327,16 @@ module Dynflow
       end
 
       return results
+    end
+
+    def locks_validity_check
+      orphaned_locks = coordinator.clean_orphaned_locks
+
+      unless orphaned_locks.empty?
+        logger.error "invalid coordinator locks found and invalidated: #{orphaned_locks.inspect}"
+      end
+
+      return orphaned_locks
     end
 
     # executes plans that are planned/paused and haven't reported any error yet (usually when no executor

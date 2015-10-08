@@ -155,6 +155,17 @@ module Dynflow
         @data[:world_id]
       end
 
+      def self.valid_owner_ids(coordinator)
+        coordinator.find_worlds.map { |w| "world:#{w.id}" }
+      end
+
+      def self.valid_classes
+        @valid_classes ||= []
+      end
+
+      def self.inherited(klass)
+        valid_classes << klass
+      end
     end
 
     class DelayedExecutorLock < LockByWorld
@@ -277,6 +288,7 @@ module Dynflow
 
     def delete_world(world)
       Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
+      release_by_owner("world:#{world.id}")
       delete_record(world)
     end
 
@@ -284,6 +296,25 @@ module Dynflow
       Type! world, Coordinator::ExecutorWorld
       world.active = false
       update_record(world)
+    end
+
+    def clean_orphaned_locks
+      cleanup_classes = [LockByWorld]
+      ret = []
+      cleanup_classes.each do |cleanup_class|
+        valid_owner_ids = cleanup_class.valid_owner_ids(self)
+        valid_classes = cleanup_class.valid_classes.map(&:name)
+        orphaned_locks = find_locks(class: valid_classes, exclude_owner_id: valid_owner_ids)
+        # reloading the valid owner ids to avoid race conditions
+        valid_owner_ids = cleanup_class.valid_owner_ids(self)
+        orphaned_locks.each do |lock|
+          unless valid_owner_ids.include?(lock.owner_id)
+            release(lock)
+            ret << lock
+          end
+        end
+      end
+      return ret
     end
   end
 end

@@ -88,6 +88,7 @@ module WorldFactory
     config.coordinator_adapter = coordinator_adapter
     config.delayed_executor    = nil
     config.auto_rescue         = false
+    config.auto_validity_check = false
     config.exit_on_terminate   = false
     config.auto_execute        = false
     config.auto_terminate      = false
@@ -138,13 +139,14 @@ module TestHelpers
   # allows to create the world inside the tests, using the `connector`
   # and `persistence adapter` from the test context: usefull to create
   # multi-world topology for a signle test
-  def create_world(with_executor = true)
+  def create_world(with_executor = true, &block)
     WorldFactory.create_world do |config|
       config.connector = connector
       config.persistence_adapter = persistence_adapter
       unless with_executor
         config.executor = false
       end
+      block.call(config) if block
     end
   end
 

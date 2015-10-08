@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 require_relative 'test_helper'
+require 'ostruct'
 
 module Dynflow
   module ConsistencyCheckTest
@@ -35,8 +36,8 @@ module Dynflow
       let(:persistence_adapter) { WorldFactory.persistence_adapter }
       let(:shared_connector) { Connectors::Direct.new }
       let(:connector) { Proc.new { |world| shared_connector.start_listening(world); shared_connector } }
-      let(:executor_world) { create_world(true) }
-      let(:executor_world_2) { create_world(true) }
+      let(:executor_world) { create_world(true) { |config| config.auto_validity_check = true } }
+      let(:executor_world_2) { create_world(true) { |config| config.auto_validity_check = true } }
       let(:client_world) { create_world(false) }
       let(:client_world_2) { create_world(false) }
 
@@ -176,8 +177,11 @@ module Dynflow
           end
 
           it 'by default, the auto_validity_check is enabled only for executor words' do
-            create_world(false).auto_validity_check.must_equal false
-            create_world(true).auto_validity_check.must_equal true
+            client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world )
+            client_world_config.auto_validity_check.must_equal false
+
+            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = lambda { |w, _| Executors::Parallel.new(w) } }, create_world )
+            executor_world_config.auto_validity_check.must_equal true
           end
 
           it 'reports the validation status' do
@@ -210,6 +214,43 @@ module Dynflow
         end
       end
 
+      describe '#coordinator_validity_check' do
+        describe 'the auto_validity_check is enabled' do
+          let :world_with_auto_validity_check do
+            create_world do |config|
+              config.auto_validity_check = true
+            end
+          end
+
+          let(:invalid_lock) { Coordinator::DelayedExecutorLock.new(OpenStruct.new(:id => 'invalid-world-id')) }
+          let(:valid_lock) { Coordinator::AutoExecuteLock.new(client_world) }
+
+          def current_locks
+            client_world.coordinator.find_locks(id: [valid_lock.id, invalid_lock.id])
+          end
+
+          before do
+            client_world.coordinator.acquire(valid_lock)
+            client_world.coordinator.acquire(invalid_lock)
+            current_locks.must_include(valid_lock)
+            current_locks.must_include(invalid_lock)
+          end
+
+          it 'performs the validity check on world creation if auto_validity_check enabled' do
+            world_with_auto_validity_check
+            current_locks.must_include(valid_lock)
+            current_locks.wont_include(invalid_lock)
+          end
+
+          it 'performs the validity check on world creation if auto_validity_check enabled' do
+            invalid_locks = client_world.locks_validity_check
+            current_locks.must_include(valid_lock)
+            current_locks.wont_include(invalid_lock)
+            invalid_locks.must_include(invalid_lock)
+            invalid_locks.wont_include(valid_lock)
+          end
+        end
+      end
     end
   end
 end

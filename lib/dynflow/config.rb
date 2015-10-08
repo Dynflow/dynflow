@@ -77,7 +77,7 @@ module Dynflow
       !!config.executor
     end
 
-    config_attr :validity_check_timeout, Fixnum do
+    config_attr :validity_check_timeout, Numeric do
       5
     end
 
