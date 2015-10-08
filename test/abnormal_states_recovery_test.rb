@@ -35,8 +35,8 @@ module Dynflow
       let(:persistence_adapter) { WorldFactory.persistence_adapter }
       let(:shared_connector) { Connectors::Direct.new }
       let(:connector) { Proc.new { |world| shared_connector.start_listening(world); shared_connector } }
-      let(:executor_world) { create_world(true) }
-      let(:executor_world_2) { create_world(true) }
+      let(:executor_world) { create_world(true) { |config| config.auto_validity_check = true } }
+      let(:executor_world_2) { create_world(true) { |config| config.auto_validity_check = true } }
       let(:client_world) { create_world(false) }
       let(:client_world_2) { create_world(false) }
 
@@ -176,8 +176,11 @@ module Dynflow
           end
 
           it 'by default, the auto_validity_check is enabled only for executor words' do
-            create_world(false).auto_validity_check.must_equal false
-            create_world(true).auto_validity_check.must_equal true
+            client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world )
+            client_world_config.auto_validity_check.must_equal false
+
+            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = lambda { |w, _| Executors::Parallel.new(w) } }, create_world )
+            executor_world_config.auto_validity_check.must_equal true
           end
 
           it 'reports the validation status' do

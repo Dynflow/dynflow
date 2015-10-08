@@ -277,6 +277,7 @@ module Dynflow
 
     def delete_world(world)
       Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
+      release_by_owner("world:#{world.id}")
       delete_record(world)
     end
 

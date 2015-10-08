@@ -229,7 +229,6 @@ module Dynflow
               clock.ask(:terminate!).wait
             end
 
-            coordinator.release_by_owner("world:#{registered_world.id}")
             coordinator.delete_world(registered_world)
             true
           rescue => e
