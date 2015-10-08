@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 require_relative 'test_helper'
+require 'ostruct'
 
 module Dynflow
   module ConsistencyCheckTest
@@ -213,6 +214,43 @@ module Dynflow
         end
       end
 
+      describe '#coordinator_validity_check' do
+        describe 'the auto_validity_check is enabled' do
+          let :world_with_auto_validity_check do
+            create_world do |config|
+              config.auto_validity_check = true
+            end
+          end
+
+          let(:invalid_lock) { Coordinator::DelayedExecutorLock.new(OpenStruct.new(:id => 'invalid-world-id')) }
+          let(:valid_lock) { Coordinator::AutoExecuteLock.new(client_world) }
+
+          def current_locks
+            client_world.coordinator.find_locks(id: [valid_lock.id, invalid_lock.id])
+          end
+
+          before do
+            client_world.coordinator.acquire(valid_lock)
+            client_world.coordinator.acquire(invalid_lock)
+            current_locks.must_include(valid_lock)
+            current_locks.must_include(invalid_lock)
+          end
+
+          it 'performs the validity check on world creation if auto_validity_check enabled' do
+            world_with_auto_validity_check
+            current_locks.must_include(valid_lock)
+            current_locks.wont_include(invalid_lock)
+          end
+
+          it 'performs the validity check on world creation if auto_validity_check enabled' do
+            invalid_locks = client_world.locks_validity_check
+            current_locks.must_include(valid_lock)
+            current_locks.wont_include(invalid_lock)
+            invalid_locks.must_include(invalid_lock)
+            invalid_locks.wont_include(valid_lock)
+          end
+        end
+      end
     end
   end
 end

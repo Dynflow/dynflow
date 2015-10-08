@@ -177,7 +177,12 @@ module Dynflow
       def find_coordinator_records(options)
         coordinator_feature!
         options = options.dup
-        data_set = filter(:coordinator_record, table(:coordinator_record), options[:filters])
+        filters = (options[:filters] || {}).dup
+        exclude_owner_id = filters.delete(:exclude_owner_id)
+        data_set = filter(:coordinator_record, table(:coordinator_record), filters)
+        if exclude_owner_id
+          data_set = data_set.exclude(:owner_id => exclude_owner_id)
+        end
         data_set.map { |record| load_data(record) }
       end
 
