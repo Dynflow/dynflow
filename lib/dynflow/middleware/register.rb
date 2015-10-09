@@ -22,6 +22,10 @@ module Dynflow
       end
     end
 
+    def do_not_use(middleware_class)
+      use nil, :replace => middleware_class
+    end
+
     def merge!(register)
       Type! register, Middleware::Register
       register.rules.each do |klass, rules|

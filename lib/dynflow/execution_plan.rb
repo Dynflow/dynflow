@@ -182,22 +182,18 @@ module Dynflow
 
     def plan(*args)
       update_state(:planning)
-      world.transaction_adapter.transaction do
-        world.middleware.execute(:plan_phase, root_plan_step.action_class) do
-          with_planning_scope do
-            root_plan_step.execute(self, nil, false, *args)
+      world.middleware.execute(:plan_phase, root_plan_step.action_class, self) do
+        with_planning_scope do
+          root_plan_step.execute(self, nil, false, *args)
 
-            if @dependency_graph.unresolved?
-              raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
-            end
+          if @dependency_graph.unresolved?
+            raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
           end
         end
+      end
 
-        if @run_flow.size == 1
-          @run_flow = @run_flow.sub_flows.first
-        end
-
-        world.transaction_adapter.rollback if error?
+      if @run_flow.size == 1
+        @run_flow = @run_flow.sub_flows.first
       end
       steps.values.each(&:save)
       update_state(error? ? :stopped : :planned)
