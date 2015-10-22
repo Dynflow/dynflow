@@ -282,8 +282,8 @@ module Dynflow
 
     def execute_delay(delay_options, *args)
       with_error_handling(true) do
-        world.middleware.execute(:delay, self, delay_options, *args) do
-          @serializer = delay(delay_options, *args).tap do |serializer|
+        world.middleware.execute(:delay, self, delay_options, *args) do |*new_args|
+          @serializer = delay(*new_args).tap do |serializer|
             serializer.perform_serialization!
           end
         end
