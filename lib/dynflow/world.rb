@@ -24,6 +24,7 @@ module Dynflow
       @exit_on_terminate      = config_for_world.exit_on_terminate
       @connector              = config_for_world.connector
       @middleware             = Middleware::World.new
+      @middleware.use Middleware::Common::Transaction if @transaction_adapter
       @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
       @meta                   = config_for_world.meta
       @auto_validity_check    = config_for_world.auto_validity_check

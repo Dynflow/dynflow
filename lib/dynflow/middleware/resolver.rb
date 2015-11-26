@@ -48,7 +48,7 @@ module Dynflow
         middleware_deps.reject! { |dep| !deps.has_key?(dep) }
       end
 
-      return deps
+      return deps.delete_if {|klass, _| klass.nil? }
     end
 
     def tsort_each_node(&block)

@@ -39,13 +39,13 @@ module Support
         log 'after_finalize'
       end
 
-      def plan_phase
+      def plan_phase(*_)
         log 'before_plan_phase'
         pass
         log 'after_plan_phase'
       end
 
-      def finalize_phase
+      def finalize_phase(*_)
         log 'before_finalize_phase'
         pass
         log 'after_finalize_phase'
@@ -150,6 +150,12 @@ module Support
 
     class SubActionReplaceRule < Action
       middleware.use AnotherLogRunMiddleware, replace: LogRunMiddleware
+    end
+
+    class SubActionDoNotUseRule < Action
+      middleware.use AnotherLogRunMiddleware
+      middleware.do_not_use AnotherLogRunMiddleware
+      middleware.do_not_use LogRunMiddleware
     end
 
     class SubActionAfterRule < Action

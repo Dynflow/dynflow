@@ -99,6 +99,13 @@ module Dynflow
                               AnotherLogRunMiddleware::after_run]
           end
         end
+
+        describe "remove" do
+          specify do
+            world.trigger(Support::MiddlewareExample::SubActionDoNotUseRule, {}).finished.wait
+            log.must_equal %w[run]
+          end
+        end
       end
 
       it "allows access the running action" do
