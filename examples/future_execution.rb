@@ -12,15 +12,14 @@ class CustomPassedObject
 end
 
 class CustomPassedObjectSerializer < ::Dynflow::Serializers::Abstract
-  def serialize
-    object = args.first
+  def serialize(arg)
     # Serialized output can be anything that is representable as JSON: Array, Hash...
-    { :id => object.id, :name => object.name }
+    { :id => arg.id, :name => arg.name }
   end
 
-  def deserialize
+  def deserialize(arg)
     # Deserialized output must be an Array
-    [CustomPassedObject.new(serialized_args[:id], serialized_args[:name])]
+    CustomPassedObject.new(arg[:id], arg[:name])
   end
 end
 
