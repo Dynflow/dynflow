@@ -36,6 +36,9 @@
             <ul class="nav navbar-nav">
               <li><a href="<%= url '/' %>">Execution plans</a></li>
               <li><a href="<%= url '/status' %>">Status</a></li>
+              <% if back %>
+                  <li><a href="<%= back %>">Back to Foreman</a></li>
+              <% end %>
             </ul>
             <ul class="nav navbar-nav navbar-right">
             </ul>

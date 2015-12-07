@@ -11,6 +11,7 @@ module Dynflow
       helpers Web::FilteringHelpers
       helpers Web::WorldHelpers
       helpers Web::ConsoleHelpers
+      helpers Web::NavbarItemsHelper
 
       get('/') do
         options = find_execution_plans_options
