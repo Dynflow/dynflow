@@ -65,6 +65,10 @@ module Dynflow
       Executors::Parallel.new(world, config.pool_size)
     end
 
+    config_attr :executor_semaphore, Semaphores::Abstract, FalseClass do |world, config|
+      Semaphores::Dummy.new
+    end
+
     config_attr :connector, Connectors::Abstract do |world|
       Connectors::Direct.new(world)
     end
@@ -97,6 +101,10 @@ module Dynflow
       options = { :poll_interval => 15,
                   :time_source => -> { Time.now.utc } }
       DelayedExecutors::Polling.new(world, options)
+    end
+
+    config_attr :throttle_limiter, ::Dynflow::ThrottleLimiter do |world|
+      ::Dynflow::ThrottleLimiter.new(world)
     end
 
     config_attr :action_classes do

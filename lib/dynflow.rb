@@ -45,5 +45,7 @@ module Dynflow
   require 'dynflow/dispatcher'
   require 'dynflow/serializers'
   require 'dynflow/delayed_executors'
+  require 'dynflow/semaphores'
+  require 'dynflow/throttle_limiter'
   require 'dynflow/config'
 end

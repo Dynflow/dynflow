@@ -69,11 +69,11 @@ module Dynflow
           execution_plan.result.must_equal :pending
           assert_planning_success execution_plan
           history_names.call(execution_plan).must_equal ['delay']
-          executed = delayed_plan.execute
-          executed.wait
-          executed.value.state.must_equal :stopped
-          executed.value.result.must_equal :success
-          executed.value.execution_history.count.must_equal 3
+          delayed_plan.execute.future.wait
+          executed = world.persistence.load_execution_plan(delayed_plan.execution_plan_uuid)
+          executed.state.must_equal :stopped
+          executed.result.must_equal :success
+          executed.execution_history.count.must_equal 3
         end
 
         it 'expired plans can be failed' do

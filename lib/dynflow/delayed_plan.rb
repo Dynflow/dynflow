@@ -8,7 +8,7 @@ module Dynflow
     def initialize(world, execution_plan_uuid, start_at, start_before, args_serializer)
       @world               = Type! world, World
       @execution_plan_uuid = Type! execution_plan_uuid, String
-      @start_at            = Type! start_at, Time
+      @start_at            = Type! start_at, Time, NilClass
       @start_before        = Type! start_before, Time, NilClass
       @args_serializer     = Type! args_serializer, Serializers::Abstract
     end
@@ -42,8 +42,9 @@ module Dynflow
       return true
     end
 
-    def execute
-      @world.execute(execution_plan.id)
+    def execute(future = Concurrent.future)
+      @world.execute(execution_plan.id, future)
+      ::Dynflow::World::Triggered[execution_plan.id, future]
     end
 
     def to_hash

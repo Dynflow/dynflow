@@ -17,8 +17,8 @@ module Dynflow
                end
              end),
             (on SubPlanFinished do
-              mark_as_done(event.execution_plan_id, event.success)
-              try_to_finish or suspend
+               mark_as_done(event.execution_plan_id, event.success)
+               try_to_finish or suspend
              end),
             (on Action::Cancellable::Cancel do
                cancel!
@@ -28,7 +28,15 @@ module Dynflow
     def initiate
       sub_plans = create_sub_plans
       sub_plans = Array[sub_plans] unless sub_plans.is_a? Array
-      wait_for_sub_plans(sub_plans)
+      if uses_concurrency_control
+        planned, failed = sub_plans.partition { |plan| plan.state == :planned }
+        calculate_time_distribution sub_plans.count
+        sub_plans = world.throttle_limiter.handle_plans! execution_plan_id,
+                                                         planned.map(&:id),
+                                                         failed.map(&:id),
+                                                         input[:concurrency_control]
+      end
+      wait_for_sub_plans sub_plans
     end
 
     # @abstract when the logic for the initiation of the subtasks
@@ -55,13 +63,40 @@ module Dynflow
     end
 
     def cancel!
+      @world.throttle_limiter.cancel!(execution_plan_id)
       sub_plans('state' => 'running').each(&:cancel)
       suspend
     end
 
     # Helper for creating sub plans
     def trigger(*args)
-      world.trigger { world.plan_with_caller(self, *args) }
+      if uses_concurrency_control
+        world.plan_with_caller(self, *args)
+      else
+        world.trigger { world.plan_with_caller(self, *args) }
+      end
+    end
+
+    def limit_concurrency_level(level)
+      input[:concurrency_control] ||= {}
+      input[:concurrency_control][:level] = ::Dynflow::Semaphores::Stateful.new(level).to_hash
+    end
+
+    def calculate_time_distribution(count)
+      time = input[:concurrency_control][:time]
+      unless time.nil? || time.is_a?(Hash)
+        # Assume concurrency level 1 unless stated otherwise
+        level = input[:concurrency_control].fetch(:level, {}).fetch(:free, 1)
+        semaphore = ::Dynflow::Semaphores::Stateful.new(nil, level,
+                                                        :interval => time.to_f / (count * level),
+                                                        :time_span => time)
+        input[:concurrency_control][:time] = semaphore.to_hash
+      end
+    end
+
+    def distribute_over_time(time_span)
+      input[:concurrency_control] ||= {}
+      input[:concurrency_control][:time] = time_span
     end
 
     def wait_for_sub_plans(sub_plans)
@@ -171,5 +206,8 @@ module Dynflow
       fail "A sub task failed" if output[:failed_count] > 0
     end
 
+    def uses_concurrency_control
+      @uses_concurrency_control = input.key? :concurrency_control
+    end
   end
 end
