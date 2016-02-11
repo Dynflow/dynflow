@@ -206,36 +206,36 @@ module Dynflow
         end
       end
 
-      # it 'fails tasks which failed to plan immediately' do
-      #   FailureSimulator.will_fail!
-      #   total = 5
-      #   level = 1
-      #   time_span = 10
-      #   plan = world.plan(ParentAction, total, level, time_span)
-      #   future = world.execute(plan.id)
-      #   wait_for { future.completed? }
-      #   plan.sub_plans.all? { |sub| sub.result == :error }.must_equal true
-      # end
+      it 'fails tasks which failed to plan immediately' do
+        FailureSimulator.will_fail!
+        total = 5
+        level = 1
+        time_span = 10
+        plan = world.plan(ParentAction, total, level, time_span)
+        future = world.execute(plan.id)
+        wait_for { future.completed? }
+        plan.sub_plans.all? { |sub| sub.result == :error }.must_equal true
+      end
 
-      # it 'cancels tasks which could not be started within the time window' do
-      #   world.stub :clock, klok do
-      #     time_span = 10.0
-      #     level = 1
-      #     total = 10
-      #     plan = world.plan(ParentAction, total, level, time_span, true)
-      #     future = world.execute(plan.id)
-      #     wait_for { plan.sub_plans.count == total && plan.sub_plans.all? { |sub| sub.result == :pending } }
-      #     planned, running = plan.sub_plans.partition { |sub| planned? sub }
-      #     planned.count.must_equal total - level
-      #     running.count.must_equal level
-      #     world.throttle_limiter.observe(plan.id).length.must_equal (total - 1)
-      #     4.times { klok.progress }
-      #     wait_for { future.completed? }
-      #     finished, stopped = plan.sub_plans.partition { |sub| successful? sub }
-      #     finished.count.must_equal level
-      #     stopped.count.must_equal (total - level)
-      #   end
-      # end
+      it 'cancels tasks which could not be started within the time window' do
+        world.stub :clock, klok do
+          time_span = 10.0
+          level = 1
+          total = 10
+          plan = world.plan(ParentAction, total, level, time_span, true)
+          future = world.execute(plan.id)
+          wait_for { plan.sub_plans.count == total && plan.sub_plans.all? { |sub| sub.result == :pending } }
+          planned, running = plan.sub_plans.partition { |sub| planned? sub }
+          planned.count.must_equal total - level
+          running.count.must_equal level
+          world.throttle_limiter.observe(plan.id).length.must_equal (total - 1)
+          4.times { klok.progress }
+          wait_for { future.completed? }
+          finished, stopped = plan.sub_plans.partition { |sub| successful? sub }
+          finished.count.must_equal level
+          stopped.count.must_equal (total - level)
+        end
+      end
     end
   end
 end

@@ -32,9 +32,9 @@ module Dynflow
 
     def spawn
       Concurrent.future.tap do |initialized|
-        @core = core_class.spawn :name => 'throttle-limiter',
+        @core = core_class.spawn(:name => 'throttle-limiter',
                                  :args => [@world],
-                                 :initialized => initialized
+                                 :initialized => initialized)
       end
     end
 
@@ -45,19 +45,19 @@ module Dynflow
       end
 
       def handle_plans(parent_id, planned_ids, failed_ids, semaphores_hash)
-        @semaphores[parent_id] = create_semaphores semaphores_hash
-        set_up_clock_for parent_id, true
+        @semaphores[parent_id] = create_semaphores(semaphores_hash)
+        set_up_clock_for(parent_id, true)
 
         failed = failed_ids.map do |plan_id|
           ::Dynflow::World::Triggered[plan_id, Concurrent.future].tap do |triggered|
-            execute_triggered triggered
+            execute_triggered(triggered)
           end
         end
 
         planned_ids.map do |child_id|
           ::Dynflow::World::Triggered[child_id, Concurrent.future].tap do |triggered|
             triggered.future.on_completion! { self << [:release, parent_id] }
-            execute_triggered triggered if @semaphores[parent_id].wait(triggered)
+            execute_triggered(triggered) if @semaphores[parent_id].wait(triggered)
           end
         end + failed
       end
@@ -76,36 +76,37 @@ module Dynflow
 
       def release(plan_id, key = :level)
         return unless @semaphores.key? plan_id
-        set_up_clock_for plan_id if key == :time
+        set_up_clock_for(plan_id) if key == :time
         semaphore = @semaphores[plan_id]
-        semaphore.release(1, key) if semaphore.children.key? key
+        semaphore.release(1, key) if semaphore.children.key?(key)
         if semaphore.has_waiting? && semaphore.get == 1
-          execute_triggered semaphore.get_waiting
+          execute_triggered(semaphore.get_waiting)
         end
         @semaphores.delete(plan_id) unless semaphore.has_waiting?
       end
 
-      def cancel(parent_id, reason = 'cancelled')
-        if @semaphores.key? parent_id
+      def cancel(parent_id, reason = nil)
+        if @semaphores.key?(parent_id)
+          reason ||= 'The task was cancelled.'
           @semaphores[parent_id].waiting.each do |triggered|
-            cancel_plan_id triggered.execution_plan_id, reason
-            triggered.future.fail reason
+            cancel_plan_id(triggered.execution_plan_id, reason)
+            triggered.future.fail(reason)
           end
-          @semaphores.delete parent_id
+          @semaphores.delete(parent_id)
         end
       end
 
       private
 
       def cancel_plan_id(plan_id, reason)
-        plan = @world.persistence.load_execution_plan plan_id
-        steps = plan.steps.values.select { |step| step.is_a? ::Dynflow::ExecutionPlan::Steps::RunStep }
+        plan = @world.persistence.load_execution_plan(plan_id)
+        steps = plan.steps.values.select { |step| step.is_a?(::Dynflow::ExecutionPlan::Steps::RunStep) }
         steps.each do |step|
           step.state = :error
           step.error = ::Dynflow::ExecutionPlan::Steps::Error.new(reason)
           step.save
         end
-        plan.update_state :stopped
+        plan.update_state(:stopped)
         plan.save
       end
 
@@ -115,10 +116,11 @@ module Dynflow
 
       def set_up_clock_for(plan_id, initial = false)
         if @semaphores[plan_id].children.key? :time
+          timeout_message = 'The task could not be started within the maintenance window.'
           interval = @semaphores[plan_id].children[:time].meta[:interval]
           timeout = @semaphores[plan_id].children[:time].meta[:time_span]
           @world.clock.ping(self, interval, [:release, plan_id, :time])
-          @world.clock.ping(self, timeout, [:cancel, plan_id, 'timeout']) if initial
+          @world.clock.ping(self, timeout, [:cancel, plan_id, timeout_message]) if initial
         end
       end
 

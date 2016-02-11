@@ -31,10 +31,10 @@ module Dynflow
       if uses_concurrency_control
         planned, failed = sub_plans.partition { |plan| plan.state == :planned }
         calculate_time_distribution sub_plans.count
-        sub_plans = world.throttle_limiter.handle_plans! execution_plan_id,
+        sub_plans = world.throttle_limiter.handle_plans!(execution_plan_id,
                                                          planned.map(&:id),
                                                          failed.map(&:id),
-                                                         input[:concurrency_control]
+                                                         input[:concurrency_control])
       end
       wait_for_sub_plans sub_plans
     end
