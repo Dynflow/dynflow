@@ -8,6 +8,10 @@ class ExampleHelper
       @world ||= create_world
     end
 
+    def set_world(world)
+      @world = world
+    end
+
     def create_world
       config = Dynflow::Config.new
       config.persistence_adapter = persistence_adapter
@@ -30,7 +34,6 @@ class ExampleHelper
     def logger_adapter
       Dynflow::LoggerAdapters::Simple.new $stderr, 4
     end
-
 
     def run_web_console(world = ExampleHelper.world)
       require 'dynflow/web'

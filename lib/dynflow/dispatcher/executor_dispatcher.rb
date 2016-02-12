@@ -1,7 +1,7 @@
 module Dynflow
   module Dispatcher
     class ExecutorDispatcher < Abstract
-      def initialize(world)
+      def initialize(world, semaphore)
         @world        = Type! world, World
         @current_futures = Set.new
       end
@@ -19,12 +19,7 @@ module Dynflow
         execution_lock = Coordinator::ExecutionLock.new(@world, execution.execution_plan_id, envelope.sender_id, envelope.request_id)
         future = on_finish do |f|
           f.then do |plan|
-            if plan.state == :running
-              @world.invalidate_execution_lock(execution_lock)
-            else
-              @world.coordinator.release(execution_lock)
-              respond(envelope, Done)
-            end
+            when_done(plan, envelope, execution, execution_lock)
           end.rescue do |reason|
             @world.coordinator.release(execution_lock)
             respond(envelope, Failed[reason.to_s])
@@ -35,6 +30,15 @@ module Dynflow
       rescue Dynflow::Error => e
         future.fail(e) if future && !future.completed?
         respond(envelope, Failed[e.message])
+      end
+
+      def when_done(plan, envelope, execution, execution_lock)
+        if plan.state == :running
+          @world.invalidate_execution_lock(execution_lock)
+        else
+          @world.coordinator.release(execution_lock)
+          respond(envelope, Done)
+        end
       end
 
       def perform_event(envelope, event_request)

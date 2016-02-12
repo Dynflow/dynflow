@@ -351,9 +351,9 @@ module Dynflow
           input[:count].times.map { trigger(ChildAction, suspend: input[:suspend]) }
         end
 
-        def resume
+        def resume(*args)
           output[:custom_resume] = true
-          super
+          super *args
         end
       end
 

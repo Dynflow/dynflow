@@ -23,7 +23,7 @@ module Dynflow
       @state_transitions ||= { pending:  [:stopped, :scheduled, :planning],
                                scheduled: [:planning, :stopped],
                                planning: [:planned, :stopped],
-                               planned:  [:running],
+                               planned:  [:running, :stopped],
                                running:  [:paused, :stopped],
                                paused:   [:running],
                                stopped:  [] }
@@ -152,9 +152,9 @@ module Dynflow
       @last_step_id += 1
     end
 
-    def delay(action_class, delay_options, *args)
+    def delay(caller_action, action_class, delay_options, *args)
       save
-      @root_plan_step = add_scheduling_step(action_class)
+      @root_plan_step = add_scheduling_step(action_class, caller_action)
       execution_history.add("delay", @world.id)
       serializer = root_plan_step.delay(delay_options, args)
       delayed_plan = DelayedPlan.new(@world,
@@ -280,9 +280,9 @@ module Dynflow
       current_run_flow.add_and_resolve(@dependency_graph, new_flow) if current_run_flow
     end
 
-    def add_scheduling_step(action_class)
+    def add_scheduling_step(action_class, caller_action = nil)
       add_step(Steps::PlanStep, action_class, generate_action_id, :scheduling).tap do |step|
-        step.initialize_action
+        step.initialize_action(caller_action)
       end
     end
 

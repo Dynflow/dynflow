@@ -15,7 +15,7 @@ module Dynflow
         delay = world.delay(Support::MiddlewareExample::LoggingAction, { :start_at => Time.now.utc - 60 }, {})
         plan = world.persistence.load_delayed_plan delay.execution_plan_id
         plan.plan
-        plan.execute.wait
+        plan.execute.future.wait
         log.must_equal %w[LogMiddleware::before_delay
                           delay
                           LogMiddleware::after_delay
@@ -125,7 +125,7 @@ module Dynflow
         delay = world.delay(Support::MiddlewareExample::Action, { :start_at => Time.now - 60 })
         plan = world.persistence.load_delayed_plan delay.execution_plan_id
         plan.plan
-        plan.execute.wait
+        plan.execute.future.wait
         log.must_equal ["delay#set-input:#{world.id}",
                         "plan#input:#{world.id}",
                         "input#message:#{world.id}",

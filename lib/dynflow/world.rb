@@ -7,7 +7,7 @@ module Dynflow
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
         :transaction_adapter, :logger_adapter, :coordinator,
         :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout
+        :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter
 
     def initialize(config)
       @id                     = SecureRandom.uuid
@@ -29,10 +29,11 @@ module Dynflow
       @meta                   = config_for_world.meta
       @auto_validity_check    = config_for_world.auto_validity_check
       @validity_check_timeout = config_for_world.validity_check_timeout
+      @throttle_limiter       = config_for_world.throttle_limiter
       calculate_subscription_index
 
       if executor
-        @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self)
+        @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, config_for_world.executor_semaphore)
         executor.initialized.wait
       end
       if auto_validity_check
@@ -150,10 +151,14 @@ module Dynflow
       end
     end
 
-    def delay(action_class, delay_options, *args)
+    def delay(*args)
+      delay_with_caller(nil, *args)
+    end
+
+    def delay_with_caller(caller_action, action_class, delay_options, *args)
       raise 'No action_class given' if action_class.nil?
-      execution_plan = ExecutionPlan.new self
-      execution_plan.delay(action_class, delay_options, *args)
+      execution_plan = ExecutionPlan.new(self)
+      execution_plan.delay(caller_action, action_class, delay_options, *args)
       Scheduled[execution_plan.id]
     end
 
@@ -207,6 +212,9 @@ module Dynflow
               logger.info "start terminating delayed_executor..."
               delayed_executor.terminate.wait
             end
+
+            logger.info "start terminating throttle_limiter..."
+            throttle_limiter.terminate.wait
 
             if executor
               connector.stop_receiving_new_work(self)
