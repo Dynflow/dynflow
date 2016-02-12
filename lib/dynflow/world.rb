@@ -21,7 +21,7 @@ module Dynflow
       @executor               = config_for_world.executor
       @action_classes         = config_for_world.action_classes
       @auto_rescue            = config_for_world.auto_rescue
-      @exit_on_terminate      = config_for_world.exit_on_terminate
+      @exit_on_terminate      = Concurrent::AtomicBoolean.new(config_for_world.exit_on_terminate)
       @connector              = config_for_world.connector
       @middleware             = Middleware::World.new
       @middleware.use Middleware::Common::Transaction if @transaction_adapter
@@ -48,7 +48,7 @@ module Dynflow
 
       if config_for_world.auto_terminate
         at_exit do
-          @exit_on_terminate = false # make sure we don't terminate twice
+          @exit_on_terminate.make_false # make sure we don't terminate twice
           self.terminate.wait
         end
       end
@@ -239,7 +239,7 @@ module Dynflow
             logger.fatal(e)
           end
         end.on_completion do
-          Kernel.exit if @exit_on_terminate
+          Thread.new { Kernel.exit } if @exit_on_terminate.true?
         end
       end
 
