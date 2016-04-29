@@ -353,8 +353,8 @@ module Dynflow
     def auto_execute
       coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
         planned_execution_plans =
-            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => 'pending' }
-        planned_execution_plans.each { |ep| execute ep.id }
+            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
+        planned_execution_plans.map { |ep| execute ep.id }
       end
     end
 

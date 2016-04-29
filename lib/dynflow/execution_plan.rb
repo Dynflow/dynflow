@@ -19,6 +19,10 @@ module Dynflow
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
     end
 
+    def self.results
+      @results ||= [:pending, :success, :warning, :error]
+    end
+
     def self.state_transitions
       @state_transitions ||= { pending:  [:stopped, :scheduled, :planning],
                                scheduled: [:planning, :stopped],

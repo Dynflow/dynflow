@@ -139,7 +139,8 @@ module Dynflow
           executor_world # mention it to get initialized
           triggered = client_world.trigger(Support::DummyExample::FailingDummy)
           triggered.finished.wait
-          executor_world.auto_execute
+          retries = executor_world.auto_execute
+          retries.each(&:wait)
           plan = client_world.persistence.load_execution_plan(triggered.id)
           plan.state.must_equal :paused
           expected_history = [['start execution', executor_world.id],
