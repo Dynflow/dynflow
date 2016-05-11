@@ -183,7 +183,7 @@ module Dynflow
         if exclude_owner_id
           data_set = data_set.exclude(:owner_id => exclude_owner_id)
         end
-        data_set.map { |record| load_data(record) }
+        data_set.all.map { |record| load_data(record) }
       end
 
       def to_hash
