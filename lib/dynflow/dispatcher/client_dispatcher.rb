@@ -61,13 +61,14 @@ module Dynflow
             (on Ping.(~any) do |receiver_id|
                receiver_id
              end)
-        request = Envelope[request_id, client_world_id, executor_id, request]
-        if Dispatcher::UnknownWorld === request.receiver_id
-          raise Dynflow::Error, "Could not find an executor for #{request}"
+        envelope = Envelope[request_id, client_world_id, executor_id, request]
+        if Dispatcher::UnknownWorld === envelope.receiver_id
+          raise Dynflow::Error, "Could not find an executor for #{envelope}"
         end
-        connector.send(request).value!
+        connector.send(envelope).value!
       rescue => e
-        respond(request, Failed[e.message])
+        log(Logger::ERROR, e)
+        respond(envelope, Failed[e.message]) if envelope
       end
 
       def dispatch_response(envelope)
@@ -94,6 +95,9 @@ module Dynflow
         else
           Dispatcher::UnknownWorld
         end
+      rescue => e
+        log(Logger::ERROR, e)
+        Dispatcher::UnknownWorld
       end
 
       def track_request(finished, request, timeout)
