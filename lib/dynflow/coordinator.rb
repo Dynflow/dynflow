@@ -146,6 +146,14 @@ module Dynflow
         @data.merge!(owner_id: "world:#{world.id}",  world_id: world.id)
       end
 
+      def self.lock_id(*args)
+        raise NoMethodError
+      end
+
+      def self.unique_filter(*args)
+        { :class => self.name, :id => lock_id(*args) }
+      end
+
       def validate!
         super
         raise Errors::InactiveWorldError.new(@world) if @world.terminating?
@@ -171,31 +179,47 @@ module Dynflow
     class DelayedExecutorLock < LockByWorld
       def initialize(world)
         super
-        @data[:id] = "delayed-executor"
+        @data[:id] = self.class.lock_id
+      end
+
+      def self.lock_id
+        "delayed-executor"
       end
     end
 
     class WorldInvalidationLock < LockByWorld
       def initialize(world, invalidated_world)
         super(world)
-        @data[:id] = "world-invalidation:#{invalidated_world.id}"
+        @data[:id] = self.class.lock_id(invalidated_world.id)
+      end
+
+      def self.lock_id(invalidated_world_id)
+        "world-invalidation:#{invalidated_world_id}"
       end
     end
 
     class AutoExecuteLock < LockByWorld
       def initialize(*args)
         super
-        @data[:id] = "auto-execute"
+        @data[:id] = self.class.lock_id
+      end
+
+      def self.lock_id
+        "auto-execute"
       end
     end
 
     class ExecutionLock < LockByWorld
       def initialize(world, execution_plan_id, client_world_id, request_id)
         super(world)
-        @data.merge!(id: "execution-plan:#{execution_plan_id}",
+        @data.merge!(id: self.class.lock_id(execution_plan_id),
                      execution_plan_id: execution_plan_id,
                      client_world_id: client_world_id,
                      request_id: request_id)
+      end
+
+      def self.lock_id(execution_plan_id)
+        "execution-plan:#{execution_plan_id}"
       end
 
       # we need to store the following data in case of
