@@ -32,6 +32,12 @@ module Dynflow
           tester.finish
         end
 
+        it 'supports checking about locks' do
+          world.coordinator.acquire(Coordinator::AutoExecuteLock.new(world))
+          locks = world.coordinator.find_locks(Coordinator::AutoExecuteLock.unique_filter)
+          locks.map(&:world_id).must_equal([world.id])
+        end
+
         it 'deserializes the data from the adapter when searching for locks' do
           lock = Coordinator::AutoExecuteLock.new(world)
           world.coordinator.acquire(lock)
