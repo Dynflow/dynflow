@@ -70,6 +70,39 @@ module Support
     class AnotherLogRunMiddleware < LogRunMiddleware
     end
 
+    class FilterSensitiveData < Dynflow::Middleware
+      def present
+        if action.respond_to?(:filter_sensitive_data)
+          action.filter_sensitive_data
+        end
+        filter_sensitive_data(action.input)
+        filter_sensitive_data(action.output)
+      end
+
+      def filter_sensitive_data(data)
+        case data
+        when Hash
+          data.values.each { |value| filter_sensitive_data(value) }
+        when Array
+          data.each { |value| filter_sensitive_data(value) }
+        when String
+          data.gsub!('Lord Voldemort', 'You-Know-Who')
+        end
+      end
+    end
+
+    class SecretAction < Dynflow::Action
+      middleware.use(FilterSensitiveData)
+
+      def run
+        output[:spell] = 'Wingardium Leviosa'
+      end
+
+      def filter_sensitive_data
+        output[:spell] = '***'
+      end
+    end
+
     class LoggingAction < Dynflow::Action
 
       middleware.use LogMiddleware
