@@ -45,7 +45,7 @@ module Dynflow
       end
 
       def load_action(step)
-        world.persistence.load_action(step)
+        world.persistence.load_action_for_presentation(@plan, step.action_id, step)
       end
 
       def step_error(step)

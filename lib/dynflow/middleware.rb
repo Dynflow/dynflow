@@ -46,5 +46,8 @@ module Dynflow
       pass(*args)
     end
 
+    def present
+      pass
+    end
   end
 end

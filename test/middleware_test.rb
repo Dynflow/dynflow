@@ -132,6 +132,57 @@ module Dynflow
                         'run',
                         'output#message:finished']
       end
+
+      describe 'Presnet middleware' do
+        let(:world_with_middleware) do
+          WorldFactory.create_world.tap do |world|
+            world.middleware.use(Support::MiddlewareExample::FilterSensitiveData)
+          end
+        end
+
+        let :execution_plan do
+          result = world.trigger(Support::CodeWorkflowExample::IncomingIssue, issue_data)
+          result.must_be :planned?
+          result.finished.value
+        end
+
+        let :execution_plan_2 do
+          result = world.trigger(Support::MiddlewareExample::SecretAction)
+          result.must_be :planned?
+          result.finished.value
+        end
+
+        let :filtered_execution_plan do
+          world_with_middleware.persistence.load_execution_plan(execution_plan.id)
+        end
+
+        let :issue_data do
+          { 'author' => 'Harry Potter', 'text' => 'Lord Voldemort is comming' }
+        end
+
+        let :presenter do
+          filtered_execution_plan.root_plan_step.action filtered_execution_plan
+        end
+
+        let :presenter_2 do
+          execution_plan_2.root_plan_step.action execution_plan_2
+        end
+
+        let :presenter_without_middleware do
+          execution_plan.root_plan_step.action execution_plan
+        end
+
+        it 'filters the data ===' do
+          presenter.input['text'].must_equal('You-Know-Who is comming')
+          presenter_2.output['spell'].must_equal('***')
+        end
+
+        it "doesn't affect stored data" do
+          presenter.input['text'].must_equal('You-Know-Who is comming')
+          presenter_without_middleware.input['text'].must_equal('Lord Voldemort is comming')
+        end
+      end
+
     end
   end
 end
