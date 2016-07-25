@@ -43,7 +43,7 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :label,
+    attr_reader :id, :world, :label, :rescue_plan_id,
                 :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time, :execution_history
 
@@ -80,7 +80,8 @@ module Dynflow
                    ended_at          = nil,
                    execution_time    = nil,
                    real_time         = 0.0,
-                   execution_history = ExecutionHistory.new)
+                   execution_history = ExecutionHistory.new,
+                   rescue_plan_id    = nil)
 
       @id                = Type! id, String
       @world             = Type! world, World
@@ -94,6 +95,7 @@ module Dynflow
       @execution_time    = Type! execution_time, Numeric, NilClass
       @real_time         = Type! real_time, Numeric
       @execution_history = Type! execution_history, ExecutionHistory
+      @rescue_plan_id    = Type! rescue_plan_id, String, NilClass
 
       steps.all? do |k, v|
         Type! k, Integer
@@ -199,17 +201,23 @@ module Dynflow
       persistence.find_execution_plan_counts(filters: { 'caller_execution_plan_id' => self.id })
     end
 
-    def rescue_plan_id
+    def generate_rescue_plan_id
       case rescue_strategy
       when Action::Rescue::Pause
         nil
+      when Action::Rescue::Revert
+        update_state :stopped
+        plan = world.plan(entry_action.class.revert_action_class, entry_action)
+        @rescue_plan_id = plan.id
       when Action::Rescue::Fail
         update_state :stopped
         nil
       when Action::Rescue::Skip
         failed_steps.each { |step| self.skip(step) }
-        self.id
+        @rescue_plan_id = self.id
       end
+    ensure
+      self.save
     end
 
     def plan_steps
@@ -233,7 +241,7 @@ module Dynflow
     end
 
     def rescue_from_error
-      if rescue_plan_id = self.rescue_plan_id
+      if rescue_plan_id = generate_rescue_plan_id
         @world.execute(rescue_plan_id)
       else
         raise Errors::RescueError, 'Unable to rescue from the error'
@@ -432,7 +440,8 @@ module Dynflow
                         ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
                         real_time:         real_time,
-                        execution_history: execution_history.to_hash
+                        execution_history: execution_history.to_hash,
+                        rescue_plan_id:    rescue_plan_id
     end
 
     def save
@@ -455,7 +464,8 @@ module Dynflow
                string_to_time(hash[:ended_at]),
                hash[:execution_time].to_f,
                hash[:real_time].to_f,
-               ExecutionHistory.new_from_hash(hash[:execution_history]))
+               ExecutionHistory.new_from_hash(hash[:execution_history]),
+               hash[:rescue_plan_id])
     rescue => plan_exception
       begin
         world.logger.error("Could not load execution plan #{execution_plan_id}")

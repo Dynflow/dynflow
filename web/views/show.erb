@@ -43,6 +43,11 @@
   <%= h(@plan.ended_at) %>
 </p>
 
+<% if @plan.rescue_plan_id && @plan.rescue_plan_id != @plan.id %>
+  <b>Reverted by:</b>
+  <a href="<%= url("/#{@plan.rescue_plan_id}") %>"><%= h(@plan.rescue_plan_id) %></a>
+<% end %>
+
 <ul class="phases nav nav-tabs" id="myTab">
   <li><a href="#plan">Plan</a></li>
   <li class="active"><a href="#run">Run</a></li>

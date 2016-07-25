@@ -2,7 +2,7 @@ module Dynflow
   module Action::Rescue
 
     Strategy = Algebrick.type do
-      variants Skip = atom, Pause = atom, Fail = atom
+      variants Skip = atom, Pause = atom, Revert = atom, Fail = atom
     end
 
     SuggestedStrategy = Algebrick.type do
