@@ -34,6 +34,12 @@ module Dynflow
         stubbed_action.test.must_equal "test"
       end
 
+      specify '#create_action_presentation' do
+        action = create_action_presentation(Support::DummyExample::WeightedPolling)
+        action.output['message'] = 'make the world a better place'
+        action.humanized_output.must_equal 'You should make the world a better place'
+      end
+
       specify '#run_action without suspend' do
         input  = { 'input' => 'input' }
         plan   = create_and_plan_action Support::DummyExample::WeightedPolling, input

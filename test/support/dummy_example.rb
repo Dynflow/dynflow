@@ -98,6 +98,10 @@ module Support
       def finalize_progress_weight
         5
       end
+
+      def humanized_output
+        "You should #{output['message']}"
+      end
     end
 
     class EventedAction < Dynflow::Action
