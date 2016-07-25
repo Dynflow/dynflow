@@ -92,7 +92,7 @@ module Dynflow
 
       @phase             = Type! attributes.fetch(:phase), Phase
       @world             = Type! world, World
-      @step              = Type! attributes.fetch(:step), ExecutionPlan::Steps::Abstract, NilClass
+      @step              = Type! attributes.fetch(:step, nil), ExecutionPlan::Steps::Abstract, NilClass
       raise ArgumentError, 'Step reference missing' if phase?(Executable) && @step.nil?
       @execution_plan_id = Type! attributes.fetch(:execution_plan_id), String
       @id                = Type! attributes.fetch(:id), Integer
