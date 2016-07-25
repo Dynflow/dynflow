@@ -49,17 +49,17 @@ module Dynflow
     # Override when different approach should be taken for combining
     # the suggested strategies
     def combine_suggested_strategies(suggested_strategies)
-      if suggested_strategies.empty?
-        nil
+      return Skip if suggested_strategies.empty?
+
+      counts = suggested_strategies.map(&:strategy).reduce({}) do |acc, cur|
+        acc.merge(cur => acc.fetch(cur, 0) + 1)
+      end
+      agreement = [Fail, Pause, Revert, Skip].find { |key| counts[key] == suggested_strategies.count }
+
+      if agreement
+        agreement
       else
-        # TODO: Find the safest rescue strategy among the suggested ones
-        if suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Skip }
-          return Skip
-        elsif suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Fail }
-          return Fail
-        else
-          return Pause # We don't know how to handle this case, so we'll just pause
-        end
+        Pause
       end
     end
   end
