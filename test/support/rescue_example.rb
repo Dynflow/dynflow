@@ -17,9 +17,8 @@ module Support
       end
 
       def rescue_strategy_for_self
-        Dynflow::Action::Rescue::Skip
+        ::Dynflow::Action::Rescue::Skip
       end
-
     end
 
     class ComplexActionWithoutSkip < ComplexActionWithSkip
