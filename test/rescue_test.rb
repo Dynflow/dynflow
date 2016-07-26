@@ -136,6 +136,44 @@ module Dynflow
 
       end
 
+      describe 'of complex action with rollback in run' do
+
+        let :execution_plan do
+          execute(Example::ComplexActionWithRollback, :error_on_run)
+        end
+
+        it 'suggest reverting the plan' do
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Revert
+        end
+
+        it 'rollbacks successfully' do
+          rescued_plan.state.must_equal :stopped
+          rescued_plan.result.must_equal :success
+          rescued_plan.steps.values.count.must_equal 6
+          rescued_plan.steps_in_state(:success).count.must_equal 6
+        end
+
+      end
+
+      describe 'of complex action with rollback in finalize' do
+
+        let :execution_plan do
+          execute(Example::ComplexActionWithRollback, :error_on_finalize)
+        end
+
+        it 'suggest reverting the plan' do
+          execution_plan.rescue_strategy.must_equal Action::Rescue::Revert
+        end
+
+        it 'rollbacks successfully' do
+          rescued_plan.state.must_equal :stopped
+          rescued_plan.result.must_equal :success
+          rescued_plan.steps.values.count.must_equal 7
+          rescued_plan.steps_in_state(:success).count.must_equal 7
+        end
+
+      end
+
       describe 'auto rescue' do
 
         let(:world) do
@@ -195,6 +233,27 @@ module Dynflow
             execution_plan.steps_in_state(:success).count.must_equal 6
             execution_plan.steps_in_state(:pending).count.must_equal 6
             execution_plan.steps_in_state(:error).count.must_equal 1
+          end
+        end
+
+        describe 'of plan with revert' do
+
+          let :execution_plan do
+            execute(Example::ComplexActionWithRollback, :error_on_run)
+          end
+
+          let :rescue_plan do
+            world.persistence.load_execution_plan(execution_plan.rescue_plan_id)
+          end
+
+          it 'reverts the plan automatically' do
+            execution_plan.state.must_equal :stopped
+            execution_plan.result.must_equal :error
+            execution_plan.steps_in_state(:success).count.must_equal 5
+            execution_plan.steps_in_state(:pending).count.must_equal 4
+            execution_plan.steps_in_state(:error).count.must_equal 1
+            rescue_plan.state.must_equal :stopped
+            rescue_plan.result.must_equal :success
           end
         end
 
