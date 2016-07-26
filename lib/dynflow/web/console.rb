@@ -86,6 +86,12 @@ module Dynflow
         end
       end
 
+      post('/:id/rollback') do |id|
+        plan = world.persistence.load_execution_plan(id)
+        plan.rescue_from_error
+        redirect(url "/#{plan.id}?notice=#{url_encode('The rollback was triggered')}")
+      end
+
       post('/:id/skip/:step_id') do |id, step_id|
         plan = world.persistence.load_execution_plan(id)
         step = plan.steps[step_id.to_i]

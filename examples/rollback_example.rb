@@ -102,8 +102,9 @@ class RevertLaunch < Dynflow::Action::Reverting
 end
 
 if $0 == __FILE__
-  world = ExampleHelper.create_world { |config| config.auto_rescue = true }
-  ExampleHelper.set_world world
+  # Uncomment the following 2 lines to have the execution plan rolled-back automatically
+  # world = ExampleHelper.create_world { |config| config.auto_rescue = true }
+  # ExampleHelper.set_world world
   ExampleHelper.something_should_fail!
   triggered = ExampleHelper.world.trigger(LaunchToSpace)
   ExampleHelper.world.trigger(LaunchToSpace)

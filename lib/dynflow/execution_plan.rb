@@ -47,6 +47,8 @@ module Dynflow
                 :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time, :execution_history
 
+    attr_accessor :rescued_plan_id
+
     def self.states
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
     end
@@ -81,7 +83,8 @@ module Dynflow
                    execution_time    = nil,
                    real_time         = 0.0,
                    execution_history = ExecutionHistory.new,
-                   rescue_plan_id    = nil)
+                   rescue_plan_id    = nil,
+                   rescued_plan_id   = nil)
 
       @id                = Type! id, String
       @world             = Type! world, World
@@ -96,6 +99,7 @@ module Dynflow
       @real_time         = Type! real_time, Numeric
       @execution_history = Type! execution_history, ExecutionHistory
       @rescue_plan_id    = Type! rescue_plan_id, String, NilClass
+      @rescued_plan_id   = Type! rescued_plan_id, String, NilClass
 
       steps.all? do |k, v|
         Type! k, Integer
@@ -206,15 +210,13 @@ module Dynflow
       when Action::Rescue::Pause
         nil
       when Action::Rescue::Revert
-        update_state :stopped
-        plan = world.plan(entry_action.class.revert_action_class, entry_action)
-        @rescue_plan_id = plan.id
+        revert
       when Action::Rescue::Fail
         update_state :stopped
         nil
       when Action::Rescue::Skip
         failed_steps.each { |step| self.skip(step) }
-        @rescue_plan_id = self.id
+        @rescue_plan_id = @rescued_plan_id = self.id
       end
     ensure
       self.save
@@ -241,7 +243,7 @@ module Dynflow
     end
 
     def rescue_from_error
-      if generate_rescue_plan_id
+      if rescue_plan_id || generate_rescue_plan_id
         @world.execute(rescue_plan_id)
       else
         raise Errors::RescueError, 'Unable to rescue from the error'
@@ -328,6 +330,20 @@ module Dynflow
       steps_to_cancel.any?
     end
 
+    def revert
+      update_state :stopped
+      plan = world.plan(entry_action.class.revert_action_class, entry_action)
+      plan.rescued_plan_id = id
+      plan.save
+      @rescue_plan_id = plan.id
+    end
+
+    def revertible?
+      state == :paused &&
+        rescue_strategy == Action::Rescue::Revert &&
+        actions.all? { |action| action.is_a? ::Dynflow::Action::Revertible }
+    end
+
     def steps_to_cancel
       steps_in_state(:running, :suspended).find_all do |step|
         step.action(self).is_a?(::Dynflow::Action::Cancellable)
@@ -338,6 +354,10 @@ module Dynflow
       steps_to_skip = steps_to_skip(step).each(&:mark_to_skip)
       self.save
       return steps_to_skip
+    end
+
+    def rescued_plan
+      @rescued_plan ||= world.persistence.load_execution_plan(rescued_plan_id)
     end
 
     # All the steps that need to get skipped when wanting to skip the step
@@ -441,7 +461,8 @@ module Dynflow
                         execution_time:    execution_time,
                         real_time:         real_time,
                         execution_history: execution_history.to_hash,
-                        rescue_plan_id:    rescue_plan_id
+                        rescue_plan_id:    rescue_plan_id,
+                        rescued_plan_id:   rescued_plan_id
     end
 
     def save
@@ -465,7 +486,8 @@ module Dynflow
                hash[:execution_time].to_f,
                hash[:real_time].to_f,
                ExecutionHistory.new_from_hash(hash[:execution_history]),
-               hash[:rescue_plan_id])
+               hash[:rescue_plan_id],
+               hash[:rescued_plan_id])
     rescue => plan_exception
       begin
         world.logger.error("Could not load execution plan #{execution_plan_id}")

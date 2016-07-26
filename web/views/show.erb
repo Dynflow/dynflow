@@ -15,6 +15,9 @@
   <% if @plan.valid? && @plan.cancellable? %>
     <a href="<%= url("/#{@plan.id}/cancel") %>" class="postlink">Cancel</a>
   <% end %>
+  <% if @plan.revertible? %>
+    <a href="<%= url("/#{@plan.id}/rollback") %>" class="postlink">Rollback</a>
+  <% end %>
 </p>
 
 <p>
@@ -46,6 +49,11 @@
 <% if @plan.rescue_plan_id && @plan.rescue_plan_id != @plan.id %>
   <b>Reverted by:</b>
   <a href="<%= url("/#{@plan.rescue_plan_id}") %>"><%= h(@plan.rescue_plan_id) %></a>
+<% end %>
+
+<% if !@plan.rescued_plan_id.nil? && @plan.rescued_plan_id != @plan.id %>
+  <b>Reverts:</b>
+  <a href="<%= url("/#{@plan.rescued_plan.id}") %>"><%= h(@plan.rescued_plan.id) %></a>
 <% end %>
 
 <ul class="phases nav nav-tabs" id="myTab">

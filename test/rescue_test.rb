@@ -151,6 +151,7 @@ module Dynflow
           rescued_plan.result.must_equal :success
           rescued_plan.steps.values.count.must_equal 6
           rescued_plan.steps_in_state(:success).count.must_equal 6
+          rescued_plan.rescued_plan_id.must_equal execution_plan.id
         end
 
       end
@@ -170,6 +171,7 @@ module Dynflow
           rescued_plan.result.must_equal :success
           rescued_plan.steps.values.count.must_equal 7
           rescued_plan.steps_in_state(:success).count.must_equal 7
+          rescued_plan.rescued_plan_id.must_equal execution_plan.id
         end
 
       end
@@ -254,6 +256,7 @@ module Dynflow
             execution_plan.steps_in_state(:error).count.must_equal 1
             rescue_plan.state.must_equal :stopped
             rescue_plan.result.must_equal :success
+            rescue_plan.rescued_plan_id.must_equal execution_plan.id
           end
         end
 
