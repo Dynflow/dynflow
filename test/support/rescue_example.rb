@@ -14,6 +14,11 @@ module Support
           plan_action(ActionWithSkip, 5, :success)
         end
       end
+
+      def rescue_strategy_for_self
+        Dynflow::Action::Rescue::Skip
+      end
+
     end
 
     class ComplexActionWithoutSkip < ComplexActionWithSkip
@@ -69,5 +74,29 @@ module Support
       end
 
     end
+
+    class ActionWithFail < AbstractAction
+
+      def rescue_strategy_for_self
+        Dynflow::Action::Rescue::Fail
+      end
+
+    end
+
+    class ComplexActionWithFail < ActionWithFail
+
+      def plan(error_state)
+        sequence do
+          concurrence do
+            plan_action(ActionWithFail, 3, :success)
+            plan_action(ActionWithFail, 4, error_state)
+          end
+          plan_action(ActionWithFail, 5, :success)
+        end
+      end
+
+    end
+
+
   end
 end

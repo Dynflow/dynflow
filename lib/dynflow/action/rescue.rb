@@ -2,7 +2,7 @@ module Dynflow
   module Action::Rescue
 
     Strategy = Algebrick.type do
-      variants Skip = atom, Pause = atom
+      variants Skip = atom, Pause = atom, Fail = atom
     end
 
     SuggestedStrategy = Algebrick.type do
@@ -21,7 +21,8 @@ module Dynflow
     def rescue_strategy
       suggested_strategies = []
 
-      if self.steps.compact.any? { |step| step.state == :error }
+      if self.steps.compact.any? { |step| step.state == :error } ||
+         self.steps.compact.all? { |step| [:pending, :success].include? step.state }
         suggested_strategies << SuggestedStrategy[self, rescue_strategy_for_self]
       end
 
@@ -44,14 +45,20 @@ module Dynflow
       action.rescue_strategy
     end
 
-    # Override when different appraoch should be taken for combining
+    # Override when different approach should be taken for combining
     # the suggested strategies
     def combine_suggested_strategies(suggested_strategies)
-      if suggested_strategies.empty? ||
-            suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Skip }
+      if suggested_strategies.empty?
         return Skip
       else
-        return Pause
+        # TODO: Find the safest rescue strategy among the suggested ones
+        if suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Skip }
+          return Skip
+        elsif suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Fail }
+          return Fail
+        else
+          return Pause # We don't know how to handle this case, so we'll just pause
+        end
       end
     end
   end

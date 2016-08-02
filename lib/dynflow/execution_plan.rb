@@ -29,7 +29,7 @@ module Dynflow
                                planning: [:planned, :stopped],
                                planned:  [:running, :stopped],
                                running:  [:paused, :stopped],
-                               paused:   [:running],
+                               paused:   [:running, :stopped],
                                stopped:  [] }
     end
 
@@ -123,6 +123,9 @@ module Dynflow
     def rescue_plan_id
       case rescue_strategy
       when Action::Rescue::Pause
+        nil
+      when Action::Rescue::Fail
+        update_state :stopped
         nil
       when Action::Rescue::Skip
         failed_steps.each { |step| self.skip(step) }
