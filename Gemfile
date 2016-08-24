@@ -21,3 +21,7 @@ end
 if RUBY_VERSION < "2.2.2"
   gem 'activesupport', '~> 4.2'
 end
+
+group :lint do
+  gem 'rubocop', '0.39.0'
+end

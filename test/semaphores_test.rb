@@ -40,7 +40,7 @@ module Dynflow
         waiting = semaphore.get_waiting
         waiting.must_equal 3
       end
-      
+
     end
 
     describe ::Dynflow::Semaphores::Dummy do
@@ -93,6 +93,6 @@ module Dynflow
         assert_semaphore_state semaphore, 0, 0
       end
     end
-    
+
   end
 end

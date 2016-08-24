@@ -460,7 +460,7 @@ module Dynflow
           triggered_plan.finished.value.state.must_equal :stopped
           triggered_plan.finished.value.result.must_equal :success
         end
-     end
+      end
     end
   end
 end

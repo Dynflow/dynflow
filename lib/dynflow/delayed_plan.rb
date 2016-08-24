@@ -48,11 +48,11 @@ module Dynflow
     end
 
     def to_hash
-       recursive_to_hash :execution_plan_uuid => @execution_plan_uuid,
-                         :start_at            => time_to_str(@start_at),
-                         :start_before        => time_to_str(@start_before),
-                         :serialized_args     => @args_serializer.serialized_args,
-                         :args_serializer     => @args_serializer.class.name
+      recursive_to_hash :execution_plan_uuid => @execution_plan_uuid,
+                        :start_at            => time_to_str(@start_at),
+                        :start_before        => time_to_str(@start_before),
+                        :serialized_args     => @args_serializer.serialized_args,
+                        :args_serializer     => @args_serializer.class.name
     end
 
     # @api private
