@@ -51,12 +51,12 @@ module Dynflow
         end
 
         it "puts the middleware to the beginning of the stack" do
-            world_with_middleware.trigger(Support::MiddlewareExample::Action, {}).finished.wait
-            log.must_equal %w[AnotherLogRunMiddleware::before_run
-                              LogRunMiddleware::before_run
-                              run
-                              LogRunMiddleware::after_run
-                              AnotherLogRunMiddleware::after_run]
+          world_with_middleware.trigger(Support::MiddlewareExample::Action, {}).finished.wait
+          log.must_equal %w[AnotherLogRunMiddleware::before_run
+                            LogRunMiddleware::before_run
+                            run
+                            LogRunMiddleware::after_run
+                            AnotherLogRunMiddleware::after_run]
         end
       end
 

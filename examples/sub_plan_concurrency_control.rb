@@ -44,7 +44,7 @@ class ConcurrencyControlExample < Dynflow::Action
 
   ConcurrencyLevel = 2
   RunWithin = 2 * 60
-  
+
   def plan(count)
     limit_concurrency_level(ConcurrencyLevel)
     distribute_over_time(RunWithin)

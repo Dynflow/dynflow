@@ -15,7 +15,7 @@ module Dynflow
                   step.execute event
                 end),
                 (on Work::Finalize.(~any, any) do |sequential_manager|
-                  sequential_manager.finalize
+                   sequential_manager.finalize
                  end)
         rescue Errors::PersistenceError => e
           @pool.tell([:handle_persistence_error, e])

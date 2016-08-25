@@ -23,4 +23,5 @@ install:
   - test/prepare_travis_env.sh
 
 script:
+  - bundle exec rubocop
   - bundle exec rake test
