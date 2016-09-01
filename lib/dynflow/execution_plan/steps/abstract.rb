@@ -112,8 +112,8 @@ module Dynflow
 
       # @return [Action] in presentation mode, intended for retrieving: progress information,
       # details, human outputs, etc.
-      def action(execution_plan, with_step = false)
-        world.persistence.load_action_for_presentation(execution_plan, action_id, with_step ? self : nil)
+      def action(execution_plan)
+        world.persistence.load_action_for_presentation(execution_plan, action_id, self)
       end
 
       def skippable?
