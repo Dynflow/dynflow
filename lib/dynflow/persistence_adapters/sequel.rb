@@ -55,7 +55,7 @@ module Dynflow
                                 paginate(table(:execution_plan), options),
                                 options),
                           options[:filters])
-        data_set.map { |record| load_data(record) }
+        data_set.all.map { |record| load_data(record) }
       end
 
       def delete_execution_plans(filters, batch_size = 1000)
