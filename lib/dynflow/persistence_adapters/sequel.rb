@@ -113,6 +113,10 @@ module Dynflow
         load :step, execution_plan_uuid: execution_plan_id, id: step_id
       end
 
+      def load_steps(execution_plan_id)
+        load_records :step, execution_plan_uuid: execution_plan_id
+      end
+
       def save_step(execution_plan_id, step_id, value)
         save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value
       end
@@ -246,7 +250,7 @@ module Dynflow
         value
       end
 
-      def load(what, condition)
+      def load_record(what, condition)
         table = table(what)
         if (record = with_retry { table.first(Utils.symbolize_keys(condition)) } )
           load_data(record)
@@ -254,6 +258,15 @@ module Dynflow
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
       end
+
+      alias_method :load, :load_record
+
+      def load_records(what, condition)
+        table = table(what)
+        records = with_retry { table.filter(Utils.symbolize_keys(condition)).to_a }
+        records.map { |record| load_data(record) }
+      end
+
 
       def load_data(record)
         Utils.indifferent_hash(MultiJson.load(record[:data]))

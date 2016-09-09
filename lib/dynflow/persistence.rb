@@ -76,6 +76,12 @@ module Dynflow
       ExecutionPlan::Steps::Abstract.from_hash(step_hash, execution_plan_id, world)
     end
 
+    def load_steps(execution_plan_id, world)
+      adapter.load_steps(execution_plan_id).map do |step_hash|
+        ExecutionPlan::Steps::Abstract.from_hash(step_hash, execution_plan_id, world)
+      end
+    end
+
     def save_step(step)
       adapter.save_step(step.execution_plan_id, step.id, step.to_hash)
     end
