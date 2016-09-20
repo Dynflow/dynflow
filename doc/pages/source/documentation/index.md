@@ -143,8 +143,8 @@ end
 In example above, it seems that `plan_self` is just shortcut to
 `plan_action MyActions::File::Destroy, filename` but it's not entirely true.
 Note that `plan_action` always triggers `plan` of a given action while `plan_self`
-plans only the `run` of Action, so by using `plan_action` we'd end up in
-endless loop.
+plans only the `run` and `finalize` of Action, so by using `plan_action`
+we'd end up in endless loop.
 
 Also note, that run method does not take any input. In fact, it can use
 `input` method that refers to arguments, that were used in `plan_self`.
@@ -154,8 +154,9 @@ After that some finalizing steps can be taken. Actions can use outputs of other 
 as parts of their inputs establishing dependency. Action's state is serialized between each phase
 and survives machine/executor restarts.
 
-As lightly touched in the previous paragraph there are 3 phases: `plan`, `run`, `finalize`.
-Plan phase starts by triggering an action.
+As lightly touched in the previous paragraphs there are 3 phases: `plan`, `run` and `finalize`.
+Plan phase starts by triggering an action. `run` and `finalize` are only ran if you use
+`plan_self` in `plan` phase.
 
 #### Input and Output
 
@@ -315,7 +316,8 @@ an_action.plan(*args) # an_action is AnAction
 ```
 
 `plan` method is inherited from Dynflow::Action and by default it plans itself if
-`run` method is present using first argument as input.
+`run` method is present using first argument as input. It also calls `finalize`
+method if it is present.
 
 ```ruby
 class AnAction < Dynflow::Action
