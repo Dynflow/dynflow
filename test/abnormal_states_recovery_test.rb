@@ -104,6 +104,9 @@ module Dynflow
           client_world.auto_execute
           expected_locks = ["lock auto-execute", "unlock auto-execute"]
           client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          lock = Coordinator::AutoExecuteLock.new(client_world)
+          client_world.coordinator.acquire(lock)
+          client_world.auto_execute.must_equal []
         end
 
         it "re-runs the plans that were planned but not executed" do

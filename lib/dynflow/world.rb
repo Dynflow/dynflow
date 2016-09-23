@@ -360,6 +360,9 @@ module Dynflow
           end
         end.compact
       end
+    rescue Coordinator::LockError => e
+      logger.info "auto-executor lock already aquired: #{e.message}"
+      []
     end
 
     def try_spawn_delayed_executor(config_for_world)
