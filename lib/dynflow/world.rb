@@ -13,8 +13,8 @@ module Dynflow
       @id                     = SecureRandom.uuid
       @clock                  = spawn_and_wait(Clock, 'clock')
       config_for_world        = Config::ForWorld.new(config, self)
-      config_for_world.validate
       @logger_adapter         = config_for_world.logger_adapter
+      config_for_world.validate
       @transaction_adapter    = config_for_world.transaction_adapter
       @persistence            = Persistence.new(self, config_for_world.persistence_adapter)
       @coordinator            = Coordinator.new(config_for_world.coordinator_adapter)
