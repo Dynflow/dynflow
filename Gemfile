@@ -11,7 +11,11 @@ group :pry do
 end
 
 group :postgresql do
-  gem "pg"
+  if RUBY_VERSION <= '2'
+    gem 'pg', '< 0.19'
+  else
+    gem "pg"
+  end
 end
 
 group :mysql do
