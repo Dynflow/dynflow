@@ -36,6 +36,11 @@
             <ul class="nav navbar-nav">
               <li><a href="<%= url '/' %>">Execution plans</a></li>
               <li><a href="<%= url '/status' %>">Status</a></li>
+              <% if settings.respond_to?(:custom_navigation) && settings.custom_navigation %>
+                <% settings.custom_navigation.each do |description, uri| %>
+                  <li><a href="<%= uri %>"><%= description %></a></li>
+                <% end %>
+              <% end %>
             </ul>
             <ul class="nav navbar-nav navbar-right">
             </ul>
