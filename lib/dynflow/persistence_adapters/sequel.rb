@@ -143,8 +143,7 @@ module Dynflow
       def pull_envelopes(receiver_id)
         connector_feature!
         db.transaction do
-          data_set = table(:envelope).where(receiver_id: receiver_id).to_a
-
+          data_set = table(:envelope).where(receiver_id: receiver_id).all
           envelopes = data_set.map { |record| load_data(record) }
 
           table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
@@ -263,7 +262,7 @@ module Dynflow
 
       def load_records(what, condition)
         table = table(what)
-        records = with_retry { table.filter(Utils.symbolize_keys(condition)).to_a }
+        records = with_retry { table.filter(Utils.symbolize_keys(condition)).all }
         records.map { |record| load_data(record) }
       end
 
