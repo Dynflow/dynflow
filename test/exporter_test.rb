@@ -19,7 +19,8 @@ module Dynflow
 
         before do
           execution_plan.save
-          @exporter = Exporters::Hash.new(execution_plan)
+          @exporter = Exporters::Hash.new(@world)
+          @exporter.add(execution_plan)
         end
 
         let(:atom_keys) do
@@ -31,7 +32,7 @@ module Dynflow
           direct_keys = [:id, :state, :result, :started_at, :ended_at, :execution_time, :real_time]
           changed_keys = [:execution_history, :phase, :sub_plans, :delay_record]
           all_keys = direct_keys + changed_keys
-          exported_plan = @exporter.export
+          exported_plan = @exporter.send(:export, execution_plan)
           execution_plan_hash = execution_plan.to_hash
           assert exported_plan.keys.all? { |key| all_keys.include? key }
           direct_keys.each do |key|
@@ -45,7 +46,7 @@ module Dynflow
         end
 
         it 'exports plan phase properly' do
-          exported_plan = @exporter.export
+          exported_plan = @exporter.send(:export, execution_plan)
 
           action = ->(flow) do
             execution_plan.actions[flow[:action_id] - 1]
@@ -64,6 +65,8 @@ module Dynflow
           end
 
           assert_correct_plan_phase.call(exported_plan[:phase][:plan])
+          batch_exported = @exporter.finalize.index[execution_plan.id][:result]
+          assert_correct_plan_phase.call(batch_exported[:phase][:plan])
         end
 
         it 'exports run phase properly' do
@@ -86,15 +89,20 @@ module Dynflow
             end
           end
 
-          exported_plan = @exporter.export
+          exported_plan = @exporter.send(:export, execution_plan)
           assert_correct_type.call(exported_plan[:phase][:run])
+          batch_exported = @exporter.finalize.index[execution_plan.id][:result]
+          assert_correct_type.call(batch_exported[:phase][:run])
         end
 
         it 'exports finalize phase properly' do
-          exported_plan = @exporter.export
+          exported_plan = @exporter.send(:export, execution_plan)
+          batch_exported = @exporter.finalize.index[execution_plan.id][:result]
+
           finalize = exported_plan[:phase][:finalize]
           finalize[:type].must_equal 'sequence'
           finalize[:steps].count.must_equal execution_plan.finalize_flow.flows.count
+          assert_equal finalize, batch_exported[:phase][:finalize]
         end
 
       end
@@ -112,15 +120,14 @@ module Dynflow
 
       let(:fake_console) { MiniTest::Mock.new }
 
-
       it 'renders one execution plan' do
         fake_console.expect(:erb, nil, [:export,
                                         :locals => {
                                           :template => :show,
                                           :plan => execution_plans.first
                                         }])
-        exporter = ::Dynflow::Exporters::HTML.new(execution_plans.first, :console => fake_console)
-        exporter.export
+        exporter = ::Dynflow::Exporters::HTML.new(@world, :console => fake_console)
+                     .add(execution_plans.first).finalize
         assert fake_console.verify
       end
 
@@ -129,7 +136,8 @@ module Dynflow
                                         :locals => {
                                           :template => :index,
                                           :plans => execution_plans }])
-        exporter = ::Dynflow::Exporters::HTML.new(execution_plans, :console => fake_console)
+        exporter = ::Dynflow::Exporters::HTML.new(@world, :console => fake_console)
+        execution_plans.each { |plan| exporter.add(plan) }
         exporter.export_index
         assert fake_console.verify
       end
@@ -142,8 +150,9 @@ module Dynflow
                                             :plan => plan
                                           }])
         end
-        exporter = ::Dynflow::Exporters::HTML.new(execution_plans, :console => fake_console)
-        exporter.export_all_plans
+        exporter = ::Dynflow::Exporters::HTML.new(@world, :console => fake_console)
+        execution_plans.each { |plan| exporter.add(plan) }
+        exporter.finalize
         assert fake_console.verify
       end
     end
@@ -160,36 +169,25 @@ module Dynflow
 
       let(:fake_tar) do
         tar = MiniTest::Mock.new
-        tar.expect(:finalize, nil)
+        tar.expect(:add_many, tar, [execution_plans])
+        tar.expect(:finalize, tar)
+        tar.expect(:result, tar)
       end
 
       it 'does full html export' do
         exported_plans = Hash[execution_plans.map { |plan| [plan.id + '.html', 'html-' + plan.id]  }]
         fake_console = MiniTest::Mock.new
 
-        fake_html = MiniTest::Mock.new
-        fake_html.expect(:export_index, 'index')
-        fake_html.expect(:export_all_plans, exported_plans.values)
-
-        fake_tar.expect(:add_assets, fake_tar)
-        fake_tar.expect(:add, fake_tar, [exported_plans.merge('index.html' => 'index')])
-
         ::Dynflow::Exporters::Tar.stub :new, fake_tar do
-          ::Dynflow::Exporters::HTML.stub :new, fake_html, [execution_plans, :console => fake_console] do
-            ::Dynflow::Exporters::Tar.full_html_export(execution_plans, fake_console)
-          end
+          ::Dynflow::Exporters::Tar.full_html_export(execution_plans, fake_console)
         end
         assert fake_tar.verify
-        assert fake_html.verify
       end
 
       it 'does full JSON export' do
         exported_plans = Hash[execution_plans.map { |plan| [plan.id + '.json', '{}'] }]
-        fake_tar.expect(:add, fake_tar, [exported_plans])
         ::Dynflow::Exporters::Tar.stub :new, fake_tar do
-          ::Dynflow::Exporters::Hash.stub :export_execution_plan, {} do
-            ::Dynflow::Exporters::Tar.full_json_export(execution_plans)
-          end
+          ::Dynflow::Exporters::Tar.full_json_export(execution_plans)
         end
         assert fake_tar.verify
       end

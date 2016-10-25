@@ -1,5 +1,6 @@
 module Dynflow
   module Exporters
+
     class Hash < Abstract
 
       attr_reader :execution_plan, :world
@@ -9,7 +10,16 @@ module Dynflow
       DELAYED_FILTER = %w(execution_plan_uuid args_serializer).map(&:to_sym)
       EXECUTION_PLAN_FILTER = %w(step_ids root_plan_step_id finalize_flow run_flow class).map(&:to_sym)
 
-      def export
+      def export(plan)
+        @execution_plan = plan
+        result = export_private
+        @execution_plan = nil
+        result
+      end
+
+      private
+
+      def export_private
         hash = execution_plan.to_hash.delete_if { |key, _| EXECUTION_PLAN_FILTER.include? key }
         hash[:phase] = {
           :plan => export_planned_step(execution_plan.root_plan_step),
@@ -21,8 +31,6 @@ module Dynflow
         hash[:delay_record] = export_delay_record
         hash
       end
-
-      private
 
       def export_history
         execution_plan.execution_history.to_hash.map do |history|
@@ -58,7 +66,12 @@ module Dynflow
       def export_sub_plans
         sub_plans = execution_plan.sub_plans
                       .reject { |plan| plan.id == execution_plan.id }
-        sub_plans.map { |sub_plan| full? ? self.class.export_execution_plan(sub_plan) : sub_plan.id }
+        if !full? || sub_plans.empty?
+          sub_plans.map(&:id)
+        else
+          Hash.new(sub_plans.first.world, :with_full_sub_plans => true)
+            .add_many(sub_plans).finalize.result
+        end
       end
 
       def export_delay_record
@@ -73,6 +86,18 @@ module Dynflow
       def full?
         @options.fetch(:with_full_sub_plans, true)
       end
+    end
+
+    class JSON < ::Dynflow::Exporters::Hash
+
+      def export(plan)
+        super(plan).to_json
+      end
+
+      def result
+        '[' + super.join(',') + ']'
+      end
+
     end
   end
 end

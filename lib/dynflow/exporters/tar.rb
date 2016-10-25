@@ -1,37 +1,52 @@
+require 'zlib'
+require 'archive/tar/minitar'
+
 module Dynflow
   module Exporters
-    class Tar
+    class Tar < Abstract
 
       class << self
 
         def full_html_export(plans, console)
-          exporter = Exporters::HTML.new(plans, :console => console)
-          index = exporter.export_index
-
-          arr = plans.map { |plan| plan.id + '.html' }
-                   .zip(exporter.export_all_plans)
-
-          self.new.add_assets.add(::Hash[arr].merge('index.html' => index)).finalize
+          tar = self.new(Exporters::HTML.new(plans.first.world, :console => console),
+                         :with_assets => true,
+                         :with_index  => true,
+                         :filetype    => 'html')
+          tar.add_many(plans).finalize.result
         end
 
         def full_json_export(plans)
-          all_plans = plans.reduce({}) do |acc, plan|
-            exported = Exporters::Hash.export_execution_plan(plan, :with_full_sub_plans => false).to_json
-            acc.merge("#{plan.id}.json" => exported)
-          end
-          new.add(all_plans).finalize
+          world = plans.first.world unless plans.empty?
+          tar = self.new(Exporters::JSON.new(world, :with_sub_plans => false),
+                         :filetype => 'json')
+          tar.add_many(plans).finalize.result
         end
 
       end
 
-      def initialize
-        @buffer = StringIO.new("")
+      def initialize(exporter, options = {})
+        @exporter = exporter
+        @buffer = options.fetch(:io, StringIO.new(""))
         @gzip = Zlib::GzipWriter.new(@buffer)
         @tar = Archive::Tar::Minitar::Output.new(@gzip)
+        @options = options
       end
 
       def finalize
+        @exporter.finalize
+
+        add_assets if @options[:with_assets]
+        add_file('index.' + @options[:filetype], @exporter.export_index) if @options[:with_index]
+
+        @exporter.index.each do |key, value|
+          add_file(key + '.' + @options[:filetype], value[:result])
+        end
+
         @tar.close
+        self
+      end
+
+      def result
         @buffer.string
       end
 
@@ -42,11 +57,13 @@ module Dynflow
         self
       end
 
-      def add(files_hash)
-        raise 'Must be a hash' unless files_hash.is_a? ::Hash
-        files_hash.each do |path, contents|
-          add_file(path, contents)
-        end
+      def add(execution_plan)
+        @exporter.add(execution_plan)
+        self
+      end
+
+      def add_id(execution_plan_id)
+        @exporter.add_id(execution_plan_id)
         self
       end
 
