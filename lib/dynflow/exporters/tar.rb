@@ -7,12 +7,14 @@ module Dynflow
 
       class << self
 
-        def full_html_export(plans, console)
-          tar = self.new(Exporters::HTML.new(plans.first.world, :console => console),
-                         :with_assets => true,
+        def full_html_export(plans)
+          html = Exporters::HTML.new(plans.first.world)
+          tar = self.new(html, :with_assets => true,
                          :with_index  => true,
                          :filetype    => 'html')
-          tar.add_many(plans).finalize.result
+          tar.add_many(plans)
+            .add_file('worlds.html', html.export_worlds)
+            .finalize.result
         end
 
         def full_json_export(plans)
@@ -68,7 +70,7 @@ module Dynflow
       end
 
       def add_assets
-        Dir.chdir('web/assets') do
+        Dir.chdir(::Dynflow::Web.web_dir('/assets')) do
           Dir["**/*"].each do |asset|
             Archive::Tar::Minitar.pack_file(asset, @tar)
           end

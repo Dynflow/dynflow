@@ -34,6 +34,7 @@
         </div>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="nav navbar-nav">
+<<<<<<< 5bbabfa690d5b6dd49f4d008b3cf6abd867976be
               <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/' %>">Execution plans</a></li>
               <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/status' %>">Status</a></li>
               <% if !export && settings.respond_to?(:custom_navigation) && settings.custom_navigation %>
@@ -43,6 +44,10 @@
               <% end %>
               <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/' %>">Execution plans</a></li>
               <li><a class="<%= @export ? 'hidden' : '' %>" href="<%= url '/status' %>">Status</a></li>
+=======
+              <li><a href="<%= url(@export ? 'index.html' : '/') %>">Execution plans</a></li>
+              <li><a href="<%= url(@export ? 'worlds.html' : '/status') %>">Status</a></li>
+>>>>>>> Reworked HTML exporter
             </ul>
             <ul class="nav navbar-nav navbar-right">
             </ul>
