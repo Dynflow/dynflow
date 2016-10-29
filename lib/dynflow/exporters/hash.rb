@@ -95,7 +95,7 @@ module Dynflow
       end
 
       def result
-        '[' + super.join(',') + ']'
+        @result = '[' + super.join(',') + ']'
       end
 
     end
