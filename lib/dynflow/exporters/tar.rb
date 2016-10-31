@@ -18,8 +18,7 @@ module Dynflow
         end
 
         def full_json_export(plans)
-          world = plans.first.world unless plans.empty?
-          tar = self.new(Exporters::JSON.new(world, :with_sub_plans => false),
+          tar = self.new(Exporters::JSON.new(nil, :with_sub_plans => false),
                          :filetype => 'json')
           tar.add_many(plans).finalize.result
         end

@@ -69,12 +69,12 @@ module Dynflow
       end
 
       def export_worlds
-        @validation_results = @world.worlds_validity_check(false)
         worlds = @world.coordinator.find_worlds.reject { |world| world.id == @world.id }
         render :export,
                :locals => {
                  :template => :worlds,
-                 :worlds => worlds
+                 :worlds => worlds,
+                 :validation_results => @world.worlds_validity_check(false)
                }
       end
 

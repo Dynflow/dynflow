@@ -2,10 +2,12 @@ module Dynflow
   module Exporters
     class CSV < Abstract
 
-      WANTED_ATTRIBUTES = ['id', 'state', 'type', 'label', 'result', 'parent_task_id', 'started_at', 'ended_at']
+      WANTED_ATTRIBUTES = ['id', 'state', 'type', 'label', 'result', 'parent_task_id', 'started_at', 'ended_at'].map(&:to_sym)
 
       def export(plan)
-        plan.to_hash.select { |key, _| WANTED_ATTRIBUTES.include? key }.join(',')
+        hash = plan.to_hash
+        hash[:label] = plan.root_plan_step.action_class.name
+        WANTED_ATTRIBUTES.map { |attr| hash[attr] }.join(',')
       end
 
       def result

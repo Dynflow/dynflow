@@ -53,13 +53,17 @@ module Dynflow
       end
 
       def process_atom(step_id)
-        execution_plan.steps[step_id].to_hash.delete_if { |key, _| STEP_FILTER.include? key }
+        step = execution_plan.steps[step_id]
+        hash = execution_plan.steps[step_id].to_hash.reject { |key, _| STEP_FILTER.include? key }
+        hash[:action_class] = step.action_class.name
+        hash
       end
 
       def export_planned_step(step)
         hash = step.to_hash.delete_if { |key, _| STEP_FILTER.include? key }
         hash[:input], hash[:output] = step.action(execution_plan).to_hash.values_at(*ACTION_KEYS)
         hash[:children] = step.planned_steps(execution_plan).map { |child| export_planned_step(child) }
+        hash[:action_class] = step.action_class.name
         hash
       end
 

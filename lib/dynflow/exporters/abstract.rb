@@ -19,7 +19,7 @@ module Dynflow
       # Expected workflow:
       # Exporter.new.add(foo).add(bar).add(baz).finalize
       
-      def initialize(world, options = {})
+      def initialize(world = nil, options = {})
         @world   = world
         @options = options
         @index   = {}
