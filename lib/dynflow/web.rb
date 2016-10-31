@@ -18,6 +18,7 @@ module Dynflow
       File.join(web_dir, sub_dir)
     end
 
+    require 'dynflow/web/navbar_items_helper'
     require 'dynflow/web/filtering_helpers'
     require 'dynflow/web/world_helpers'
     require 'dynflow/web/console_helpers'
