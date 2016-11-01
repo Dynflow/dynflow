@@ -1,6 +1,71 @@
 require_relative 'test_helper'
+require 'ostruct'
+
 module Dynflow
   module ExporterTest
+
+    describe ::Dynflow::Exporters::Abstract do
+      let(:fake_world) { MiniTest::Mock.new }
+      let(:exporter) { ::Dynflow::Exporters::Abstract.new(fake_world) }
+      let(:plan) { OpenStruct.new(:id => 1) }
+      let(:plan2) { OpenStruct.new(:id => 2) }
+      let(:index) { { plan.id => { :plan => plan, :result => nil } } } 
+
+      it '#add' do
+        ret = exporter.add(plan)
+        assert_equal exporter.index, index
+        assert_equal ret, exporter
+      end
+
+      it '#add_id' do
+        ret = exporter.add_id(plan.id)
+        expected = { plan.id => { :plan => nil, :result => nil } }
+        assert_equal exporter.index, expected
+        assert_equal ret, exporter
+      end
+
+      it '#add_many' do
+        ret = exporter.add_many([plan, plan2])
+        expected = { plan.id => { :plan => plan, :result => nil},
+                     plan2.id => { :plan => plan2, :result => nil} }
+        assert_equal exporter.index, expected
+        assert_equal ret, exporter
+      end
+
+      it '#add_many_ids' do
+        expected = { plan.id => { :plan => nil, :result => nil},
+                     plan2.id => { :plan => nil, :result => nil} }
+
+        ret = exporter.add_many_ids([plan.id, plan2.id])
+        assert_equal exporter.index, expected
+        assert_equal ret, exporter
+      end
+
+      it '#finalize, #result' do
+        msg = 'stubbed'
+        expected = { plan.id => { :plan => plan, :result => msg } }
+        exporter.stub(:export, proc { |_thing| msg }) do
+          exporter.add(plan).finalize
+        end
+
+        assert exporter.index.frozen?
+        exporter.index.each { |_, value| assert value.frozen? }
+        assert_equal exporter.index, expected
+
+        assert_equal exporter.result, [msg]
+      end
+
+      it '#resolve_ids' do
+        fake_persistence = MiniTest::Mock.new
+        fake_world.expect(:persistence, fake_persistence)
+        fake_persistence.expect(:find_execution_plans, [plan], [:id => [plan.id]])
+
+        exporter.add_id(plan.id)
+        exporter.send(:resolve_ids)
+        assert_equal exporter.index, index
+      end
+    end
+
     describe ::Dynflow::Exporters::Hash do
 
       before do
@@ -118,46 +183,83 @@ module Dynflow
         2.times.map { @world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123') }
       end
 
-      let(:fake_console) { MiniTest::Mock.new }
+      let(:fake_renderer) { MiniTest::Mock.new }
+      let(:exporter) { ::Dynflow::Exporters::HTML.new(@world) }
 
       it 'renders one execution plan' do
-        fake_console.expect(:erb, nil, [:export,
-                                        :locals => {
-                                          :template => :show,
-                                          :plan => execution_plans.first
-                                        }])
-        exporter = ::Dynflow::Exporters::HTML.new(@world, :console => fake_console)
-                     .add(execution_plans.first).finalize
-        assert fake_console.verify
+        fake_renderer.expect(:render, nil, [:export,
+                                            :locals => {
+                                              :template => :show,
+                                              :plan => execution_plans.first
+                                            }])
+        ::Dynflow::Exporters::TaskRenderer.stub(:new, fake_renderer) do
+          exporter.add(execution_plans.first).finalize
+          assert fake_renderer.verify
+        end
       end
 
       it 'renders index' do
-        fake_console.expect(:erb, nil, [:export,
-                                        :locals => {
-                                          :template => :index,
-                                          :plans => execution_plans }])
-        exporter = ::Dynflow::Exporters::HTML.new(@world, :console => fake_console)
-        execution_plans.each { |plan| exporter.add(plan) }
-        exporter.export_index
-        assert fake_console.verify
+        fake_renderer.expect(:render, nil, [:export,
+                                            :locals => {
+                                              :template => :index,
+                                              :plans => execution_plans }])
+        ::Dynflow::Exporters::TaskRenderer.stub(:new, fake_renderer) do
+          exporter.add_many(execution_plans).export_index
+          assert fake_renderer.verify
+        end
       end
 
       it 'renders all plans' do
         execution_plans.each do |plan|
-          fake_console.expect(:erb, nil, [:export,
-                                          :locals => {
-                                            :template => :show,
-                                            :plan => plan
-                                          }])
+          fake_renderer.expect(:render, nil, [:export,
+                                              :locals => {
+                                                :template => :show,
+                                                :plan => plan
+                                              }])
         end
-        exporter = ::Dynflow::Exporters::HTML.new(@world, :console => fake_console)
-        execution_plans.each { |plan| exporter.add(plan) }
-        exporter.finalize
-        assert fake_console.verify
+        ::Dynflow::Exporters::TaskRenderer.stub(:new, fake_renderer) do
+          exporter.add_many(execution_plans).finalize
+          assert fake_renderer.verify
+        end
+      end
+    end
+
+    describe ::Dynflow::Exporters::CSV do
+
+      before do
+        @world = WorldFactory.create_world
+        execution_plans.each(&:save)
+      end
+
+      let(:exporter) { exporter = ::Dynflow::Exporters::CSV.new(@world) }
+      let(:header) do
+        ::Dynflow::Exporters::CSV::WANTED_ATTRIBUTES.map(&:to_s).join(',')
+      end
+      let(:execution_plans) do
+        2.times.map { @world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123') }
+      end
+
+      it 'renders header' do
+        assert_equal exporter.result, header
+      end
+
+      it 'renders plans' do
+        exporter.add_many(execution_plans)
+        lines = exporter.result.split("\n")
+        assert_equal lines.first, header
+        execution_plans.each_with_index do |plan, index|
+          data = Hash[::Dynflow::Exporters::CSV::WANTED_ATTRIBUTES.zip(lines[index + 1].split(','))]
+          assert_equal data[:id], plan.id
+          assert_equal data[:state], plan.state.to_s
+          assert_equal data[:result], plan.result.to_s
+          assert_equal data[:parent_task_id], plan.caller_execution_plan_id.to_s
+          assert_equal data[:label], plan.entry_action.class.name
+        end
       end
     end
 
     describe ::Dynflow::Exporters::Tar do
+
       before do
         @world = WorldFactory.create_world
         execution_plans.each(&:save)
@@ -167,31 +269,34 @@ module Dynflow
         2.times.map { @world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123') }
       end
 
-      let(:fake_tar) do
-        tar = MiniTest::Mock.new
-        tar.expect(:add_many, tar, [execution_plans])
-        tar.expect(:finalize, tar)
-        tar.expect(:result, tar)
+      it 'wraps another exporter' do
+        dummy = MiniTest::Mock.new
+        dummy.expect(:add, dummy, [1])
+        dummy.expect(:add_id, dummy, [2])
+        dummy.expect(:finalize, dummy)
+        dummy.expect(:index, [])
+
+        exporter = ::Dynflow::Exporters::Tar.new(dummy)
+        exporter.add(1).add_id(2).finalize
+        assert dummy.verify
       end
 
-      it 'does full html export' do
-        exported_plans = Hash[execution_plans.map { |plan| [plan.id + '.html', 'html-' + plan.id]  }]
-        fake_console = MiniTest::Mock.new
+      it 'writes to any IO object' do
+        fake_io = MiniTest::Mock.new
+        fake_io.expect(:close, nil)
+        2.times { fake_io.expect(:write, nil) { true } } # Expects write twice, we don't care about arguments
 
-        ::Dynflow::Exporters::Tar.stub :new, fake_tar do
-          ::Dynflow::Exporters::Tar.full_html_export(execution_plans, fake_console)
-        end
-        assert fake_tar.verify
+        dummy = MiniTest::Mock.new
+        dummy.expect(:finalize, nil)
+        dummy.expect(:index, { '1' => { :result => 'foo' } })
+
+        exporter = ::Dynflow::Exporters::Tar.new(dummy, :io => fake_io, :filetype => '')
+        exporter.finalize
+
+        assert fake_io.verify
+        assert dummy.verify
       end
-
-      it 'does full JSON export' do
-        exported_plans = Hash[execution_plans.map { |plan| [plan.id + '.json', '{}'] }]
-        ::Dynflow::Exporters::Tar.stub :new, fake_tar do
-          ::Dynflow::Exporters::Tar.full_json_export(execution_plans)
-        end
-        assert fake_tar.verify
-      end
-
     end
+
   end
 end
