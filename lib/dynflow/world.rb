@@ -291,7 +291,7 @@ module Dynflow
         end
       end
 
-      plan.update_state(:paused) unless [:paused, :stopped].include?(plan.state)
+      plan.update_state(:paused) if plan.state == :running
       plan.save
       coordinator.release(execution_lock)
       unless plan.error?
