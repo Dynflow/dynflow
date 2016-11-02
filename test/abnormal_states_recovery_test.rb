@@ -85,6 +85,16 @@ module Dynflow
                               "unlock world-invalidation:#{executor_world.id}"]
             client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
           end
+
+          it "handles missing execution plans" do
+            lock = Coordinator::ExecutionLock.new(executor_world, "missing", nil, nil)
+            executor_world.coordinator.acquire(lock)
+            client_world.invalidate(executor_world.registered_world)
+            expected_locks = ["lock world-invalidation:#{executor_world.id}",
+                              "unlock execution-plan:missing",
+                              "unlock world-invalidation:#{executor_world.id}"]
+            client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          end
         end
       end
 

@@ -280,7 +280,13 @@ module Dynflow
     end
 
     def invalidate_execution_lock(execution_lock)
-      plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
+      begin
+        plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
+      rescue KeyError => e
+        logger.error "invalidated execution plan #{execution_lock.execution_plan_id} missing, skipping"
+        coordinator.release(execution_lock)
+        return
+      end
       plan.execution_history.add('terminate execution', execution_lock.world_id)
 
       plan.steps.values.each do |step|
@@ -322,6 +328,7 @@ module Dynflow
               invalidate(world)
               result = :invalidated
             rescue => e
+              logger.error e
               result = e.message
             end
           else
