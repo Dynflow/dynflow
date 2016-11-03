@@ -100,7 +100,7 @@ module Dynflow
 
       def cancel_plan_id(plan_id, reason)
         plan = @world.persistence.load_execution_plan(plan_id)
-        steps = plan.steps.values.select { |step| step.is_a?(::Dynflow::ExecutionPlan::Steps::RunStep) }
+        steps = plan.run_steps
         steps.each do |step|
           step.state = :error
           step.error = ::Dynflow::ExecutionPlan::Steps::Error.new(reason)

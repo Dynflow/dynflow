@@ -113,9 +113,8 @@ module Dynflow
             TestPause.when_paused do
               plan = world.persistence.load_execution_plan(execution_plan.id)
               plan.state.must_equal :running
-              triage = plan.steps.values.find do |s|
-                s.is_a?(Dynflow::ExecutionPlan::Steps::RunStep) &&
-                    s.action_class == Support::CodeWorkflowExample::Triage
+              triage = plan.run_steps.find do |s|
+                s.action_class == Support::CodeWorkflowExample::Triage
               end
               triage.state.must_equal :running
               world.persistence.
@@ -204,10 +203,7 @@ module Dynflow
             it 'fails' do
               assert_equal :error, result.result
               assert_equal :paused, result.state
-              assert_equal :error,
-                           result.steps.values.
-                               find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.
-                               state
+              assert_equal :error, result.run_steps.first.state
             end
           end
 
@@ -292,14 +288,12 @@ module Dynflow
             specify do
               assert_equal :paused, result.state
               assert_equal :error, result.result
-              assert_equal :error, result.steps.values.
-                  find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+              assert_equal :error, result.run_steps.first.state
 
               ep = world.execute(result.id).value
               assert_equal :stopped, ep.state
               assert_equal :success, ep.result
-              assert_equal :success, ep.steps.values.
-                  find { |s| s.is_a? Dynflow::ExecutionPlan::Steps::RunStep }.state
+              assert_equal :success, ep.run_steps.first.state
             end
           end
 

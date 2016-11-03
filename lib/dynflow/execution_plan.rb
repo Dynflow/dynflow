@@ -133,6 +133,18 @@ module Dynflow
       end
     end
 
+    def plan_steps
+      steps_of_type(Dynflow::ExecutionPlan::Steps::PlanStep)
+    end
+
+    def run_steps
+      steps_of_type(Dynflow::ExecutionPlan::Steps::RunStep)
+    end
+
+    def finalize_steps
+      steps_of_type(Dynflow::ExecutionPlan::Steps::FinalizeStep)
+    end
+
     def failed_steps
       steps_in_state(:error)
     end
@@ -263,6 +275,11 @@ module Dynflow
     end
 
     # @api private
+
+    def steps_of_type(type)
+      steps.values.find_all { |step| step.is_a?(type) }
+    end
+
     def current_run_flow
       @run_flow_stack.last
     end

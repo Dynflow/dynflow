@@ -332,10 +332,7 @@ module PlanAssertions
   end
 
   def assert_planning_success(execution_plan)
-    plan_steps = execution_plan.steps.values.find_all do |step|
-      step.is_a? Dynflow::ExecutionPlan::Steps::PlanStep
-    end
-    plan_steps.all? { |plan_step| plan_step.state.must_equal :success, plan_step.error }
+    execution_plan.plan_steps.all? { |plan_step| plan_step.state.must_equal :success, plan_step.error }
   end
 
   def assert_run_flow(expected, execution_plan)
