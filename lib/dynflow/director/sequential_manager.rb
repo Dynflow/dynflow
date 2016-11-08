@@ -1,6 +1,6 @@
 module Dynflow
-  module Executors
-    class Parallel::SequentialManager
+  class Director
+    class SequentialManager
       attr_reader :execution_plan, :world
 
       def initialize(world, execution_plan)

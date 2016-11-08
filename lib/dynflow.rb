@@ -38,6 +38,7 @@ module Dynflow
   require 'dynflow/execution_plan'
   require 'dynflow/delayed_plan'
   require 'dynflow/action'
+  require 'dynflow/director'
   require 'dynflow/executors'
   require 'dynflow/logger_adapters'
   require 'dynflow/world'

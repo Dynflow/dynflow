@@ -1,13 +1,6 @@
 module Dynflow
   module Executors
     class Abstract
-      Event = Algebrick.type do
-        fields! execution_plan_id: String,
-                step_id:           Fixnum,
-                event:             Object,
-                result:            Concurrent::Edge::Future
-      end
-
       include Algebrick::TypeCheck
       attr_reader :world, :logger
 

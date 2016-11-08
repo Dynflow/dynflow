@@ -47,8 +47,8 @@ module Dynflow
           distribute_jobs
         end
 
-        def worker_done(worker, step)
-          @executor_core.tell([:finish_step, step])
+        def worker_done(worker, work)
+          @executor_core.tell([:work_finished, work])
           @free_workers << worker
           distribute_jobs
         end
