@@ -24,7 +24,7 @@ DESC
 
     exit 0
   end
-  
+
   opts.on('-s', '--search=SEARCH', 'Search for SEARCH') do |arg|
     utils.task_search = arg
   end

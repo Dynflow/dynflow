@@ -2,7 +2,7 @@ module Dynflow
   module Exporters
     class CSV < Abstract
 
-      WANTED_ATTRIBUTES = ['id', 'state', 'type', 'label', 'result', 'parent_task_id', 'started_at', 'ended_at'].map(&:to_sym)
+      WANTED_ATTRIBUTES = %w(id state type label result parent_task_id started_at ended_at).map(&:to_sym)
 
       def export(plan)
         hash = plan.to_hash

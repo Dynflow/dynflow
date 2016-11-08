@@ -9,7 +9,7 @@ module Dynflow
       let(:exporter) { ::Dynflow::Exporters::Abstract.new(fake_world) }
       let(:plan) { OpenStruct.new(:id => 1) }
       let(:plan2) { OpenStruct.new(:id => 2) }
-      let(:index) { { plan.id => { :plan => plan, :result => nil } } } 
+      let(:index) { { plan.id => { :plan => plan, :result => nil } } }
 
       it '#add' do
         ret = exporter.add(plan)
