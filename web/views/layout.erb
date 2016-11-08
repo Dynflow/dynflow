@@ -36,7 +36,7 @@
             <ul class="nav navbar-nav">
               <li><a href="<%= url(@export ? 'index.html' : '/') %>">Execution plans</a></li>
               <li><a href="<%= url(@export ? 'worlds.html' : '/status') %>">Status</a></li>
-              <% if !export && settings.respond_to?(:custom_navigation) && settings.custom_navigation %>
+              <% if !@export && settings.respond_to?(:custom_navigation) && settings.custom_navigation %>
                 <% settings.custom_navigation.each do |description, uri| %>
                   <li><a href="<%= uri %>"><%= description %></a></li>
                 <% end %>
