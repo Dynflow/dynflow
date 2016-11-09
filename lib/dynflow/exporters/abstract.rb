@@ -85,7 +85,7 @@ module Dynflow
       def resolve_ids
         ids = @index.select { |_key, value| value[:plan].nil? }.keys
         return if ids.empty?
-        @world.persistence.find_execution_plans(:id => ids).each do |plan|
+        @world.persistence.find_execution_plans(:filters => { :uuid => ids }).each do |plan|
           @index[plan.id].update(:plan => plan)
         end
       end

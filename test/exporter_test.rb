@@ -58,7 +58,7 @@ module Dynflow
       it '#resolve_ids' do
         fake_persistence = MiniTest::Mock.new
         fake_world.expect(:persistence, fake_persistence)
-        fake_persistence.expect(:find_execution_plans, [plan], [:id => [plan.id]])
+        fake_persistence.expect(:find_execution_plans, [plan], [:filters => { :uuid => [plan.id] }])
 
         exporter.add_id(plan.id)
         exporter.send(:resolve_ids)
