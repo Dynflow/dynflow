@@ -147,13 +147,6 @@ Style/Alias:
 Style/AlignHash:
   Enabled: false
 
-# Offense count: 51
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles.
-# SupportedStyles: with_first_parameter, with_fixed_indentation
-Style/AlignParameters:
-  Enabled: false
-
 # Offense count: 11
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles.

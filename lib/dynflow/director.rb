@@ -167,12 +167,12 @@ module Dynflow
 
       if @execution_plan_managers[execution_plan_id]
         raise Dynflow::Error,
-            "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
+              "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
       end
 
       if execution_plan.state == :stopped
         raise Dynflow::Error,
-            "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
+              "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
       end
 
       @execution_plan_managers[execution_plan_id] =

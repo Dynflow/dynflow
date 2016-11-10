@@ -5,17 +5,17 @@ module Dynflow
 
       # @param [Array] children is a private API parameter
       def initialize(execution_plan_id,
-          id,
-          state,
-          action_class,
-          action_id,
-          error,
-          world,
-          started_at = nil,
-          ended_at = nil,
-          execution_time = 0.0,
-          real_time = 0.0,
-          children = [])
+                     id,
+                     state,
+                     action_class,
+                     action_id,
+                     error,
+                     world,
+                     started_at     = nil,
+                     ended_at       = nil,
+                     execution_time = 0.0,
+                     real_time      = 0.0,
+                     children       = [])
 
         super execution_plan_id, id, state, action_class, action_id, error, world, started_at,
               ended_at, execution_time, real_time

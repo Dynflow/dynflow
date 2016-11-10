@@ -16,7 +16,7 @@ module Dynflow
         def handle_execution(execution_plan_id, finished)
           if terminating?
             raise Dynflow::Error,
-                "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
+                  "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
           end
 
           feed_pool(@director.start_execution(execution_plan_id, finished))

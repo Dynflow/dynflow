@@ -52,15 +52,15 @@ module Dynflow
 
       def dispatch_request(request, client_world_id, request_id)
         executor_id = match request,
-            (on ~Execution do |execution|
-               AnyExecutor
-             end),
-            (on ~Event do |event|
-               find_executor(event.execution_plan_id)
-             end),
-            (on Ping.(~any) do |receiver_id|
-               receiver_id
-             end)
+                            (on ~Execution do |execution|
+                               AnyExecutor
+                             end),
+                            (on ~Event do |event|
+                               find_executor(event.execution_plan_id)
+                             end),
+                            (on Ping.(~any) do |receiver_id|
+                               receiver_id
+                             end)
         envelope = Envelope[request_id, client_world_id, executor_id, request]
         if Dispatcher::UnknownWorld === envelope.receiver_id
           raise Dynflow::Error, "Could not find an executor for #{envelope}"
@@ -74,15 +74,15 @@ module Dynflow
       def dispatch_response(envelope)
         return unless @tracked_requests.key?(envelope.request_id)
         match envelope.message,
-            (on ~Accepted do
-               @tracked_requests[envelope.request_id].accept!
-             end),
-            (on ~Failed do |msg|
-               resolve_tracked_request(envelope.request_id, Dynflow::Error.new(msg.error))
-             end),
-            (on Done | Pong do
-               resolve_tracked_request(envelope.request_id)
-             end)
+              (on ~Accepted do
+                 @tracked_requests[envelope.request_id].accept!
+               end),
+              (on ~Failed do |msg|
+                 resolve_tracked_request(envelope.request_id, Dynflow::Error.new(msg.error))
+               end),
+              (on Done | Pong do
+                 resolve_tracked_request(envelope.request_id)
+               end)
       end
 
       private
@@ -128,12 +128,12 @@ module Dynflow
         else
           tracked_request = @tracked_requests[id]
           resolve_to = match tracked_request.request,
-              (on Execution.(execution_plan_id: ~any) do |uuid|
-                 @world.persistence.load_execution_plan(uuid)
-               end),
-              (on Event | Ping do
-                 true
-               end)
+                             (on Execution.(execution_plan_id: ~any) do |uuid|
+                                @world.persistence.load_execution_plan(uuid)
+                              end),
+                             (on Event | Ping do
+                                true
+                              end)
           @tracked_requests.delete(id).success! resolve_to
         end
       end

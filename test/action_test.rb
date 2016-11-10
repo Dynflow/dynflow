@@ -148,7 +148,7 @@ module Dynflow
 
         class Config
           attr_accessor :external_service, :poll_max_retries,
-              :poll_intervals, :attempts_before_next_interval
+                        :poll_intervals, :attempts_before_next_interval
 
           def initialize
             @external_service              = ExternalService.new

@@ -5,9 +5,9 @@ module Dynflow
     include Algebrick::Matching
 
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-        :transaction_adapter, :logger_adapter, :coordinator,
-        :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter
+                :transaction_adapter, :logger_adapter, :coordinator,
+                :persistence, :action_classes, :subscription_index,
+                :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter
 
     def initialize(config)
       @id                     = SecureRandom.uuid

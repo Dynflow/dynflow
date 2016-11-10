@@ -214,10 +214,10 @@ module TestHelpers
     assert_equal :stopped, plan.state
     assert_equal :success, plan.result
     assert_equal plan.execution_history.map(&:name),
-        ['start execution',
-         'terminate execution',
-         'start execution',
-         'finish execution']
+                 ['start execution',
+                  'terminate execution',
+                  'start execution',
+                  'finish execution']
     refute_equal plan.execution_history.first.world_id, plan.execution_history.to_a.last.world_id
   end
 end
