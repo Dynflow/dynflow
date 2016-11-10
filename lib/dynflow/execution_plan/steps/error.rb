@@ -55,7 +55,7 @@ module Dynflow
 
       def exception
         @exception ||
-            exception_class.exception(message).tap { |e| e.set_backtrace backtrace }
+          exception_class.exception(message).tap { |e| e.set_backtrace backtrace }
       end
     end
   end

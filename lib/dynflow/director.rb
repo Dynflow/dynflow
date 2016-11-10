@@ -147,7 +147,7 @@ module Dynflow
     def rescue?(manager)
       return false if @world.terminating?
       @world.auto_rescue && manager.execution_plan.state == :paused &&
-          !@plan_ids_in_rescue.include?(manager.execution_plan.id)
+        !@plan_ids_in_rescue.include?(manager.execution_plan.id)
     end
 
     def rescue!(manager)

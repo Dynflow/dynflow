@@ -378,13 +378,6 @@ Style/MultilineMethodCallIndentation:
 
 # Offense count: 9
 # Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, SupportedStyles, IndentationWidth.
-# SupportedStyles: aligned, indented
-Style/MultilineOperationIndentation:
-  Enabled: false
-
-# Offense count: 9
-# Cop supports --auto-correct.
 Style/MutableConstant:
   Enabled: false
 

@@ -119,7 +119,7 @@ module Dynflow
 
     def phase!(*phases)
       phase?(*phases) or
-          raise TypeError, "Wrong phase #{phase}, required #{phases}"
+        raise TypeError, "Wrong phase #{phase}, required #{phases}"
     end
 
     def input=(hash)
@@ -137,7 +137,7 @@ module Dynflow
     def output
       if phase? Plan
         @output_reference or
-            raise 'plan_self has to be invoked before being able to reference the output'
+          raise 'plan_self has to be invoked before being able to reference the output'
       else
         @output
       end
