@@ -74,7 +74,6 @@ module Dynflow
 
         5.times { progress_action_time action }
 
-
         action.output.must_equal('task' => { 'progress' => 100, 'done' => true },
                                  'poll_attempts' => {'total' => 9, 'failed' => 0 })
         action.run_progress.must_equal 1
@@ -201,7 +200,6 @@ module Dynflow
       let :polling_execution_plan do
         world.plan(Support::DummyExample::Polling, { :external_task_id => '123' })
       end
-
 
       it "is able to execute plans inside the thread" do
         world.execute(execution_plan.id).value.tap do |plan|

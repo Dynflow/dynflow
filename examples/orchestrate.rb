@@ -24,7 +24,6 @@ require_relative 'example_helper'
 
 module Orchestrate
 
-
   class CreateInfrastructure < Dynflow::Action
 
     def plan

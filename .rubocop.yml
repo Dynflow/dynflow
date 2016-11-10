@@ -22,3 +22,6 @@ Style/AlignParameters:
 Style/MultilineOperationIndentation:
   Enabled: true
 
+# Cop supports --auto-correct.
+Style/EmptyLines:
+  Enabled: true

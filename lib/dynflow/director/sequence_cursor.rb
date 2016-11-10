@@ -29,7 +29,6 @@ module Dynflow
         end
       end
 
-
       # return true if we can't move the cursor further, either when
       # everyting is done in the sequence or there was some failure
       # that prevents us from moving

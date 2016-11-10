@@ -65,7 +65,6 @@ module Jekyll
         [tag.to_s, range < (size = posts.size) ? range = size : size]
       }
 
-
       range = 1..range
 
       tags.sort!.map! { |tag, size| [tag, range.quantile(size, num)] }

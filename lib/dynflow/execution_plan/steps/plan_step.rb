@@ -68,7 +68,6 @@ module Dynflow
                                  error:      [] }
       end
 
-
       def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash
         new execution_plan_id,

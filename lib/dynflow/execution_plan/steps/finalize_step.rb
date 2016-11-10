@@ -13,7 +13,6 @@ module Dynflow
         }
       end
 
-
       def phase
         Action::Finalize
       end

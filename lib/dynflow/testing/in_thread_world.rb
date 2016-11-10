@@ -37,7 +37,6 @@ module Dynflow
         @instance ||= self.new(test_world_config(&block))
       end
 
-
       def initialize(*args)
         super
         @clock = ManagedClock.new

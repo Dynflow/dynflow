@@ -38,7 +38,6 @@ class CostyAction < Dynflow::Action
   end
 end
 
-
 class ConcurrencyControlExample < Dynflow::Action
   include Dynflow::Action::WithSubPlans
 

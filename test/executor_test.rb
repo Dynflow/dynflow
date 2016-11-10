@@ -563,7 +563,6 @@ module Dynflow
             assert_next_steps([], 4, false)
           end
 
-
           it "is not done while other steps can be finished" do
             assert_next_steps([4, 13])
             assert_next_steps([], 4, false)

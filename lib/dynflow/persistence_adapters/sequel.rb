@@ -266,7 +266,6 @@ module Dynflow
         records.map { |record| load_data(record) }
       end
 
-
       def load_data(record)
         Utils.indifferent_hash(MultiJson.load(record[:data]))
       end

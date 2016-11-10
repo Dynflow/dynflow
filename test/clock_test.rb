@@ -12,7 +12,6 @@ describe clock_class do
     clock.ping [], 0.1, :pong
   end
 
-
   it 'pongs' do
     q = Queue.new
     start = Time.now
@@ -50,6 +49,5 @@ describe clock_class do
     end
     threads.each &:join
   end
-
 
 end
