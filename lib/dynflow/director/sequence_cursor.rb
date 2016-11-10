@@ -51,7 +51,7 @@ module Dynflow
       end
 
       def move
-        @index    += 1
+        @index   += 1
         next_flow = @sequence.sub_flows[@index]
         add_todo(next_flow)
       end

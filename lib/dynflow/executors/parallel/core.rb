@@ -6,11 +6,11 @@ module Dynflow
         attr_reader :logger
 
         def initialize(world, pool_size)
-          @logger = world.logger
-          @world = Type! world, World
-          @pool = Pool.spawn('pool', reference, pool_size, world.transaction_adapter)
+          @logger     = world.logger
+          @world      = Type! world, World
+          @pool       = Pool.spawn('pool', reference, pool_size, world.transaction_adapter)
           @terminated = nil
-          @director = Director.new(@world)
+          @director   = Director.new(@world)
         end
 
         def handle_execution(execution_plan_id, finished)

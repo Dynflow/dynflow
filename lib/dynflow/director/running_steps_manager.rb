@@ -64,8 +64,7 @@ module Dynflow
 
         step = @running_steps[event.step_id]
         unless step
-          event.result.fail UnprocessableEvent.new(
-                                                   'step is not suspended, it cannot process events')
+          event.result.fail UnprocessableEvent.new('step is not suspended, it cannot process events')
           return next_work_items
         end
 
