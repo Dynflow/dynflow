@@ -141,7 +141,7 @@ module Dynflow
       else
         execution_plan = plan(action_class, *args)
       end
-      planned        = execution_plan.state == :planned
+      planned = execution_plan.state == :planned
 
       if planned
         done = execute(execution_plan.id, Concurrent.future)

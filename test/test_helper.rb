@@ -194,7 +194,7 @@ module TestHelpers
       client_world.persistence.load_execution_plan(triggered.id).state == :running
     end
 
-    executor  = WorldFactory.created_worlds.find { |e| e.id == executor_id }
+    executor = WorldFactory.created_worlds.find { |e| e.id == executor_id }
     raise "Could not find an executor with id #{executor_id}" unless executor
     yield executor
     return triggered
@@ -239,7 +239,7 @@ events_test = -> do
 
   Concurrent::Edge::Event.singleton_class.send :define_method, :new do |*args, &block|
     super(*args, &block).tap do |event|
-      event_creations[event.object_id]  = caller(4)
+      event_creations[event.object_id] = caller(4)
     end
   end
 

@@ -1,1 +1,6 @@
 inherit_from: .rubocop_todo.yml
+
+# Cop supports --auto-correct.
+# Configuration parameters: AllowForAlignment, ForceEqualSignAlignment.
+Style/ExtraSpacing:
+  Enabled: true

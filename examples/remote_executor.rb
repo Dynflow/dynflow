@@ -21,7 +21,7 @@ class RemoteExecutorExample
   class << self
 
     def run_observer
-      world               = ExampleHelper.create_world do |config|
+      world = ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
         config.connector           = connector
         config.executor            = false
@@ -30,7 +30,7 @@ class RemoteExecutorExample
     end
 
     def run_server
-      world               = ExampleHelper.create_world do |config|
+      world = ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
         config.connector           = connector
       end
@@ -65,7 +65,7 @@ class RemoteExecutorExample
     end
 
     def run_client
-      world    = ExampleHelper.create_world do |config|
+      world = ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
         config.executor            = false
         config.connector           = connector

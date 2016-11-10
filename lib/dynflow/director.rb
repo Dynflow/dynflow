@@ -103,7 +103,7 @@ module Dynflow
     end
 
     def work_finished(work)
-      manager   = @execution_plan_managers[work.execution_plan_id]
+      manager = @execution_plan_managers[work.execution_plan_id]
       unless_done(manager, manager.what_is_next(work))
     end
 

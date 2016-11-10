@@ -155,9 +155,9 @@ module Dynflow
         block.call
       ensure
         @progress_done, @progress_weight = action.calculated_progress
-        @ended_at       = Time.now
+        @ended_at        = Time.now
         @execution_time += @ended_at - start
-        @real_time      = @ended_at - @started_at
+        @real_time       = @ended_at - @started_at
       end
     end
   end

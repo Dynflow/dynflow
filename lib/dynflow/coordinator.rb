@@ -60,8 +60,8 @@ module Dynflow
       # @api override
       # check to be performed before we try to acquire the lock
       def validate!
-        Type! id,       String
-        Type! @data,     Hash
+        Type! id,    String
+        Type! @data, Hash
         raise "The record id %{s} too large" % id if id.size > 100
         raise "The record class name %{s} too large" % self.class.name if self.class.name.size > 100
       end
@@ -94,7 +94,7 @@ module Dynflow
     class ExecutorWorld < WorldRecord
       def initialize(world)
         super
-        self.active    = !world.terminating?
+        self.active = !world.terminating?
       end
 
       def active?
@@ -143,7 +143,7 @@ module Dynflow
       def initialize(world)
         super
         @world = world
-        @data.merge!(owner_id: "world:#{world.id}",  world_id: world.id)
+        @data.merge!(owner_id: "world:#{world.id}", world_id: world.id)
       end
 
       def self.lock_id(*args)

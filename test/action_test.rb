@@ -81,7 +81,7 @@ module Dynflow
       end
 
       it 'fails when output is not serializable' do
-        klass  = Class.new(Dynflow::Action) do
+        klass = Class.new(Dynflow::Action) do
           def run
             output.update key: Object.new
           end
@@ -235,13 +235,13 @@ module Dynflow
         end
 
         it 'initiates the external task' do
-          action   = run_action plan
+          action = run_action plan
 
           action.output[:task][:task_id].must_equal 123
         end
 
         it 'polls till the task is done' do
-          action   = run_action plan
+          action = run_action plan
 
           9.times { progress_action_time action }
           action.done?.must_equal false
@@ -255,14 +255,14 @@ module Dynflow
         end
 
         it 'tries to poll for the old task when resuming' do
-          action   = run_action plan
+          action = run_action plan
           action.output[:task][:progress].must_equal 0
           run_action action
           action.output[:task][:progress].must_equal 10
         end
 
         it 'invokes the external task again when polling on the old one fails' do
-          action   = run_action plan
+          action = run_action plan
           action.world.silence_logger!
           action.external_service.will_fail
           action.output[:task][:progress].must_equal 0
@@ -271,7 +271,7 @@ module Dynflow
         end
 
         it 'tolerates some failure while polling' do
-          action   = run_action plan
+          action = run_action plan
           action.external_service.will_fail
           action.world.silence_logger!
 
@@ -293,7 +293,7 @@ module Dynflow
           TestPollingAction.config.poll_intervals = [1, 2]
           TestPollingAction.config.attempts_before_next_interval = 2
 
-          action   = run_action plan
+          action = run_action plan
           pings = []
           pings << next_ping(action)
           progress_action_time action
@@ -317,7 +317,7 @@ module Dynflow
         end
 
         it 'timesout' do
-          action   = run_action plan
+          action = run_action plan
           iterations = 0
           while progress_action_time action
             # we count the number of iterations till the timeout occurs

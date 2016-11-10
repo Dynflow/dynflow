@@ -48,9 +48,10 @@ module Dynflow
       nil
     end
 
-    ERROR         = Object.new
-    SUSPEND       = Object.new
-    Phase         = Algebrick.type do
+    ERROR   = Object.new
+    SUSPEND = Object.new
+    Skip    = Algebrick.atom
+    Phase   = Algebrick.type do
       Executable = type do
         variants Plan     = atom,
                  Run      = atom,
@@ -58,7 +59,6 @@ module Dynflow
       end
       variants Executable, Present = atom
     end
-    Skip    = Algebrick.atom
 
     module Executable
       def execute_method_name

@@ -277,7 +277,7 @@ module Dynflow
 
       def extract_metadata(what, value)
         meta_keys = META_DATA.fetch(what)
-        value         = Utils.indifferent_hash(value)
+        value     = Utils.indifferent_hash(value)
         meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
       end
 

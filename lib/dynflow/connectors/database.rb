@@ -151,7 +151,7 @@ module Dynflow
                                  1
                                end
                              end
-        @core  = Core.spawn('connector-database-core', self, polling_interval)
+        @core = Core.spawn('connector-database-core', self, polling_interval)
         start_listening(world) if world
       end
 
