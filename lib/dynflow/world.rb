@@ -360,7 +360,7 @@ module Dynflow
     def auto_execute
       coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
         planned_execution_plans =
-            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
+          self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
         planned_execution_plans.map do |ep|
           if coordinator.find_locks(Dynflow::Coordinator::ExecutionLock.unique_filter(ep.id)).empty?
             execute(ep.id)
@@ -384,12 +384,12 @@ module Dynflow
 
     def calculate_subscription_index
       @subscription_index =
-          action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
-            next unless klass.subscribe
-            Array(klass.subscribe).each do |subscribed_class|
-              index[Utils.constantize(subscribed_class.to_s)] << klass
-            end
-          end.tap { |o| o.freeze }
+        action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
+        next unless klass.subscribe
+        Array(klass.subscribe).each do |subscribed_class|
+          index[Utils.constantize(subscribed_class.to_s)] << klass
+        end
+      end.tap { |o| o.freeze }
     end
 
     def run_before_termination_hooks

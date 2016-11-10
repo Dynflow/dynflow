@@ -176,7 +176,7 @@ module Dynflow
       end
 
       @execution_plan_managers[execution_plan_id] =
-          ExecutionPlanManager.new(@world, execution_plan, finished)
+        ExecutionPlanManager.new(@world, execution_plan, finished)
     rescue Dynflow::Error => e
       finished.fail e
       nil
