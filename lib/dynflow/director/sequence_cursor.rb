@@ -64,14 +64,11 @@ module Dynflow
 
       def next_steps
         move if @no_error_so_far
-        if done?
-          if @parent_cursor
-            return @parent_cursor.what_is_next(self, @no_error_so_far)
-          else
-            return []
-          end
+        return steps_todo unless done?
+        if @parent_cursor
+          return @parent_cursor.what_is_next(self, @no_error_so_far)
         else
-          return steps_todo
+          return []
         end
       end
 

@@ -50,10 +50,8 @@ module Dynflow
         when StepWorkItem
           step = work.step
           execution_plan.steps[step.id] = step
-          suspended, work = @running_steps_manager.done(work.step)
-          unless suspended
-            work = compute_next_from_step.call step
-          end
+          suspended, work = @running_steps_manager.done(step)
+          work = compute_next_from_step.call step unless suspended
           work
         when FinalizeWorkItem
           raise unless @finalize_manager
@@ -83,19 +81,17 @@ module Dynflow
       end
 
       def start_run
-        unless execution_plan.run_flow.empty?
-          raise 'run phase already started' if @run_manager
-          @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow)
-          @run_manager.start.map { |s| prepare_next_step(s) }.tap { |a| raise if a.empty? }
-        end
+        return if execution_plan.run_flow.empty?
+        raise 'run phase already started' if @run_manager
+        @run_manager = FlowManager.new(execution_plan, execution_plan.run_flow)
+        @run_manager.start.map { |s| prepare_next_step(s) }.tap { |a| raise if a.empty? }
       end
 
       def start_finalize
-        unless execution_plan.finalize_flow.empty?
-          raise 'finalize phase already started' if @finalize_manager
-          @finalize_manager = SequentialManager.new(@world, execution_plan)
-          [FinalizeWorkItem.new(execution_plan.id, @finalize_manager)]
-        end
+        return if execution_plan.finalize_flow.empty?
+        raise 'finalize phase already started' if @finalize_manager
+        @finalize_manager = SequentialManager.new(@world, execution_plan)
+        [FinalizeWorkItem.new(execution_plan.id, @finalize_manager)]
       end
 
       def finish
