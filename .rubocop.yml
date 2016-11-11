@@ -6,11 +6,6 @@ Style/ExtraSpacing:
   Enabled: true
 
 # Cop supports --auto-correct.
-# Configuration parameters: IndentationWidth.
-Style/IndentAssignment:
-  Enabled: true
-
-# Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles.
 # SupportedStyles: with_first_parameter, with_fixed_indentation
 Style/AlignParameters:
