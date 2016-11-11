@@ -34,34 +34,24 @@ module Dynflow
       def what_is_next(work)
         Type! work, WorkItem
 
-        compute_next_from_step =-> step do
-          raise unless @run_manager
-          raise if @run_manager.done?
-
-          next_steps = @run_manager.what_is_next(step)
-          if @run_manager.done?
-            start_finalize or finish
-          else
-            next_steps.map { |s| prepare_next_step(s) }
-          end
-        end
-
         case work
         when StepWorkItem
           step = work.step
           execution_plan.steps[step.id] = step
           suspended, work = @running_steps_manager.done(step)
-          work = compute_next_from_step.call step unless suspended
+          work = compute_next_from_step(step) unless suspended
           work
         when FinalizeWorkItem
-          raise unless @finalize_manager
+          raise "Finalize work item without @finalize_manager ready" unless @finalize_manager
           finish
         end
       end
 
       def event(event)
         Type! event, Event
-        raise unless event.execution_plan_id == @execution_plan.id
+        unless event.execution_plan_id == @execution_plan.id
+          raise "event #{event.inspect} doesn't belong to plan #{@execution_plan.id}"
+        end
         @running_steps_manager.event(event)
       end
 
@@ -74,6 +64,18 @@ module Dynflow
       end
 
       private
+
+      def compute_next_from_step(step)
+        raise "run manager not set" unless @run_manager
+        raise "run manager already done" if @run_manager.done?
+
+        next_steps = @run_manager.what_is_next(step)
+        if @run_manager.done?
+          start_finalize or finish
+        else
+          next_steps.map { |s| prepare_next_step(s) }
+        end
+      end
 
       def no_work
         raise "No work but not done" unless done?
