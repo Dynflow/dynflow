@@ -7,7 +7,7 @@ module Dynflow
         @work_items = Queue.new
       end
 
-      def execute(execution_plan_id, finished)
+      def execute(execution_plan_id, finished, _wait_for_acceptance = true)
         feed_queue(@director.start_execution(execution_plan_id, finished))
         process_work_items
         finished
@@ -41,8 +41,11 @@ module Dynflow
         work_items.each { |work_item| @work_items.push(work_item) }
       end
 
-      def terminate
+      def terminate(future = Concurrent.future)
         @director.terminate
+        future.success true
+      rescue => e
+        future.fail e
       end
     end
   end
