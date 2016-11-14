@@ -57,7 +57,7 @@ module Dynflow
       end
 
       def event(execution_plan_id, step_id, event, done = Concurrent.future)
-        publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
+        @executor.event(execution_plan_id, step_id, event, done)
       end
     end
   end

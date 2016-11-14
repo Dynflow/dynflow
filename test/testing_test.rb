@@ -214,7 +214,7 @@ module Dynflow
       end
 
       it "is able to handle when events" do
-        world.execute(execution_plan.id).value.tap do |plan|
+        world.execute(polling_execution_plan.id).value.tap do |plan|
           plan.state.must_equal :stopped
         end
       end
@@ -227,7 +227,6 @@ module Dynflow
         end
 
         describe 'of plan with skips' do
-
           let :execution_plan do
             plan = world.plan(Support::RescueExample::ComplexActionWithSkip, :error_on_run)
             world.execute(plan.id).value

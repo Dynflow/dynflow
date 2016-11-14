@@ -9,7 +9,7 @@ module Dynflow
         @logger = world.logger
       end
 
-      # @param execution_plan_id [Number] id of execution plan
+      # @param execution_plan_id [String] id of execution plan
       # @param finished [Concurrent::Edge::Future]
       # @param wait_for_acceptance [TrueClass|FalseClass] should the executor confirm receiving
       # the event, disable if calling executor from within executor

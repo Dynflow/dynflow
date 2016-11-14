@@ -15,8 +15,8 @@ module Dynflow
 
       def process_work_items
         until @work_items.empty?
-          clock_tick
           feed_queue(handle_work(@work_items.pop))
+          clock_tick
         end
       end
 
@@ -27,7 +27,7 @@ module Dynflow
 
       def event(execution_plan_id, step_id, event, future = Concurrent.future)
         event = (Director::Event[execution_plan_id, step_id, event, future])
-        @director.event(event).each do |work_item|
+        @director.handle_event(event).each do |work_item|
           @work_items << work_item
         end
         future
