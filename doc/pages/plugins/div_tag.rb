@@ -1,7 +1,7 @@
 module Jekyll
   class DivTag < Liquid::Block
     def render(context)
-      content            = super
+      content = super
 
       <<-HTML.gsub(/^ +\|/, '')
         |<#{tag} class="#{@markup}">

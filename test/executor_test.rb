@@ -530,7 +530,7 @@ module Dynflow
           world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         end
 
-        let(:manager) { Executors::Parallel::FlowManager.new execution_plan, execution_plan.run_flow }
+        let(:manager) { Director::FlowManager.new execution_plan, execution_plan.run_flow }
 
         def assert_next_steps(expected_next_step_ids, finished_step_id = nil, success = true)
           if finished_step_id
@@ -562,7 +562,6 @@ module Dynflow
             assert_next_steps([4, 13])
             assert_next_steps([], 4, false)
           end
-
 
           it "is not done while other steps can be finished" do
             assert_next_steps([4, 13])

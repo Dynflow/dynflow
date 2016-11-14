@@ -53,7 +53,7 @@ module Dynflow
           unless output[:slept]
             output[:slept] = true
             puts "SLEEPING" if input[:should_sleep]
-            suspend { |suspended| world.clock.ping(suspended, 100, [:run])  } if input[:should_sleep]
+            suspend { |suspended| world.clock.ping(suspended, 100, [:run]) } if input[:should_sleep]
           end
         end
       end

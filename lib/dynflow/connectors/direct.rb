@@ -47,7 +47,7 @@ module Dynflow
       end
 
       def initialize(world = nil)
-        @core  = Core.spawn('connector-direct-core', self)
+        @core = Core.spawn('connector-direct-core', self)
         start_listening(world) if world
       end
 

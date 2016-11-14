@@ -11,7 +11,7 @@ module Dynflow
       end
 
       def ping(who, time, with_what = nil, where = :<<)
-        time  = current_time + time if time.is_a? Numeric
+        time = current_time + time if time.is_a? Numeric
         with = with_what.nil? ? None : Some[Object][with_what]
         @pending_pings << Clock::Timer[who, time, with, where]
         @pending_pings.sort!

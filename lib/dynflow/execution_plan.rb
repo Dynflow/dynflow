@@ -35,17 +35,17 @@ module Dynflow
 
     # all params with default values are part of *private* api
     def initialize(world,
-        id = SecureRandom.uuid,
-        state = :pending,
-        root_plan_step = nil,
-        run_flow = Flows::Concurrence.new([]),
-        finalize_flow = Flows::Sequence.new([]),
-        steps = {},
-        started_at = nil,
-        ended_at = nil,
-        execution_time = nil,
-        real_time = 0.0,
-        execution_history = ExecutionHistory.new)
+                   id                = SecureRandom.uuid,
+                   state             = :pending,
+                   root_plan_step    = nil,
+                   run_flow          = Flows::Concurrence.new([]),
+                   finalize_flow     = Flows::Sequence.new([]),
+                   steps             = {},
+                   started_at        = nil,
+                   ended_at          = nil,
+                   execution_time    = nil,
+                   real_time         = 0.0,
+                   execution_history = ExecutionHistory.new)
 
       @id                = Type! id, String
       @world             = Type! world, World
@@ -177,10 +177,10 @@ module Dynflow
       execution_history.add("delay", @world.id)
       serializer = root_plan_step.delay(delay_options, args)
       delayed_plan = DelayedPlan.new(@world,
-                                         id,
-                                         delay_options[:start_at],
-                                         delay_options.fetch(:start_before, nil),
-                                         serializer)
+                                     id,
+                                     delay_options[:start_at],
+                                     delay_options.fetch(:start_before, nil),
+                                     serializer)
       persistence.save_delayed_plan(delayed_plan)
     ensure
       update_state(error? ? :stopped : :scheduled)

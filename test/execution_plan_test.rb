@@ -61,7 +61,6 @@ module Dynflow
 
         end
 
-
         describe 'for error in running phase' do
 
           before do
@@ -223,7 +222,6 @@ module Dynflow
             RUN_FLOW
           end
         end
-
 
         describe 'finalize flow' do
 

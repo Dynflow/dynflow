@@ -120,8 +120,8 @@ module Dynflow
         ar_pool_size = ::ActiveRecord::Base.connection_pool.instance_variable_get(:@size)
         if (config_for_world.pool_size / 2.0) > ar_pool_size
           config_for_world.world.logger.warn 'Consider increasing ActiveRecord::Base.connection_pool size, ' +
-              "it's #{ar_pool_size} but there is #{config_for_world.pool_size} " +
-                              'threads in Dynflow pool.'
+                                             "it's #{ar_pool_size} but there is #{config_for_world.pool_size} " +
+                                             'threads in Dynflow pool.'
         end
       end
     end

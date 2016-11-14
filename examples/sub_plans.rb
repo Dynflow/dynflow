@@ -16,7 +16,6 @@ DESC
 require_relative 'example_helper'
 require_relative 'orchestrate_evented'
 
-
 class SubPlansExample < Dynflow::Action
   include Dynflow::Action::WithSubPlans
 

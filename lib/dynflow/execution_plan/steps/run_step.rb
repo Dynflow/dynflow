@@ -20,7 +20,7 @@ module Dynflow
 
       def cancellable?
         [:suspended, :running].include?(self.state) &&
-            self.action_class < Action::Cancellable
+          self.action_class < Action::Cancellable
       end
 
       def with_sub_plans?

@@ -266,7 +266,6 @@ module Dynflow
         records.map { |record| load_data(record) }
       end
 
-
       def load_data(record)
         Utils.indifferent_hash(MultiJson.load(record[:data]))
       end
@@ -277,7 +276,7 @@ module Dynflow
 
       def extract_metadata(what, value)
         meta_keys = META_DATA.fetch(what)
-        value         = Utils.indifferent_hash(value)
+        value     = Utils.indifferent_hash(value)
         meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
       end
 

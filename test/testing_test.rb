@@ -74,7 +74,6 @@ module Dynflow
 
         5.times { progress_action_time action }
 
-
         action.output.must_equal('task' => { 'progress' => 100, 'done' => true },
                                  'poll_attempts' => {'total' => 9, 'failed' => 0 })
         action.run_progress.must_equal 1
@@ -166,6 +165,59 @@ module Dynflow
         end
       end
     end
-  end
 
+    describe "in thread executor" do
+      let :world do
+        Dynflow::Testing::InThreadWorld.instance
+      end
+
+      let :issues_data do
+        [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
+         { 'author' => 'John Doe', 'text' => 'Internal server error' }]
+      end
+
+      let :failing_issues_data do
+        [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
+         { 'author' => 'John Doe', 'text' => 'trolling' }]
+      end
+
+      let :finalize_failing_issues_data do
+        [{ 'author' => 'Peter Smith', 'text' => 'Failing test' },
+         { 'author' => 'John Doe', 'text' => 'trolling in finalize' }]
+      end
+
+      let :execution_plan do
+        world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
+      end
+
+      let :failed_execution_plan do
+        plan = world.plan(Support::CodeWorkflowExample::IncomingIssues, failing_issues_data)
+        plan = world.execute(plan.id).value
+        plan.state.must_equal :paused
+        plan
+      end
+
+      let :polling_execution_plan do
+        world.plan(Support::DummyExample::Polling, { :external_task_id => '123' })
+      end
+
+      it "is able to execute plans inside the thread" do
+        world.execute(execution_plan.id).value.tap do |plan|
+          plan.state.must_equal :stopped
+        end
+      end
+
+      it "is able to handle errors in the plan" do
+        world.execute(failed_execution_plan.id).value.tap do |plan|
+          plan.state.must_equal :paused
+        end
+      end
+
+      it "is able to handle when events ===" do
+        world.execute(execution_plan.id).value.tap do |plan|
+          plan.state.must_equal :stopped
+        end
+      end
+    end
+  end
 end

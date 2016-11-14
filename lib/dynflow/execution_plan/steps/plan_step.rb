@@ -5,17 +5,17 @@ module Dynflow
 
       # @param [Array] children is a private API parameter
       def initialize(execution_plan_id,
-          id,
-          state,
-          action_class,
-          action_id,
-          error,
-          world,
-          started_at = nil,
-          ended_at = nil,
-          execution_time = 0.0,
-          real_time = 0.0,
-          children = [])
+                     id,
+                     state,
+                     action_class,
+                     action_id,
+                     error,
+                     world,
+                     started_at     = nil,
+                     ended_at       = nil,
+                     execution_time = 0.0,
+                     real_time      = 0.0,
+                     children       = [])
 
         super execution_plan_id, id, state, action_class, action_id, error, world, started_at,
               ended_at, execution_time, real_time
@@ -67,7 +67,6 @@ module Dynflow
                                  skipped:    [],
                                  error:      [] }
       end
-
 
       def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash

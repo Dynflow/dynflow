@@ -2,7 +2,7 @@ module Dynflow
   module Dispatcher
     class ExecutorDispatcher < Abstract
       def initialize(world, semaphore)
-        @world        = Type! world, World
+        @world           = Type! world, World
         @current_futures = Set.new
       end
 

@@ -5,9 +5,9 @@ module Dynflow
     include Algebrick::Matching
 
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-        :transaction_adapter, :logger_adapter, :coordinator,
-        :persistence, :action_classes, :subscription_index,
-        :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter
+                :transaction_adapter, :logger_adapter, :coordinator,
+                :persistence, :action_classes, :subscription_index,
+                :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter
 
     def initialize(config)
       @id                     = SecureRandom.uuid
@@ -141,7 +141,7 @@ module Dynflow
       else
         execution_plan = plan(action_class, *args)
       end
-      planned        = execution_plan.state == :planned
+      planned = execution_plan.state == :planned
 
       if planned
         done = execute(execution_plan.id, Concurrent.future)
@@ -381,7 +381,6 @@ module Dynflow
     end
 
     private
-
     def calculate_subscription_index
       @subscription_index =
           action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|

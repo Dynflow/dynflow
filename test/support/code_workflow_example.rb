@@ -28,7 +28,7 @@ module Support
         triages   = all_planned_actions(Triage)
         assignees = triages.map do |triage|
           triage.output[:classification] &&
-              triage.output[:classification][:assignee]
+            triage.output[:classification][:assignee]
         end.compact.uniq
         { assignees: assignees }
       end

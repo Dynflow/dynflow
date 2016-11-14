@@ -9,18 +9,18 @@ module Dynflow
       attr_accessor :error
 
       def initialize(execution_plan_id,
-          id,
-          state,
-          action_class,
-          action_id,
-          error,
-          world,
-          started_at = nil,
-          ended_at = nil,
-          execution_time = 0.0,
-          real_time = 0.0,
-          progress_done = nil,
-          progress_weight = nil)
+                     id,
+                     state,
+                     action_class,
+                     action_id,
+                     error,
+                     world,
+                     started_at      = nil,
+                     ended_at        = nil,
+                     execution_time  = 0.0,
+                     real_time       = 0.0,
+                     progress_done   = nil,
+                     progress_weight = nil)
 
         @id                = id || raise(ArgumentError, 'missing id')
         @execution_plan_id = Type! execution_plan_id, String
@@ -155,9 +155,9 @@ module Dynflow
         block.call
       ensure
         @progress_done, @progress_weight = action.calculated_progress
-        @ended_at       = Time.now
+        @ended_at        = Time.now
         @execution_time += @ended_at - start
-        @real_time      = @ended_at - @started_at
+        @real_time       = @ended_at - @started_at
       end
     end
   end

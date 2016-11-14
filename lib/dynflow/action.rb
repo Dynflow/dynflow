@@ -48,9 +48,10 @@ module Dynflow
       nil
     end
 
-    ERROR         = Object.new
-    SUSPEND       = Object.new
-    Phase         = Algebrick.type do
+    ERROR   = Object.new
+    SUSPEND = Object.new
+    Skip    = Algebrick.atom
+    Phase   = Algebrick.type do
       Executable = type do
         variants Plan     = atom,
                  Run      = atom,
@@ -58,7 +59,6 @@ module Dynflow
       end
       variants Executable, Present = atom
     end
-    Skip    = Algebrick.atom
 
     module Executable
       def execute_method_name
@@ -119,7 +119,7 @@ module Dynflow
 
     def phase!(*phases)
       phase?(*phases) or
-          raise TypeError, "Wrong phase #{phase}, required #{phases}"
+        raise TypeError, "Wrong phase #{phase}, required #{phases}"
     end
 
     def input=(hash)
@@ -137,7 +137,7 @@ module Dynflow
     def output
       if phase? Plan
         @output_reference or
-            raise 'plan_self has to be invoked before being able to reference the output'
+          raise 'plan_self has to be invoked before being able to reference the output'
       else
         @output
       end
