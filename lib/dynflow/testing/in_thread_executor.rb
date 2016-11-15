@@ -7,7 +7,7 @@ module Dynflow
         @work_items = Queue.new
       end
 
-      def execute(execution_plan_id, finished, _wait_for_acceptance = true)
+      def execute(execution_plan_id, finished = Concurrent.future, _wait_for_acceptance = true)
         feed_queue(@director.start_execution(execution_plan_id, finished))
         process_work_items
         finished
