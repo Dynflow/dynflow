@@ -7,7 +7,7 @@ module Dynflow
         @work_items = Queue.new
       end
 
-      def execute(execution_plan_id, finished)
+      def execute(execution_plan_id, finished = Concurrent.future, _wait_for_acceptance = true)
         feed_queue(@director.start_execution(execution_plan_id, finished))
         process_work_items
         finished
@@ -15,8 +15,8 @@ module Dynflow
 
       def process_work_items
         until @work_items.empty?
-          clock_tick
           feed_queue(handle_work(@work_items.pop))
+          clock_tick
         end
       end
 
@@ -27,7 +27,7 @@ module Dynflow
 
       def event(execution_plan_id, step_id, event, future = Concurrent.future)
         event = (Director::Event[execution_plan_id, step_id, event, future])
-        @director.event(event).each do |work_item|
+        @director.handle_event(event).each do |work_item|
           @work_items << work_item
         end
         future
@@ -41,8 +41,11 @@ module Dynflow
         work_items.each { |work_item| @work_items.push(work_item) }
       end
 
-      def terminate
+      def terminate(future = Concurrent.future)
         @director.terminate
+        future.success true
+      rescue => e
+        future.fail e
       end
     end
   end

@@ -28,7 +28,7 @@ module Dynflow
         self
       end
 
-      # @returns [WorkItem, nil]
+      # @returns [TrueClass|FalseClass, Array<WorkItem>]
       def done(step)
         Type! step, ExecutionPlan::Steps::RunStep
         @events.shift(step.id).tap do |work|
@@ -36,7 +36,7 @@ module Dynflow
         end
 
         if step.state == :suspended
-          return true, @events.first(step.id)
+          return true, [@events.first(step.id)].compact
         else
           while (event = @events.shift(step.id))
             message = "step #{step.execution_plan_id}:#{step.id} dropping event #{event.event}"
@@ -46,7 +46,7 @@ module Dynflow
           end
           raise 'assert' unless @events.empty?(step.id)
           @running_steps.delete(step.id)
-          return false, nil
+          return false, []
         end
       end
 

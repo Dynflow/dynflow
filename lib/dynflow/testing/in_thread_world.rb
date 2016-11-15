@@ -47,8 +47,17 @@ module Dynflow
         @executor.execute(execution_plan_id, done)
       end
 
+      def terminate(future = Concurrent.future)
+        run_before_termination_hooks
+        @executor.terminate
+        coordinator.delete_world(registered_world)
+        future.success true
+      rescue => e
+        future.fail e
+      end
+
       def event(execution_plan_id, step_id, event, done = Concurrent.future)
-        publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
+        @executor.event(execution_plan_id, step_id, event, done)
       end
     end
   end

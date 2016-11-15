@@ -213,9 +213,29 @@ module Dynflow
         end
       end
 
-      it "is able to handle when events ===" do
-        world.execute(execution_plan.id).value.tap do |plan|
+      it "is able to handle when events" do
+        world.execute(polling_execution_plan.id).value.tap do |plan|
           plan.state.must_equal :stopped
+        end
+      end
+
+      describe 'auto rescue' do
+        let(:world) do
+          WorldFactory.create_world(Dynflow::Testing::InThreadWorld) do |config|
+            config.auto_rescue = true
+          end
+        end
+
+        describe 'of plan with skips' do
+          let :execution_plan do
+            plan = world.plan(Support::RescueExample::ComplexActionWithSkip, :error_on_run)
+            world.execute(plan.id).value
+          end
+
+          it 'skips the action and continues automatically' do
+            execution_plan.state.must_equal :stopped
+            execution_plan.result.must_equal :warning
+          end
         end
       end
     end

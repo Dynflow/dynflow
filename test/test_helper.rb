@@ -97,8 +97,8 @@ module WorldFactory
   end
 
   # The worlds created by this method are getting terminated after each test run
-  def self.create_world(&block)
-    Dynflow::World.new(test_world_config(&block)).tap do |world|
+  def self.create_world(klass = Dynflow::World, &block)
+    klass.new(test_world_config(&block)).tap do |world|
       created_worlds << world
     end
   end
