@@ -7,7 +7,8 @@ module Dynflow
     attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
                 :transaction_adapter, :logger_adapter, :coordinator,
                 :persistence, :action_classes, :subscription_index,
-                :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter
+                :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
+                :terminated
 
     def initialize(config)
       @id                     = SecureRandom.uuid
@@ -30,6 +31,7 @@ module Dynflow
       @auto_validity_check    = config_for_world.auto_validity_check
       @validity_check_timeout = config_for_world.validity_check_timeout
       @throttle_limiter       = config_for_world.throttle_limiter
+      @terminated             = Concurrent.event
       calculate_subscription_index
 
       if executor
@@ -204,7 +206,7 @@ module Dynflow
 
     def terminate(future = Concurrent.future)
       @termination_barrier.synchronize do
-        @terminated ||= Concurrent.future do
+        @terminating ||= Concurrent.future do
           begin
             run_before_termination_hooks
 
@@ -242,6 +244,7 @@ module Dynflow
             end
 
             coordinator.delete_world(registered_world)
+            @terminated.complete
             true
           rescue => e
             logger.fatal(e)
@@ -251,12 +254,12 @@ module Dynflow
         end
       end
 
-      @terminated.tangle(future)
+      @terminating.tangle(future)
       future
     end
 
     def terminating?
-      defined?(@terminated)
+      defined?(@terminating)
     end
 
     # Invalidate another world, that left some data in the runtime,
