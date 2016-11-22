@@ -18,6 +18,18 @@ module Dynflow
           registered_world.meta.must_equal('fast' => true)
         end
       end
+
+      describe '#terminate' do
+        it 'fires an event after termination' do
+          terminated_event = world.terminated
+          terminated_event.completed?.must_equal false
+          world.terminate
+          # wait for termination process to finish, but don't block
+          # the test from running.
+          terminated_event.wait(10)
+          terminated_event.completed?.must_equal true
+        end
+      end
     end
   end
 end

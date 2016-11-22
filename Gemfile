@@ -8,6 +8,7 @@ end
 
 group :pry do
   gem 'pry'
+  gem 'pry-byebug'
 end
 
 group :postgresql do
@@ -28,4 +29,8 @@ end
 
 group :lint do
   gem 'rubocop', '0.39.0'
+end
+
+group :memory_watcher do
+  gem 'get_process_mem'
 end

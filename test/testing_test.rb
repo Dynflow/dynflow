@@ -168,7 +168,7 @@ module Dynflow
 
     describe "in thread executor" do
       let :world do
-        Dynflow::Testing::InThreadWorld.instance
+        WorldFactory.create_world(Dynflow::Testing::InThreadWorld)
       end
 
       let :issues_data do

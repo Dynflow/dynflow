@@ -52,6 +52,7 @@ module Dynflow
         @executor.terminate
         coordinator.delete_world(registered_world)
         future.success true
+        @terminated.complete
       rescue => e
         future.fail e
       end
