@@ -50,5 +50,5 @@ module Dynflow
   require 'dynflow/throttle_limiter'
   require 'dynflow/config'
   require 'dynflow/exporters'
-  require 'dynflow/utilities'
+  require 'dynflow/tasks'
 end
