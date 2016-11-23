@@ -52,8 +52,8 @@ module Dynflow
 
       get('/:id/export') do |id|
         set_download_headers(id + '.tar.gz')
-        plan = Exporters::HTML.export_execution_plan_id(world, id, :console => self)
-        Exporters::Tar.new.add_assets.add(id + '.html' => plan).finalize
+        @plan = world.persistence.load_execution_plan(id)
+        ::Dynflow::Exporters::Tar.full_html_export([@plan])
       end
 
       get('/:id/json') do |id|

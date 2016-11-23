@@ -69,7 +69,9 @@ module Dynflow
       end
 
       def export_worlds
-        worlds = @world.coordinator.find_worlds.reject { |world| world.id == @world.id }
+        worlds = @world.coordinator.find_worlds
+        worlds.find { |world| world.data['id'] == @world.id }.data['meta'].update('doing_export' => true)
+
         render :export,
                :locals => {
                  :template => :worlds,

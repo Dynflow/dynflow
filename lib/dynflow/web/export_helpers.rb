@@ -1,5 +1,3 @@
-require 'archive/tar/minitar'
-
 module Dynflow
   module Web
     module ExportHelpers

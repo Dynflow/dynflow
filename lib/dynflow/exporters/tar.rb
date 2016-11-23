@@ -1,9 +1,12 @@
 require 'zlib'
-require 'archive/tar/minitar'
+require 'rubygems/package'
 
 module Dynflow
   module Exporters
     class Tar < Abstract
+
+      FILE_MODE = 0644
+      DIR_MODE = 0775
 
       class << self
 
@@ -29,7 +32,7 @@ module Dynflow
         @exporter = exporter
         @buffer = options.fetch(:io, StringIO.new(""))
         @gzip = Zlib::GzipWriter.new(@buffer)
-        @tar = Archive::Tar::Minitar::Output.new(@gzip)
+        @tar = Gem::Package::TarWriter.new(@gzip)
         @options = options
       end
 
@@ -44,6 +47,7 @@ module Dynflow
         end
 
         @tar.close
+        @gzip.close
         self
       end
 
@@ -51,8 +55,8 @@ module Dynflow
         @buffer.string
       end
 
-      def add_file(path, contents)
-        @tar.tar.add_file_simple(path, :mode => 0664, :size => contents.size) do |stream|
+      def add_file(path, contents, size = contents.size)
+        @tar.add_file_simple(path, FILE_MODE, size) do |stream|
           stream.write(contents)
         end
         self
@@ -71,10 +75,22 @@ module Dynflow
       def add_assets
         Dir.chdir(::Dynflow::Web.web_dir('/assets')) do
           Dir["**/*"].each do |asset|
-            Archive::Tar::Minitar.pack_file(asset, @tar)
+            if File.directory?(asset)
+              @tar.mkdir(asset, DIR_MODE)
+            else
+              add_file_path(asset)
+            end
           end
         end
         self
+      end
+
+      private
+
+      def add_file_path(path)
+        File.open(path) do |f|
+          add_file(path, f.read, f.size)
+        end
       end
     end
   end

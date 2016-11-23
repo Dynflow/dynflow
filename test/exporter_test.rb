@@ -284,7 +284,8 @@ module Dynflow
       it 'writes to any IO object' do
         fake_io = MiniTest::Mock.new
         fake_io.expect(:close, nil)
-        2.times { fake_io.expect(:write, nil) { true } } # Expects write twice, we don't care about arguments
+        # Expects write three times, we don't care about arguments
+        3.times { fake_io.expect(:write, nil) { true } }
 
         dummy = MiniTest::Mock.new
         dummy.expect(:finalize, nil)
