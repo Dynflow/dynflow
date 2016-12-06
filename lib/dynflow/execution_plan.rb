@@ -56,7 +56,7 @@ module Dynflow
     require 'dynflow/execution_plan/hooks'
 
     def self.results
-      @results ||= [:pending, :success, :warning, :error, :cancelled]
+      @results ||= [:pending, :success, :warning, :error, :cancelled, :reverted]
     end
 
     def self.state_transitions
@@ -65,7 +65,7 @@ module Dynflow
                                planning: [:planned, :stopped],
                                planned:  [:running, :stopped],
                                running:  [:paused, :stopped],
-                               paused:   [:running, :stopped],
+                               paused:   [:running, :stopped, :planned],
                                stopped:  [] }
     end
 
@@ -171,6 +171,8 @@ module Dynflow
         return :warning
       elsif all_steps.all? { |step| step.state == :success }
         return :success
+      elsif all_steps.all? { |step| step.state == :reverted }
+        return :reverted
       else
         return :pending
       end
@@ -283,9 +285,14 @@ module Dynflow
     def prepare(action_class, options = {})
       options = options.dup
       caller_action = Type! options.delete(:caller_action), Dynflow::Action, NilClass
+      reverting = Type! options.delete(:reverting), TrueClass, FalseClass, NilClass
       raise "Unexpected options #{options.keys.inspect}" unless options.empty?
       save
-      @root_plan_step = add_plan_step(action_class, caller_action)
+      @root_plan_step = if reverting
+                          add_revert_step(action_class, caller_action)
+                        else
+                          add_plan_step(action_class, caller_action)
+                        end
       @root_plan_step.save
     end
 
@@ -331,8 +338,7 @@ module Dynflow
     end
 
     def revert
-      update_state :stopped
-      plan = world.plan(entry_action.class.revert_action_class, entry_action)
+      plan = @world.revert(entry_action)
       plan.rescued_plan_id = id
       plan.save
       @rescue_plan_id = plan.id
@@ -421,6 +427,16 @@ module Dynflow
       end
     end
 
+    def add_revert_step(action_class, caller_action = nil)
+      add_step(Steps::RevertStep, action_class, generate_action_id).tap do |step|
+        # TODO: to be removed and preferred by the caller_action
+        if caller_action && caller_action.execution_plan_id == self.id
+          @steps[caller_action.plan_step_id].children << step.id
+        end
+        step.initialize_action(caller_action)
+      end
+    end
+
     def add_plan_step(action_class, caller_action = nil)
       add_step(Steps::PlanStep, action_class, generate_action_id).tap do |step|
         # TODO: to be removed and preferred by the caller_action
@@ -442,6 +458,21 @@ module Dynflow
     def add_finalize_step(action)
       add_step(Steps::FinalizeStep, action.class, action.id).tap do |step|
         step.update_from_action(action)
+        finalize_flow << Flows::Atom.new(step.id)
+      end
+    end
+
+    def add_revert_run_step(action)
+      add_step(Steps::RevertRunStep, action.class, action.id).tap do |step|
+        step.progress_weight = action.run_progress_weight
+        @dependency_graph.add_dependencies(step, action)
+        current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
+      end
+    end
+
+    def add_revert_plan_step(action)
+      add_step(Steps::RevertPlanStep, action.class, action.id).tap do |step|
+        step.progress_weight = action.finalize_progress_weight
         finalize_flow << Flows::Atom.new(step.id)
       end
     end

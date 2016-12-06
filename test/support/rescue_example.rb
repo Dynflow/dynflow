@@ -98,19 +98,9 @@ module Support
 
     end
 
-    class RollbackAction < ::Dynflow::Action::Reverting
-
-      def run; end
-
-    end
-
     class ActionWithRollback < AbstractAction
 
       include ::Dynflow::Action::Revertible
-
-      def self.revert_action_class
-        RollbackAction
-      end
 
       def rescue_strategy_for_self
         Dynflow::Action::Rescue::Revert

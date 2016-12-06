@@ -6,10 +6,6 @@ require 'logger'
 class LaunchToSpace < Dynflow::Action
   include ::Dynflow::Action::Revertible
 
-  def self.revert_action_class
-    RevertLaunch
-  end
-
   def plan
     sequence do
       plan_action LoadFuel, 'liquid hydrogen'
@@ -32,14 +28,18 @@ class LaunchToSpace < Dynflow::Action
   def finalize
     output[:log] << 'Launch successful'
   end
+
+  def revert_run
+    output[:log] = ['Aborting launch']
+  end
+
+  def revert_plan
+    output[:log] << 'Launch aborted'
+  end
 end
 
 class RunPreFlightChecks < ::Dynflow::Action
   include ::Dynflow::Action::Revertible
-
-  def self.revert_action_class
-    Reverting
-  end
 
   def run
     if ExampleHelper.something_should_fail?
@@ -48,14 +48,18 @@ class RunPreFlightChecks < ::Dynflow::Action
     end
     output[:log] = 'All checks passed'
   end
+
+  def revert_run
+    # Not doing anything
+  end
+
+  def revert_plan
+    # Not doing anything either
+  end
 end
 
 class Load < Dynflow::Action
   include ::Dynflow::Action::Revertible
-
-  def self.revert_action_class
-    constantize self.to_s.gsub(/^Load/, 'Unload')
-  end
 
   def plan(things = [])
     if things.kind_of? Array
@@ -68,38 +72,21 @@ class Load < Dynflow::Action
   end
 
   def run
-    output[:log] = "Loading #{input[:what]}"
+    output[:log] = ["Loading #{input[:what]}"]
+  end
+
+  def revert_run
+    output[:log] = ["Unloading #{original_input[:what]}"]
+  end
+
+  def revert_plan
+    output[:log] << "Cleaning up after unloading #{original_input[:what]}"
   end
 end
 
 class LoadFuel < Load; end
 class LoadCrew < Load; end
 class LoadCargo < Load; end
-
-class Unload < Dynflow::Action::Reverting
-  def run
-    output[:log] = "Unloading #{original_input[:kind]} - #{original_input[:what]}"
-  end
-end
-
-class UnloadFuel < Unload; end
-class UnloadCrew < Unload; end
-class UnloadCargo < Unload; end
-
-class RevertLaunch < Dynflow::Action::Reverting
-
-  def plan(parent_action)
-    super(parent_action)
-    if entry_action? && parent_action.run_step.state == :pending
-      plan_self
-    end
-  end
-
-  def finalize
-    output[:log] = 'Launch aborted'
-  end
-
-end
 
 if $0 == __FILE__
   # Uncomment the following 2 lines to have the execution plan rolled-back automatically
@@ -110,7 +97,7 @@ if $0 == __FILE__
   ExampleHelper.world.trigger(LaunchToSpace)
 
   puts <<-MSG.gsub(/^.*\|/, '')
-    |  Execution plan #{triggered.id} failed and was reverted
+    |  Execution plan #{triggered.id} failed and can be reverted
     |  You can see the details at http://localhost:4567/#{triggered.id}
   MSG
 

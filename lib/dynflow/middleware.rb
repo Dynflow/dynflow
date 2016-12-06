@@ -1,5 +1,8 @@
 module Dynflow
   class Middleware
+
+    METHODS = [:delay, :plan, :run, :finalize, :plan_phase, :finalize_phase, :present, :revert, :revert_plan, :revert_run]
+
     require 'dynflow/middleware/register'
     require 'dynflow/middleware/world'
     require 'dynflow/middleware/resolver'
@@ -44,6 +47,18 @@ module Dynflow
     end
 
     def finalize_phase(*args)
+      pass(*args)
+    end
+
+    def revert_run(*args)
+      pass(*args)
+    end
+
+    def revert_plan(*args)
+      pass(*args)
+    end
+
+    def revert(*args)
       pass(*args)
     end
 

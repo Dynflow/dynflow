@@ -208,6 +208,13 @@ module Dynflow
       end
     end
 
+    def revert(action)
+      ExecutionPlan.new(self).tap do |execution_plan|
+        execution_plan.prepare(action.class, :reverting => true)
+        execution_plan.plan(action)
+      end
+    end
+
     # @return [Concurrent::Promises::ResolvableFuture] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
     def execute(execution_plan_id, done = Concurrent::Promises.resolvable_future)

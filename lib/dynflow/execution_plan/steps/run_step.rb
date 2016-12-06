@@ -6,11 +6,11 @@ module Dynflow
         @state_transitions ||= {
             pending:   [:running, :skipped, :error], # :skipped when it cannot be run because it depends on skipping step
             running:   [:success, :error, :suspended],
-            success:   [:suspended], # after not-done process_update
+            success:   [:suspended, :reverted], # after not-done process_update
             suspended: [:running, :error], # process_update, e.g. error in setup_progress_updates
             skipping:  [:error, :skipped], # waiting for the skip method to be called
             skipped:   [],
-            error:     [:skipping, :running]
+            error:     [:skipping, :running, :reverted]
         }
       end
 
@@ -43,6 +43,21 @@ module Dynflow
         end
         self.save
       end
+    end
+
+    class RevertRunStep < RunStep
+      include Revert
+
+      def real_execute(action, event)
+        action.send(:in_run_phase, event) do |action|
+          world.middleware.execute(:revert_run, action, *[event].compact) do |*new_args|
+            action.revert_run(*new_args)
+          end
+        end
+        reset_original_step!(action, 'run')
+        original_execution_plan(action).update_state(:planned) if entry_action?(action)
+      end
+
     end
   end
 end

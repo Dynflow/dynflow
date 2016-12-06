@@ -70,7 +70,8 @@ module Dynflow
       Executable = type do
         variants Plan     = atom,
                  Run      = atom,
-                 Finalize = atom
+                 Finalize = atom,
+                 Revert   = atom
       end
       variants Executable, Present = atom
     end
@@ -381,6 +382,10 @@ module Dynflow
       method(:run).arity != 0
     end
 
+    def revert_run_accepts_events?
+      method(:revert_run).arity != 0
+    end
+
     def self.new_from_hash(hash, world)
       hash.delete(:output) if hash[:output].nil?
       unless hash[:execution_plan_uuid].nil?
@@ -419,6 +424,25 @@ module Dynflow
       end
 
       return self # to stay consistent with plan_action
+    end
+
+    def revert_self(input = {})
+      phase! Plan
+      self.input.update input
+
+      run_step = @execution_plan.add_revert_run_step(self)
+      @run_step_id = run_step.id
+      @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
+
+      finalize_step = @execution_plan.add_revert_plan_step(self)
+      @finalize_step_id = finalize_step.id
+
+      return self
+    end
+
+    def revert_action(action, *args)
+      phase! Plan
+      @execution_plan.add_revert_step(action.class, self).execute(@execution_plan, self, false, action, *args)
     end
 
     def plan_action(action_class, *args)
@@ -482,7 +506,7 @@ module Dynflow
       @step.error = ExecutionPlan::Steps::Error.new(error)
     end
 
-    def execute_plan(*args)
+    def in_plan_phase(*args)
       phase! Plan
       self.state = :running
       save_state
@@ -490,6 +514,13 @@ module Dynflow
       # when the error occurred inside the planning, catch that
       # before getting out of the planning phase
       with_error_handling(!root_action?) do
+        yield self
+        check_serializable :input
+      end
+    end
+
+    def execute_plan(*args)
+      in_plan_phase(*args) do
         concurrence do
           world.middleware.execute(:plan, self, *args) do |*new_args|
             plan(*new_args)
@@ -508,13 +539,10 @@ module Dynflow
             end
           end
         end
-
-        check_serializable :input
       end
     end
 
-    # TODO: This is getting out of hand, refactoring needed
-    def execute_run(event)
+    def in_run_phase(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
                                  'Step', execution_plan_id, @step.id, event) if event
@@ -535,11 +563,10 @@ module Dynflow
           event = Skip if state == :skipping
 
           # we run the Skip event only when the run accepts events
-          if event != Skip || run_accepts_events?
+          if event != Skip || ((@step.is_a?(Steps::RunStep) && run_accepts_events?) ||
+                               (@step.is_a?(Steps::RevertRunStep) && revert_run_accepts_events?))
             result = catch(SUSPEND) do
-              world.middleware.execute(:run, self, *[event].compact) do |*args|
-                run(*args)
-              end
+              yield self
             end
 
             self.state = :suspended if result == SUSPEND
@@ -552,14 +579,28 @@ module Dynflow
       end
     end
 
-    def execute_finalize
+    def execute_run(event)
+      in_run_phase(event) do |action|
+        world.middleware.execute(:run, self, *[event].compact) do |*args|
+          action.run(*args)
+        end
+      end
+    end
+
+    def in_finalize_phase
       phase! Finalize
       @input     = OutputReference.dereference @input, world.persistence
       self.state = :running
       save_state
       with_error_handling do
+        yield self
+      end
+    end
+
+    def execute_finalize
+      in_finalize_phase do |action|
         world.middleware.execute(:finalize, self) do
-          finalize
+          action.finalize
         end
       end
     end

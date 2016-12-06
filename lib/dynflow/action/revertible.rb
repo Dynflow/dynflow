@@ -2,12 +2,37 @@ module Dynflow
   class Action
     module Revertible
 
-      def self.revert_action_class
+      def rescue_strategy_for_self
+        Rescue::Revert
+      end
+
+      def revert_run
         raise NotImplementedError
       end
 
-      def rescue_strategy_for_self
-        Rescue::Revert
+      def revert_plan
+        raise NotImplementedError
+      end
+
+      def original_input
+        input.fetch(:input, {})
+      end
+
+      def original_output
+        input.fetch(:output, {})
+      end
+
+      # General approach
+      # Take all the child actions of the action we're reverting, reverse their order
+      # plan those which went through planning (eg. not pending plan step state)
+      # plan self if the action attempted to run (eg. not pending run step state)
+      def revert(parent_action)
+        sequence do
+          parent_action.planned_actions.reverse.each do |action|
+            revert_action(action) if action.plan_step.state != :pending
+          end
+          revert_self(parent_action)
+        end
       end
 
     end

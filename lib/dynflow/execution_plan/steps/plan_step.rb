@@ -51,22 +51,26 @@ module Dynflow
         @action.set_plan_context(execution_plan, trigger, from_subscription)
         Type! execution_plan, ExecutionPlan
         with_meta_calculation(@action) do
-          @action.execute(*args)
+          real_execute(*args)
         end
 
         persistence.save_action(execution_plan_id, @action)
         return @action
       end
 
+      def real_execute(*args)
+        @action.execute(*args)
+      end
+
       def self.state_transitions
         @state_transitions ||= { scheduling: [:pending, :error, :cancelled],
                                  pending:    [:running, :error, :cancelled],
                                  running:    [:success, :error, :cancelled],
-                                 success:    [],
+                                 success:    [:reverted],
                                  suspended:  [],
-                                 skipped:    [],
+                                 skipped:    [:reverted],
                                  cancelled:  [],
-                                 error:      [] }
+                                 error:      [:reverted] }
       end
 
       def self.new_from_hash(hash, execution_plan_id, world)
@@ -106,6 +110,17 @@ module Dynflow
         @action = action_class.new(attributes, world)
         persistence.save_action(execution_plan_id, @action)
         @action
+      end
+    end
+
+    class RevertStep < PlanStep
+      include Revert
+
+      def real_execute(*args)
+        @action.send(:in_plan_phase, *args) do |action|
+          action.revert(*args)
+        end
+        reset_original_step!(@action, 'finalize')
       end
     end
   end
