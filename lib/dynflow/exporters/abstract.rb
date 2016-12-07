@@ -17,14 +17,14 @@ module Dynflow
       end
 
       # Expected workflow:
-      # Exporter.new.add(foo).add(bar).add(baz).finalize
+      # Exporter.new.add(foo).add(bar).add(baz).finalize.result
       def initialize(world = nil, options = {})
         @world   = world
         @options = options
         @index   = {}
       end
 
-      # Add execution plan to export
+      # Add the execution_plan to the index, thus queueing it for exporting
       def add(execution_plan)
         @index[execution_plan.id] = {
           :plan   => execution_plan,
@@ -33,7 +33,10 @@ module Dynflow
         self
       end
 
-      # Add execution plan to export by id
+      # Add provided id to the index
+      # The id will be resolved to the execution plan
+      # in the #resolve_ids method along with all the other
+      # index entries whose :plan is nil
       def add_id(execution_plan_id)
         @index[execution_plan_id] = {
           :plan   => nil,
@@ -42,17 +45,19 @@ module Dynflow
         self
       end
 
+      # The same as #add, but takes Array[ExecutionPlan]
       def add_many(execution_plans)
         execution_plans.each { |plan| add plan }
         self
       end
 
+      # The same as #add_id, but takes Array[String]
       def add_many_ids(execution_plan_ids)
         execution_plan_ids.each { |plan_id| add_id plan_id }
         self
       end
 
-      # Processes the entries in index, generate result
+      # Processes the entries in index and freezes the index and all entries
       def finalize
         return self if @index.frozen?
         resolve_ids
@@ -78,10 +83,14 @@ module Dynflow
 
       private
 
+      # Implement this method in sub-classes to provide the real exporting functionality
+      # Transforms an execution plan to its exported representation
       def export(plan)
         raise NotImplementedError
       end
 
+      # Selects all the entries from the index whose :plan is nil
+      # Loads execution plans for those ids from the database
       def resolve_ids
         ids = @index.select { |_key, value| value[:plan].nil? }.keys
         return if ids.empty?

@@ -17,11 +17,13 @@ module Dynflow
         @world = nil
         @plans = nil
 
-        @task_file   = nil
+        @task_file   = nil # Filename of the resulting file
         # Search options
-        @task_days   = nil
-        @task_format = nil
-        @task_search = nil
+        @task_days    = nil # Number of days
+        @task_format  = nil # One of html, csv, json
+        @task_ids     = nil # Comma separated list of task ids
+        @task_states  = nil # Comma separated list of task states
+        @task_results = nil # Comma separated list of task results
         yield self if block_given?
         define
       end
@@ -44,12 +46,23 @@ module Dynflow
         ENV['TASK_FORMAT'] || @task_format || 'html'
       end
 
-      def task_search
-        ENV['TASK_SEARCH'] || @task_search
-      end
-
       def task_days
         ENV['TASK_DAYS'] || @task_days
+      end
+
+      def task_states
+        return @task_states if @task_states
+        @task_states = ENV['TASK_STATES'].split(',') if ENV['TASK_STATES']
+      end
+
+      def task_results
+        return @task_results if @task_results
+        @task_results = ENV['TASK_RESULTS'].split(',') if ENV['TASK_RESULTS']
+      end
+
+      def task_ids
+        return @task_ids if @task_ids
+        @task_ids = ENV['TASK_IDS'].split(',') if ENV['TASK_IDS']
       end
 
       private
@@ -63,7 +76,6 @@ module Dynflow
         puts "Exporting #{plans.count} tasks"
         content = case task_format
                   when 'html'
-                    require 'pry'; binding.pry
                     ::Dynflow::Exporters::Tar.full_html_export plans
                   when 'json'
                     ::Dynflow::Exporters::Tar.full_json_export plans
@@ -93,23 +105,37 @@ module Dynflow
       def sequel_filter
         filter = nil
 
-        if task_search.nil? && task_days.nil?
+        # Nothing provided, exporting with some default values
+        unless filters_provided?
           # Tasks started in last 7 days (in any state)
           last_week = { :started_at => last_days(7) }
-          # Tasks started in last 60 days where state != success
+          # Tasks started in last 60 days where result != success
           last_two_months = Sequel.&(Sequel.~(:result => 'success'),
                                      { :started_at => last_days(60) })
           # Select tasks matching either of the two
           filter = Sequel.|(last_week, last_two_months)
-        elsif task_search
-          # Use the search filter provided
-          filter = Sequel.&(task_search)
+        else
+          # Collect all provided filters into the filters array
+          filters = []
+          # Select tasks with specified ids
+          filters << { :uuid => task_ids } if task_ids
+          # Select tasks in specified states
+          filters << { :state => task_states } if task_states
+          # Select tasks with specified results
+          filters << { :result => task_results } if task_results
+
+          if (days = task_days) # Limit by age
+            filters << { :started_at => last_days(days.to_i) }
+          end
+
+          filter = Sequel.&(*filters)
         end
 
-        if (days = task_days)
-          filter = Sequel.&(filter, { :started_at => last_days(days.to_i) })
-        end
         filter
+      end
+
+      def filters_provided?
+        task_ids || task_states || task_days || task_results
       end
 
       def last_days(count)
