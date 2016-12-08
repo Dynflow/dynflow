@@ -49,7 +49,7 @@ module Dynflow
       include Revert
 
       def real_execute(action, event)
-        action.send(:in_run_phase, event) do |action|
+        action.send(:in_run_phase, event) do |action, event|
           world.middleware.execute(:revert_run, action, *[event].compact) do |*new_args|
             action.revert_run(*new_args)
           end

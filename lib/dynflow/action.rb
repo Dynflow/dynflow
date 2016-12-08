@@ -561,12 +561,11 @@ module Dynflow
         save_state
         with_error_handling do
           event = Skip if state == :skipping
-
-          # we run the Skip event only when the run accepts events
-          if event != Skip || ((@step.is_a?(Steps::RunStep) && run_accepts_events?) ||
-                               (@step.is_a?(Steps::RevertRunStep) && revert_run_accepts_events?))
+          # we run the Skip event only when the right method for run phase accepts arguments
+          if event != Skip || ((@step.is_a?(ExecutionPlan::Steps::RunStep) && run_accepts_events?) ||
+                               (@step.is_a?(ExecutionPlan::Steps::RevertRunStep) && revert_run_accepts_events?))
             result = catch(SUSPEND) do
-              yield self
+              yield self, event
             end
 
             self.state = :suspended if result == SUSPEND
@@ -580,7 +579,7 @@ module Dynflow
     end
 
     def execute_run(event)
-      in_run_phase(event) do |action|
+      in_run_phase(event) do |action, event|
         world.middleware.execute(:run, self, *[event].compact) do |*args|
           action.run(*args)
         end

@@ -75,6 +75,22 @@ module Support
 
     end
 
+    class DeepActionWithFail < AbstractAction
+
+      def plan(error_state, count)
+        if count == 0
+          super(count, error_state)
+        else
+          plan_action(self.class, error_state, count - 1)
+          plan_self(:desired_state => :success)
+        end
+      end
+
+      def rescue_strategy_for_self
+        Dynflow::Action::Rescue::Fail
+      end
+    end
+
     class ActionWithFail < AbstractAction
 
       def rescue_strategy_for_self
@@ -105,6 +121,9 @@ module Support
       def rescue_strategy_for_self
         Dynflow::Action::Rescue::Revert
       end
+
+      def revert_run; end
+      def revert_plan; end
 
     end
 

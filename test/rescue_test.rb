@@ -147,11 +147,18 @@ module Dynflow
         end
 
         it 'rollbacks successfully' do
+          # For each planned step there will be another plan, run and finalize step
+          expected_step_count = execution_plan.plan_steps.count * 3
           rescued_plan.state.must_equal :stopped
           rescued_plan.result.must_equal :success
-          rescued_plan.steps.values.count.must_equal 6
-          rescued_plan.steps_in_state(:success).count.must_equal 6
+          rescued_plan.steps.values.count.must_equal expected_step_count
+          rescued_plan.steps_in_state(:success).count.must_equal expected_step_count
           rescued_plan.rescued_plan_id.must_equal execution_plan.id
+
+          # The original plan has to be reverted successfully
+          reverted = world.persistence.load_execution_plan(execution_plan.id)
+          reverted.state.must_equal :stopped
+          reverted.result.must_equal :reverted
         end
 
       end
@@ -167,13 +174,17 @@ module Dynflow
         end
 
         it 'rollbacks successfully' do
+          expected_step_count = execution_plan.plan_steps.count * 3
           rescued_plan.state.must_equal :stopped
           rescued_plan.result.must_equal :success
-          rescued_plan.steps.values.count.must_equal 7
-          rescued_plan.steps_in_state(:success).count.must_equal 7
+          rescued_plan.steps.values.count.must_equal expected_step_count
+          rescued_plan.steps_in_state(:success).count.must_equal expected_step_count
           rescued_plan.rescued_plan_id.must_equal execution_plan.id
-        end
 
+          reverted = world.persistence.load_execution_plan(execution_plan.id)
+          reverted.state.must_equal :stopped
+          reverted.result.must_equal :reverted
+        end
       end
 
       describe 'auto rescue' do
@@ -229,6 +240,15 @@ module Dynflow
             execute(Example::ComplexActionWithFail, :error_on_run)
           end
 
+          let :deep_execution_plan do
+            execute(Example::DeepActionWithFail, :error_on_run, 15)
+          end
+
+          it 'suggests to fail' do
+            execution_plan.rescue_strategy.must_equal Action::Rescue::Fail
+            deep_execution_plan.rescue_strategy.must_equal Action::Rescue::Fail
+          end
+
           it 'fails the execution plan automatically' do
             execution_plan.state.must_equal :stopped
             execution_plan.result.must_equal :error
@@ -250,13 +270,12 @@ module Dynflow
 
           it 'reverts the plan automatically' do
             execution_plan.state.must_equal :stopped
-            execution_plan.result.must_equal :error
-            execution_plan.steps_in_state(:success).count.must_equal 5
-            execution_plan.steps_in_state(:pending).count.must_equal 4
-            execution_plan.steps_in_state(:error).count.must_equal 1
+            execution_plan.result.must_equal :reverted
+
             rescue_plan.state.must_equal :stopped
             rescue_plan.result.must_equal :success
             rescue_plan.rescued_plan_id.must_equal execution_plan.id
+            rescue_plan.steps.count.must_equal(execution_plan.plan_steps.count * 3)
           end
         end
 
