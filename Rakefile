@@ -22,7 +22,7 @@ namespace :foreman_tasks do
         config.connector           = Proc.new { |world| Dynflow::Connectors::Database.new(world) }
         config.auto_execute        = false
       end
-      t.world  = ::Dynflow::World.new(config)
+      t.world = ::Dynflow::World.new(config)
     end
     Rake::Task[export_task.name].invoke
   end

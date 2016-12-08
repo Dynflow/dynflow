@@ -17,7 +17,7 @@ module Dynflow
         @world = nil
         @plans = nil
 
-        @task_file   = nil # Filename of the resulting file
+        @task_file = nil # Filename of the resulting file
         # Search options
         @task_days    = nil # Number of days
         @task_format  = nil # One of html, csv, json
@@ -106,15 +106,7 @@ module Dynflow
         filter = nil
 
         # Nothing provided, exporting with some default values
-        unless filters_provided?
-          # Tasks started in last 7 days (in any state)
-          last_week = { :started_at => last_days(7) }
-          # Tasks started in last 60 days where result != success
-          last_two_months = Sequel.&(Sequel.~(:result => 'success'),
-                                     { :started_at => last_days(60) })
-          # Select tasks matching either of the two
-          filter = Sequel.|(last_week, last_two_months)
-        else
+        if filters_provided?
           # Collect all provided filters into the filters array
           filters = []
           # Select tasks with specified ids
@@ -129,6 +121,14 @@ module Dynflow
           end
 
           filter = Sequel.&(*filters)
+        else
+          # Tasks started in last 7 days (in any state)
+          last_week = { :started_at => last_days(7) }
+          # Tasks started in last 60 days where result != success
+          last_two_months = Sequel.&(Sequel.~(:result => 'success'),
+                                     { :started_at => last_days(60) })
+          # Select tasks matching either of the two
+          filter = Sequel.|(last_week, last_two_months)
         end
 
         filter
