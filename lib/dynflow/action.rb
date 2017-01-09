@@ -542,6 +542,7 @@ module Dynflow
       end
     end
 
+    # rubocop:disable Style/CyclomaticComplexity, Style/PerceivedComplexity
     def in_run_phase(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
@@ -577,6 +578,7 @@ module Dynflow
         raise "wrong state #{state} when event:#{event}"
       end
     end
+    # rubocop:enable Style/CyclomaticComplexity, Style/PerceivedComplexity
 
     def execute_run(event)
       in_run_phase(event) do |action, event|

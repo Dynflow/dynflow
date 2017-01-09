@@ -69,6 +69,7 @@ module Dynflow
                                stopped:  [] }
     end
 
+    # rubocop:disable Metrics/ParameterLists
     # all params with default values are part of *private* api
     def initialize(world,
                    id                = SecureRandom.uuid,
@@ -107,6 +108,7 @@ module Dynflow
       end
       @steps = steps
     end
+    # rubocop:enable Metric/ParameterLists
 
     def valid?
       true
