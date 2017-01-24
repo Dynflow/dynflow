@@ -300,7 +300,9 @@ module Dynflow
       plan.update_state(:paused) if plan.state == :running
       plan.save
       coordinator.release(execution_lock)
-      unless plan.error?
+
+      available_executors = coordinator.find_worlds(true)
+      if available_executors.any? && !plan.error?
         client_dispatcher.tell([:dispatch_request,
                                 Dispatcher::Execution[execution_lock.execution_plan_id],
                                 execution_lock.client_world_id,
