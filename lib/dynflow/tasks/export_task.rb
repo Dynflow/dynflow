@@ -24,6 +24,7 @@ module Dynflow
         @task_ids     = nil # Comma separated list of task ids
         @task_states  = nil # Comma separated list of task states
         @task_results = nil # Comma separated list of task results
+        @task_mod     = 100 # Report progress on every task_mod-th task
         yield self if block_given?
         define
       end
@@ -39,7 +40,7 @@ module Dynflow
       def task_file
         ENV['TASK_FILE'] ||
           @task_file ||
-          "/tmp/task-export-#{Time.now.to_i}.#{task_format == 'csv' ? 'csv' : 'tar.gz'}"
+          "/tmp/task-export-#{Time.now.to_i}.#{filetype}"
       end
 
       def task_format
@@ -48,6 +49,10 @@ module Dynflow
 
       def task_days
         ENV['TASK_DAYS'] || @task_days
+      end
+
+      def task_mod
+        @task_mod ||= ENV['task_mod'] || @task_mod
       end
 
       def task_states
@@ -65,32 +70,50 @@ module Dynflow
         @task_ids = ENV['TASK_IDS'].split(',') if ENV['TASK_IDS']
       end
 
+      def task_compress
+        ENV['TASK_COMPRESS'] || @task_compress || 'yes'
+      end
+
       private
 
+      def compress?
+        task_compress.downcase == 'yes'
+      end
+
       def export
-        if plans.empty?
+        if plans_or_ids.empty?
           puts("Nothing to export, exiting")
           return
         end
 
-        puts "Exporting #{plans.count} tasks"
-        content = case task_format
-                  when 'html'
-                    ::Dynflow::Exporters::Tar.full_html_export plans
-                  when 'json'
-                    ::Dynflow::Exporters::Tar.full_json_export plans
-                  when 'csv'
-                    ::Dynflow::Exporters::CSV.new
-                      .add_many(plans).result
-                  else
-                    raise "Unknown export format '#{format}'"
-                  end
-        File.write(task_file, content)
+        puts "Exporting #{plans_or_ids.count} tasks"
+        File.open(task_file, 'w') do |f|
+          f = Zlib::GzipWriter.new(f) if compress?
+          manager = case task_format
+                    when 'html'
+                      ::Dynflow::Exporters::Tar.prepare_html_export f, plans_or_ids, world
+                    when 'json'
+                      ::Dynflow::Exporters::Tar.new(world, Exporters::JSON.new(:with_full_sub_plans => false), f)
+                    when 'csv'
+                      ::Dynflow::Exporters::ExportManager.new(world, ::Dynflow::Exporters::CSV.new, f)
+                    else
+                      raise "Unknown export format '#{task_format}'"
+                    end
+          manager.add(plans_or_ids).export_collection { |_| progress_report }
+          f.close if compress?
+        end
         puts "Exported tasks as #{task_file}"
       end
 
-      def plans
-        @plans ||= world.persistence.find_execution_plans(:filters => filter)
+      # Should return an Array containing ExecutionPlans or ids
+      def plans_or_ids
+        @plans ||= world.persistence.find_execution_plans_attributes([:uuid], :filters => filter).flatten
+      end
+
+      def progress_report(_uuid = nil)
+        @counter ||= 0
+        @counter += 1
+        puts "Exported #{@counter}/#{@plans.size} tasks" if @counter % task_mod == 0
       end
 
       def filter
@@ -140,6 +163,12 @@ module Dynflow
 
       def last_days(count)
         ((Date.today - count)..(Date.today))
+      end
+
+      def filetype
+        suffix = task_format == 'csv' ? 'csv' : 'tar'
+        suffix = suffix + '.gz' if compress?
+        suffix
       end
     end
   end

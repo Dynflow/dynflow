@@ -64,7 +64,8 @@ module Dynflow
                string_to_time(hash[:start_before]),
                serializer)
     rescue NameError => e
-      error(e.message)
+      world.logger.error("Failed to load delayed plan #{hash[:execution_plan_uuid]}")
+      nil
     end
   end
 end

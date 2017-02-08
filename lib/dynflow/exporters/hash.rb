@@ -73,14 +73,17 @@ module Dynflow
         if !full? || sub_plans.empty?
           sub_plans.map(&:id)
         else
-          Hash.new(sub_plans.first.world, :with_full_sub_plans => true)
-            .add_many(sub_plans).finalize.result
+          exporter = Hash.new(:with_full_sub_plans => true)
+          sub_plans.map { |sub_plan| exporter.export(sub_plan) }
         end
       end
 
       def export_delay_record
         if execution_plan.state == :scheduled
-          raise 'No delay record found for scheduled plan' if execution_plan.delay_record.nil?
+          if execution_plan.delay_record.nil?
+            execution_plan.world.logger.error("No delay record found for scheduled plan #{execution_plan.id}")
+            return {}
+          end
           execution_plan.delay_record.to_hash.delete_if { |key, _| DELAYED_FILTER.include? key }
         else
           {}
@@ -98,8 +101,12 @@ module Dynflow
         super(plan).to_json
       end
 
-      def result
-        @result = '[' + super.join(',') + ']'
+      def filetype
+        'json'
+      end
+
+      def brackets
+        ['[', ',', ']']
       end
 
     end

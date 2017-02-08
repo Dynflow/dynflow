@@ -52,12 +52,17 @@ module Dynflow
 
       get('/:id/export') do |id|
         set_download_headers(id + '.tar.gz')
-        @plan = world.persistence.load_execution_plan(id)
-        ::Dynflow::Exporters::Tar.full_html_export([@plan])
+        plan = world.persistence.load_execution_plan(id)
+        io = StringIO.new
+        gzip = Zlib::GzipWriter.new(io)
+        ::Dynflow::Exporters::Tar.full_html_export(io, [plan])
+        gzip.close
+        io.string
       end
 
       get('/:id/json') do |id|
-        Exporters::Hash.export_execution_plan_id(world, id).to_json
+        plan = world.persistence.load_execution_plan(id)
+        Exporters::JSON.new.export(plan)
       end
 
       get('/:id') do |id|

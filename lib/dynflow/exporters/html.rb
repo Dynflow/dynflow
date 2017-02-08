@@ -47,12 +47,12 @@ module Dynflow
 
     class HTML < Abstract
 
-      def initialize(world, *args)
-        super(world, *args)
+      def initialize(world)
+        @world = world
         @renderer = TaskRenderer.new(world)
       end
 
-      def export_execution_plan(plan)
+      def export(plan)
         render :export,
                :locals => {
                  :template => :show,
@@ -60,11 +60,15 @@ module Dynflow
                }
       end
 
-      def export_index
+      def filetype
+        'html'
+      end
+
+      def export_index(plans)
         render :export,
                :locals => {
                  :template => :index,
-                 :plans => @index.values.map { |val| val[:plan] }
+                 :plans => plans
                }
       end
 
@@ -78,10 +82,6 @@ module Dynflow
                  :worlds => worlds,
                  :validation_results => @world.worlds_validity_check(false)
                }
-      end
-
-      def export(plan)
-        export_execution_plan(plan)
       end
 
       private

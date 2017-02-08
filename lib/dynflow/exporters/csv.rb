@@ -15,6 +15,13 @@ module Dynflow
         @result = (header + super).join("\n")
       end
 
+      def brackets
+        [nil, "\n", "\n"]
+      end
+
+      def filetype
+        'csv'
+      end
     end
   end
 end

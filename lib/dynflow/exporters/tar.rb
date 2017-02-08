@@ -3,72 +3,41 @@ require 'rubygems/package'
 
 module Dynflow
   module Exporters
-    class Tar < Abstract
+    class Tar < ExportManager
 
       FILE_MODE = 0644
-      DIR_MODE = 0775
+      DIR_MODE  = 0775
 
-      class << self
-
-        def full_html_export(plans)
-          html = Exporters::HTML.new(plans.first.world)
-          tar = self.new(html, :with_assets => true,
-                         :with_index  => true,
-                         :filetype    => 'html')
-          tar.add_many(plans)
-            .add_file('worlds.html', html.export_worlds)
-            .finalize.result
-        end
-
-        def full_json_export(plans)
-          tar = self.new(Exporters::JSON.new(nil, :with_sub_plans => false),
-                         :filetype => 'json')
-          tar.add_many(plans).finalize.result
-        end
-
+      def self.prepare_html_export(io, plans, world)
+        html = Exporters::HTML.new(world)
+        tar = self.new(world, html, io,
+                       :with_assets => true,
+                       :with_index  => true,
+                       :io          => io)
+        tar.add_file('worlds.html', html.export_worlds)
       end
 
-      def initialize(exporter, options = {})
-        @exporter = exporter
-        @buffer = options.fetch(:io, StringIO.new(""))
-        @gzip = Zlib::GzipWriter.new(@buffer)
-        @tar = Gem::Package::TarWriter.new(@gzip)
-        @options = options
+      def initialize(world, exporter, io, options = {})
+        super(world, exporter, options)
+        @tar = Gem::Package::TarWriter.new(io)
       end
 
-      def finalize
-        @exporter.finalize
-
+      def export_collection
         add_assets if @options[:with_assets]
-        add_file('index.' + @options[:filetype], @exporter.export_index) if @options[:with_index]
+        add_file('index.' + @exporter.filetype, @exporter.export_index(@queue.values)) if @options[:with_index]
 
-        @exporter.index.each do |key, value|
-          add_file(key + '.' + @options[:filetype], value[:result])
+        each do |uuid, content, _|
+          add_file("#{uuid}.#{@exporter.filetype}", content)
+          yield uuid if block_given?
         end
-
         @tar.close
-        @gzip.close
         self
       end
 
-      def result
-        @buffer.string
-      end
-
-      def add_file(path, contents, size = contents.size)
+      def add_file(path, contents, size = contents.bytesize)
         @tar.add_file_simple(path, FILE_MODE, size) do |stream|
           stream.write(contents)
         end
-        self
-      end
-
-      def add(execution_plan)
-        @exporter.add(execution_plan)
-        self
-      end
-
-      def add_id(execution_plan_id)
-        @exporter.add_id(execution_plan_id)
         self
       end
 
@@ -89,7 +58,7 @@ module Dynflow
 
       def add_file_path(path)
         File.open(path) do |f|
-          add_file(path, f.read, f.size)
+          add_file(path, f.read, f.bytesize)
         end
       end
     end
