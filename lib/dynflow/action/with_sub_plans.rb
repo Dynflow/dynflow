@@ -26,16 +26,19 @@ module Dynflow
     end
 
     def initiate
+      output.update(:total_count   => 0,
+                    :success_count => 0,
+                    :failed_count  => 0,
+                    :pending_count => 0)
+      if uses_concurrency_control
+        world.throttle_limiter.initialize_plan(execution_plan_id, input[:concurrency_control])
+      end
+      spawn_plans
+    end
+
+    def spawn_plans
       sub_plans = create_sub_plans
       sub_plans = Array[sub_plans] unless sub_plans.is_a? Array
-      if uses_concurrency_control
-        planned, failed = sub_plans.partition { |plan| plan.state == :planned }
-        calculate_time_distribution sub_plans.count
-        sub_plans = world.throttle_limiter.handle_plans!(execution_plan_id,
-                                                         planned.map(&:id),
-                                                         failed.map(&:id),
-                                                         input[:concurrency_control])
-      end
       wait_for_sub_plans sub_plans
     end
 
@@ -70,11 +73,18 @@ module Dynflow
 
     # Helper for creating sub plans
     def trigger(*args)
-      if uses_concurrency_control
-        world.plan_with_caller(self, *args)
+      if uses_concurrency_control?
+        trigger_with_concurrency_control(args)
       else
         world.trigger { world.plan_with_caller(self, *args) }
       end
+    end
+
+    def trigger_with_concurrency_control(*args)
+      record = world.plan_with_caller(self, *args)
+      records = [[record], []]
+      records.reverse! unless record.state == :planned
+      @world.throttle_limiter.handle_plans(execution_plan_id, *records)
     end
 
     def limit_concurrency_level(level)
@@ -100,18 +110,11 @@ module Dynflow
     end
 
     def wait_for_sub_plans(sub_plans)
-      output.update(total_count: 0,
-                    failed_count: 0,
-                    success_count: 0,
-                    pending_count: 0)
-
       planned, failed = sub_plans.partition(&:planned?)
 
-      sub_plan_ids = (planned + failed).map(&:execution_plan_id)
-
-      output[:total_count] = sub_plan_ids.size
-      output[:failed_count] = failed.size
-      output[:pending_count] = planned.size
+      output[:total_count]   += sub_plans.size
+      output[:failed_count]  += failed.size
+      output[:pending_count] += planned.size
 
       if planned.any?
         notify_on_finish(planned)
@@ -122,6 +125,7 @@ module Dynflow
 
     def try_to_finish
       if done?
+        world.throttle_limiter.finish(execution_plan_id)
         check_for_errors!
         on_finish
         return true
