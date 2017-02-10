@@ -17,8 +17,12 @@ module Dynflow
     # Returns the items in the current batch
     def current_batch
       start_position = output[:total_count]
-      size = start_position + BATCH_SIZE > total_count ? total_count - start_position : BATCH_SIZE
+      size = start_position + batch_size > total_count ? total_count - start_position : batch_size
       batch(start_position, size)
+    end
+
+    def batch_size
+      BATCH_SIZE
     end
 
     def done?
