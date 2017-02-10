@@ -25,18 +25,6 @@ module Dynflow
         []
       end
 
-      # def self.export_execution_plan_id(world, execution_plan_id, options = {})
-      #   self.new(world, options)
-      #     .add_id(execution_plan_id)
-      #     .finalize.queue[execution_plan_id][:result]
-      # end
-
-      # def self.export_execution_plan(execution_plan, options = {})
-      #   self.new(execution_plan.world, options)
-      #     .add(execution_plan)
-      #     .finalize.queue[execution_plan.id][:result]
-      # end
-
     end
   end
 end

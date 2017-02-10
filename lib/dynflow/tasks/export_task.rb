@@ -88,19 +88,19 @@ module Dynflow
 
         puts "Exporting #{plans_or_ids.count} tasks"
         File.open(task_file, 'w') do |f|
-          f = Zlib::GzipWriter.new(f) if compress?
-          manager = case task_format
-                    when 'html'
-                      ::Dynflow::Exporters::Tar.prepare_html_export f, plans_or_ids, world
-                    when 'json'
-                      ::Dynflow::Exporters::Tar.new(world, Exporters::JSON.new(:with_full_sub_plans => false), f)
-                    when 'csv'
-                      ::Dynflow::Exporters::ExportManager.new(world, ::Dynflow::Exporters::CSV.new, f)
-                    else
-                      raise "Unknown export format '#{task_format}'"
-                    end
-          manager.add(plans_or_ids).export_collection { |_| progress_report }
-          f.close if compress?
+          with_compression(f) do |io|
+            manager = case task_format
+                      when 'html'
+                        ::Dynflow::Exporters::Tar.prepare_html_export io, plans_or_ids, world
+                      when 'json'
+                        ::Dynflow::Exporters::Tar.new(world, Exporters::JSON.new(:with_full_sub_plans => false), io)
+                      when 'csv'
+                        ::Dynflow::Exporters::ExportManager.new(world, ::Dynflow::Exporters::CSV.new, io)
+                      else
+                        raise "Unknown export format '#{task_format}'"
+                      end
+            manager.add(plans_or_ids).export_collection { |_| progress_report }
+          end
         end
         puts "Exported tasks as #{task_file}"
       end
@@ -169,6 +169,19 @@ module Dynflow
         suffix = task_format == 'csv' ? 'csv' : 'tar'
         suffix = suffix + '.gz' if compress?
         suffix
+      end
+
+      def with_compression(f, &block)
+        if compress?
+          begin
+            gzip_f = Zlib::GzipWriter.new(f)
+            yield gzip_f
+          ensure
+            gzip_f.close
+          end
+        else
+          yield f
+        end
       end
     end
   end

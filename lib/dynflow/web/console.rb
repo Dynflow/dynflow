@@ -53,11 +53,9 @@ module Dynflow
       get('/:id/export') do |id|
         set_download_headers(id + '.tar.gz')
         plan = world.persistence.load_execution_plan(id)
-        io = StringIO.new
-        gzip = Zlib::GzipWriter.new(io)
-        ::Dynflow::Exporters::Tar.full_html_export(io, [plan])
+        gzip = Zlib::GzipWriter.new(response)
+        ::Dynflow::Exporters::Tar.prepare_html_export(gzip, [plan], world).export_collection
         gzip.close
-        io.string
       end
 
       get('/:id/json') do |id|
