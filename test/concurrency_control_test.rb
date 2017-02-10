@@ -63,7 +63,7 @@ module Dynflow
 
         def plan(count, concurrency_level = nil, time_span = nil, should_sleep = nil)
           limit_concurrency_level(concurrency_level) unless concurrency_level.nil?
-          distribute_over_time(time_span) unless time_span.nil?
+          distribute_over_time(time_span, count) unless time_span.nil?
           plan_self :count => count, :should_sleep => should_sleep
         end
 

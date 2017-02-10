@@ -31,6 +31,7 @@ module Dynflow
                     :failed_count  => 0,
                     :pending_count => 0)
       if uses_concurrency_control
+        calculate_time_distribution
         world.throttle_limiter.initialize_plan(execution_plan_id, input[:concurrency_control])
       end
       spawn_plans
@@ -73,8 +74,8 @@ module Dynflow
 
     # Helper for creating sub plans
     def trigger(*args)
-      if uses_concurrency_control?
-        trigger_with_concurrency_control(args)
+      if uses_concurrency_control
+        trigger_with_concurrency_control(*args)
       else
         world.trigger { world.plan_with_caller(self, *args) }
       end
@@ -82,9 +83,9 @@ module Dynflow
 
     def trigger_with_concurrency_control(*args)
       record = world.plan_with_caller(self, *args)
-      records = [[record], []]
+      records = [[record.id], []]
       records.reverse! unless record.state == :planned
-      @world.throttle_limiter.handle_plans(execution_plan_id, *records)
+      @world.throttle_limiter.handle_plans!(execution_plan_id, *records).first
     end
 
     def limit_concurrency_level(level)
@@ -92,8 +93,8 @@ module Dynflow
       input[:concurrency_control][:level] = ::Dynflow::Semaphores::Stateful.new(level).to_hash
     end
 
-    def calculate_time_distribution(count)
-      time = input[:concurrency_control][:time]
+    def calculate_time_distribution
+      time, count = input[:concurrency_control][:time]
       unless time.nil? || time.is_a?(Hash)
         # Assume concurrency level 1 unless stated otherwise
         level = input[:concurrency_control].fetch(:level, {}).fetch(:free, 1)
@@ -104,9 +105,9 @@ module Dynflow
       end
     end
 
-    def distribute_over_time(time_span)
+    def distribute_over_time(time_span, count)
       input[:concurrency_control] ||= {}
-      input[:concurrency_control][:time] = time_span
+      input[:concurrency_control][:time] = [time_span, count]
     end
 
     def wait_for_sub_plans(sub_plans)
