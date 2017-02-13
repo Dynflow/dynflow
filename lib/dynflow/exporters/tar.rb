@@ -9,27 +9,26 @@ module Dynflow
       DIR_MODE  = 0775
 
       def self.prepare_html_export(io, plans, world)
-        html = Exporters::HTML.new(world)
+        html = Exporters::HTML.new(world, :collect_index => true)
         tar = self.new(world, html, io,
                        :with_assets => true,
-                       :with_index  => true,
-                       :io          => io)
+                       :with_index  => true)
         tar.add_file('worlds.html', html.export_worlds)
       end
 
       def initialize(world, exporter, io, options = {})
-        super(world, exporter, options)
+        super(world, exporter, io, options)
         @tar = Gem::Package::TarWriter.new(io)
       end
 
       def export_collection
         add_assets if @options[:with_assets]
-        add_file('index.' + @exporter.filetype, @exporter.export_index(@queue.values)) if @options[:with_index]
 
         each do |uuid, content, _|
           add_file("#{uuid}.#{@exporter.filetype}", content)
           yield uuid if block_given?
         end
+        add_file('index.' + @exporter.filetype, @exporter.export_index) if @options[:with_index]
         @tar.close
         self
       end
@@ -58,7 +57,7 @@ module Dynflow
 
       def add_file_path(path)
         File.open(path) do |f|
-          add_file(path, f.read, f.bytesize)
+          add_file(path, f.read, f.size)
         end
       end
     end

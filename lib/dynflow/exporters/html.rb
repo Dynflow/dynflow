@@ -25,12 +25,12 @@ module Dynflow
         end
       end
 
-      private
-
       def erb(file, options = {})
         @cache[file] ||= ::Tilt.new(template file)
         @cache[file].render(self, options[:locals])
       end
+
+      private
 
       def template(filename)
         File.join(::Dynflow::Web::Console.views, filename.to_s + '.erb')
@@ -47,12 +47,22 @@ module Dynflow
 
     class HTML < Abstract
 
-      def initialize(world)
+      def initialize(world, options = {})
         @world = world
         @renderer = TaskRenderer.new(world)
+        @index_rows = []
+        @options = options
       end
 
       def export(plan)
+        if collect_index?
+          row = @renderer.erb(:export,
+                              :locals => {
+                                :template => :index_row,
+                                :plan => plan
+                              })
+          @index_rows << row
+        end
         render :export,
                :locals => {
                  :template => :show,
@@ -64,12 +74,12 @@ module Dynflow
         'html'
       end
 
-      def export_index(plans)
-        render :export,
+      def export_index
+        render(:export,
                :locals => {
                  :template => :index,
-                 :plans => plans
-               }
+                 :rows => @index_rows
+               })
       end
 
       def export_worlds
@@ -85,6 +95,10 @@ module Dynflow
       end
 
       private
+
+      def collect_index?
+        @options.fetch(:collect_index, true)
+      end
 
       def render(*args)
         @renderer.render(*args)

@@ -2,6 +2,7 @@
 @plan   = locals[:plan]
 @plans  = locals[:plans]
 @worlds = locals[:worlds]
+@rows   = locals[:rows] || []
 @validation_results = locals[:validation_results]
-erb(locals[:template]) 
+erb(locals[:template], :locals => locals)
 %>

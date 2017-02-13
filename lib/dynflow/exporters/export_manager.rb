@@ -8,7 +8,6 @@ module Dynflow
         @options  = options
         @io       = io
         @db_batch_size = options.fetch(:db_batch_size, 50)
-        @queue    = {}
         @ids = @plans = []
         @wrap_before, @separator, @wrap_after = @exporter.brackets
       end

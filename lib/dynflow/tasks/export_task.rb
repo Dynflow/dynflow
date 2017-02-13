@@ -40,7 +40,7 @@ module Dynflow
       def task_file
         ENV['TASK_FILE'] ||
           @task_file ||
-          "/tmp/task-export-#{Time.now.to_i}.#{filetype}"
+          @task_file = "/tmp/task-export-#{Time.now.to_i}.#{filetype}"
       end
 
       def task_format
