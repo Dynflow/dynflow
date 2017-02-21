@@ -49,4 +49,16 @@ module Dynflow
   require 'dynflow/semaphores'
   require 'dynflow/throttle_limiter'
   require 'dynflow/config'
+
+  if defined? ::ActiveJob
+    require 'dynflow/active_job/queue_adapter'
+
+    class Railtie < Rails::Railtie
+      config.before_initialize do
+        ::ActiveJob::QueueAdapters.include(
+          Dynflow::ActiveJob::QueueAdapters
+        )
+      end
+    end
+  end
 end
