@@ -1,4 +1,5 @@
 module Dynflow
+  # rubocop:disable Metrics/ClassLength
   class Action < Serializable
 
     OutputReference = ExecutionPlan::OutputReference
@@ -544,4 +545,5 @@ module Dynflow
       @trigger.nil?
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
