@@ -55,7 +55,11 @@ module Dynflow
                                 paginate(table(:execution_plan), options),
                                 options),
                           options[:filters])
-        data_set.all.map { |record| load_data(record) }
+        if wanted = options.delete(:pluck)
+          data_set.select_map(wanted)
+        else
+          data_set.all.map { |record| load_data(record) }
+        end
       end
 
       def delete_execution_plans(filters, batch_size = 1000)
@@ -307,28 +311,32 @@ module Dynflow
       end
 
       def filter(what, data_set, filters)
-        Type! filters, NilClass, Hash
+        Type! filters, NilClass, Hash, ::Sequel::SQL::BooleanExpression
         return data_set if filters.nil?
 
-        unknown = filters.keys.map(&:to_s) - META_DATA.fetch(what)
-        if what == :execution_plan
-          unknown -= %w[uuid caller_execution_plan_id caller_action_id]
+        if filters.is_a?(Hash)
+          unknown = filters.keys.map(&:to_s) - META_DATA.fetch(what)
+          if what == :execution_plan
+            unknown -= %w[uuid caller_execution_plan_id caller_action_id]
 
-          if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
-            raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"
+            if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
+              raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"
+            end
+
+            if filters.key?('caller_execution_plan_id')
+              data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
+                           select_all(TABLES[:execution_plan]).distinct
+            end
           end
 
-          if filters.key?('caller_execution_plan_id')
-            data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
-                select_all(TABLES[:execution_plan]).distinct
+          unless unknown.empty?
+            raise ArgumentError, "unkown columns: #{unknown.inspect}"
           end
-        end
 
-        unless unknown.empty?
-          raise ArgumentError, "unkown columns: #{unknown.inspect}"
+          data_set.where Utils.symbolize_keys(filters)
+        else
+          data_set.where filters
         end
-
-        data_set.where Utils.symbolize_keys(filters)
       end
 
       def with_retry

@@ -1,6 +1,6 @@
 <h1>List of worlds</h1>
 
-<ul>
+<ul class=<%= @export ? 'hidden' : '' %>>
   <li><a href="<%= url("/worlds/check") %>" class="postlink">check status</a>: see potentially invalid worlds</li>
   <li><a href="<%= url("/worlds/check?invalidate=true") %>" class="postlink">check and invalidate</a>: invalidate the worlds that don't respond</li>
 </ul>
@@ -23,12 +23,12 @@
     <td>
       <% validation_result = @validation_results[world.id] if @validation_results %>
 
-      <% unless validation_result == :invalidated %>
+      <% unless @export || validation_result == :invalidated %>
         <a href="<%= url("/worlds/#{world.id}/check") %>" class="postlink">check</a>
       <% end %>
 
       <% if validation_result %>
-        <% if validation_result == :invalid %>
+        <% if !@export && validation_result == :invalid %>
           <a href="<%= url("/worlds/#{world.id}/check?invalidate=true") %>" class="postlink">invalidate</a>
         <% end %>
 

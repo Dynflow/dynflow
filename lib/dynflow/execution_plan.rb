@@ -426,15 +426,9 @@ module Dynflow
     end
 
     def self.steps_from_hash(step_ids, execution_plan_id, world)
-      steps = world.persistence.load_steps(execution_plan_id, world)
-      ids_to_steps = steps.inject({}) do |hash, step|
-        hash[step.id.to_i] = step
-        hash
-      end
-      # to make sure to we preserve the order of the steps
       step_ids.inject({}) do |hash, step_id|
-        hash[step_id.to_i] = ids_to_steps[step_id.to_i]
-        hash
+        step = world.persistence.load_step(execution_plan_id, step_id, world)
+        hash.update(step_id.to_i => step)
       end
     end
 

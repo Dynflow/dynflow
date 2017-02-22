@@ -1,6 +1,6 @@
 <h1>Listing execution plans</h1>
 
-<form action="<%= url %>" method="GET">
+<form action="<%= url %>" method="GET" class="<%= @export ? 'hidden' : '' %>">
   <%= filter_checkbox(:state, Dynflow::ExecutionPlan.states.map(&:to_s)) if supported_filter?(:state) %>
   <input type="submit" value="Filter"/>
 </form>
@@ -13,23 +13,20 @@
       <th><%= order_link(:state, "State") %></th>
       <th><%= order_link(:result, "Result") %></th>
       <th><%= order_link(:started_at, "Started at") %></th>
-      <th></th>
+      <th><% unless @export %><a class="button" href="<%= h(url("/export")) %>">Export</a><% end %></th>
     </tr>
   </thead>
 
-<% @plans.each do |plan| %>
-  <tr>
-    <td><%= h(plan.id) %></td>
-    <td><%= h(plan.root_plan_step.action_class.name) %></td>
-    <th><%= h(plan.state) %></th>
-    <th><%= h(plan.result) %></th>
-    <th><%= h(plan.started_at) %></th>
-    <td><a href="<%= h(url("/#{plan.id}")) %>">Show</a></td>
-  </tr>
-
+  <% unless @rows.nil? || @rows.empty? %>
+    <%= @rows.join %>
+  <% else %>
+    <% @plans.each do |plan| %>
+      <%= erb :index_row, :locals => { :plan => plan } %>
+    <% end %>
+  <% end %>
 <% end %>
 </table>
-<% if paginate? %>
+<% if !@export && paginate? %>
   <ul class="pagination">
     <li><a href="<%= paginated_url(-1) %>">&laquo; Prev</a></li>
     <li><a href="<%= paginated_url(+1) %>">Next &raquo;</a></li>

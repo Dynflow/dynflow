@@ -1,0 +1,9 @@
+<tr>
+  <td><%= h(plan.id) %></td>
+  <td><%= h(plan.root_plan_step.action_class.name) %></td>
+  <th><%= h(plan.state) %></th>
+  <th><%= h(plan.result) %></th>
+  <th><%= h(plan.started_at) %></th>
+  <td><a href="<%= h(url("/#{plan.id}#{@export ? '.html' : ''}")) %>">Show</a></td>
+  <td><a class="<%= @export ? 'hidden' : '' %>" href="<%= h(url("/#{plan.id}/json")) %>">JSON</a></td>
+</tr>

@@ -21,6 +21,7 @@ module Dynflow
     require 'dynflow/web/filtering_helpers'
     require 'dynflow/web/world_helpers'
     require 'dynflow/web/console_helpers'
+    require 'dynflow/web/export_helpers'
     require 'dynflow/web/console'
   end
 end

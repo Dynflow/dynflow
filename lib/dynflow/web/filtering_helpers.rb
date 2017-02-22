@@ -28,11 +28,16 @@ module Dynflow
         return @filtering_options
       end
 
-      def find_execution_plans_options(show_all = false)
+      def find_execution_plans_options(show_all = false, paginate = true)
         options = Utils.indifferent_hash({})
         options.merge!(filtering_options(show_all))
-        options.merge!(pagination_options)
+        options.merge!(pagination_options) if paginate
         options.merge!(ordering_options)
+      end
+
+      def find_execution_plans(*args)
+        options = find_execution_plans_options(*args)
+        world.persistence.find_execution_plans(options)
       end
 
       def paginate?

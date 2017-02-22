@@ -11,6 +11,7 @@ module Dynflow
       helpers Web::FilteringHelpers
       helpers Web::WorldHelpers
       helpers Web::ConsoleHelpers
+      helpers Web::ExportHelpers
 
       get('/') do
         options = find_execution_plans_options
@@ -47,6 +48,19 @@ module Dynflow
         @worlds = world.coordinator.find_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate], id: params[:id])
         erb :worlds
+      end
+
+      get('/:id/export') do |id|
+        set_download_headers(id + '.tar.gz')
+        plan = world.persistence.load_execution_plan(id)
+        gzip = Zlib::GzipWriter.new(response)
+        ::Dynflow::Exporters::Tar.prepare_html_export(gzip, [plan], world).export_collection
+        gzip.close
+      end
+
+      get('/:id/json') do |id|
+        plan = world.persistence.load_execution_plan(id)
+        Exporters::JSON.new.export(plan)
       end
 
       get('/:id') do |id|

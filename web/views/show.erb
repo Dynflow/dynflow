@@ -1,7 +1,7 @@
 <p>
   <b>Status:</b>
   <%= h(@plan.state) %>
-  <% if @plan.state == :paused %>
+  <% if !@export && @plan.state == :paused %>
     <a href="<%= url("/#{@plan.id}/resume") %>" class="postlink">Resume</a>
   <% end %>
   <% if @plan.cancellable? %>
@@ -76,4 +76,7 @@ $(function () {
 })
 </script>
 
-<a href="<%= url '/' %>">Back</a>
+<a href="<%= url(@export ? 'index.html' : '/') %>">Back</a>
+<% unless @export %>
+  <a href="<%= h(url("/#{@plan.id}/export")) %>">Export</a>
+<% end %>

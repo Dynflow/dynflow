@@ -38,6 +38,10 @@ module Dynflow
       end
     end
 
+    def find_execution_plans_attributes(attrs, options)
+      adapter.find_execution_plans(options.merge(:pluck => attrs))
+    end
+
     def delete_execution_plans(filters, batch_size = 1000)
       adapter.delete_execution_plans(filters, batch_size)
     end
