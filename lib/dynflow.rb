@@ -61,4 +61,8 @@ module Dynflow
       end
     end
   end
+
+  if defined? Rails
+    require 'dynflow/rails'
+  end
 end

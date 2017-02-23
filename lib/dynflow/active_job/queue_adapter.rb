@@ -9,11 +9,11 @@ module Dynflow
 
         class << self
           def enqueue(job)
-            Rails.application.dynflow.world.trigger(JobWrapper, job.serialize)
+            ::Rails.application.dynflow.world.trigger(JobWrapper, job.serialize)
           end
 
           def enqueue_at(job, timestamp)
-            Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize)
+            ::Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize)
           end
         end
       end
