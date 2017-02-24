@@ -9,6 +9,17 @@ module Dynflow
       raise NotImplementedError
     end
 
+    PlanNextBatch = Algebrick.atom
+
+    def run(event = nil)
+      if event === PlanNextBatch
+        spawn_plans if can_spawn_next_batch?
+        suspend
+      else
+        super
+      end
+    end
+
     # Should return the expected total count of tasks
     def total_count
       raise NotImplementedError
@@ -40,13 +51,10 @@ module Dynflow
       end
     end
 
-    def try_to_finish
-      # Start next batch if we can, try to finish otherwise
-      if can_spawn_next_batch?
-        spawn_plans
-      else
-        super
-      end
+    def spawn_plans
+      super
+    ensure
+      suspended_action << PlanNextBatch
     end
 
     private
