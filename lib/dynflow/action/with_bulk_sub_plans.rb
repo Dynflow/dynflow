@@ -57,6 +57,22 @@ module Dynflow
       suspended_action << PlanNextBatch
     end
 
+    def cancel!
+      output[:failed_count] += total_count - output[:total_count]
+      output[:total_count] = total_count
+      if uses_concurrency_control
+        # Tell the throttle limiter to cancel the tasks its managing
+        world.throttle_limiter.cancel!(execution_plan_id)
+      else
+        # Just stop the tasks which were not started yet
+        sub_plans(:state => 'planned').each { |sub_plan| sub_plan.update_state(:stopped) }
+      end
+      running = sub_plans(:state => 'running')
+      # Pass the cancel event to running sub plans if they can be cancelled
+      running.each { |sub_plan| sub_plan.cancel! if sub_plan.cancellable? }
+      suspend
+    end
+
     private
 
     def can_spawn_next_batch?
