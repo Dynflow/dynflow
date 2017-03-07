@@ -2,7 +2,7 @@ module Dynflow
   module Action::WithBulkSubPlans
     include Dynflow::Action::Cancellable
 
-    BATCH_SIZE = 10
+    DEFAULT_BATCH_SIZE = 100
 
     # Should return a slice of size items starting from item with index from
     def batch(from, size)
@@ -20,6 +20,17 @@ module Dynflow
       end
     end
 
+    def initiate
+      output[:planned_count] = 0
+      output[:total_count]   = total_count
+      super
+    end
+
+    def increase_counts(planned, failed)
+      super(planned, failed, false)
+      output[:planned_count] += planned
+    end
+
     # Should return the expected total count of tasks
     def total_count
       raise NotImplementedError
@@ -27,19 +38,13 @@ module Dynflow
 
     # Returns the items in the current batch
     def current_batch
-      start_position = output[:total_count]
+      start_position = output[:planned_count]
       size = start_position + batch_size > total_count ? total_count - start_position : batch_size
       batch(start_position, size)
     end
 
     def batch_size
-      BATCH_SIZE
-    end
-
-    def done?
-      # The action is done if the real total count equal to the expected total count and all of them
-      #   are either successful or failed
-      super && total_count == output[:total_count]
+      DEAFULT_BATCH_SIZE
     end
 
     # The same logic as in Action::WithSubPlans, but calculated using the expected total count
@@ -58,8 +63,8 @@ module Dynflow
     end
 
     def cancel!
-      output[:failed_count] += total_count - output[:total_count]
-      output[:total_count] = total_count
+      # Count the not-yet-planned tasks as failed
+      output[:failed_count] += total_count - output[:planned_count]
       if uses_concurrency_control
         # Tell the throttle limiter to cancel the tasks its managing
         world.throttle_limiter.cancel!(execution_plan_id)
@@ -76,7 +81,7 @@ module Dynflow
     private
 
     def can_spawn_next_batch?
-      total_count > output[:total_count]
+      total_count - output[:success_count] - output[:pending_count] - output[:failed_count] > 0
     end
 
   end

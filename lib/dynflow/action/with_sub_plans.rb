@@ -26,10 +26,6 @@ module Dynflow
     end
 
     def initiate
-      output.update(:total_count   => 0,
-                    :success_count => 0,
-                    :failed_count  => 0,
-                    :pending_count => 0)
       if uses_concurrency_control
         calculate_time_distribution
         world.throttle_limiter.initialize_plan(execution_plan_id, input[:concurrency_control])
@@ -112,16 +108,19 @@ module Dynflow
 
     def wait_for_sub_plans(sub_plans)
       planned, failed = sub_plans.partition(&:planned?)
-
-      output[:total_count]   += sub_plans.size
-      output[:failed_count]  += failed.size
-      output[:pending_count] += planned.size
-
+      increase_counts(planned.count, failed.count)
       if planned.any?
         notify_on_finish(planned)
       else
         check_for_errors!
       end
+    end
+
+    def increase_counts(planned, failed, track_total = true)
+      output[:total_count]   = output.fetch(:total_count, 0) + planned + failed if track_total
+      output[:failed_count]  = output.fetch(:failed_count, 0) + failed
+      output[:pending_count] = output.fetch(:pending_count, 0) + planned
+      output[:success_count] ||= 0
     end
 
     def try_to_finish
@@ -137,6 +136,8 @@ module Dynflow
 
     def resume
       if sub_plans.all? { |sub_plan| sub_plan.error_in_plan? }
+        # We're starting over and need to reset the counts
+        %w(total failed pending success).each { |key| output.delete("#{key}_count".to_sym) }
         initiate
       else
         recalculate_counts
