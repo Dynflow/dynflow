@@ -1,15 +1,14 @@
 require_relative 'test_helper'
-require 'fileutils'
 
 module Dynflow
   module PersistenceTest
     describe 'persistence adapters' do
 
       let :execution_plans_data do
-        [{ id: 'plan1', state: 'paused' },
-         { id: 'plan2', state: 'stopped' },
-         { id: 'plan3', state: 'paused' },
-         { id: 'plan4', state: 'paused' }]
+        [{ id: 'plan1', :label => 'test1', state: 'paused' },
+         { id: 'plan2', :label => 'test2', state: 'stopped' },
+         { id: 'plan3', :label => 'test3', state: 'paused' },
+         { id: 'plan4', :label => 'test4', state: 'paused' }]
       end
 
       let :action_data do
@@ -37,6 +36,10 @@ module Dynflow
         end
       end
 
+      def format_time(time)
+        time.strftime('%Y-%m-%d %H:%M:%S')
+      end
+
       def prepare_action(plan)
         adapter.save_action(plan, action_data[:id], action_data)
       end
@@ -57,6 +60,7 @@ module Dynflow
         end
       end
 
+      # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
       def self.it_acts_as_persistence_adapter
         before do
           # the tests expect clean field
@@ -76,20 +80,22 @@ module Dynflow
 
           it 'supports ordering' do
             prepare_plans
-            if adapter.ordering_by.include?(:state)
+            if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(order_by: 'state')
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3', 'plan2']
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan3 plan4 plan2)
 
               loaded_plans = adapter.find_execution_plans(order_by: 'state', desc: true)
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan2', 'plan3', 'plan1']
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan2 plan1 plan3 plan4)
             end
           end
 
           it 'supports filtering' do
             prepare_plans
-            if adapter.ordering_by.include?(:state)
+            if adapter.ordering_by.include?('state')
+              loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'] })
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
               loaded_plans = adapter.find_execution_plans(filters: { state: ['paused'] })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3', 'plan4']
 
               loaded_plans = adapter.find_execution_plans(filters: { state: ['stopped'] })
               loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
@@ -98,10 +104,20 @@ module Dynflow
               loaded_plans.map { |h| h[:id] }.must_equal []
 
               loaded_plans = adapter.find_execution_plans(filters: { state: ['stopped', 'paused'] })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan2', 'plan3']
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan2 plan3 plan4)
 
               loaded_plans = adapter.find_execution_plans(filters: { 'state' => ['stopped', 'paused'] })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan2', 'plan3']
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan2 plan3 plan4)
+
+              loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
+              loaded_plans.must_be_empty
+
+              adapter.save_delayed_plan('plan1',
+                                        :execution_plan_uuid => 'plan1',
+                                        :start_at => format_time(Time.now + 60),
+                                        :start_before => format_time(Time.now - 60))
+              loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
             end
           end
         end
@@ -112,7 +128,7 @@ module Dynflow
             prepare_plans
             adapter.load_execution_plan('plan1')[:id].must_equal 'plan1'
             adapter.load_execution_plan('plan1')['id'].must_equal 'plan1'
-            adapter.load_execution_plan('plan1').keys.size.must_equal 7
+            adapter.load_execution_plan('plan1').keys.size.must_equal 8
 
             adapter.save_execution_plan('plan1', nil)
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
@@ -173,11 +189,12 @@ module Dynflow
           it 'finds plans with start_before in past' do
             start_time = Time.now
             prepare_plans
-            fmt =->(time) { time.strftime('%Y-%m-%d %H:%M:%S') }
-            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :start_at => fmt.call(start_time + 60), :start_before => fmt.call(start_time - 60))
-            adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :start_at => fmt.call(start_time - 60))
-            adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :start_at => fmt.call(start_time + 60))
-            adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :start_at => fmt.call(start_time - 60), :start_before => fmt.call(start_time - 60))
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :start_at => format_time(start_time + 60),
+                                      :start_before => format_time(start_time - 60))
+            adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :start_at => format_time(start_time - 60))
+            adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :start_at => format_time(start_time + 60))
+            adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :start_at => format_time(start_time - 60),
+                                      :start_before => format_time(start_time - 60))
             plans = adapter.find_past_delayed_plans(start_time)
             plans.length.must_equal 3
             plans.map { |plan| plan[:execution_plan_uuid] }.must_equal %w(plan2 plan4 plan1)

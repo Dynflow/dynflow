@@ -1,4 +1,12 @@
 <p>
+  <b>Id:</b>
+  <%= h(@plan.id) %>
+</p>
+<p>
+  <b>Label:</b>
+  <%= h(@plan.label) %>
+</p>
+<p>
   <b>Status:</b>
   <%= h(@plan.state) %>
   <% if @plan.state == :paused %>

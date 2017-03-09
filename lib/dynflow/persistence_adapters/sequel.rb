@@ -27,7 +27,7 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      META_DATA = { execution_plan:      %w(state result started_at ended_at real_time execution_time),
+      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time),
                     action:              %w(caller_execution_plan_id caller_action_id),
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     envelope:            %w(receiver_id),
@@ -309,10 +309,11 @@ module Dynflow
       def filter(what, data_set, filters)
         Type! filters, NilClass, Hash
         return data_set if filters.nil?
+        filters = filters.each.with_object({}) { |(k, v), hash| hash[k.to_s] = v }
 
-        unknown = filters.keys.map(&:to_s) - META_DATA.fetch(what)
+        unknown = filters.keys - META_DATA.fetch(what)
         if what == :execution_plan
-          unknown -= %w[uuid caller_execution_plan_id caller_action_id]
+          unknown -= %w[uuid caller_execution_plan_id caller_action_id delayed]
 
           if filters.key?('caller_action_id') && !filters.key?('caller_execution_plan_id')
             raise ArgumentError, "caller_action_id given but caller_execution_plan_id missing"
@@ -321,6 +322,11 @@ module Dynflow
           if filters.key?('caller_execution_plan_id')
             data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
                 select_all(TABLES[:execution_plan]).distinct
+          end
+          if filters.key?('delayed')
+            filters.delete('delayed')
+            data_set = data_set.join_table(:inner, TABLES[:delayed], :execution_plan_uuid => :uuid).
+              select_all(TABLES[:execution_plan]).distinct
           end
         end
 

@@ -214,6 +214,9 @@ module Support
     end
 
     class Dummy < Dynflow::Action
+      def label
+        'dummy_action'
+      end
     end
 
     class DummyWithFinalize < Dynflow::Action

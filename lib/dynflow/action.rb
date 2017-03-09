@@ -124,6 +124,10 @@ module Dynflow
         raise TypeError, "Wrong phase #{phase}, required #{phases}"
     end
 
+    def label
+      self.class.name
+    end
+
     def input=(hash)
       Type! hash, Hash
       phase! Plan

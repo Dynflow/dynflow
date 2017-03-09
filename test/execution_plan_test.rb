@@ -29,6 +29,7 @@ module Dynflow
 
           it 'restores the plan properly' do
             deserialized_execution_plan.id.must_equal execution_plan.id
+            deserialized_execution_plan.label.must_equal execution_plan.label
 
             assert_steps_equal execution_plan.root_plan_step, deserialized_execution_plan.root_plan_step
             assert_equal execution_plan.steps.keys, deserialized_execution_plan.steps.keys
@@ -44,6 +45,20 @@ module Dynflow
 
       end
 
+      describe '#label' do
+        let :execution_plan do
+          world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+        end
+
+        let :dummy_execution_plan do
+          world.plan(Support::CodeWorkflowExample::Dummy)
+        end
+
+        it 'is determined by the action#label method of entry action' do
+          execution_plan.label.must_equal 'Support::CodeWorkflowExample::FastCommit'
+          dummy_execution_plan.label.must_equal 'dummy_action'
+        end
+      end
       describe '#result' do
 
         let :execution_plan do

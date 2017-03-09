@@ -9,7 +9,7 @@
   <thead>
     <tr>
       <th><%= order_link(:id, "Id") %></th>
-      <th><%= order_link(:action, "Action") %></th>
+      <th><%= order_link(:label, "Label") %></th>
       <th><%= order_link(:state, "State") %></th>
       <th><%= order_link(:result, "Result") %></th>
       <th><%= order_link(:started_at, "Started at") %></th>
@@ -20,7 +20,7 @@
 <% @plans.each do |plan| %>
   <tr>
     <td><%= h(plan.id) %></td>
-    <td><%= h(plan.root_plan_step.action_class.name) %></td>
+    <td><%= h(plan.label || plan.root_plan_step.action_class.name) %></td>
     <th><%= h(plan.state) %></th>
     <th><%= h(plan.result) %></th>
     <th><%= h(plan.started_at) %></th>
