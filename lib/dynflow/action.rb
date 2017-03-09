@@ -1,4 +1,5 @@
 module Dynflow
+  # rubocop:disable Metrics/ClassLength
   class Action < Serializable
 
     OutputReference = ExecutionPlan::OutputReference
@@ -120,6 +121,10 @@ module Dynflow
     def phase!(*phases)
       phase?(*phases) or
         raise TypeError, "Wrong phase #{phase}, required #{phases}"
+    end
+
+    def label
+      self.class.name
     end
 
     def input=(hash)

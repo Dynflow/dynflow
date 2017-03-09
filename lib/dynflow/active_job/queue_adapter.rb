@@ -28,6 +28,10 @@ module Dynflow
         def run
           input[:job_class].constantize.perform_now(*input[:job_arguments])
         end
+
+        def label
+          input[:job_class]
+        end
       end
     end
   end

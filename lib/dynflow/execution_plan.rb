@@ -12,7 +12,8 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :root_plan_step, :steps, :run_flow, :finalize_flow,
+    attr_reader :id, :world, :label,
+                :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time, :execution_history
 
     def self.states
@@ -36,6 +37,7 @@ module Dynflow
     # all params with default values are part of *private* api
     def initialize(world,
                    id                = SecureRandom.uuid,
+                   label             = nil,
                    state             = :pending,
                    root_plan_step    = nil,
                    run_flow          = Flows::Concurrence.new([]),
@@ -49,6 +51,7 @@ module Dynflow
 
       @id                = Type! id, String
       @world             = Type! world, World
+      @label             = Type! label, String, NilClass
       self.state         = state
       @run_flow          = Type! run_flow, Flows::Abstract
       @finalize_flow     = Type! finalize_flow, Flows::Abstract
@@ -203,7 +206,8 @@ module Dynflow
       update_state(:planning)
       world.middleware.execute(:plan_phase, root_plan_step.action_class, self) do
         with_planning_scope do
-          root_plan_step.execute(self, nil, false, *args)
+          root_action = root_plan_step.execute(self, nil, false, *args)
+          @label = root_action.label
 
           if @dependency_graph.unresolved?
             raise "Some dependencies were not resolved: #{@dependency_graph.inspect}"
@@ -336,9 +340,10 @@ module Dynflow
     end
 
     def to_hash
-      recursive_to_hash id:                self.id,
+      recursive_to_hash id:                id,
                         class:             self.class.to_s,
-                        state:             self.state,
+                        label:             label,
+                        state:             state,
                         result:            result,
                         root_plan_step_id: root_plan_step && root_plan_step.id,
                         run_flow:          run_flow,
@@ -361,6 +366,7 @@ module Dynflow
       steps             = steps_from_hash(hash[:step_ids], execution_plan_id, world)
       self.new(world,
                execution_plan_id,
+               hash[:label],
                hash[:state],
                steps[hash[:root_plan_step_id]],
                Flows::Abstract.from_hash(hash[:run_flow]),
