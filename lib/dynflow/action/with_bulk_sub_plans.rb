@@ -44,7 +44,7 @@ module Dynflow
     end
 
     def batch_size
-      DEAFULT_BATCH_SIZE
+      DEFAULT_BATCH_SIZE
     end
 
     # The same logic as in Action::WithSubPlans, but calculated using the expected total count
