@@ -8,6 +8,14 @@ module Dynflow
       spawn
     end
 
+    def initialize_plan(plan_id, semaphores_hash)
+      core.tell([:initialize_plan, plan_id, semaphores_hash])
+    end
+
+    def finish(plan_id)
+      core.tell([:finish, plan_id])
+    end
+
     def handle_plans!(*args)
       core.ask!([:handle_plans, *args])
     end
@@ -44,10 +52,12 @@ module Dynflow
         @semaphores = {}
       end
 
-      def handle_plans(parent_id, planned_ids, failed_ids, semaphores_hash)
-        @semaphores[parent_id] = create_semaphores(semaphores_hash)
-        set_up_clock_for(parent_id, true)
+      def initialize_plan(plan_id, semaphores_hash)
+        @semaphores[plan_id] = create_semaphores(semaphores_hash)
+        set_up_clock_for(plan_id, true)
+      end
 
+      def handle_plans(parent_id, planned_ids, failed_ids)
         failed = failed_ids.map do |plan_id|
           ::Dynflow::World::Triggered[plan_id, Concurrent.future].tap do |triggered|
             execute_triggered(triggered)
@@ -82,7 +92,6 @@ module Dynflow
         if semaphore.has_waiting? && semaphore.get == 1
           execute_triggered(semaphore.get_waiting)
         end
-        @semaphores.delete(plan_id) unless semaphore.has_waiting?
       end
 
       def cancel(parent_id, reason = nil)
@@ -92,8 +101,12 @@ module Dynflow
             cancel_plan_id(triggered.execution_plan_id, reason)
             triggered.future.fail(reason)
           end
-          @semaphores.delete(parent_id)
+          finish(parent_id)
         end
+      end
+
+      def finish(parent_id)
+        @semaphores.delete(parent_id)
       end
 
       private

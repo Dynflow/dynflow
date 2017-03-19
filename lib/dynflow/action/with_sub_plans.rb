@@ -26,16 +26,16 @@ module Dynflow
     end
 
     def initiate
+      if uses_concurrency_control
+        calculate_time_distribution
+        world.throttle_limiter.initialize_plan(execution_plan_id, input[:concurrency_control])
+      end
+      spawn_plans
+    end
+
+    def spawn_plans
       sub_plans = create_sub_plans
       sub_plans = Array[sub_plans] unless sub_plans.is_a? Array
-      if uses_concurrency_control
-        planned, failed = sub_plans.partition { |plan| plan.state == :planned }
-        calculate_time_distribution sub_plans.count
-        sub_plans = world.throttle_limiter.handle_plans!(execution_plan_id,
-                                                         planned.map(&:id),
-                                                         failed.map(&:id),
-                                                         input[:concurrency_control])
-      end
       wait_for_sub_plans sub_plans
     end
 
@@ -71,10 +71,17 @@ module Dynflow
     # Helper for creating sub plans
     def trigger(*args)
       if uses_concurrency_control
-        world.plan_with_caller(self, *args)
+        trigger_with_concurrency_control(*args)
       else
         world.trigger { world.plan_with_caller(self, *args) }
       end
+    end
+
+    def trigger_with_concurrency_control(*args)
+      record = world.plan_with_caller(self, *args)
+      records = [[record.id], []]
+      records.reverse! unless record.state == :planned
+      @world.throttle_limiter.handle_plans!(execution_plan_id, *records).first
     end
 
     def limit_concurrency_level(level)
@@ -82,8 +89,8 @@ module Dynflow
       input[:concurrency_control][:level] = ::Dynflow::Semaphores::Stateful.new(level).to_hash
     end
 
-    def calculate_time_distribution(count)
-      time = input[:concurrency_control][:time]
+    def calculate_time_distribution
+      time, count = input[:concurrency_control][:time]
       unless time.nil? || time.is_a?(Hash)
         # Assume concurrency level 1 unless stated otherwise
         level = input[:concurrency_control].fetch(:level, {}).fetch(:free, 1)
@@ -94,25 +101,14 @@ module Dynflow
       end
     end
 
-    def distribute_over_time(time_span)
+    def distribute_over_time(time_span, count)
       input[:concurrency_control] ||= {}
-      input[:concurrency_control][:time] = time_span
+      input[:concurrency_control][:time] = [time_span, count]
     end
 
     def wait_for_sub_plans(sub_plans)
-      output.update(total_count: 0,
-                    failed_count: 0,
-                    success_count: 0,
-                    pending_count: 0)
-
       planned, failed = sub_plans.partition(&:planned?)
-
-      sub_plan_ids = (planned + failed).map(&:execution_plan_id)
-
-      output[:total_count] = sub_plan_ids.size
-      output[:failed_count] = failed.size
-      output[:pending_count] = planned.size
-
+      increase_counts(planned.count, failed.count)
       if planned.any?
         notify_on_finish(planned)
       else
@@ -120,8 +116,16 @@ module Dynflow
       end
     end
 
+    def increase_counts(planned, failed, track_total = true)
+      output[:total_count]   = output.fetch(:total_count, 0) + planned + failed if track_total
+      output[:failed_count]  = output.fetch(:failed_count, 0) + failed
+      output[:pending_count] = output.fetch(:pending_count, 0) + planned
+      output[:success_count] ||= 0
+    end
+
     def try_to_finish
       if done?
+        world.throttle_limiter.finish(execution_plan_id)
         check_for_errors!
         on_finish
         return true
@@ -132,6 +136,8 @@ module Dynflow
 
     def resume
       if sub_plans.all? { |sub_plan| sub_plan.error_in_plan? }
+        # We're starting over and need to reset the counts
+        %w(total failed pending success).each { |key| output.delete("#{key}_count".to_sym) }
         initiate
       else
         recalculate_counts
