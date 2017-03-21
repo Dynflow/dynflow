@@ -43,13 +43,13 @@ module Dynflow
 
         def start_termination(*args)
           super
-          logger.info 'shutting down Core ...'
+          logger.info 'shutting down Dynflow Core ...'
           @pool.tell([:start_termination, Concurrent.future])
         end
 
         def finish_termination
           @director.terminate
-          logger.error '... core terminated.'
+          logger.error '... Dynflow Core has shut down.'
           super
         end
 
