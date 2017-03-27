@@ -950,7 +950,27 @@ to the chain of middleware execution.
 ### Sub-plans
 
 -   *when to use?*
--   *how to use?*
+
+To use sub-plans, you must include the `Dynflow::Action::WithSubPlans` module
+and override the `create_sub_plans` method. Inside the `create_sub_plans`
+method, you use the `trigger` method to create sub-tasks that will be executed
+in no particular order during the run phase. The parent task will wait for the
+sub-tasks to finish without blocking a thread in a pool while waiting.
+
+```rb
+class MyAction < Actions::EntryAction
+  include Dynflow::Action::WithSubPlans
+
+  ...
+
+  def create_sub_plans
+    [
+      trigger(Actions::OtherAction, action_param1, action_opts),
+      trigger(Actions::AnotherAction)
+    ]
+  end
+end
+```
 
 ## How it works TODO
 
