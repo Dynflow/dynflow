@@ -7,7 +7,7 @@ module Dynflow
       attr_reader :clock, :executor, :middleware
       attr_accessor :action
 
-      def initialize
+      def initialize(_config = nil)
         @logger_adapter = Testing.logger_adapter
         @clock          = ManagedClock.new
         @executor       = DummyExecutor.new(self)
