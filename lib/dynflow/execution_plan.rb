@@ -439,7 +439,12 @@ module Dynflow
       end
       # to make sure to we preserve the order of the steps
       step_ids.inject({}) do |hash, step_id|
-        hash[step_id.to_i] = ids_to_steps[step_id.to_i]
+        step = ids_to_steps[step_id.to_i]
+        if step.nil?
+          raise Errors::DataConsistencyError, "Could not load steps for execution plan #{execution_plan_id}"
+        else
+          hash[step_id.to_i] = step
+        end
         hash
       end
     end

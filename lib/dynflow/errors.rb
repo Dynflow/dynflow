@@ -31,6 +31,9 @@ module Dynflow
       end
     end
 
+    class DataConsistencyError < Dynflow::Error
+    end
+
     class PersistenceError < Dynflow::Error
       def self.delegate(original_exception)
         self.new("caused by #{original_exception.class}: #{original_exception.message}").tap do |e|
