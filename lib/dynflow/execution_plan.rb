@@ -5,6 +5,37 @@ module Dynflow
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
 
+    # a fallback object representing a plan with some corrupted data,
+    # preventing to load the whole plan properly, this can be used for presenting
+    # at least some data and not running into internal server errors
+    class InvalidPlan
+      attr_reader :exception, :id, :label, :state,
+                  :started_at, :ended_at,
+                  :execution_time, :real_time, :execution_history
+
+      def initialize(exception, id, label, state,
+                     started_at = nil, ended_at = nil,
+                     execution_time = nil, real_time = nil, execution_history = nil)
+        @exception = exception
+        @id = id
+        @label = label || 'N/A'
+        @state = state
+        @started_at = started_at
+        @ended_at = ended_at
+        @execution_time = execution_time
+        @real_time = real_time
+        @execution_history = execution_history || []
+      end
+
+      def valid?
+        false
+      end
+
+      def result
+        'N/A'
+      end
+    end
+
     include Algebrick::TypeCheck
     include Stateful
 
@@ -67,6 +98,10 @@ module Dynflow
         Type! v, Steps::Abstract
       end
       @steps = steps
+    end
+
+    def valid?
+      true
     end
 
     def logger
@@ -377,6 +412,25 @@ module Dynflow
                hash[:execution_time].to_f,
                hash[:real_time].to_f,
                ExecutionHistory.new_from_hash(hash[:execution_history]))
+    rescue => plan_exception
+      begin
+        world.logger.error("Could not load execution plan #{execution_plan_id}")
+        world.logger.error(plan_exception)
+        InvalidPlan.new(plan_exception, execution_plan_id,
+                        hash[:label],
+                        hash[:state],
+                        string_to_time(hash[:started_at]),
+                        string_to_time(hash[:ended_at]),
+                        hash[:execution_time].to_f,
+                        hash[:real_time].to_f,
+                        ExecutionHistory.new_from_hash(hash[:execution_history]))
+      rescue => invalid_plan_exception
+        world.logger.error("Could not even load a fallback execution plan for #{execution_plan_id}")
+        world.logger.error(invalid_plan_exception)
+        InvalidPlan.new(invalid_plan_exception, execution_plan_id,
+                        hash[:label],
+                        hash[:state])
+      end
     end
 
     def compute_execution_time

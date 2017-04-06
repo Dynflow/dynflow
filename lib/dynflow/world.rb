@@ -295,6 +295,11 @@ module Dynflow
         coordinator.release(execution_lock)
         return
       end
+      unless plan.valid?
+        logger.error "invalid plan #{plan.id}, skipping"
+        coordinator.release(execution_lock)
+        return
+      end
       plan.execution_history.add('terminate execution', execution_lock.world_id)
 
       plan.steps.values.each do |step|

@@ -26,8 +26,10 @@ module Dynflow
         describe 'serialized execution plan' do
 
           before { execution_plan.save }
+          after { world.persistence.delete_execution_plans(:uuid => execution_plan.id) }
 
           it 'restores the plan properly' do
+            assert deserialized_execution_plan.valid?
             deserialized_execution_plan.id.must_equal execution_plan.id
             deserialized_execution_plan.label.must_equal execution_plan.label
 
@@ -39,6 +41,26 @@ module Dynflow
             end
 
             assert_run_flow_equal execution_plan, deserialized_execution_plan
+          end
+
+          it 'handles issues with loading the data' do
+            world.persistence.adapter.send(:table, :step)
+              .where(execution_plan_uuid: execution_plan.id).delete
+            refute deserialized_execution_plan.valid?
+            assert_equal Dynflow::Errors::DataConsistencyError, deserialized_execution_plan.exception.class
+            [:label, :state, :started_at, :ended_at].each do |attr|
+              assert_equal execution_plan.send(attr).to_s,
+                           deserialized_execution_plan.send(attr).to_s,
+                           "invalid plan is supposed to still store #{attr}"
+            end
+            [:execution_time, :real_time].each do |attr|
+              assert_equal execution_plan.send(attr).to_f,
+                           deserialized_execution_plan.send(attr).to_f,
+                           "invalid plan is supposed to still store #{attr}"
+            end
+            assert_equal execution_plan.execution_history.events,
+                         deserialized_execution_plan.execution_history.events,
+                         "invalid plan is supposed to still store execution history"
           end
 
         end
