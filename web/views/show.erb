@@ -12,7 +12,7 @@
   <% if @plan.state == :paused %>
     <a href="<%= url("/#{@plan.id}/resume") %>" class="postlink">Resume</a>
   <% end %>
-  <% if @plan.cancellable? %>
+  <% if @plan.valid? && @plan.cancellable? %>
     <a href="<%= url("/#{@plan.id}/cancel") %>" class="postlink">Cancel</a>
   <% end %>
 </p>
@@ -52,23 +52,33 @@
 
 <div class="tab-content">
   <div class="tab-pane" id="plan">
-    <%= erb :plan_step, locals: { step: @plan.root_plan_step } %>
+    <% if @plan.valid? %>
+      <%= erb :plan_step, locals: { step: @plan.root_plan_step } %>
+    <% else %>
+      N/A
+    <% end %>
   </div>
   <div class="tab-pane active" id="run">
-
-    <table class="flow-hint">
-      <tr>
-        <td class="border sequence"> </td>
-        <td>sequence</td>
-        <td class="border concurrence"> </td>
-        <td>concurrence</td>
-      </tr>
-    </table>
-
-    <%= erb :flow, locals: { flow: @plan.run_flow } %>
+    <% if @plan.valid? %>
+      <%= erb :flow, locals: { flow: @plan.run_flow } %>
+      <table class="flow-hint">
+        <tr>
+          <td class="border sequence"> </td>
+          <td>sequence</td>
+          <td class="border concurrence"> </td>
+          <td>concurrence</td>
+        </tr>
+      </table>
+    <% else %>
+      N/A
+    <% end %>
   </div>
   <div class="tab-pane" id="finalize">
-    <%= erb :flow, locals: { flow: @plan.finalize_flow } %>
+    <% if @plan.valid? %>
+      <%= erb :flow, locals: { flow: @plan.finalize_flow } %>
+    <% else %>
+      N/A
+    <% end %>
   </div>
   <div class="tab-pane" id="execution-history">
     <%= erb :execution_history %>

@@ -285,8 +285,18 @@ module Dynflow
     def invalidate_execution_lock(execution_lock)
       begin
         plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
-      rescue KeyError => e
-        logger.error "invalidated execution plan #{execution_lock.execution_plan_id} missing, skipping"
+      rescue => e
+        if e.is_a?(KeyError)
+          logger.error "invalidated execution plan #{execution_lock.execution_plan_id} missing, skipping"
+        else
+          logger.error e
+          logger.error "unexpected error when invalidating execution plan #{execution_lock.execution_plan_id}, skipping"
+        end
+        coordinator.release(execution_lock)
+        return
+      end
+      unless plan.valid?
+        logger.error "invalid plan #{plan.id}, skipping"
         coordinator.release(execution_lock)
         return
       end
