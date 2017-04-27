@@ -162,16 +162,16 @@ module Dynflow
       @caller_action = world.persistence.load_action_for_presentation(caller_execution_plan, @caller_action_id)
     end
 
-    def set_plan_context(execution_plan, trigger, from_subscription)
+    def set_plan_context(execution_plan, triggering_action, from_subscription)
       phase! Plan
       @execution_plan    = Type! execution_plan, ExecutionPlan
-      @trigger           = Type! trigger, Action, NilClass
+      @triggering_action = Type! triggering_action, Action, NilClass
       @from_subscription = Type! from_subscription, TrueClass, FalseClass
     end
 
-    def trigger
+    def triggering_action
       phase! Plan
-      @trigger
+      @triggering_action
     end
 
     def from_subscription?
@@ -330,7 +330,7 @@ module Dynflow
         # if the action is triggered by subscription, by default use the
         # input of parent action.
         # should be replaced by referencing the input from input format
-        plan_self(input.merge(trigger.input))
+        plan_self(input.merge(triggering_action.input))
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
@@ -546,7 +546,7 @@ module Dynflow
     end
 
     def root_action?
-      @trigger.nil?
+      @triggering_action.nil?
     end
   end
   # rubocop:enable Metrics/ClassLength

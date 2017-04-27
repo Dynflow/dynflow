@@ -110,7 +110,7 @@ module Support
       end
 
       def plan(*args)
-        plan_self(:triage => trigger.output)
+        plan_self(:triage => triggering_action.output)
       end
 
       def run
