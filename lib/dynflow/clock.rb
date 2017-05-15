@@ -25,6 +25,14 @@ module Dynflow
         self.when <=> other.when
       end
 
+      def eql?(other)
+        object_id == other.object_id
+      end
+
+      def hash
+        object_id
+      end
+
       def apply
         if Algebrick::Some[Object] === what
           who.send where, what.value
