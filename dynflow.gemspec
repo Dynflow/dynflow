@@ -32,5 +32,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "activerecord", '< 5.0.0'
   s.add_development_dependency 'activejob', '< 5.0.0'
   s.add_development_dependency "sqlite3"
-  s.add_development_dependency "sinatra"
+  s.add_development_dependency "sinatra", '~> 1.4.8'
 end
