@@ -1,4 +1,4 @@
-require 'sequel/no_core_ext' # to avoid sequel ~> 3.0 coliding with ActiveRecord
+require 'sequel'
 require 'multi_json'
 
 module Dynflow
@@ -93,7 +93,7 @@ module Dynflow
 
       def find_past_delayed_plans(time)
         table(:delayed)
-          .where('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time)
+          .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
           .order_by(:start_at)
           .all
           .map { |plan| load_data(plan) }
