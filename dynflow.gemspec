@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "algebrick", '~> 0.7.0'
   s.add_dependency "concurrent-ruby", '~> 1.0'
   s.add_dependency "concurrent-ruby-edge", '~> 0.2.3'
-  s.add_dependency "sequel"
+  s.add_dependency "sequel", '>= 4.0.0'
 
   s.add_development_dependency "rake"
   s.add_development_dependency "rack-test"
