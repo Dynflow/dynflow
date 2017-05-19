@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 echo "Setting the environment to use ${DB} database"
+env
 
 BUNDLE_CONFIG=.bundle/config
 mkdir -p $(dirname $BUNDLE_CONFIG)
@@ -33,3 +34,4 @@ if [ "$CONCURRENT_RUBY_EXT" = "true" ]; then
 fi
 gem update bundler
 bundle install
+cat Gemfile.lock
