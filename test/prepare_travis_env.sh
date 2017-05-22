@@ -32,6 +32,6 @@ if [ "$CONCURRENT_RUBY_EXT" = "true" ]; then
   echo "Enabling concurrent-ruby-ext"
   sed -i 's/:concurrent_ruby_ext//'g $BUNDLE_CONFIG
 fi
-gem update bundler
+#gem update bundler
 bundle install
 cat Gemfile.lock
