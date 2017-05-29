@@ -51,7 +51,7 @@ module Dynflow
           execution_plan = world.persistence.load_execution_plan(self.execution_plan.id)
           execution_plan.state.must_equal :stopped
           execution_plan.result.must_equal :error
-          execution_plan.delay_record.must_equal nil
+          assert_nil execution_plan.delay_record
         end
 
         it 'finds delayed plans' do

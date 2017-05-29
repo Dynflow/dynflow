@@ -35,3 +35,9 @@ end
 group :memory_watcher do
   gem 'get_process_mem'
 end
+
+group :rails do
+  gem 'daemons'
+  gem 'rails', '>= 4.2.9'
+  gem 'logging'
+end

@@ -37,7 +37,6 @@ module Dynflow
       def persistence
         nil
       end
-
     end
   end
 end
