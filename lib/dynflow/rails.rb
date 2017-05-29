@@ -7,9 +7,10 @@ module Dynflow
 
     attr_reader :config
 
-    def initialize(config = Rails::Configuration.new)
+    def initialize(world_class = nil, config = Rails::Configuration.new)
       @required = false
       @config = config
+      @world_class = world_class
     end
 
     # call this method if your engine uses Dynflow
@@ -33,7 +34,7 @@ module Dynflow
         config.dynflow_logger.
           warn('Dynflow: lazy loading with PhusionPassenger might lead to unexpected results')
       end
-      config.initialize_world.tap do |world|
+      init_world.tap do |world|
         @world = world
 
         unless config.remote?
@@ -90,6 +91,13 @@ module Dynflow
 
     def loaded_paths
       @loaded_paths ||= Set.new
+    end
+
+    private
+
+    def init_world
+      return config.initialize_world(@world_class) if @world_class
+      config.initialize_world
     end
   end
 end

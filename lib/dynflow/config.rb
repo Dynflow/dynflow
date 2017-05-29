@@ -124,6 +124,10 @@ module Dynflow
                                              'threads in Dynflow pool.'
         end
       end
+
+    rescue ActiveRecord::ConnectionNotEstablished # rubocop:disable Lint/HandleExceptions
+      # If in tests or in an environment where ActiveRecord doesn't have a
+      # real DB connection, we want to skip AR configuration altogether
     end
   end
 end
