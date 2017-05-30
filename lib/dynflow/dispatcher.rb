@@ -3,7 +3,7 @@ module Dynflow
     Request = Algebrick.type do
       Event = type do
         fields! execution_plan_id: String,
-                step_id:           Fixnum,
+                step_id:           Integer,
                 event:             Object
       end
 

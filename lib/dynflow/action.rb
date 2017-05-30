@@ -267,7 +267,7 @@ module Dynflow
     end
 
     # @api private
-    # @return [Array<Fixnum>] - ids of steps referenced from action
+    # @return [Array<Integer>] - ids of steps referenced from action
     def required_step_ids(input = self.input)
       results   = []
       recursion =-> value do
