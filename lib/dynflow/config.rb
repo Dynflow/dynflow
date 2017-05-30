@@ -57,7 +57,7 @@ module Dynflow
       CoordinatorAdapters::Sequel.new(world)
     end
 
-    config_attr :pool_size, Fixnum do
+    config_attr :pool_size, Integer do
       5
     end
 

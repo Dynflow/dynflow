@@ -17,7 +17,7 @@ Sequel.migration do
     create_table(:dynflow_actions) do
       foreign_key :execution_plan_uuid, :dynflow_execution_plans, type: String, size: 36, fixed: true
       index :execution_plan_uuid
-      column :id, Fixnum
+      column :id, Integer
       primary_key [:execution_plan_uuid, :id]
       index [:execution_plan_uuid, :id], :unique => true
 
@@ -27,10 +27,10 @@ Sequel.migration do
     create_table(:dynflow_steps) do
       foreign_key :execution_plan_uuid, :dynflow_execution_plans, type: String, size: 36, fixed: true
       index :execution_plan_uuid
-      column :id, Fixnum
+      column :id, Integer
       primary_key [:execution_plan_uuid, :id]
       index [:execution_plan_uuid, :id], :unique => true
-      column :action_id, Fixnum
+      column :action_id, Integer
       foreign_key [:execution_plan_uuid, :action_id], :dynflow_actions
       index [:execution_plan_uuid, :action_id]
 
