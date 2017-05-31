@@ -40,12 +40,12 @@ module Dynflow
       if values.size == 1
         value = values.first
         case value
-        when Numeric, String, Symbol, TrueClass, FalseClass, NilClass
+        when String, Numeric, Symbol, TrueClass, FalseClass, NilClass
           value
-        when Array
-          value.map { |v| recursive_to_hash v }
         when Hash
           value.inject({}) { |h, (k, v)| h.update k => recursive_to_hash(v) }
+        when Array
+          value.map { |v| recursive_to_hash v }
         else
           value.to_hash
         end
