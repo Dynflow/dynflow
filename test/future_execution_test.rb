@@ -11,7 +11,7 @@ module Dynflow
 
         before do
           @start_at = Time.now.utc + 180
-          world.persistence.delete_delayed_plans(:execution_plan_uuid => [])
+          world.persistence.delete_delayed_plans({})
         end
 
         let(:world) { WorldFactory.create_world }
