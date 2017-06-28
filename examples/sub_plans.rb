@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-
+require 'benchmark'
 example_description = <<DESC
   Sub Plans Example
   ===================
@@ -16,21 +16,42 @@ DESC
 require_relative 'example_helper'
 require_relative 'orchestrate_evented'
 
+COUNT = 100
+
+class Miniaction < Dynflow::Action
+  def run; end
+end
+
 class SubPlansExample < Dynflow::Action
   include Dynflow::Action::WithSubPlans
-
   def create_sub_plans
-    10.times.map { |i| trigger(OrchestrateEvented::CreateMachine, "host-#{i}", 'web_server') }
+    COUNT.times.map { |i| trigger(Miniaction) }
   end
 end
 
-if $0 == __FILE__
-  triggered = ExampleHelper.world.trigger(SubPlansExample)
-  puts example_description
-  puts <<-MSG.gsub(/^.*\|/, '')
-    |  Execution plan #{triggered.id} with sub plans triggered
-    |  You can see the details at http://localhost:4567/#{triggered.id}
-  MSG
+class PollingSubPlansExample < Dynflow::Action
+  include Dynflow::Action::WithSubPlans
+  include Dynflow::Action::WithPollingSubPlans
+  def create_sub_plans
+    COUNT.times.map { |i| trigger(Miniaction) }
+  end
+end
 
-  ExampleHelper.run_web_console
+
+if $0 == __FILE__
+  Benchmark.bm do |bm|
+    bm.report("evented") do
+      ExampleHelper.world.trigger(SubPlansExample).finished.wait
+    end
+    bm.report("polling") do
+      ExampleHelper.world.trigger(PollingSubPlansExample).finished.wait
+    end
+  end
+  # puts example_description
+  # puts <<-MSG.gsub(/^.*\|/, '')
+  #   |  Execution plan #{triggered.id} with sub plans triggered
+  #   |  You can see the details at http://localhost:4567/#{triggered.id}
+  # MSG
+
+  # ExampleHelper.run_web_console
 end
