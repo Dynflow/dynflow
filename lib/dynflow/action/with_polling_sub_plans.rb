@@ -18,7 +18,11 @@ module Dynflow
     end
 
     def wait_for_sub_plans(_sub_plans)
-      poll
+      if respond_to?(:can_spawn_next_batch?) && can_spawn_next_batch?
+        suspend
+      else
+        poll
+      end
     end
 
     def notify_on_finish(_sub_plans)
