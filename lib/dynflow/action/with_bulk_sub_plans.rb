@@ -13,11 +13,19 @@ module Dynflow
 
     def run(event = nil)
       if event === PlanNextBatch
-        spawn_plans if can_spawn_next_batch?
-        suspend
+        if can_spawn_next_batch?
+          spawn_plans
+          suspend
+        else
+          on_planning_finished
+        end
       else
         super
       end
+    end
+
+    def on_planning_finished
+      suspend
     end
 
     def initiate
@@ -79,6 +87,10 @@ module Dynflow
     end
 
     private
+
+    def done?
+      !can_spawn_next_batch? && super
+    end
 
     def can_spawn_next_batch?
       total_count - output[:success_count] - output[:pending_count] - output[:failed_count] > 0

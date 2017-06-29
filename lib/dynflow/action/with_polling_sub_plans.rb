@@ -8,7 +8,7 @@ module Dynflow
       when Poll
         poll
       else
-        super
+        super(event)
       end
     end
 
@@ -17,12 +17,17 @@ module Dynflow
       try_to_finish || suspend_and_ping
     end
 
-    def wait_for_sub_plans(_sub_plans)
-      if respond_to?(:can_spawn_next_batch?) && can_spawn_next_batch?
+    def wait_for_sub_plans(sub_plans)
+      increase_counts(sub_plans.count, 0)
+      if is_a?(::Dynflow::Action::WithBulkSubPlans)
         suspend
       else
         poll
       end
+    end
+
+    def on_planning_finished
+      poll
     end
 
     def notify_on_finish(_sub_plans)

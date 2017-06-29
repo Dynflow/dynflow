@@ -16,35 +16,53 @@ DESC
 require_relative 'example_helper'
 require_relative 'orchestrate_evented'
 
-COUNT = 100
+COUNT = ARGV[0].to_i
 
 class Miniaction < Dynflow::Action
   def run; end
 end
 
-class SubPlansExample < Dynflow::Action
+class Common < Dynflow::Action
   include Dynflow::Action::WithSubPlans
+  include Dynflow::Action::WithBulkSubPlans
+
   def create_sub_plans
-    COUNT.times.map { |i| trigger(Miniaction) }
+    current_batch.map { |i| trigger(Miniaction) }
+  end
+
+  def batch_size
+    100
+  end
+
+  def batch(from, size)
+    COUNT.times.drop(from).take(size)
+  end
+  
+  def total_count
+    COUNT
   end
 end
 
-class PollingSubPlansExample < Dynflow::Action
-  include Dynflow::Action::WithSubPlans
+class SubPlansExample < Common
+end
+
+class PollingSubPlansExample < Common
   include Dynflow::Action::WithPollingSubPlans
-  def create_sub_plans
-    COUNT.times.map { |i| trigger(Miniaction) }
-  end
 end
 
 
 if $0 == __FILE__
+  ExampleHelper.world.action_logger.level = Logger::INFO
+  ExampleHelper.world
+  t1 = t2 = nil
   Benchmark.bm do |bm|
     bm.report("evented") do
-      ExampleHelper.world.trigger(SubPlansExample).finished.wait
+      t1 = ExampleHelper.world.trigger(SubPlansExample)
+      t1.finished.wait
     end
     bm.report("polling") do
-      ExampleHelper.world.trigger(PollingSubPlansExample).finished.wait
+      t2 = ExampleHelper.world.trigger(PollingSubPlansExample)
+      t2.finished.wait
     end
   end
   # puts example_description
@@ -52,6 +70,8 @@ if $0 == __FILE__
   #   |  Execution plan #{triggered.id} with sub plans triggered
   #   |  You can see the details at http://localhost:4567/#{triggered.id}
   # MSG
+  puts t1.id
+  puts t2.id
 
-  # ExampleHelper.run_web_console
+  ExampleHelper.run_web_console
 end
