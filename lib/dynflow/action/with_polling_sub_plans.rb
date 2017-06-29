@@ -34,17 +34,13 @@ module Dynflow
     def recalculate_counts
       total = sub_plans.count
       @sub_plans = nil
-      stopped = sub_plans(:state => :stopped).count
+      failed = sub_plans('state' => 'stopped', 'result' => 'error').count
+      @sub_plans = nil
+      success = sub_plans('state' => 'stopped', 'result' => 'success').count
       output.update(:total_count => total,
-                    :done_count => stopped)
-    end
-
-    def done?
-      if output.key?(:total_count) && output.key?(:done_count)
-        output[:total_count] == output[:done_count]
-      else
-        false
-      end
+                    :pending_count => 0,
+                    :failed_count => failed,
+                    :success_count => success)
     end
   end
 end
