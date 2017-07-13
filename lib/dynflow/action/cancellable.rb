@@ -1,10 +1,14 @@
 module Dynflow
   module Action::Cancellable
     Cancel = Algebrick.atom
+    Abort  = Algebrick.atom
 
     def run(event = nil)
-      if Cancel === event
+      case event
+      when Cancel
         cancel!
+      when Abort
+        abort!
       else
         super event
       end
@@ -12,6 +16,10 @@ module Dynflow
 
     def cancel!
       raise NotImplementedError
+    end
+
+    def abort!
+      cancel!
     end
   end
 end
