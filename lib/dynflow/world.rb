@@ -17,7 +17,9 @@ module Dynflow
       @logger_adapter         = config_for_world.logger_adapter
       config_for_world.validate
       @transaction_adapter    = config_for_world.transaction_adapter
-      @persistence            = Persistence.new(self, config_for_world.persistence_adapter)
+      @persistence            = Persistence.new(self, config_for_world.persistence_adapter,
+                                                :backup_deleted_plans => config_for_world.backup_deleted_plans,
+                                                :backup_dir => config_for_world.backup_dir)
       @coordinator            = Coordinator.new(config_for_world.coordinator_adapter)
       @executor               = config_for_world.executor
       @action_classes         = config_for_world.action_classes

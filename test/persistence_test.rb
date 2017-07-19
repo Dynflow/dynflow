@@ -1,4 +1,5 @@
 require_relative 'test_helper'
+require 'tmpdir'
 
 module Dynflow
   module PersistenceTest
@@ -153,6 +154,22 @@ module Dynflow
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
             adapter.load_execution_plan('plan2') # nothing raised
             -> { adapter.load_execution_plan('plan3') }.must_raise KeyError
+          end
+
+          it 'creates backup dir and produce backup including steps and actions' do
+            prepare_plans_with_steps
+            Dir.mktmpdir do |backup_dir|
+              adapter.delete_execution_plans({'uuid' => 'plan1'}, 100, backup_dir).must_equal 1
+              plans = CSV.read(backup_dir + "/execution_plans.csv", :headers => true)
+              assert_equal 1, plans.count
+              assert_equal 'plan1', plans.first.to_hash['uuid']
+              actions = CSV.read(backup_dir + "/actions.csv", :headers => true)
+              assert_equal 1, actions.count
+              assert_equal 'plan1', actions.first.to_hash['execution_plan_uuid']
+              steps = CSV.read(backup_dir +"/steps.csv", :headers => true)
+              assert_equal 1, steps.count
+              assert_equal 'plan1', steps.first.to_hash['execution_plan_uuid']
+            end
           end
         end
 

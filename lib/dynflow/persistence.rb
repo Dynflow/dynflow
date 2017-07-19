@@ -8,10 +8,12 @@ module Dynflow
 
     attr_reader :adapter
 
-    def initialize(world, persistence_adapter)
+    def initialize(world, persistence_adapter, options = {})
       @world   = world
       @adapter = persistence_adapter
       @adapter.register_world(world)
+      @backup_deleted_plans = options.fetch(:backup_deleted_plans, false)
+      @backup_dir = options.fetch(:backup_dir, './backup')
     end
 
     def load_action(step)
@@ -38,8 +40,13 @@ module Dynflow
       end
     end
 
-    def delete_execution_plans(filters, batch_size = 1000)
-      adapter.delete_execution_plans(filters, batch_size)
+    def delete_execution_plans(filters, batch_size = 1000, enforce_backup_dir = nil)
+      backup_dir = enforce_backup_dir || current_backup_dir
+      adapter.delete_execution_plans(filters, batch_size, backup_dir)
+    end
+
+    def current_backup_dir
+      @backup_deleted_plans ? File.join(@backup_dir, Date.today.strftime('%Y%m%d')) : nil
     end
 
     def load_execution_plan(id)

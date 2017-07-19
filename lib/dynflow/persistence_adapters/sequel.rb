@@ -1,5 +1,7 @@
 require 'sequel'
 require 'multi_json'
+require 'fileutils'
+require 'csv'
 
 module Dynflow
   module PersistenceAdapters
@@ -58,15 +60,24 @@ module Dynflow
         data_set.all.map { |record| load_data(record) }
       end
 
-      def delete_execution_plans(filters, batch_size = 1000)
+      def delete_execution_plans(filters, batch_size = 1000, backup_dir = nil)
         count = 0
         filter(:execution_plan, table(:execution_plan), filters).each_slice(batch_size) do |plans|
           uuids = plans.map { |p| p.fetch(:uuid) }
           @db.transaction do
             table(:delayed).where(execution_plan_uuid: uuids).delete
-            table(:step).where(execution_plan_uuid: uuids).delete
-            table(:action).where(execution_plan_uuid: uuids).delete
-            count += table(:execution_plan).where(uuid: uuids).delete
+
+            steps = table(:step).where(execution_plan_uuid: uuids)
+            backup_to_csv(steps, backup_dir, 'steps.csv') if backup_dir
+            steps.delete
+
+            actions = table(:action).where(execution_plan_uuid: uuids)
+            backup_to_csv(actions, backup_dir, 'actions.csv') if backup_dir
+            actions.delete
+
+            execution_plans = table(:execution_plan).where(uuid: uuids)
+            backup_to_csv(execution_plans, backup_dir, 'execution_plans.csv') if backup_dir
+            count += execution_plans.delete
           end
         end
         return count
@@ -268,6 +279,24 @@ module Dynflow
 
       def load_data(record)
         Utils.indifferent_hash(MultiJson.load(record[:data]))
+      end
+
+      def ensure_backup_dir(backup_dir)
+        FileUtils.mkdir_p(backup_dir) unless File.directory?(backup_dir)
+      end
+
+      def backup_to_csv(dataset, backup_dir, file_name)
+        ensure_backup_dir(backup_dir)
+        csv_file = File.join(backup_dir, file_name)
+        appending = File.exist?(csv_file)
+        columns = dataset.columns
+        File.open(csv_file, 'a') do |csv|
+          csv << columns.to_csv unless appending
+          dataset.each do |row|
+            csv << columns.collect { |col| row[col] }.to_csv
+          end
+        end
+        dataset
       end
 
       def delete(what, condition)
