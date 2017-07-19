@@ -43,7 +43,9 @@ module Dynflow
       #   what to delete
       # @param batch_size the size of the chunks to iterate over when
       #   performing the deletion
-      def delete_execution_plans(filters, batch_size = 1000)
+      # @param backup_dir where the backup of deleted plans will be created.
+      #   Set to nil for no backup
+      def delete_execution_plans(filters, batch_size = 1000, backup_dir = nil)
         raise NotImplementedError
       end
 

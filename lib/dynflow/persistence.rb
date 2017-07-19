@@ -8,10 +8,12 @@ module Dynflow
 
     attr_reader :adapter
 
-    def initialize(world, persistence_adapter)
+    def initialize(world, persistence_adapter, options = {})
       @world   = world
       @adapter = persistence_adapter
       @adapter.register_world(world)
+      @backup_deleted_plans = options.fetch(:backup_deleted_plans, false)
+      @backup_dir = options.fetch(:backup_dir, './backup')
     end
 
     def load_action(step)
@@ -38,8 +40,13 @@ module Dynflow
       end
     end
 
+    # - presunout current backup dir do persistence
+    # - v persistence se urci dir a bude ho mozne pretizit pomoci parametru
+    # - v tasks nactu z persistence current dir a pouziju ho
+    # - export_to_csv presunout do class method adapteru sequel. Volat ho z tasks
+
     def delete_execution_plans(filters, batch_size = 1000)
-      adapter.delete_execution_plans(filters, batch_size)
+      adapter.delete_execution_plans(filters, batch_size, @backup_deleted_plans ? @backup_dir : nil)
     end
 
     def load_execution_plan(id)

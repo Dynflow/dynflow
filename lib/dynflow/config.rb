@@ -115,6 +115,14 @@ module Dynflow
       { 'hostname' => Socket.gethostname, 'pid' => Process.pid }
     end
 
+    config_attr :backup_deleted_plans, Algebrick::Types::Boolean do
+      false
+    end
+
+    config_attr :backup_dir, String, NilClass do
+      './backup'
+    end
+
     def validate(config_for_world)
       if defined? ::ActiveRecord::Base
         ar_pool_size = ::ActiveRecord::Base.connection_pool.instance_variable_get(:@size)

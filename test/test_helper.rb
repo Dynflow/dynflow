@@ -82,16 +82,18 @@ module WorldFactory
   end
 
   def self.test_world_config
-    config                     = Dynflow::Config.new
-    config.persistence_adapter = persistence_adapter
-    config.logger_adapter      = logger_adapter
-    config.coordinator_adapter = coordinator_adapter
-    config.delayed_executor    = nil
-    config.auto_rescue         = false
-    config.auto_validity_check = false
-    config.exit_on_terminate   = false
-    config.auto_execute        = false
-    config.auto_terminate      = false
+    config                      = Dynflow::Config.new
+    config.persistence_adapter  = persistence_adapter
+    config.logger_adapter       = logger_adapter
+    config.coordinator_adapter  = coordinator_adapter
+    config.delayed_executor     = nil
+    config.auto_rescue          = false
+    config.auto_validity_check  = false
+    config.exit_on_terminate    = false
+    config.auto_execute         = false
+    config.auto_terminate       = false
+    config.backup_deleted_plans = false
+    config.backup_dir           = nil
     yield config if block_given?
     return config
   end
