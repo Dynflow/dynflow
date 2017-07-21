@@ -58,7 +58,7 @@ module Dynflow
         def on_message(message)
           super
         rescue Errors::PersistenceError => e
-          self.tell(:handle_persistence_error, e)
+          self.tell([:handle_persistence_error, e])
         end
 
         def feed_pool(work_items)
