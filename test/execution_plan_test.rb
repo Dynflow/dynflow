@@ -300,6 +300,20 @@ module Dynflow
           cancel_events.each(&:wait)
           finished.wait
         end
+
+        it 'force cancels' do
+          finished = world.execute(execution_plan.id)
+          plan = wait_for do
+            plan = world.persistence.load_execution_plan(execution_plan.id)
+            if plan.cancellable?
+              plan
+            end
+          end
+          cancel_events = plan.cancel true
+          cancel_events.size.must_equal 1
+          cancel_events.each(&:wait)
+          finished.wait
+        end
       end
 
       describe 'accessing actions results' do
