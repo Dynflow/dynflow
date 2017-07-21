@@ -54,7 +54,7 @@ module Dynflow
         end
 
         def handle_persistence_error(error)
-          @executor_core.tell(:handle_persistence_error, error)
+          @executor_core.tell([:handle_persistence_error, error])
         end
 
         def start_termination(*args)
