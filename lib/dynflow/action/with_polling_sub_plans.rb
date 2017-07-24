@@ -31,6 +31,22 @@ module Dynflow
       poll
     end
 
+    def resume
+      if sub_plans.all? { |sub_plan| sub_plan.error_in_plan? }
+        # We're starting over and need to reset the counts
+        %w(total failed pending success).each { |key| output.delete("#{key}_count".to_sym) }
+        initiate
+      else
+        if self.is_a?(::Dynflow::Actions::WithBulkSubPlans) && can_spawn_next_batch?
+          spawn_plans
+          suspend
+        else
+          poll
+        end
+      end
+    end
+
+
     def notify_on_finish(_sub_plans)
       suspend_and_ping
     end
