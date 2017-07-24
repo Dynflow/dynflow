@@ -42,9 +42,11 @@ module Dynflow
     end
 
     def recalculate_counts
-      total   = sub_plans.count
-      failed  = sub_plans('state' => 'stopped', 'result' => 'error').count
-      success = sub_plans('state' => 'stopped', 'result' => 'success').count
+      total      = sub_plans.count
+      @sub_plans = nil # TODO:
+      failed     = sub_plans('state' => 'stopped', 'result' => 'error').count
+      @sub_plans = nil # TODO:
+      success    = sub_plans('state' => 'stopped', 'result' => 'success').count
       output.update(:total_count => total,
                     :pending_count => 0,
                     :failed_count => failed,

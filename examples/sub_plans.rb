@@ -1,5 +1,4 @@
 #!/usr/bin/env ruby
-require 'benchmark'
 example_description = <<DESC
   Sub Plans Example
   ===================
@@ -16,7 +15,7 @@ DESC
 require_relative 'example_helper'
 require_relative 'orchestrate_evented'
 
-COUNT = ARGV[0].to_i
+COUNT = (ARGV[0] || 25).to_i
 
 class Miniaction < Dynflow::Action
   def run; end
@@ -31,7 +30,7 @@ class Common < Dynflow::Action
   end
 
   def batch_size
-    100
+    5
   end
 
   def batch(from, size)
@@ -54,17 +53,8 @@ end
 if $0 == __FILE__
   ExampleHelper.world.action_logger.level = Logger::INFO
   ExampleHelper.world
-  t1 = t2 = nil
-  Benchmark.bm do |bm|
-    bm.report("evented") do
-      t1 = ExampleHelper.world.trigger(SubPlansExample)
-      t1.finished.wait
-    end
-    bm.report("polling") do
-      t2 = ExampleHelper.world.trigger(PollingSubPlansExample)
-      t2.finished.wait
-    end
-  end
+  t1 = ExampleHelper.world.trigger(SubPlansExample)
+  t2 = ExampleHelper.world.trigger(PollingSubPlansExample)
   # puts example_description
   # puts <<-MSG.gsub(/^.*\|/, '')
   #   |  Execution plan #{triggered.id} with sub plans triggered
