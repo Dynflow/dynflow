@@ -461,6 +461,35 @@ module Dynflow
           triggered_plan.finished.value.result.must_equal :success
         end
       end
+
+      describe ::Dynflow::Action::WithPollingSubPlans do
+        include TestHelpers
+
+        class PollingParentAction < ParentAction
+          include ::Dynflow::Action::WithPollingSubPlans
+        end
+
+        let(:klok) { Dynflow::Testing::ManagedClock.new }
+
+        specify 'polls for sub plans state' do
+          world.stub :clock, klok do
+            total = 2
+            triggered_plan = world.trigger(PollingParentAction, count: total)
+            plan = world.persistence.load_execution_plan(triggered_plan.id)
+            wait_for do
+              plan.sub_plans.count == total &&
+                plan.sub_plans.all? { |sub| sub.result == :success }
+            end
+            klok.pending_pings.count.must_equal 1
+            klok.progress
+            wait_for do
+              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan.state == :stopped
+            end
+            klok.pending_pings.count.must_equal 0
+          end
+        end
+      end
     end
   end
 end
