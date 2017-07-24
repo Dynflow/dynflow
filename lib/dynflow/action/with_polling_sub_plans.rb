@@ -1,6 +1,7 @@
 module Dynflow
   module Action::WithPollingSubPlans
 
+    REFRESH_INTERVAL = 10
     Poll = Algebrick.atom
 
     def run(event = nil)
@@ -36,15 +37,13 @@ module Dynflow
 
     def suspend_and_ping
       suspend do |suspended_action|
-        world.clock.ping suspended_action, 10, Poll
+        world.clock.ping suspended_action, REFRESH_INTERVAL, Poll
       end
     end
 
     def recalculate_counts
-      total = sub_plans.count
-      @sub_plans = nil
-      failed = sub_plans('state' => 'stopped', 'result' => 'error').count
-      @sub_plans = nil
+      total   = sub_plans.count
+      failed  = sub_plans('state' => 'stopped', 'result' => 'error').count
       success = sub_plans('state' => 'stopped', 'result' => 'success').count
       output.update(:total_count => total,
                     :pending_count => 0,
