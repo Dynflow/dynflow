@@ -40,13 +40,13 @@ module Dynflow
       end
     end
 
-    # - presunout current backup dir do persistence
-    # - v persistence se urci dir a bude ho mozne pretizit pomoci parametru
-    # - v tasks nactu z persistence current dir a pouziju ho
-    # - export_to_csv presunout do class method adapteru sequel. Volat ho z tasks
+    def delete_execution_plans(filters, batch_size = 1000, enforce_backup_dir = nil)
+      backup_dir = enforce_backup_dir || (@backup_deleted_plans ? current_backup_dir : nil)
+      adapter.delete_execution_plans(filters, batch_size, backup_dir)
+    end
 
-    def delete_execution_plans(filters, batch_size = 1000)
-      adapter.delete_execution_plans(filters, batch_size, @backup_deleted_plans ? @backup_dir : nil)
+    def current_backup_dir
+      File.join(@backup_dir, Date.today.strftime('%Y%m%d'))
     end
 
     def load_execution_plan(id)

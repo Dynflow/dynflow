@@ -156,17 +156,17 @@ module Dynflow
             -> { adapter.load_execution_plan('plan3') }.must_raise KeyError
           end
 
-          it 'creates daily dir and produce backup including steps and actions' do
+          it 'creates backup dir and produce backup including steps and actions' do
             prepare_plans_with_steps
             Dir.mktmpdir do |backup_dir|
               adapter.delete_execution_plans({'uuid' => 'plan1'}, 100, backup_dir).must_equal 1
-              plans = CSV.read(Dir[backup_dir + "/*/execution_plans.csv"].first, :headers => true)
+              plans = CSV.read(backup_dir + "/execution_plans.csv", :headers => true)
               assert_equal 1, plans.count
               assert_equal 'plan1', plans.first.to_hash['uuid']
-              actions = CSV.read(Dir[backup_dir + "/*/actions.csv"].first, :headers => true)
+              actions = CSV.read(backup_dir + "/actions.csv", :headers => true)
               assert_equal 1, actions.count
               assert_equal 'plan1', actions.first.to_hash['execution_plan_uuid']
-              steps = CSV.read(Dir[backup_dir + "/*/steps.csv"].first, :headers => true)
+              steps = CSV.read(backup_dir +"/steps.csv", :headers => true)
               assert_equal 1, steps.count
               assert_equal 'plan1', steps.first.to_hash['execution_plan_uuid']
             end
