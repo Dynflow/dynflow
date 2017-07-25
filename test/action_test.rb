@@ -469,6 +469,40 @@ module Dynflow
           include ::Dynflow::Action::WithPollingSubPlans
         end
 
+        class PollingBulkParentAction < ParentAction
+          include ::Dynflow::Action::WithBulkSubPlans
+          include ::Dynflow::Action::WithPollingSubPlans
+
+          def total_count
+            input[:count]
+          end
+
+          def batch_size
+            1
+          end
+
+          def create_sub_plans
+            current_batch.map { trigger(ChildAction, suspend: input[:suspend]) }
+          end
+
+          def on_planning_finished
+            output[:poll] = 0
+            output[:planning_finished] ||= 0
+            output[:planning_finished] += 1
+            super
+          end
+
+          def poll
+            output[:poll] += 1
+            super
+          end
+
+          def batch(from, size)
+            total_count.times.drop(from).take(size)
+          end
+
+        end
+
         let(:klok) { Dynflow::Testing::ManagedClock.new }
 
         specify 'polls for sub plans state' do
@@ -486,6 +520,39 @@ module Dynflow
               plan = world.persistence.load_execution_plan(triggered_plan.id)
               plan.state == :stopped
             end
+            klok.pending_pings.count.must_equal 0
+          end
+        end
+
+        specify 'polls for sub plans after all batches were planned' do
+          world.stub :clock, klok do
+            total = 2
+            triggered_plan = world.trigger(PollingBulkParentAction, count: total)
+            plan = world.persistence.load_execution_plan(triggered_plan.id)
+            assert_nil plan.entry_action.output[:planning_finished]
+            wait_for do
+              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan.entry_action.output[:planning_finished] == 1
+            end
+            # It polls when the tasks are planned
+            plan.entry_action.output[:poll].must_equal 1
+
+            # We're not done yet
+            klok.pending_pings.count.must_equal 1
+
+            # Wait for the sub plans to finish
+            wait_for do
+              plan.sub_plans.count == total &&
+                plan.sub_plans.all? { |sub| sub.result == :success }
+            end
+
+            # Poll again
+            klok.progress
+            wait_for do
+              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan.state == :stopped
+            end
+            plan.entry_action.output[:poll].must_equal 2
             klok.pending_pings.count.must_equal 0
           end
         end
