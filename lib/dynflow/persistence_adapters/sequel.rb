@@ -83,22 +83,6 @@ module Dynflow
         return count
       end
 
-
-
-      def backup_to_csv(dataset, backup_dir, file_name)
-        FileUtils.mkdir_p(backup_dir) unless File.directory?(backup_dir)
-        csv_file = File.join(backup_dir, file_name)
-        appending = File.exist?(csv_file)
-        columns = dataset.columns
-        File.open(csv_file, 'a') do |csv|
-          csv << columns.to_csv unless appending
-          dataset.each do |row|
-            csv << columns.collect { |col| row[col] }.to_csv
-          end
-        end
-        dataset
-      end
-
       def load_execution_plan(execution_plan_id)
         load :execution_plan, uuid: execution_plan_id
       end
@@ -295,6 +279,24 @@ module Dynflow
 
       def load_data(record)
         Utils.indifferent_hash(MultiJson.load(record[:data]))
+      end
+
+      def ensure_backup_dir(backup_dir)
+        FileUtils.mkdir_p(backup_dir) unless File.directory?(backup_dir)
+      end
+
+      def backup_to_csv(dataset, backup_dir, file_name)
+        ensure_backup_dir(backup_dir)
+        csv_file = File.join(backup_dir, file_name)
+        appending = File.exist?(csv_file)
+        columns = dataset.columns
+        File.open(csv_file, 'a') do |csv|
+          csv << columns.to_csv unless appending
+          dataset.each do |row|
+            csv << columns.collect { |col| row[col] }.to_csv
+          end
+        end
+        dataset
       end
 
       def delete(what, condition)
