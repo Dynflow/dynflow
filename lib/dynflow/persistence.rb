@@ -41,12 +41,12 @@ module Dynflow
     end
 
     def delete_execution_plans(filters, batch_size = 1000, enforce_backup_dir = nil)
-      backup_dir = enforce_backup_dir || (@backup_deleted_plans ? current_backup_dir : nil)
+      backup_dir = enforce_backup_dir || current_backup_dir
       adapter.delete_execution_plans(filters, batch_size, backup_dir)
     end
 
     def current_backup_dir
-      File.join(@backup_dir, Date.today.strftime('%Y%m%d'))
+      @backup_deleted_plans ? File.join(@backup_dir, Date.today.strftime('%Y%m%d')) : nil
     end
 
     def load_execution_plan(id)
