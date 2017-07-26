@@ -377,6 +377,45 @@ module Dynflow
         end
       end
 
+      class PollingParentAction < ParentAction
+        include ::Dynflow::Action::WithPollingSubPlans
+      end
+
+      class PollingBulkParentAction < PollingParentAction
+        include ::Dynflow::Action::WithBulkSubPlans
+        include ::Dynflow::Action::WithPollingSubPlans
+
+        def on_planning_finished
+          output[:poll] = 0
+          output[:planning_finished] ||= 0
+          output[:planning_finished] += 1
+          super
+        end
+
+        def poll
+          output[:poll] += 1
+          super
+        end
+
+
+        def total_count
+          input[:count]
+        end
+
+        def batch_size
+          1
+        end
+
+        def create_sub_plans
+          current_batch.map { trigger(ChildAction, suspend: input[:suspend]) }
+        end
+
+        def batch(from, size)
+          total_count.times.drop(from).take(size)
+        end
+
+      end
+
       let(:execution_plan) { world.trigger(ParentAction, count: 2).finished.value }
 
       before do
@@ -442,6 +481,34 @@ module Dynflow
           resumed_plan.state.must_equal :stopped
           resumed_plan.result.must_equal :success
         end
+
+        describe ::Dynflow::Action::WithPollingSubPlans do
+          include TestHelpers
+
+          let(:klok) { Dynflow::Testing::ManagedClock.new }
+
+          specify "by default it starts polling again" do
+            world.stub(:clock, klok) do
+              total = 2
+              FailureSimulator.fail_in_child_run = true
+              triggered_plan = world.trigger(PollingParentAction, count: total)
+              wait_for do
+                plan = world.persistence.load_execution_plan(triggered_plan.id)
+                plan.sub_plans.count == total &&
+                  plan.sub_plans.all? { |sub| sub.state == :paused }
+              end
+              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan.entry_action.output[:poll].must_equal 1
+              plan.status.must_equal :paused
+              FailureSimulator.fail_in_child_run = false
+              world.execute(plan.id)
+
+              wait_for do
+                plan.sub_plans.all? { |sub| sub.result == :warning }
+              end
+            end
+          end
+        end
       end
 
       describe 'cancelling' do
@@ -465,44 +532,6 @@ module Dynflow
       describe ::Dynflow::Action::WithPollingSubPlans do
         include TestHelpers
 
-        class PollingParentAction < ParentAction
-          include ::Dynflow::Action::WithPollingSubPlans
-        end
-
-        class PollingBulkParentAction < ParentAction
-          include ::Dynflow::Action::WithBulkSubPlans
-          include ::Dynflow::Action::WithPollingSubPlans
-
-          def total_count
-            input[:count]
-          end
-
-          def batch_size
-            1
-          end
-
-          def create_sub_plans
-            current_batch.map { trigger(ChildAction, suspend: input[:suspend]) }
-          end
-
-          def on_planning_finished
-            output[:poll] = 0
-            output[:planning_finished] ||= 0
-            output[:planning_finished] += 1
-            super
-          end
-
-          def poll
-            output[:poll] += 1
-            super
-          end
-
-          def batch(from, size)
-            total_count.times.drop(from).take(size)
-          end
-
-        end
-
         let(:klok) { Dynflow::Testing::ManagedClock.new }
 
         specify 'polls for sub plans state' do
@@ -510,6 +539,8 @@ module Dynflow
             total = 2
             triggered_plan = world.trigger(PollingParentAction, count: total)
             plan = world.persistence.load_execution_plan(triggered_plan.id)
+            plan.state.must_equal :planned
+            klok.pending_pings.count.must_equal 0
             wait_for do
               plan.sub_plans.count == total &&
                 plan.sub_plans.all? { |sub| sub.result == :success }
@@ -524,20 +555,18 @@ module Dynflow
           end
         end
 
-        specify 'polls for sub plans after all batches were planned' do
+        specify 'starts polling for sub plans at the beginning' do
           world.stub :clock, klok do
             total = 2
             triggered_plan = world.trigger(PollingBulkParentAction, count: total)
             plan = world.persistence.load_execution_plan(triggered_plan.id)
             assert_nil plan.entry_action.output[:planning_finished]
+            klok.pending_pings.count.must_equal 0
             wait_for do
               plan = world.persistence.load_execution_plan(triggered_plan.id)
               plan.entry_action.output[:planning_finished] == 1
             end
-            # It polls when the tasks are planned
-            plan.entry_action.output[:poll].must_equal 1
-
-            # We're not done yet
+            # Poll was set during #initiate
             klok.pending_pings.count.must_equal 1
 
             # Wait for the sub plans to finish
@@ -552,7 +581,7 @@ module Dynflow
               plan = world.persistence.load_execution_plan(triggered_plan.id)
               plan.state == :stopped
             end
-            plan.entry_action.output[:poll].must_equal 2
+            plan.entry_action.output[:poll].must_equal 1
             klok.pending_pings.count.must_equal 0
           end
         end

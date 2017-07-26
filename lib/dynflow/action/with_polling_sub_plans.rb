@@ -18,17 +18,14 @@ module Dynflow
       try_to_finish || suspend_and_ping
     end
 
-    def wait_for_sub_plans(sub_plans)
-      increase_counts(sub_plans.count, 0)
-      if is_a?(::Dynflow::Action::WithBulkSubPlans)
-        suspend
-      else
-        poll
-      end
+    def initiate
+      ping suspended_action
+      super
     end
 
-    def on_planning_finished
-      poll
+    def wait_for_sub_plans(sub_plans)
+      increase_counts(sub_plans.count, 0)
+      suspend
     end
 
     def resume
@@ -38,6 +35,8 @@ module Dynflow
         initiate
       else
         if self.is_a?(::Dynflow::Actions::WithBulkSubPlans) && can_spawn_next_batch?
+          # Not everything was spawned
+          ping suspended_action
           spawn_plans
           suspend
         else
@@ -46,15 +45,16 @@ module Dynflow
       end
     end
 
-
     def notify_on_finish(_sub_plans)
-      suspend_and_ping
+      suspend
     end
 
     def suspend_and_ping
-      suspend do |suspended_action|
-        world.clock.ping suspended_action, REFRESH_INTERVAL, Poll
-      end
+      suspend { |suspended_action| ping suspended_action }
+    end
+
+    def ping(suspended_action)
+      world.clock.ping suspended_action, REFRESH_INTERVAL, Poll
     end
 
     def recalculate_counts
