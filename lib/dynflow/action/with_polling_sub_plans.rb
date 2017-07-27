@@ -30,6 +30,8 @@ module Dynflow
 
     def resume
       if sub_plans.all? { |sub_plan| sub_plan.error_in_plan? }
+        output[:resumed_count] ||= 0
+        output[:resumed_count] += output[:failed_count]
         # We're starting over and need to reset the counts
         %w(total failed pending success).each { |key| output.delete("#{key}_count".to_sym) }
         initiate
@@ -61,9 +63,9 @@ module Dynflow
       total      = sub_plans.count
       failed     = sub_plans('state' => 'stopped', 'result' => 'error').count
       success    = sub_plans('state' => 'stopped', 'result' => 'success').count
-      output.update(:total_count => total,
+      output.update(:total_count   => total - output.fetch(:resumed_count, 0),
                     :pending_count => 0,
-                    :failed_count => failed,
+                    :failed_count  => failed - output.fetch(:resumed_count, 0),
                     :success_count => success)
     end
   end
