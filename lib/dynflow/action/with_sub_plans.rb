@@ -146,8 +146,13 @@ module Dynflow
     end
 
     def sub_plans(filter = {})
-      @sub_plans ||= world.persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => execution_plan_id,
-                                                                       'caller_action_id' => self.id }.merge(filter) )
+      filters = { 'caller_execution_plan_id' => execution_plan_id,
+                  'caller_action_id' => self.id }
+      if filter.empty?
+        @sub_plans ||= world.persistence.find_execution_plans(filters: filters)
+      else
+        world.persistence.find_execution_plans(filters: filters.merge(filter))
+      end
     end
 
     def notify_on_finish(plans)
