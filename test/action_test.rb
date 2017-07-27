@@ -485,10 +485,10 @@ module Dynflow
         describe ::Dynflow::Action::WithPollingSubPlans do
           include TestHelpers
 
-          let(:klok) { Dynflow::Testing::ManagedClock.new }
+          let(:clock) { Dynflow::Testing::ManagedClock.new }
 
           specify "by default it starts polling again" do
-            world.stub(:clock, klok) do
+            world.stub(:clock, clock) do
               total = 2
               FailureSimulator.fail_in_child_run = true
               triggered_plan = world.trigger(PollingParentAction, count: total)
@@ -532,42 +532,42 @@ module Dynflow
       describe ::Dynflow::Action::WithPollingSubPlans do
         include TestHelpers
 
-        let(:klok) { Dynflow::Testing::ManagedClock.new }
+        let(:clock) { Dynflow::Testing::ManagedClock.new }
 
         specify 'polls for sub plans state' do
-          world.stub :clock, klok do
+          world.stub :clock, clock do
             total = 2
             triggered_plan = world.trigger(PollingParentAction, count: total)
             plan = world.persistence.load_execution_plan(triggered_plan.id)
             plan.state.must_equal :planned
-            klok.pending_pings.count.must_equal 0
+            clock.pending_pings.count.must_equal 0
             wait_for do
               plan.sub_plans.count == total &&
                 plan.sub_plans.all? { |sub| sub.result == :success }
             end
-            klok.pending_pings.count.must_equal 1
-            klok.progress
+            clock.pending_pings.count.must_equal 1
+            clock.progress
             wait_for do
               plan = world.persistence.load_execution_plan(triggered_plan.id)
               plan.state == :stopped
             end
-            klok.pending_pings.count.must_equal 0
+            clock.pending_pings.count.must_equal 0
           end
         end
 
         specify 'starts polling for sub plans at the beginning' do
-          world.stub :clock, klok do
+          world.stub :clock, clock do
             total = 2
             triggered_plan = world.trigger(PollingBulkParentAction, count: total)
             plan = world.persistence.load_execution_plan(triggered_plan.id)
             assert_nil plan.entry_action.output[:planning_finished]
-            klok.pending_pings.count.must_equal 0
+            clock.pending_pings.count.must_equal 0
             wait_for do
               plan = world.persistence.load_execution_plan(triggered_plan.id)
               plan.entry_action.output[:planning_finished] == 1
             end
             # Poll was set during #initiate
-            klok.pending_pings.count.must_equal 1
+            clock.pending_pings.count.must_equal 1
 
             # Wait for the sub plans to finish
             wait_for do
@@ -576,13 +576,13 @@ module Dynflow
             end
 
             # Poll again
-            klok.progress
+            clock.progress
             wait_for do
               plan = world.persistence.load_execution_plan(triggered_plan.id)
               plan.state == :stopped
             end
             plan.entry_action.output[:poll].must_equal 1
-            klok.pending_pings.count.must_equal 0
+            clock.pending_pings.count.must_equal 0
           end
         end
       end
