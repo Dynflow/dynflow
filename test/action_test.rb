@@ -507,9 +507,9 @@ module Dynflow
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :paused
               end
-              
+
               FailureSimulator.fail_in_child_plan = false
-              
+
               world.execute(polling_plan.id) # The actual resume
 
               wait_for do # Waiting for new generation of sub plans to be spawned
@@ -519,7 +519,7 @@ module Dynflow
               # Move the clock again
               clock.pending_pings.count.must_equal 1
               clock.progress
-              
+
               wait_for do # Waiting for everything to finish successfully
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :stopped && polling_plan.result == :success
@@ -549,7 +549,7 @@ module Dynflow
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :paused
               end
-              
+
               FailureSimulator.fail_in_child_run = false
 
               # Resume the sub plans

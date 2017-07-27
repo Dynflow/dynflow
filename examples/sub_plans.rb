@@ -32,7 +32,7 @@ class SubPlansExample < Dynflow::Action
   def batch(from, size)
     COUNT.times.drop(from).take(size)
   end
-  
+
   def total_count
     COUNT
   end
