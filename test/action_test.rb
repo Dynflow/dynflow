@@ -381,9 +381,14 @@ module Dynflow
         include ::Dynflow::Action::WithPollingSubPlans
       end
 
-      class PollingBulkParentAction < PollingParentAction
+      class PollingBulkParentAction < ParentAction
         include ::Dynflow::Action::WithBulkSubPlans
         include ::Dynflow::Action::WithPollingSubPlans
+
+        def poll
+          output[:poll] += 1
+          super
+        end
 
         def on_planning_finished
           output[:poll] = 0
@@ -391,12 +396,6 @@ module Dynflow
           output[:planning_finished] += 1
           super
         end
-
-        def poll
-          output[:poll] += 1
-          super
-        end
-
 
         def total_count
           input[:count]
@@ -486,25 +485,87 @@ module Dynflow
           include TestHelpers
 
           let(:clock) { Dynflow::Testing::ManagedClock.new }
+          let(:polling_plan) { world.trigger(PollingParentAction, count: 2).finished.value }
+
+          specify "by default, when no sub plans were planned successfully, it calls create_sub_plans again" do
+            world.stub(:clock, clock) do
+              total = 2
+              FailureSimulator.fail_in_child_plan = true
+              triggered_plan = world.trigger(PollingParentAction, count: total)
+              polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+
+              wait_for do # Waiting for the sub plans to be spawned
+                polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+                polling_plan.sub_plans.count == total
+              end
+
+              # Moving the clock to make the parent check on sub plans
+              clock.pending_pings.count.must_equal 1
+              clock.progress
+
+              wait_for do # Waiting for the parent to realise the sub plans failed
+                polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+                polling_plan.state == :paused
+              end
+              
+              FailureSimulator.fail_in_child_plan = false
+              
+              world.execute(polling_plan.id) # The actual resume
+
+              wait_for do # Waiting for new generation of sub plans to be spawned
+                polling_plan.sub_plans.count == 2 * total
+              end
+
+              # Move the clock again
+              clock.pending_pings.count.must_equal 1
+              clock.progress
+              
+              wait_for do # Waiting for everything to finish successfully
+                polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+                polling_plan.state == :stopped && polling_plan.result == :success
+              end
+            end
+          end
 
           specify "by default it starts polling again" do
             world.stub(:clock, clock) do
               total = 2
               FailureSimulator.fail_in_child_run = true
               triggered_plan = world.trigger(PollingParentAction, count: total)
-              wait_for do
-                plan = world.persistence.load_execution_plan(triggered_plan.id)
-                plan.sub_plans.count == total &&
-                  plan.sub_plans.all? { |sub| sub.state == :paused }
-              end
-              plan = world.persistence.load_execution_plan(triggered_plan.id)
-              plan.entry_action.output[:poll].must_equal 1
-              plan.status.must_equal :paused
-              FailureSimulator.fail_in_child_run = false
-              world.execute(plan.id)
+              polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
 
-              wait_for do
-                plan.sub_plans.all? { |sub| sub.result == :warning }
+              wait_for do # Waiting for the sub plans to be spawned
+                polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+                polling_plan.sub_plans.count == total &&
+                  polling_plan.sub_plans.all? { |sub| sub.state == :paused }
+              end
+
+              # Moving the clock to make the parent check on sub plans
+              clock.pending_pings.count.must_equal 1
+              clock.progress
+              clock.pending_pings.count.must_equal 0
+
+              wait_for do # Waiting for the parent to realise the sub plans failed
+                polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+                polling_plan.state == :paused
+              end
+              
+              FailureSimulator.fail_in_child_run = false
+
+              # Resume the sub plans
+              polling_plan.sub_plans.each do |sub|
+                world.execute(sub.id)
+              end
+
+              wait_for do # Waiting for the child tasks to finish
+                polling_plan.sub_plans.all? { |sub| sub.state == :stopped }
+              end
+
+              world.execute(polling_plan.id) # The actual resume
+
+              wait_for do # Waiting for everything to finish successfully
+                polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
+                polling_plan.state == :stopped && polling_plan.result == :success
               end
             end
           end

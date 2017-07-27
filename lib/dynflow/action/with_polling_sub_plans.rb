@@ -36,7 +36,7 @@ module Dynflow
         %w(total failed pending success).each { |key| output.delete("#{key}_count".to_sym) }
         initiate
       else
-        if self.is_a?(::Dynflow::Actions::WithBulkSubPlans) && can_spawn_next_batch?
+        if self.is_a?(::Dynflow::Action::WithBulkSubPlans) && can_spawn_next_batch?
           # Not everything was spawned
           ping suspended_action
           spawn_plans
@@ -61,7 +61,7 @@ module Dynflow
 
     def recalculate_counts
       total      = sub_plans.count
-      failed     = sub_plans('state' => 'stopped', 'result' => 'error').count
+      failed     = sub_plans('state' => %w(paused stopped), 'result' => 'error').count
       success    = sub_plans('state' => 'stopped', 'result' => 'success').count
       output.update(:total_count   => total - output.fetch(:resumed_count, 0),
                     :pending_count => 0,
