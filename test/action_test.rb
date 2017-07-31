@@ -371,9 +371,17 @@ module Dynflow
           if FailureSimulator.fail_in_child_run
             raise "Fail in child run"
           end
-          if input[:suspend] && !(event == Dynflow::Action::Cancellable::Cancel)
+          if event == Dynflow::Action::Cancellable::Abort
+            output[:aborted] = true
+          end
+          if input[:suspend] && !cancel_event?(event)
             suspend
           end
+        end
+
+        def cancel_event?(event)
+          event == Dynflow::Action::Cancellable::Cancel ||
+            event == Dynflow::Action::Cancellable::Abort
         end
       end
 
@@ -459,6 +467,23 @@ module Dynflow
           triggered_plan.finished.wait
           triggered_plan.finished.value.state.must_equal :stopped
           triggered_plan.finished.value.result.must_equal :success
+        end
+
+        it "sends the abort event to all actions that are running and support cancelling" do
+          triggered_plan = world.trigger(ParentAction, count: 2, suspend: true)
+          plan = wait_for do
+            plan = world.persistence.load_execution_plan(triggered_plan.id)
+            if plan.cancellable?
+              plan
+            end
+          end
+          plan.cancel true
+          triggered_plan.finished.wait
+          triggered_plan.finished.value.state.must_equal :stopped
+          triggered_plan.finished.value.result.must_equal :success
+          plan.sub_plans.each do |sub_plan|
+            sub_plan.entry_action.output[:aborted].must_equal true
+          end
         end
       end
     end

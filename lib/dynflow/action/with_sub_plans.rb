@@ -22,6 +22,9 @@ module Dynflow
              end),
             (on Action::Cancellable::Cancel do
                cancel!
+             end),
+            (on Action::Cancellable::Abort do
+               abort!
              end)
     end
 
@@ -62,10 +65,14 @@ module Dynflow
     def on_finish
     end
 
-    def cancel!
+    def cancel!(force = false)
       @world.throttle_limiter.cancel!(execution_plan_id)
-      sub_plans('state' => 'running').each(&:cancel)
+      sub_plans('state' => 'running').each { |sub_plan| sub_plan.cancel(force) }
       suspend
+    end
+
+    def abort!
+      cancel! true
     end
 
     # Helper for creating sub plans
@@ -146,8 +153,13 @@ module Dynflow
     end
 
     def sub_plans(filter = {})
-      @sub_plans ||= world.persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => execution_plan_id,
-                                                                       'caller_action_id' => self.id }.merge(filter) )
+      filters = { 'caller_execution_plan_id' => execution_plan_id,
+                  'caller_action_id' => self.id }
+      if filter.empty?
+        @sub_plans ||= world.persistence.find_execution_plans(filters: filters)
+      else
+        world.persistence.find_execution_plans(filters: filters.merge(filter))
+      end
     end
 
     def notify_on_finish(plans)

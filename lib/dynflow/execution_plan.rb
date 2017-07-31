@@ -260,12 +260,13 @@ module Dynflow
     # sends the cancel event to all currently running and cancellable steps.
     # if the plan is just scheduled, it cancels it (and returns an one-item
     # array with the future value of the cancel result)
-    def cancel
+    def cancel(force = false)
       if state == :scheduled
         [Concurrent.future.tap { |f| f.success delay_record.cancel }]
       else
+        event = force ? ::Dynflow::Action::Cancellable::Abort : ::Dynflow::Action::Cancellable::Cancel
         steps_to_cancel.map do |step|
-          world.event(id, step.id, ::Dynflow::Action::Cancellable::Cancel)
+          world.event(id, step.id, event)
         end
       end
     end

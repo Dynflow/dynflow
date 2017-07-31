@@ -62,7 +62,7 @@ module Dynflow
       suspended_action << PlanNextBatch
     end
 
-    def cancel!
+    def cancel!(force = false)
       # Count the not-yet-planned tasks as failed
       output[:failed_count] += total_count - output[:planned_count]
       if uses_concurrency_control
@@ -72,9 +72,8 @@ module Dynflow
         # Just stop the tasks which were not started yet
         sub_plans(:state => 'planned').each { |sub_plan| sub_plan.update_state(:stopped) }
       end
-      running = sub_plans(:state => 'running')
       # Pass the cancel event to running sub plans if they can be cancelled
-      running.each { |sub_plan| sub_plan.cancel! if sub_plan.cancellable? }
+      sub_plans(:state => 'running').each { |sub_plan| sub_plan.cancel(force) if sub_plan.cancellable? }
       suspend
     end
 
