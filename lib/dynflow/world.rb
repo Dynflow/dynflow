@@ -44,9 +44,11 @@ module Dynflow
         self.worlds_validity_check
         self.locks_validity_check
       end
-      @delayed_executor         = try_spawn_delayed_executor(config_for_world)
+      @delayed_executor         = try_spawn(config_for_world, :delayed_executor, Coordinator::DelayedExecutorLock)
+      @execution_plan_cleaner   = try_spawn(config_for_world, :execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
       @meta                     = config_for_world.meta
       @meta['delayed_executor'] = true if @delayed_executor
+      @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new
@@ -389,10 +391,13 @@ module Dynflow
       []
     end
 
-    def try_spawn_delayed_executor(config_for_world)
-      return nil if !executor || config_for_world.delayed_executor.nil?
-      coordinator.acquire(Coordinator::DelayedExecutorLock.new(self))
-      config_for_world.delayed_executor
+    def try_spawn(config_for_world, what, lock_class = nil)
+      object = nil
+      return nil if !executor || (object = config_for_world.public_send(what)).nil?
+
+      coordinator.acquire(lock_class.new(self)) if lock_class
+      object.spawn.wait
+      object
     rescue Coordinator::LockError => e
       nil
     end

@@ -187,6 +187,17 @@ module Dynflow
       end
     end
 
+    class ExecutionPlanCleanerLock < LockByWorld
+      def initialize(world)
+        super
+        @data[:id] = self.class.lock_id
+      end
+
+      def self.lock_id
+        "execution-plan-cleaner"
+      end
+    end
+
     class WorldInvalidationLock < LockByWorld
       def initialize(world, invalidated_world)
         super(world)
