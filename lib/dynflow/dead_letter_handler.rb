@@ -24,9 +24,22 @@ module Dynflow
       end
 
       def match?(dead_letter)
-        (@from == Any || dead_letter.sender.actor_class == @from) &&
-          (@message == Any || dead_letter.message == @message) &&
-          (@to == Any || dead_letter.address.actor_class == @to)
+        evaluate(dead_letter.sender.actor_class, @from) &&
+          evaluate(dead_letter.message, @message) &&
+          evaluate(dead_letter.address.actor_class, @to)
+      end
+
+      private
+
+      def evaluate(thing, condition)
+        case condition
+        when Any
+          true
+        when Proc
+          condition.call(thing)
+        else
+          condition == thing
+        end
       end
     end
   end
