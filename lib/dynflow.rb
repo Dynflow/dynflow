@@ -23,6 +23,7 @@ module Dynflow
 
   require 'dynflow/utils'
   require 'dynflow/round_robin'
+  require 'dynflow/dead_letter_handler'
   require 'dynflow/actor'
   require 'dynflow/actors'
   require 'dynflow/errors'

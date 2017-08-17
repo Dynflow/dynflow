@@ -53,6 +53,10 @@ module Dynflow
           super
         end
 
+        def dead_letter_routing
+          @world.dead_letter_handler
+        end
+
         private
 
         def on_message(message)

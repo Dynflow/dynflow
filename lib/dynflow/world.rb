@@ -8,7 +8,7 @@ module Dynflow
                 :transaction_adapter, :logger_adapter, :coordinator,
                 :persistence, :action_classes, :subscription_index,
                 :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
-                :terminated, :execution_plan_cleaner
+                :terminated, :dead_letter_handler, :execution_plan_cleaner
 
     def initialize(config)
       @id                     = SecureRandom.uuid
@@ -29,6 +29,7 @@ module Dynflow
       @middleware             = Middleware::World.new
       @middleware.use Middleware::Common::Transaction if @transaction_adapter
       @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @dead_letter_handler    = spawn_and_wait(DeadLetterHandler, 'default_dead_letter_handler')
       @meta                   = config_for_world.meta
       @auto_validity_check    = config_for_world.auto_validity_check
       @validity_check_timeout = config_for_world.validity_check_timeout
