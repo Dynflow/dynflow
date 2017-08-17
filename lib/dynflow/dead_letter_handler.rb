@@ -1,22 +1,15 @@
 module Dynflow
   class DeadLetterHandler < Concurrent::Actor::DefaultDeadLetterHandler
+    def initialize(matchers)
+      @matchers = Type! matchers, Array
+    end
 
-    class << self
-      def drop_matchers
-        @matchers ||= []
-      end
-
-      def should_drop?(dead_letter)
-        drop_matchers.any? { |matcher| matcher.match? dead_letter }
-      end
-
-      def drop_matcher(*args)
-        drop_matchers << Matcher.new(*args)
-      end
+    def should_drop?(dead_letter)
+      @matchers.any? { |matcher| matcher.match? dead_letter }
     end
 
     def on_message(dead_letter)
-      super unless self.class.should_drop?(dead_letter)
+      super unless should_drop?(dead_letter)
     end
 
     private

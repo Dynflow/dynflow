@@ -29,7 +29,7 @@ module Dynflow
       @middleware             = Middleware::World.new
       @middleware.use Middleware::Common::Transaction if @transaction_adapter
       @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
-      @dead_letter_handler    = spawn_and_wait(DeadLetterHandler, 'default_dead_letter_handler')
+      @dead_letter_handler    = spawn_and_wait(DeadLetterHandler, 'default_dead_letter_handler', config_for_world.silent_dead_letter_matchers)
       @meta                   = config_for_world.meta
       @auto_validity_check    = config_for_world.auto_validity_check
       @validity_check_timeout = config_for_world.validity_check_timeout

@@ -30,16 +30,6 @@ module Dynflow
 
     include Algebrick::Matching
 
-    def self.ignore_sent_dead_letters!
-      DeadLetterHandler.drop_matcher(self)
-    end
-
-    def self.ignore_received_dead_letters!
-      DeadLetterHandler.drop_matcher(DeadLetterHandler::Matcher::Any,
-                                     DeadLetterHandler::Matcher::Any,
-                                     self)
-    end
-
     def start_termination(future)
       @terminated = future
     end

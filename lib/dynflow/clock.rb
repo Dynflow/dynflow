@@ -3,8 +3,6 @@ module Dynflow
 
   class Clock < Actor
 
-    ignore_sent_dead_letters!
-
     include Algebrick::Types
 
     Tick  = Algebrick.atom
