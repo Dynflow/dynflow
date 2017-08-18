@@ -34,7 +34,6 @@ module Dynflow
           rescued_plan.entry_action.output[:message].
             must_equal "skipped because some error as you wish"
         end
-
       end
 
       describe 'of simple skippable action in finalize phase' do
@@ -87,6 +86,9 @@ module Dynflow
         end
 
         it 'skips the action and continues' do
+          # we need to rescue twice for two errors in sequence
+          rescued_plan = execution_plan.rescue_from_error.value
+          rescued_plan = rescued_plan.rescue_from_error.value
           rescued_plan.state.must_equal :stopped
           rescued_plan.result.must_equal :warning
           skipped_action = rescued_plan.actions.find do |action|

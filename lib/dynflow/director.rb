@@ -80,7 +80,7 @@ module Dynflow
       @world = world
       @logger = world.logger
       @execution_plan_managers = {}
-      @plan_ids_in_rescue = Set.new
+      @rescued_steps = {}
     end
 
     def start_execution(execution_plan_id, finished)
@@ -145,15 +145,24 @@ module Dynflow
     end
 
     def rescue?(manager)
-      return false if @world.terminating?
-      @world.auto_rescue && manager.execution_plan.state == :paused &&
-        !@plan_ids_in_rescue.include?(manager.execution_plan.id)
+      if @world.terminating? || !(@world.auto_rescue && manager.execution_plan.state == :paused)
+        false
+      elsif !@rescued_steps.key?(manager.execution_plan.id)
+        # we have not rescued this plan yet
+        true
+      else
+        # we have rescued this plan already, but a different step has failed now
+        # we do this check to prevent endless loop, if we always failed on the same steps
+        failed_step_ids = manager.execution_plan.failed_steps.map(&:id).to_set
+        (failed_step_ids - @rescued_steps[manager.execution_plan.id]).any?
+      end
     end
 
     def rescue!(manager)
       # TODO: after moving to concurrent-ruby actors, there should be better place
       # to put this logic of making sure we don't run rescues in endless loop
-      @plan_ids_in_rescue << manager.execution_plan.id
+      @rescued_steps[manager.execution_plan.id] ||= Set.new
+      @rescued_steps[manager.execution_plan.id].merge(manager.execution_plan.failed_steps.map(&:id))
       rescue_plan_id = manager.execution_plan.rescue_plan_id
       if rescue_plan_id
         @world.executor.execute(rescue_plan_id, manager.future, false)
@@ -183,7 +192,7 @@ module Dynflow
     end
 
     def set_future(manager)
-      @plan_ids_in_rescue.delete(manager.execution_plan.id)
+      @rescued_steps.delete(manager.execution_plan.id)
       manager.future.success manager.execution_plan
     end
   end
