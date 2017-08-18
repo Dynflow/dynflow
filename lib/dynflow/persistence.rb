@@ -58,6 +58,12 @@ module Dynflow
       adapter.save_execution_plan(execution_plan.id, execution_plan.to_hash)
     end
 
+    def find_old_execution_plans(age)
+      adapter.find_old_execution_plans(age).map do |plan|
+        ExecutionPlan.new_from_hash(plan, @world)
+      end
+    end
+
     def find_past_delayed_plans(time)
       adapter.find_past_delayed_plans(time).map do |plan|
         DelayedPlan.new_from_hash(@world, plan)

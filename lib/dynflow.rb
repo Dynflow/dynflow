@@ -24,6 +24,7 @@ module Dynflow
   require 'dynflow/utils'
   require 'dynflow/round_robin'
   require 'dynflow/actor'
+  require 'dynflow/actors'
   require 'dynflow/errors'
   require 'dynflow/serializer'
   require 'dynflow/serializable'

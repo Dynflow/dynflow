@@ -18,18 +18,18 @@ module Dynflow
         @core.ask(:terminate!)
       end
 
-      private
-
-      def core_class
-        raise NotImplementedError
-      end
-
       def spawn
         Concurrent.future.tap do |initialized|
           @core = core_class.spawn name: 'delayed-executor',
                                    args: [@world, @options],
                                    initialized: initialized
         end
+      end
+
+      private
+
+      def core_class
+        raise NotImplementedError
       end
 
     end

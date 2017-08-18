@@ -107,6 +107,10 @@ module Dynflow
       ::Dynflow::ThrottleLimiter.new(world)
     end
 
+    config_attr :execution_plan_cleaner, ::Dynflow::Actors::ExecutionPlanCleaner, NilClass do |world|
+      nil
+    end
+
     config_attr :action_classes do
       Action.all_children
     end

@@ -102,6 +102,12 @@ module Dynflow
         count
       end
 
+      def find_old_execution_plans(age)
+        table(:execution_plan)
+          .where(::Sequel.lit('ended_at <= ? AND state = ?', age, 'stopped'))
+          .all.map { |plan| load_data plan }
+      end
+
       def find_past_delayed_plans(time)
         table(:delayed)
           .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
