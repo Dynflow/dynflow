@@ -151,7 +151,8 @@ module Dynflow
     end
 
     def rescue_strategy
-      Type! entry_action.rescue_strategy, Action::Rescue::Strategy
+      rescue_strategy = entry_action.rescue_strategy || Action::Rescue::Skip
+      Type! rescue_strategy, Action::Rescue::Strategy
     end
 
     def sub_plans
