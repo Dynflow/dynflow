@@ -92,6 +92,7 @@ module Support
             plan_action(ActionWithFail, 4, error_state)
           end
           plan_action(ActionWithFail, 5, :success)
+          plan_action(ActionWithSkip, 6, :success)
         end
       end
 

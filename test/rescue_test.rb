@@ -127,8 +127,8 @@ module Dynflow
           proc { rescued_plan }.must_raise Errors::RescueError
           execution_plan.state.must_equal :stopped
           execution_plan.result.must_equal :error
-          execution_plan.steps_in_state(:success).count.must_equal 5
-          execution_plan.steps_in_state(:pending).count.must_equal 4
+          execution_plan.steps_in_state(:success).count.must_equal 6
+          execution_plan.steps_in_state(:pending).count.must_equal 6
           execution_plan.steps_in_state(:error).count.must_equal 1
         end
 
@@ -190,8 +190,8 @@ module Dynflow
           it 'fails the execution plan automatically' do
             execution_plan.state.must_equal :stopped
             execution_plan.result.must_equal :error
-            execution_plan.steps_in_state(:success).count.must_equal 5
-            execution_plan.steps_in_state(:pending).count.must_equal 4
+            execution_plan.steps_in_state(:success).count.must_equal 6
+            execution_plan.steps_in_state(:pending).count.must_equal 6
             execution_plan.steps_in_state(:error).count.must_equal 1
           end
         end

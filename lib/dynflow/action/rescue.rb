@@ -21,13 +21,14 @@ module Dynflow
     def rescue_strategy
       suggested_strategies = []
 
-      if self.steps.compact.any? { |step| step.state == :error } ||
-         self.steps.compact.all? { |step| [:pending, :success].include? step.state }
+      if self.steps.compact.any? { |step| step.state == :error }
         suggested_strategies << SuggestedStrategy[self, rescue_strategy_for_self]
       end
 
       self.planned_actions.each do |planned_action|
-        suggested_strategies << SuggestedStrategy[planned_action, rescue_strategy_for_planned_action(planned_action)]
+        rescue_strategy = rescue_strategy_for_planned_action(planned_action)
+        next unless rescue_strategy # ignore actions that have no say in the rescue strategy
+        suggested_strategies << SuggestedStrategy[planned_action, rescue_strategy]
       end
 
       combine_suggested_strategies(suggested_strategies)
@@ -49,7 +50,7 @@ module Dynflow
     # the suggested strategies
     def combine_suggested_strategies(suggested_strategies)
       if suggested_strategies.empty?
-        return Skip
+        nil
       else
         # TODO: Find the safest rescue strategy among the suggested ones
         if suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Skip }
