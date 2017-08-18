@@ -8,7 +8,7 @@ module Dynflow
                 :transaction_adapter, :logger_adapter, :coordinator,
                 :persistence, :action_classes, :subscription_index,
                 :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
-                :terminated
+                :terminated, :execution_plan_cleaner
 
     def initialize(config)
       @id                     = SecureRandom.uuid
