@@ -10,8 +10,9 @@ module Support
           concurrence do
             plan_action(ActionWithSkip, 3, :success)
             plan_action(ActionWithSkip, 4, error_state)
+            plan_action(ActionWithSkip, 5, error_state)
           end
-          plan_action(ActionWithSkip, 5, :success)
+          plan_action(ActionWithSkip, 6, :success)
         end
       end
 
