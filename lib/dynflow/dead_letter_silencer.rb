@@ -1,5 +1,5 @@
 module Dynflow
-  class DeadLetterHandler < Concurrent::Actor::DefaultDeadLetterHandler
+  class DeadLetterSilencer < Concurrent::Actor::DefaultDeadLetterHandler
     def initialize(matchers)
       @matchers = Type! matchers, Array
     end
