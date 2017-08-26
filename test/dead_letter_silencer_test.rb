@@ -8,7 +8,7 @@ module Dynflow
       include TestHelpers
 
       let(:world) { WorldFactory.create_world }
-      
+
       it 'is started for each world' do
         world.dead_letter_handler.actor_class
              .must_equal ::Dynflow::DeadLetterSilencer
@@ -31,14 +31,14 @@ module Dynflow
 
         it 'matches comparing for equality' do
           DeadLetterSilencer::Matcher.new(sender, msg, receiver)
-                                    .match?(letter).must_equal true
+                                     .match?(letter).must_equal true
           DeadLetterSilencer::Matcher.new(any, :bad, any).match?(letter).must_equal false
         end
 
         it 'matches by calling the proc' do
           condition = proc { |actor_class| actor_class.is_a? Class }
           DeadLetterSilencer::Matcher.new(condition, any, condition)
-                                    .match?(letter).must_equal true
+                                     .match?(letter).must_equal true
         end
       end
     end

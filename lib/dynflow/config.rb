@@ -100,7 +100,7 @@ module Dynflow
     config_attr :silent_dead_letter_matchers, Array do
       # By default suppress dead letters sent by Clock
       [
-       DeadLetterSilencer::Matcher.new(::Dynflow::Clock)
+        DeadLetterSilencer::Matcher.new(::Dynflow::Clock)
       ]
     end
 
