@@ -1,21 +1,25 @@
 module Dynflow
   module ActiveJob
     module QueueAdapters
+      module QueueMethods
+        def enqueue(job)
+          ::Rails.application.dynflow.world.trigger(JobWrapper, job.serialize)
+        end
+
+        def enqueue_at(job, timestamp)
+          ::Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize)
+        end
+      end
+
       # To use Dynflow, set the queue_adapter config to +:dynflow+.
       #
       #   Rails.application.config.active_job.queue_adapter = :dynflow
       class DynflowAdapter
-        extend ActiveSupport::Concern
+        # For ActiveJob >= 5
+        include QueueMethods
 
-        class << self
-          def enqueue(job)
-            ::Rails.application.dynflow.world.trigger(JobWrapper, job.serialize)
-          end
-
-          def enqueue_at(job, timestamp)
-            ::Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize)
-          end
-        end
+        # For ActiveJob <= 4
+        extend QueueMethods
       end
 
       class JobWrapper < Dynflow::Action

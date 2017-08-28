@@ -12,7 +12,7 @@ module Dynflow
   describe 'running jobs' do
     before(:all) do
       world = WorldFactory.create_world
-      ::ActiveJob::QueueAdapters.include(::Dynflow::ActiveJob::QueueAdapters)
+      ::ActiveJob::QueueAdapters.send(:include, ::Dynflow::ActiveJob::QueueAdapters)
       ::ActiveJob::Base.queue_adapter = :dynflow
       dynflow_mock = Minitest::Mock.new
       dynflow_mock.expect(:world, world)
@@ -20,7 +20,14 @@ module Dynflow
       rails_app_mock .expect(:dynflow, dynflow_mock)
       rails_mock = Minitest::Mock.new
       rails_mock.expect(:application, rails_app_mock)
-      ::Rails = rails_mock
+      @original_rails = ::Rails
+      Object.send(:remove_const, 'Rails')
+      Object.const_set('Rails', rails_mock)
+    end
+
+    after(:all) do
+      Object.send(:remove_const, 'Rails')
+      Object.const_set('Rails', @original_rails)
     end
 
     it 'is able to run the job right away' do
