@@ -8,7 +8,7 @@ module Dynflow
                 :transaction_adapter, :logger_adapter, :coordinator,
                 :persistence, :action_classes, :subscription_index,
                 :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
-                :terminated, :dead_letter_handler, :execution_plan_cleaner
+                :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
 
     def initialize(config)
       @id                     = SecureRandom.uuid
@@ -35,6 +35,7 @@ module Dynflow
       @validity_check_timeout = config_for_world.validity_check_timeout
       @throttle_limiter       = config_for_world.throttle_limiter
       @terminated             = Concurrent.event
+      @termination_timeout    = config_for_world.termination_timeout
       calculate_subscription_index
 
       if executor
@@ -217,35 +218,35 @@ module Dynflow
 
             if delayed_executor
               logger.info "start terminating delayed_executor..."
-              delayed_executor.terminate.wait
+              delayed_executor.terminate.wait(termination_timeout)
             end
 
             logger.info "start terminating throttle_limiter..."
-            throttle_limiter.terminate.wait
+            throttle_limiter.terminate.wait(termination_timeout)
 
             if executor
               connector.stop_receiving_new_work(self)
 
               logger.info "start terminating executor..."
-              executor.terminate.wait
+              executor.terminate.wait(termination_timeout)
 
               logger.info "start terminating executor dispatcher..."
               executor_dispatcher_terminated = Concurrent.future
               executor_dispatcher.ask([:start_termination, executor_dispatcher_terminated])
-              executor_dispatcher_terminated.wait
+              executor_dispatcher_terminated.wait(termination_timeout)
             end
 
             logger.info "start terminating client dispatcher..."
             client_dispatcher_terminated = Concurrent.future
             client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
-            client_dispatcher_terminated.wait
+            client_dispatcher_terminated.wait(termination_timeout)
 
             logger.info "stop listening for new events..."
             connector.stop_listening(self)
 
             if @clock
               logger.info "start terminating clock..."
-              clock.ask(:terminate!).wait
+              clock.ask(:terminate!).wait(termination_timeout)
             end
 
             coordinator.delete_world(registered_world)

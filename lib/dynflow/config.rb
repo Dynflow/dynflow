@@ -93,6 +93,10 @@ module Dynflow
       true
     end
 
+    config_attr :termination_timeout, Numeric do
+      60
+    end
+
     config_attr :auto_execute, Algebrick::Types::Boolean do
       true
     end
