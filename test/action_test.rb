@@ -623,9 +623,9 @@ module Dynflow
         specify 'polls for sub plans state' do
           world.stub :clock, clock do
             total = 2
-            triggered_plan = world.trigger(PollingParentAction, count: total)
-            plan = world.persistence.load_execution_plan(triggered_plan.id)
+            plan = world.plan(PollingParentAction, count: total)
             plan.state.must_equal :planned
+            world.execute(plan.id)
             clock.pending_pings.count.must_equal 0
             wait_for do
               plan.sub_plans.count == total &&
@@ -634,7 +634,7 @@ module Dynflow
             clock.pending_pings.count.must_equal 1
             clock.progress
             wait_for do
-              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan = world.persistence.load_execution_plan(plan.id)
               plan.state == :stopped
             end
             clock.pending_pings.count.must_equal 0
@@ -644,12 +644,12 @@ module Dynflow
         specify 'starts polling for sub plans at the beginning' do
           world.stub :clock, clock do
             total = 2
-            triggered_plan = world.trigger(PollingBulkParentAction, count: total)
-            plan = world.persistence.load_execution_plan(triggered_plan.id)
+            plan = world.plan(PollingBulkParentAction, count: total)
             assert_nil plan.entry_action.output[:planning_finished]
             clock.pending_pings.count.must_equal 0
+            world.execute(plan.id)
             wait_for do
-              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan = world.persistence.load_execution_plan(plan.id)
               plan.entry_action.output[:planning_finished] == 1
             end
             # Poll was set during #initiate
@@ -664,7 +664,7 @@ module Dynflow
             # Poll again
             clock.progress
             wait_for do
-              plan = world.persistence.load_execution_plan(triggered_plan.id)
+              plan = world.persistence.load_execution_plan(plan.id)
               plan.state == :stopped
             end
             plan.entry_action.output[:poll].must_equal 1
