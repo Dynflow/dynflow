@@ -97,6 +97,13 @@ module Dynflow
       true
     end
 
+    config_attr :silent_dead_letter_matchers, Array do
+      # By default suppress dead letters sent by Clock
+      [
+        DeadLetterSilencer::Matcher.new(::Dynflow::Clock)
+      ]
+    end
+
     config_attr :delayed_executor, DelayedExecutors::Abstract, NilClass do |world|
       options = { :poll_interval => 15,
                   :time_source => -> { Time.now.utc } }
