@@ -9,7 +9,8 @@ module Dynflow
       def handle_request(envelope)
         match(envelope.message,
               on(Execution) { perform_execution(envelope, envelope.message) },
-              on(Event)     { perform_event(envelope, envelope.message) })
+              on(Event)     { perform_event(envelope, envelope.message) },
+              on(Steps)     { get_pending_steps(envelope, envelope.message) })
       end
 
       protected
@@ -61,6 +62,10 @@ module Dynflow
         else
           Concurrent.zip(*@current_futures).then { reference.tell(:finish_termination) }
         end
+      end
+
+      def get_pending_steps(envelope, envelope_message)
+        respond(envelope, PendingSteps[pending_steps: @world.executor.pending_steps])
       end
 
       private

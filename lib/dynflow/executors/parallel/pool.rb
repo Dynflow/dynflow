@@ -23,6 +23,15 @@ module Dynflow
             @jobs.empty?
           end
 
+          def pending_steps(execution_plan_id = nil)
+            source = if execution_plan_id.nil?
+                       @jobs
+                     else
+                       { execution_plan_id => @jobs.fetch(execution_plan_id, []) }
+                     end
+            source.reduce({}) { |acc, cur| acc.update(cur.first => cur.last.count) }
+          end
+
           private
 
           def tracked?(work)
@@ -60,6 +69,10 @@ module Dynflow
         def start_termination(*args)
           super
           try_to_terminate
+        end
+
+        def pending_steps(execution_plan_id = nil)
+          @jobs.pending_steps execution_plan_id
         end
 
         private

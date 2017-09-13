@@ -37,6 +37,15 @@ module Dynflow
         erb :worlds
       end
 
+      post('/worlds/pending_steps') do
+        @worlds = world.coordinator.find_worlds
+        @worlds.each do |w|
+          steps = world.get_pending_steps(w.data['id'], nil, 5).value!.values.sum
+          w.data.update(:pending_steps => steps)
+        end
+        erb :worlds
+      end
+
       post('/worlds/check') do
         @worlds = world.coordinator.find_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate])

@@ -57,6 +57,10 @@ module Dynflow
           @world.dead_letter_handler
         end
 
+        def pending_steps(execution_plan_id = nil)
+          @pool.ask!([:pending_steps, execution_plan_id])
+        end
+
         private
 
         def on_message(message)
