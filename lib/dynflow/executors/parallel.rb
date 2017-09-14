@@ -35,8 +35,8 @@ module Dynflow
         future
       end
 
-      def pending_steps(execution_plan_id = nil)
-        @core.ask!([:pending_steps, execution_plan_id])
+      def execution_items(execution_plan_id = nil)
+        @core.ask!([:execution_items, execution_plan_id])
       end
 
       def initialized

@@ -3,7 +3,7 @@
 <ul>
   <li><a href="<%= url("/worlds/check") %>" class="postlink">check status</a>: see potentially invalid worlds</li>
   <li><a href="<%= url("/worlds/check?invalidate=true") %>" class="postlink">check and invalidate</a>: invalidate the worlds that don't respond</li>
-  <li><a href="<%= url("/worlds/pending_steps") %>" class="postlink">load pending steps counts</a>: see counts of pending steps per world</li>
+  <li><a href="<%= url("/worlds/execution_items") %>" class="postlink">load execution items counts</a>: see counts of execution items per world</li>
 </ul>
 
 <table class="table">
@@ -12,7 +12,7 @@
       <th>Id</th>
       <th>Meta</th>
       <th>Executor?</th>
-      <th>Pending steps</th>
+      <th>Execution items</th>
       <th></th>
     </tr>
   </thead>
@@ -22,7 +22,7 @@
     <td><%= h(world.id) %></td>
     <td><%= h(world.meta) %></td>
     <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
-    <td><%= h(world.data['pending_steps'] || 'N/A') %></td>
+    <td><%= h(world.data['execution_items'] || 'N/A') %></td>
     <td>
       <% validation_result = @validation_results[world.id] if @validation_results %>
 

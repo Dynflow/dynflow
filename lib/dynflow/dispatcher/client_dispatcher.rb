@@ -58,7 +58,7 @@ module Dynflow
                             (on ~Event do |event|
                                find_executor(event.execution_plan_id)
                              end),
-                            (on Ping.(~any) | Steps.(~any, ~any) do |receiver_id, _|
+                            (on Ping.(~any) | Items.(~any, ~any) do |receiver_id, _|
                                receiver_id
                              end)
         envelope = Envelope[request_id, client_world_id, executor_id, request]
@@ -83,7 +83,7 @@ module Dynflow
               (on Done | Pong do
                  resolve_tracked_request(envelope.request_id)
                end),
-              (on PendingSteps.(~any) do |steps|
+              (on ExecutionItems.(~any) do |steps|
                  @tracked_requests.delete(envelope.request_id).success! steps
                end)
       end

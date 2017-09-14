@@ -23,7 +23,7 @@ module Dynflow
             @jobs.empty?
           end
 
-          def pending_steps(execution_plan_id = nil)
+          def execution_items(execution_plan_id = nil)
             source = if execution_plan_id.nil?
                        @jobs
                      else
@@ -71,8 +71,8 @@ module Dynflow
           try_to_terminate
         end
 
-        def pending_steps(execution_plan_id = nil)
-          @jobs.pending_steps execution_plan_id
+        def execution_items(execution_plan_id = nil)
+          @jobs.execution_items execution_plan_id
         end
 
         private

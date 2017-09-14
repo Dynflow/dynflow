@@ -10,7 +10,7 @@ module Dynflow
         match(envelope.message,
               on(Execution) { perform_execution(envelope, envelope.message) },
               on(Event)     { perform_event(envelope, envelope.message) },
-              on(Steps)     { get_pending_steps(envelope, envelope.message) })
+              on(Items)     { get_execution_items(envelope, envelope.message) })
       end
 
       protected
@@ -64,8 +64,9 @@ module Dynflow
         end
       end
 
-      def get_pending_steps(envelope, envelope_message)
-        respond(envelope, PendingSteps[pending_steps: @world.executor.pending_steps])
+      def get_execution_items(envelope, envelope_message)
+        items = @world.executor.execution_items envelope_message.execution_plan_id
+        respond(envelope, ExecutionItems[execution_items: items])
       end
 
       private

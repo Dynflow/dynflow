@@ -27,7 +27,7 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def pending_steps(execution_plan_id = nil)
+      def execution_items(execution_plan_id = nil)
         raise NotImplementedError
       end
 

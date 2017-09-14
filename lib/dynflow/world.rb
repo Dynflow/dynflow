@@ -198,8 +198,8 @@ module Dynflow
       publish_request(Dispatcher::Ping[world_id], done, false, timeout)
     end
 
-    def get_pending_steps(world_id, execution_plan_id, timeout, done = Concurrent.future)
-      publish_request(Dispatcher::Steps[world_id, execution_plan_id], done, false, timeout)
+    def get_execution_items(world_id, execution_plan_id, timeout, done = Concurrent.future)
+      publish_request(Dispatcher::Items[world_id, execution_plan_id], done, false, timeout)
     end
 
     def publish_request(request, done, wait_for_accepted, timeout = nil)
