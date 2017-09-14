@@ -75,7 +75,7 @@ module Dynflow
       end
 
       def rake_task_with_executor?
-        return false unless defined?(::Rake)
+        return false unless defined?(::Rake) && ::Rake.respond_to?(:application)
 
         ::Rake.application.top_level_tasks.any? do |rake_task|
           rake_tasks_with_executor.include?(rake_task)
