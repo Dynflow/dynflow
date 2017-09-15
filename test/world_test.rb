@@ -19,6 +19,14 @@ module Dynflow
         end
       end
 
+      describe '#get_execution_items' do
+        it 'retrieves correct execution items count' do
+          world.get_execution_items(world.id, nil, 5).value!.must_equal({})
+          id = 'something like uuid'
+          world.get_execution_items(world.id, id, 5).value!.must_equal(id => 0)
+        end
+      end
+
       describe '#terminate' do
         it 'fires an event after termination' do
           terminated_event = world.terminated
