@@ -72,7 +72,9 @@ module Dynflow
         end
 
         def execution_items(execution_plan_id = nil)
-          @jobs.execution_items execution_plan_id
+          { :pool_size => @pool_size,
+            :free_workers => @free_workers.count,
+            :execution_items => @jobs.execution_items(execution_plan_id) }
         end
 
         private

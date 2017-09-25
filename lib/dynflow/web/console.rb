@@ -40,8 +40,9 @@ module Dynflow
       post('/worlds/execution_items') do
         @worlds = world.coordinator.find_worlds
         @worlds.each do |w|
-          steps = world.get_execution_items(w.data['id'], nil, 5).value!.values.reduce(:+) || 0
-          w.data.update(:execution_items => steps)
+          hash = world.get_execution_items(w.data['id'], nil, 5).value!
+          hash[:execution_items] = hash[:execution_items].values.reduce(:+) || 0
+          w.data.update(hash)
         end
         erb :worlds
       end

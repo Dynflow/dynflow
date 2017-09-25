@@ -20,10 +20,15 @@ module Dynflow
       end
 
       describe '#get_execution_items' do
+        let(:base) do
+          { :pool_size => 5, :free_workers => 5, :execution_items => {} }
+        end
+
         it 'retrieves correct execution items count' do
-          world.get_execution_items(world.id, nil, 5).value!.must_equal({})
+          world.get_execution_items(world.id, nil, 5).value!.must_equal(base)
           id = 'something like uuid'
-          world.get_execution_items(world.id, id, 5).value!.must_equal(id => 0)
+          expected = base.merge(:execution_items => { id => 0 })
+          world.get_execution_items(world.id, id, 5).value!.must_equal(expected)
         end
       end
 

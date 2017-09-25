@@ -13,6 +13,7 @@
       <th>Meta</th>
       <th>Executor?</th>
       <th>Execution items</th>
+      <th>Free/Total workers</th>
       <th></th>
     </tr>
   </thead>
@@ -23,6 +24,7 @@
     <td><%= h(world.meta) %></td>
     <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
     <td><%= h(world.data['execution_items'] || 'N/A') %></td>
+    <td><%= world.data.key?('free_workers') ? "#{world.data['free_workers']}/#{world.data[:pool_size]}" : 'N/A' %></td>
     <td>
       <% validation_result = @validation_results[world.id] if @validation_results %>
 
