@@ -3,7 +3,7 @@
 <ul>
   <li><a href="<%= url("/worlds/check") %>" class="postlink">check status</a>: see potentially invalid worlds</li>
   <li><a href="<%= url("/worlds/check?invalidate=true") %>" class="postlink">check and invalidate</a>: invalidate the worlds that don't respond</li>
-  <li><a href="<%= url("/worlds/execution_items") %>" class="postlink">load execution items counts</a>: see counts of execution items per world</li>
+  <li><a href="<%= url("/worlds/execution_status") %>" class="postlink">load execution items counts</a>: see counts of execution items per world</li>
 </ul>
 
 <table class="table">
@@ -23,7 +23,7 @@
     <td><%= h(world.id) %></td>
     <td><%= h(world.meta) %></td>
     <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
-    <td><%= h(world.data['execution_items'] || 'N/A') %></td>
+    <td><%= h(world.data['execution_status'] || 'N/A') %></td>
     <td><%= world.data.key?('free_workers') ? "#{world.data['free_workers']}/#{world.data[:pool_size]}" : 'N/A' %></td>
     <td>
       <% validation_result = @validation_results[world.id] if @validation_results %>

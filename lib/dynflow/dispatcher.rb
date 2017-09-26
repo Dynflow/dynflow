@@ -15,12 +15,12 @@ module Dynflow
         fields! receiver_id: String
       end
 
-      Items = type do
+      Status = type do
         fields! receiver_id: String,
                 execution_plan_id: type { variants String, NilClass }
       end
 
-      variants Event, Execution, Ping, Items
+      variants Event, Execution, Ping, Status
     end
 
     Response = Algebrick.type do
@@ -28,7 +28,7 @@ module Dynflow
                Failed   = type { fields! error: String },
                Done     = atom,
                Pong     = atom,
-               ExecutionItems = type { fields! execution_items: Hash }
+               ExecutionStatus = type { fields! execution_status: Hash }
     end
 
     Envelope = Algebrick.type do

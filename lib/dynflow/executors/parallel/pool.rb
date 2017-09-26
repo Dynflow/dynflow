@@ -23,7 +23,7 @@ module Dynflow
             @jobs.empty?
           end
 
-          def execution_items(execution_plan_id = nil)
+          def execution_status(execution_plan_id = nil)
             source = if execution_plan_id.nil?
                        @jobs
                      else
@@ -71,10 +71,10 @@ module Dynflow
           try_to_terminate
         end
 
-        def execution_items(execution_plan_id = nil)
+        def execution_status(execution_plan_id = nil)
           { :pool_size => @pool_size,
             :free_workers => @free_workers.count,
-            :execution_items => @jobs.execution_items(execution_plan_id) }
+            :execution_status => @jobs.execution_status(execution_plan_id) }
         end
 
         private

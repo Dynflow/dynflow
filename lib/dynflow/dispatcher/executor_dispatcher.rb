@@ -10,7 +10,7 @@ module Dynflow
         match(envelope.message,
               on(Execution) { perform_execution(envelope, envelope.message) },
               on(Event)     { perform_event(envelope, envelope.message) },
-              on(Items)     { get_execution_items(envelope, envelope.message) })
+              on(Status)    { get_execution_status(envelope, envelope.message) })
       end
 
       protected
@@ -64,9 +64,9 @@ module Dynflow
         end
       end
 
-      def get_execution_items(envelope, envelope_message)
-        items = @world.executor.execution_items envelope_message.execution_plan_id
-        respond(envelope, ExecutionItems[execution_items: items])
+      def get_execution_status(envelope, envelope_message)
+        items = @world.executor.execution_status envelope_message.execution_plan_id
+        respond(envelope, ExecutionStatus[execution_status: items])
       end
 
       private

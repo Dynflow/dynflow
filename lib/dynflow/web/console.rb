@@ -37,11 +37,11 @@ module Dynflow
         erb :worlds
       end
 
-      post('/worlds/execution_items') do
-        @worlds = world.coordinator.find_worlds
+      post('/worlds/execution_status') do
+        @worlds = world.coordinator.find_worlds(true)
         @worlds.each do |w|
-          hash = world.get_execution_items(w.data['id'], nil, 5).value!
-          hash[:execution_items] = hash[:execution_items].values.reduce(:+) || 0
+          hash = world.get_execution_status(w.data['id'], nil, 5).value!
+          hash[:execution_status] = hash[:execution_status].values.reduce(:+) || 0
           w.data.update(hash)
         end
         erb :worlds
