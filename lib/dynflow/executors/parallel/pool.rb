@@ -29,7 +29,9 @@ module Dynflow
                      else
                        { execution_plan_id => @jobs.fetch(execution_plan_id, []) }
                      end
-            source.reduce({}) { |acc, cur| acc.update(cur.first => cur.last.count) }
+            source.reduce({}) do |acc, (plan_id, work_items)|
+              acc.update(plan_id => work_items.count)
+            end
           end
 
           private
