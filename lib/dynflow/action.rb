@@ -21,6 +21,7 @@ module Dynflow
 
     require 'dynflow/action/polling'
     require 'dynflow/action/cancellable'
+    require 'dynflow/action/singleton'
     require 'dynflow/action/with_sub_plans'
     require 'dynflow/action/with_bulk_sub_plans'
     require 'dynflow/action/with_polling_sub_plans'
@@ -548,6 +549,16 @@ module Dynflow
 
     def root_action?
       @triggering_action.nil?
+    end
+
+    # An action must be a singleton and have a singleton lock
+    def self.singleton_locked?(world)
+      if self.ancestors.include? ::Dynflow::Action::Singleton
+        lock_class = ::Dynflow::Coordinator::SingletonActionLock
+        !world.coordinator.find_locks(lock_class.unique_filter(self.name)).empty?
+      else
+        false
+      end
     end
   end
   # rubocop:enable Metrics/ClassLength

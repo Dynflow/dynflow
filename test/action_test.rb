@@ -671,6 +671,51 @@ module Dynflow
             clock.pending_pings.count.must_equal 0
           end
         end
+
+        describe ::Dynflow::Action::Singleton do
+          include TestHelpers
+
+          let(:clock) { Dynflow::Testing::ManagedClock.new }
+
+          class SingletonAction < ::Dynflow::Action
+            include ::Dynflow::Action::Singleton
+          end
+
+          it 'can be triggered only once' do
+            # plan1 acquires the lock in plan phase
+            plan1 = world.plan(SingletonAction)
+            plan1.state.must_equal :planned
+            plan1.result.must_equal :pending
+
+            # plan2 tries to acquire the lock in plan phase and fails
+            plan2 = world.plan(SingletonAction)
+            plan2.state.must_equal :stopped
+            plan2.result.must_equal :error
+            plan2.errors.first.message.must_equal 'Action Dynflow::SingletonAction is already active'
+
+            # Simulate some bad things happening
+            plan1.entry_action.send(:singleton_unlock!)
+
+            # plan3 acquires the lock in plan phase
+            plan3 = world.plan(SingletonAction)
+
+            # plan1 tries to relock on run
+            # This should fail because the lock was taken by plan3
+            plan1 = world.execute(plan1.id).wait!.value
+            plan1.state.must_equal :paused
+            plan1.result.must_equal :error
+
+            # plan3 can finish successfully because it holds the lock
+            plan3 = world.execute(plan3.id).wait!.value
+            plan3.state.must_equal :stopped
+            plan3.result.must_equal :success
+
+            # The lock was released when plan3 stopped
+            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                              .unique_filter plan3.entry_action.class.name
+            world.coordinator.find_locks(lock_filter).must_be :empty?
+          end
+        end
       end
     end
   end
