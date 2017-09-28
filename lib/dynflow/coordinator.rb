@@ -224,7 +224,8 @@ module Dynflow
     class SingletonActionLock < Lock
       def initialize(action_class, execution_plan_id)
         super
-        @data.merge!(owner_id: "execution-plan:#{execution_plan_id}", execution_plan_id: execution_plan_id)
+        @data[:owner_id] = "execution-plan:#{execution_plan_id}"
+        @data[:execution_plan_id] = execution_plan_id
         @data[:id] = self.class.lock_id(action_class)
       end
 

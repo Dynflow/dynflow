@@ -5,7 +5,7 @@ module Dynflow
         singleton_lock!
         plan_self(*args)
       end
-      
+
       def run(event = nil)
         validate_singleton_lock!
       end
