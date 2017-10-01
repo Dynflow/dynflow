@@ -681,6 +681,17 @@ module Dynflow
             include ::Dynflow::Action::Singleton
           end
 
+          class BadAction < SingletonAction
+            def plan(ignore_locks = false)
+              singleton_lock! unless ignore_locks
+              plan_self :ignore_locks => ignore_locks
+            end
+
+            def run
+              validate_singleton_lock! unless input[:ignore_locks]
+            end
+          end
+
           it 'can be triggered only once' do
             # plan1 acquires the lock in plan phase
             plan1 = world.plan(SingletonAction)
@@ -714,6 +725,26 @@ module Dynflow
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
                               .unique_filter plan3.entry_action.class.name
             world.coordinator.find_locks(lock_filter).must_be :empty?
+          end
+
+          it 'cannot be unlocked by another action' do
+            plan1 = world.plan(BadAction, false)
+            plan1.state.must_equal :planned
+            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                              .unique_filter plan1.entry_action.class.name
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+            plan2 = world.plan(BadAction, true)
+            plan2.state.must_equal :planned
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+            plan2 = world.execute(plan2.id).wait!.value
+            plan2.state.must_equal :stopped
+            plan2.result.must_equal :success
+            # The locks didn't get unlocked
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+            plan1 = world.execute(plan1.id).wait!.value
+            plan1.state.must_equal :stopped
+            plan1.result.must_equal :success
+            world.coordinator.find_locks(lock_filter).count.must_equal 0
           end
         end
       end
