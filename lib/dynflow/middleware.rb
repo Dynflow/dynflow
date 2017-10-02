@@ -5,6 +5,7 @@ module Dynflow
     require 'dynflow/middleware/resolver'
     require 'dynflow/middleware/stack'
     require 'dynflow/middleware/common/transaction'
+    require 'dynflow/middleware/common/singleton'
 
     include Algebrick::TypeCheck
 

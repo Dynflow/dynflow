@@ -679,36 +679,96 @@ module Dynflow
 
           class SingletonAction < ::Dynflow::Action
             include ::Dynflow::Action::Singleton
+            middleware.use ::Dynflow::Middleware::Common::Singleton
+          end
+
+          class SingletonActionWithRun < SingletonAction
+            def run; end
+          end
+
+          class SingletonActionWithFinalize < SingletonAction
+            def finalize; end
+          end
+
+          class SuspendedSingletonAction < SingletonAction
+            def run(event = nil)
+              unless output[:suspended]
+                output[:suspended] = true
+                suspend
+              end
+            end
           end
 
           class BadAction < SingletonAction
-            def plan(ignore_locks = false)
-              singleton_lock! unless ignore_locks
-              plan_self :ignore_locks => ignore_locks
+            def plan(break_locks = false)
+              plan_self :break_locks => break_locks
+              singleton_unlock! if break_locks
             end
 
             def run
-              validate_singleton_lock! unless input[:ignore_locks]
+              singleton_unlock! if input[:break_locks]
             end
+          end
+
+          it 'unlocks the locks after #plan if no #run or #finalize' do
+            plan = world.plan(SingletonAction)
+            plan.state.must_equal :planned
+            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                              .unique_filter plan.entry_action.class.name
+            world.coordinator.find_locks(lock_filter).must_be :empty?
+            plan = world.execute(plan.id).wait!.value
+            plan.state.must_equal :stopped
+            plan.result.must_equal :success
+            world.coordinator.find_locks(lock_filter).must_be :empty?
+          end
+
+          it 'unlocks the locks after #finalize' do
+            plan = world.plan(SingletonActionWithFinalize)
+            plan.state.must_equal :planned
+            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                              .unique_filter plan.entry_action.class.name
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+            plan = world.execute(plan.id).wait!.value
+            plan.state.must_equal :stopped
+            plan.result.must_equal :success
+            world.coordinator.find_locks(lock_filter).count.must_equal 0
+          end
+
+          it 'does not unlock when getting suspended' do
+            plan = world.plan(SuspendedSingletonAction)
+            plan.state.must_equal :planned
+            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                              .unique_filter plan.entry_action.class.name
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+            future = world.execute(plan.id)
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.state.must_equal :running
+            plan.result.must_equal :pending
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+            world.event(plan.id, 2, nil)
+            plan = future.wait!.value
+            plan.state.must_equal :stopped
+            plan.result.must_equal :success
+            world.coordinator.find_locks(lock_filter).count.must_equal 0
           end
 
           it 'can be triggered only once' do
             # plan1 acquires the lock in plan phase
-            plan1 = world.plan(SingletonAction)
+            plan1 = world.plan(SingletonActionWithRun)
             plan1.state.must_equal :planned
             plan1.result.must_equal :pending
 
             # plan2 tries to acquire the lock in plan phase and fails
-            plan2 = world.plan(SingletonAction)
+            plan2 = world.plan(SingletonActionWithRun)
             plan2.state.must_equal :stopped
             plan2.result.must_equal :error
-            plan2.errors.first.message.must_equal 'Action Dynflow::SingletonAction is already active'
+            plan2.errors.first.message.must_equal 'Action Dynflow::SingletonActionWithRun is already active'
 
             # Simulate some bad things happening
             plan1.entry_action.send(:singleton_unlock!)
 
             # plan3 acquires the lock in plan phase
-            plan3 = world.plan(SingletonAction)
+            plan3 = world.plan(SingletonActionWithRun)
 
             # plan1 tries to relock on run
             # This should fail because the lock was taken by plan3
@@ -728,23 +788,27 @@ module Dynflow
           end
 
           it 'cannot be unlocked by another action' do
-            plan1 = world.plan(BadAction, false)
+            # plan1 doesn't keep its locks
+            plan1 = world.plan(BadAction, true)
             plan1.state.must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
                               .unique_filter plan1.entry_action.class.name
-            world.coordinator.find_locks(lock_filter).count.must_equal 1
-            plan2 = world.plan(BadAction, true)
+            world.coordinator.find_locks(lock_filter).count.must_equal 0
+            plan2 = world.plan(BadAction, false)
             plan2.state.must_equal :planned
             world.coordinator.find_locks(lock_filter).count.must_equal 1
+
+            # The locks held by plan2 can't be unlocked by plan1
+            plan1.entry_action.singleton_unlock!
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
+
+            plan1 = world.execute(plan1.id).wait!.value
+            plan1.state.must_equal :paused
+            plan1.result.must_equal :error
+
             plan2 = world.execute(plan2.id).wait!.value
             plan2.state.must_equal :stopped
             plan2.result.must_equal :success
-            # The locks didn't get unlocked
-            world.coordinator.find_locks(lock_filter).count.must_equal 1
-            plan1 = world.execute(plan1.id).wait!.value
-            plan1.state.must_equal :stopped
-            plan1.result.must_equal :success
-            world.coordinator.find_locks(lock_filter).count.must_equal 0
           end
         end
       end

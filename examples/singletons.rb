@@ -17,12 +17,11 @@ DESC
 require_relative 'example_helper'
 
 class SingletonExample < Dynflow::Action
+  middleware.use ::Dynflow::Middleware::Common::Singleton
   include Dynflow::Action::Singleton
 
   def run
-    with_valid_singleton_lock do
-      sleep 10
-    end
+    sleep 10
   end
 end
 

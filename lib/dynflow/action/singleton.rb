@@ -1,27 +1,6 @@
 module Dynflow
   class Action
     module Singleton
-      def plan(*args)
-        singleton_lock!
-        plan_self(*args)
-      end
-
-      def run(event = nil)
-        # At the beginning of the run phase, verify we have the lock or fail
-        validate_singleton_lock!
-      end
-
-      def finalize
-        singleton_unlock!
-      end
-
-      private
-
-      def with_valid_singleton_lock
-        validate_singleton_lock!
-        yield
-      end
-
       def validate_singleton_lock!
         singleton_lock! unless holds_singleton_lock?
       end
