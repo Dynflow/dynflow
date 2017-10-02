@@ -741,9 +741,10 @@ module Dynflow
                               .unique_filter plan.entry_action.class.name
             world.coordinator.find_locks(lock_filter).count.must_equal 1
             future = world.execute(plan.id)
-            plan = world.persistence.load_execution_plan(plan.id)
-            plan.state.must_equal :running
-            plan.result.must_equal :pending
+            wait_for do
+              plan = world.persistence.load_execution_plan(plan.id)
+              plan.state == :running && plan.result == :pending
+            end
             world.coordinator.find_locks(lock_filter).count.must_equal 1
             world.event(plan.id, 2, nil)
             plan = future.wait!.value
