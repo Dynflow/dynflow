@@ -4,7 +4,7 @@ module Dynflow
       def plan(*args)
         action.singleton_lock!
         pass(*args)
-        unless action.respond_to?(:run) || action.respond_to?(:finalize)  
+        unless action.respond_to?(:run) || action.respond_to?(:finalize)
           action.singleton_unlock!
         end
       end
