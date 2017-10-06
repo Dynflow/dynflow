@@ -9,7 +9,8 @@ module Dynflow
       def handle_request(envelope)
         match(envelope.message,
               on(Execution) { perform_execution(envelope, envelope.message) },
-              on(Event)     { perform_event(envelope, envelope.message) })
+              on(Event)     { perform_event(envelope, envelope.message) },
+              on(Status)    { get_execution_status(envelope, envelope.message) })
       end
 
       protected
@@ -61,6 +62,11 @@ module Dynflow
         else
           Concurrent.zip(*@current_futures).then { reference.tell(:finish_termination) }
         end
+      end
+
+      def get_execution_status(envelope, envelope_message)
+        items = @world.executor.execution_status envelope_message.execution_plan_id
+        respond(envelope, ExecutionStatus[execution_status: items])
       end
 
       private

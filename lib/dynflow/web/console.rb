@@ -37,6 +37,16 @@ module Dynflow
         erb :worlds
       end
 
+      post('/worlds/execution_status') do
+        @worlds = world.coordinator.find_worlds(true)
+        @worlds.each do |w|
+          hash = world.get_execution_status(w.data['id'], nil, 5).value!
+          hash[:execution_status] = hash[:execution_status].values.reduce(:+) || 0
+          w.data.update(hash)
+        end
+        erb :worlds
+      end
+
       post('/worlds/check') do
         @worlds = world.coordinator.find_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate])

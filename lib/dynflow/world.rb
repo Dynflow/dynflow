@@ -198,6 +198,10 @@ module Dynflow
       publish_request(Dispatcher::Ping[world_id], done, false, timeout)
     end
 
+    def get_execution_status(world_id, execution_plan_id, timeout, done = Concurrent.future)
+      publish_request(Dispatcher::Status[world_id, execution_plan_id], done, false, timeout)
+    end
+
     def publish_request(request, done, wait_for_accepted, timeout = nil)
       accepted = Concurrent.future
       accepted.rescue do |reason|

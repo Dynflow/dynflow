@@ -23,6 +23,17 @@ module Dynflow
             @jobs.empty?
           end
 
+          def execution_status(execution_plan_id = nil)
+            source = if execution_plan_id.nil?
+                       @jobs
+                     else
+                       { execution_plan_id => @jobs.fetch(execution_plan_id, []) }
+                     end
+            source.reduce({}) do |acc, (plan_id, work_items)|
+              acc.update(plan_id => work_items.count)
+            end
+          end
+
           private
 
           def tracked?(work)
@@ -60,6 +71,12 @@ module Dynflow
         def start_termination(*args)
           super
           try_to_terminate
+        end
+
+        def execution_status(execution_plan_id = nil)
+          { :pool_size => @pool_size,
+            :free_workers => @free_workers.count,
+            :execution_status => @jobs.execution_status(execution_plan_id) }
         end
 
         private

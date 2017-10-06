@@ -27,6 +27,10 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def execution_status(execution_plan_id = nil)
+        raise NotImplementedError
+      end
+
       # @return [Concurrent::Edge::Future]
       def initialized
         raise NotImplementedError
