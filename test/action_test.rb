@@ -1,4 +1,5 @@
 require_relative 'test_helper'
+require 'mocha/mini_test'
 
 module Dynflow
   describe 'action' do
@@ -711,15 +712,16 @@ module Dynflow
           end
 
           it 'unlocks the locks after #plan if no #run or #finalize' do
+            SingletonAction.any_instance.tap do |instance|
+              instance.expects(:singleton_lock!)
+              instance.expects(:holds_singleton_lock?).returns(true)
+              instance.expects(:singleton_unlock!)
+            end
             plan = world.plan(SingletonAction)
             plan.state.must_equal :planned
-            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan.entry_action.class.name
-            world.coordinator.find_locks(lock_filter).must_be :empty?
             plan = world.execute(plan.id).wait!.value
             plan.state.must_equal :stopped
             plan.result.must_equal :success
-            world.coordinator.find_locks(lock_filter).must_be :empty?
           end
 
           it 'unlocks the locks after #finalize' do
