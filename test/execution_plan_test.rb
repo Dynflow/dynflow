@@ -341,6 +341,42 @@ module Dynflow
         end
 
       end
+
+      describe 'with singleton actions' do
+        class SingletonAction < ::Dynflow::Action
+          include ::Dynflow::Action::Singleton
+
+          def run
+            if input[:fail]
+              raise "Controlled Failure"
+            end
+          end
+        end
+
+        it 'unlocks the locks on transition to stopped' do
+          plan = world.plan(SingletonAction)
+          plan.state.must_equal :planned
+          lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                          .unique_filter plan.entry_action.class.name
+          world.coordinator.find_locks(lock_filter).count.must_equal 1
+          plan = world.execute(plan.id).wait!.value
+          plan.state.must_equal :stopped
+          plan.result.must_equal :success
+          world.coordinator.find_locks(lock_filter).count.must_equal 0
+        end
+
+        it 'unlocks the locks on transition to paused' do
+          plan = world.plan(SingletonAction, :fail => true)
+          plan.state.must_equal :planned
+          lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                          .unique_filter plan.entry_action.class.name
+          world.coordinator.find_locks(lock_filter).count.must_equal 1
+          plan = world.execute(plan.id).wait!.value
+          plan.state.must_equal :paused
+          plan.result.must_equal :error
+          world.coordinator.find_locks(lock_filter).count.must_equal 0
+        end
+      end
     end
   end
 end

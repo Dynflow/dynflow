@@ -680,7 +680,6 @@ module Dynflow
 
           class SingletonAction < ::Dynflow::Action
             include ::Dynflow::Action::Singleton
-            middleware.use ::Dynflow::Middleware::Common::Singleton
           end
 
           class SingletonActionWithRun < SingletonAction
@@ -712,16 +711,15 @@ module Dynflow
           end
 
           it 'unlocks the locks after #plan if no #run or #finalize' do
-            SingletonAction.any_instance.tap do |instance|
-              instance.expects(:singleton_lock!)
-              instance.expects(:holds_singleton_lock?).returns(true)
-              instance.expects(:singleton_unlock!)
-            end
             plan = world.plan(SingletonAction)
             plan.state.must_equal :planned
+            lock_filter = ::Dynflow::Coordinator::SingletonActionLock
+                            .unique_filter plan.entry_action.class.name
+            world.coordinator.find_locks(lock_filter).count.must_equal 1
             plan = world.execute(plan.id).wait!.value
             plan.state.must_equal :stopped
             plan.result.must_equal :success
+            world.coordinator.find_locks(lock_filter).count.must_equal 0
           end
 
           it 'unlocks the locks after #finalize' do

@@ -303,6 +303,10 @@ module Dynflow
       @serializer
     end
 
+    def holds_singleton_lock?
+      false
+    end
+
     protected
 
     def state=(state)
@@ -555,7 +559,7 @@ module Dynflow
     def self.singleton_locked?(world)
       if self.ancestors.include? ::Dynflow::Action::Singleton
         lock_class = ::Dynflow::Coordinator::SingletonActionLock
-        !world.coordinator.find_locks(lock_class.unique_filter(self.name)).empty?
+        world.coordinator.find_locks(lock_class.unique_filter(self.name)).any?
       else
         false
       end

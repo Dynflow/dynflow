@@ -1,6 +1,10 @@
 module Dynflow
   class Action
     module Singleton
+      def self.included(base)
+        base.middleware.use ::Dynflow::Middleware::Common::Singleton
+      end
+
       def validate_singleton_lock!
         singleton_lock! unless holds_singleton_lock?
       end
