@@ -1304,6 +1304,25 @@ executor is actively working on what execution plan: the executor is
 not allowed to start executing the unless it has successfully acquired
 a lock for it.
 
+### Singleton Actions
+Dynflow has a special module for actions of which there should be only
+one instance active at a time. This module provides a number of methods
+for managing the action's locks as well as a middleware for automatic
+locking.
+
+It works in the following way. The middleware tries to acquire the
+lock for this action, which is owned by the execution plan. If another
+action already holds the lock, it fill fail and the execution plan
+will transition to stopped-error state. Having obtained the lock,
+the action goes through the planning as usually. In run phase, the
+middleware checks if the execution plan still owns the lock for the action.
+If the execution plan holds the lock or there is no lock at all and
+the action manages to acquire it again, the execution proceeds. If the
+lock is held by another execution plan, the current one fails. Unlocking
+can be either done manually from within the action or can be left to the
+execution plan. The execution plan unlocks all locks it holds whenever it
+transitions to paused or stopped state.
+
 ### Thread-pools TODO
 
 -   *how it works now*
