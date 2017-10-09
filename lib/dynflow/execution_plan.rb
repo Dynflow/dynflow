@@ -510,7 +510,11 @@ module Dynflow
     end
 
     def unlock_all_singleton_locks!
-      actions.select(&:holds_singleton_lock?).each(&:singleton_unlock!)
+      filter = { :owner_id => 'execution-plan:' + self.id,
+                 :class => Dynflow::Coordinator::SingletonActionLock.to_s }
+      world.coordinator.find_locks(filter).each do |lock|
+        world.coordinator.release(lock)
+      end
     end
 
     private_class_method :steps_from_hash
