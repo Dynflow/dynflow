@@ -17,7 +17,6 @@ DESC
 require_relative 'example_helper'
 
 class SingletonExample < Dynflow::Action
-  middleware.use ::Dynflow::Middleware::Common::Singleton
   include Dynflow::Action::Singleton
 
   def run
