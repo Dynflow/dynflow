@@ -117,6 +117,9 @@ module Dynflow
         @ended_at       = Time.now
         @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
+        unlock_all_singleton_locks!
+      when :paused
+        unlock_all_singleton_locks!
       else
         # ignore
       end
@@ -254,6 +257,7 @@ module Dynflow
       if @run_flow.size == 1
         @run_flow = @run_flow.sub_flows.first
       end
+
       steps.values.each(&:save)
       update_state(error? ? :stopped : :planned)
     end
@@ -502,6 +506,14 @@ module Dynflow
           hash[step_id.to_i] = step
         end
         hash
+      end
+    end
+
+    def unlock_all_singleton_locks!
+      filter = { :owner_id => 'execution-plan:' + self.id,
+                 :class => Dynflow::Coordinator::SingletonActionLock.to_s }
+      world.coordinator.find_locks(filter).each do |lock|
+        world.coordinator.release(lock)
       end
     end
 

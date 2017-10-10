@@ -303,11 +303,13 @@ module Dynflow
           logger.error "unexpected error when invalidating execution plan #{execution_lock.execution_plan_id}, skipping"
         end
         coordinator.release(execution_lock)
+        coordinator.release_by_owner(execution_lock.execution_plan_id)
         return
       end
       unless plan.valid?
         logger.error "invalid plan #{plan.id}, skipping"
         coordinator.release(execution_lock)
+        coordinator.release_by_owner(execution_lock.execution_plan_id)
         return
       end
       plan.execution_history.add('terminate execution', execution_lock.world_id)

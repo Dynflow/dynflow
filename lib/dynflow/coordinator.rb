@@ -220,6 +220,28 @@ module Dynflow
       end
     end
 
+    # Used when there should be only one execution plan for a given action class
+    class SingletonActionLock < Lock
+      def initialize(action_class, execution_plan_id)
+        super
+        @data[:owner_id] = "execution-plan:#{execution_plan_id}"
+        @data[:execution_plan_id] = execution_plan_id
+        @data[:id] = self.class.lock_id(action_class)
+      end
+
+      def owner_id
+        @data[:execution_plan_id]
+      end
+
+      def self.unique_filter(action_class)
+        { :class => self.name, :id => self.lock_id(action_class) }
+      end
+
+      def self.lock_id(action_class)
+        'singleton-action:' + action_class
+      end
+    end
+
     class ExecutionLock < LockByWorld
       def initialize(world, execution_plan_id, client_world_id, request_id)
         super(world)
