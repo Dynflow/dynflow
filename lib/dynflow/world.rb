@@ -61,6 +61,7 @@ module Dynflow
       end
       self.auto_execute if @config.auto_execute
       @delayed_executor.start if @delayed_executor
+      announce if config_for_world.announce
     end
 
     def before_termination(&block)
@@ -431,6 +432,13 @@ module Dynflow
         rescue => e
           logger.error e
         end
+      end
+    end
+
+    def announce
+      coordinator.find_worlds(false).each do |world|
+        # Ping all the other worlds
+        ping(world.id, self.validity_check_timeout) unless world.id == self.id
       end
     end
 

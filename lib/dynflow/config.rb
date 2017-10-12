@@ -113,6 +113,10 @@ module Dynflow
       true
     end
 
+    config_attr :announce, Algebrick::Types::Boolean do
+      true
+    end
+
     config_attr :auto_validity_check, Algebrick::Types::Boolean do |world, config|
       !!config.executor
     end

@@ -26,16 +26,35 @@ module Dynflow
         end
       end
 
+      class PingCache
+        def initialize(age = 10)
+          @cache   = {}
+          @max_age = age
+        end
+
+        def add_record(id)
+          @cache[id] = Time.now
+        end
+
+        def fresh_record?(id)
+          @cache[id] && @cache[id] >= (Time.now - @max_age)
+        end
+      end
+
+      attr_reader :ping_cache
       def initialize(world)
         @world            = Type! world, World
         @last_id          = 0
         @tracked_requests = {}
         @terminated       = nil
+        @ping_cache       = PingCache.new
       end
 
       def publish_request(future, request, timeout)
-        track_request(future, request, timeout) do |tracked_request|
-          dispatch_request(request, @world.id, tracked_request.id)
+        with_ping_request_caching(request, future) do
+          track_request(future, request, timeout) do |tracked_request|
+            dispatch_request(request, @world.id, tracked_request.id)
+          end
         end
       end
 
@@ -80,12 +99,21 @@ module Dynflow
               (on ~Failed do |msg|
                  resolve_tracked_request(envelope.request_id, Dynflow::Error.new(msg.error))
                end),
-              (on Done | Pong do
+              (on Done do
+                 resolve_tracked_request(envelope.request_id)
+               end),
+              (on Pong do
+                 add_ping_cache_record(envelope.sender_id)
                  resolve_tracked_request(envelope.request_id)
                end),
               (on ExecutionStatus.(~any) do |steps|
                  @tracked_requests.delete(envelope.request_id).success! steps
                end)
+      end
+
+      def add_ping_cache_record(id)
+        log Logger::DEBUG, "adding ping cache record for #{id}"
+        @ping_cache.add_record id
       end
 
       private
@@ -141,6 +169,14 @@ module Dynflow
         end
       end
 
+      def with_ping_request_caching(request, future)
+        if request.is_a?(Dynflow::Dispatcher::Ping) && @ping_cache.fresh_record?(request.receiver_id)
+          future.success true
+          future
+        else
+          yield
+        end
+      end
     end
   end
 end

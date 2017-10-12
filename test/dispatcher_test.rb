@@ -82,6 +82,21 @@ module Dynflow
             ping_response.wait
             assert ping_response.failed?
           end
+
+          it 'caches the pings and pongs' do
+            ping_response = client_world.ping(executor_world.id, 0.5)
+            ping_response.wait
+            assert ping_response.success?
+            client_cache = client_world.client_dispatcher.ask!(:ping_cache)
+            # Client now has fresh record for executor
+            assert client_cache.fresh_record?(executor_world.id)
+            executor_cache = executor_world.client_dispatcher.ask!(:ping_cache)
+            # Executor now has fresh record for client
+            assert executor_cache.fresh_record?(client_world.id)
+            ping_response = client_world.ping(executor_world.id, 0)
+            ping_response.wait
+            assert ping_response.success?
+          end
         end
       end
 
