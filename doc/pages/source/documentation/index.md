@@ -1323,6 +1323,15 @@ can be either done manually from within the action or can be left to the
 execution plan. The execution plan unlocks all locks it holds whenever it
 transitions to paused or stopped state.
 
+All that is needed to make an action a singleton one is including the module
+into it.
+
+```ruby
+class ExampleSingletonAction < ::Dynflow::Action
+  include ::Dynflow::Action::Singleton
+end
+```
+
 ### Thread-pools TODO
 
 -   *how it works now*
