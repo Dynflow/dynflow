@@ -52,7 +52,7 @@
 
 <div class="tab-content">
   <div class="tab-pane" id="plan">
-    <% if @plan.valid? %>
+    <% if @plan.valid? && @plan.root_plan_step %>
       <%= erb :plan_step, locals: { step: @plan.root_plan_step } %>
     <% else %>
       N/A
