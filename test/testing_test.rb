@@ -166,6 +166,41 @@ module Dynflow
       end
     end
 
+    describe 'in thread executor with unrelated events in clock' do
+      class PollingAction < ::Dynflow::Action
+        def run(event = nil)
+          if output[:suspended].nil?
+            output[:suspended] = true
+            suspend do |action|
+              world.clock.ping(action, 1000, nil)
+            end
+          end
+        end
+      end
+
+      let :world do
+        WorldFactory.create_world(Dynflow::Testing::InThreadWorld)
+      end
+
+      let :execution_plan do
+        world.plan(PollingAction)
+      end
+
+      it 'processes unrelated events' do
+        q = Queue.new
+        20.times { |i| world.clock.ping q, 0.0002, :periodic_check_inbox }
+
+        f = world.execute(execution_plan.id)
+
+        # This deadlocks the test
+        f.wait
+
+        f.value.tap do |plan|
+          plan.state.must_equal :stopped
+        end
+      end
+    end
+
     describe "in thread executor" do
       let :world do
         WorldFactory.create_world(Dynflow::Testing::InThreadWorld)

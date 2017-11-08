@@ -17,13 +17,19 @@ module Dynflow
         @pending_pings.sort!
       end
 
-      def progress
+      def progress(ignored_subjects = [])
         if next_ping = @pending_pings.shift
-          # we are testing an isolated system = we can move in time
-          # without actually waiting
-          @current_time = next_ping.when
-          next_ping.apply
+          if !next_ping.what.respond_to?(:value) || !ignored_subjects.include?(next_ping.what.value)
+            # we are testing an isolated system = we can move in time
+            # without actually waiting
+            @current_time = next_ping.when
+            next_ping.apply
+          end
         end
+      end
+
+      def progress_all(ignored_subjects = [])
+        progress(ignored_subjects) until @pending_pings.empty?
       end
 
       def current_time
