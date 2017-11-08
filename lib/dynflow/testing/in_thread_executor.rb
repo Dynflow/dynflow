@@ -34,7 +34,7 @@ module Dynflow
       end
 
       def clock_tick
-        @world.clock.progress
+        @world.clock.progress_all([:periodic_check_inbox])
       end
 
       def feed_queue(work_items)
