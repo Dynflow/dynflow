@@ -61,8 +61,12 @@ module Dynflow
       5
     end
 
+    config_attr :queues, Hash do |_, config|
+      { :default => { :pool_size => config.pool_size } }
+    end
+
     config_attr :executor, Executors::Abstract, FalseClass do |world, config|
-      Executors::Parallel.new(world, config.pool_size)
+      Executors::Parallel.new(world, config.queues)
     end
 
     config_attr :executor_semaphore, Semaphores::Abstract, FalseClass do |world, config|
@@ -126,8 +130,8 @@ module Dynflow
       Action.all_children
     end
 
-    config_attr :meta do
-      { 'hostname' => Socket.gethostname, 'pid' => Process.pid }
+    config_attr :meta do |world, config|
+      { 'hostname' => Socket.gethostname, 'pid' => Process.pid, :queues => config.queues }
     end
 
     config_attr :backup_deleted_plans, Algebrick::Types::Boolean do
@@ -139,6 +143,10 @@ module Dynflow
     end
 
     def validate(config_for_world)
+      default_queue = config_for_world.queues[:default]
+      if default_queue.nil? || default_queue[:pool_size].to_i <= 0
+        raise Errors::ConfigurationError, "Pool_size for defualt queue not defined"
+      end
       if defined? ::ActiveRecord::Base
         ar_pool_size = ::ActiveRecord::Base.connection_pool.instance_variable_get(:@size)
         if (config_for_world.pool_size / 2.0) > ar_pool_size

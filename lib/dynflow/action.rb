@@ -380,6 +380,11 @@ module Dynflow
       new(hash, world)
     end
 
+    # define what pool should the action be run in
+    def self.queue
+      :default
+    end
+
     private
 
     # DSL for plan phase

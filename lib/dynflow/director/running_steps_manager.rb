@@ -69,7 +69,7 @@ module Dynflow
         end
 
         can_run_event = @events.empty?(step.id)
-        work          = EventWorkItem.new(event.execution_plan_id, step, event)
+        work          = EventWorkItem.new(event.execution_plan_id, step, event, step.queue)
         @events.push(step.id, work)
         next_work_items << work if can_run_event
         next_work_items

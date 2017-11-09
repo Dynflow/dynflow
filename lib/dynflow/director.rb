@@ -19,10 +19,11 @@ module Dynflow
     UnprocessableEvent = Class.new(Dynflow::Error)
 
     class WorkItem
-      attr_reader :execution_plan_id
+      attr_reader :execution_plan_id, :queue
 
-      def initialize(execution_plan_id)
+      def initialize(execution_plan_id, queue)
         @execution_plan_id = execution_plan_id
+        @queue = queue
       end
 
       def execute
@@ -33,8 +34,8 @@ module Dynflow
     class StepWorkItem < WorkItem
       attr_reader :step
 
-      def initialize(execution_plan_id, step)
-        super(execution_plan_id)
+      def initialize(execution_plan_id, step, queue)
+        super(execution_plan_id, queue)
         @step = step
       end
 
@@ -46,8 +47,8 @@ module Dynflow
     class EventWorkItem < StepWorkItem
       attr_reader :event
 
-      def initialize(execution_plan_id, step, event)
-        super(execution_plan_id, step)
+      def initialize(execution_plan_id, step, event, queue)
+        super(execution_plan_id, step, queue)
         @event = event
       end
 
@@ -57,8 +58,8 @@ module Dynflow
     end
 
     class FinalizeWorkItem < WorkItem
-      def initialize(execution_plan_id, sequential_manager)
-        super(execution_plan_id)
+      def initialize(execution_plan_id, sequential_manager, queue)
+        super(execution_plan_id, queue)
         @sequential_manager = sequential_manager
       end
 

@@ -1,5 +1,7 @@
 module Dynflow
   module Errors
+    class ConfigurationError < StandardError; end
+
     class RescueError < StandardError; end
 
     # placeholder in case the deserialized error is no longer available
