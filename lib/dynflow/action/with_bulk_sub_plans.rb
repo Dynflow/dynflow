@@ -71,8 +71,8 @@ module Dynflow
     end
 
     def cancel!(force = false)
-      # Count the not-yet-planned tasks as failed
-      output[:failed_count] += total_count - output[:planned_count]
+      # Count the not-yet-planned tasks as cancelled
+      output[:cancelled_count] = total_count - output[:planned_count]
       if uses_concurrency_control
         # Tell the throttle limiter to cancel the tasks its managing
         world.throttle_limiter.cancel!(execution_plan_id)
@@ -92,8 +92,11 @@ module Dynflow
     end
 
     def can_spawn_next_batch?
-      total_count - output.fetch(:planned_count, 0) > 0
+      remaining_count > 0
     end
 
+    def remaining_count
+      total_count - output[:planned_count] - output[:success_count] - output[:pending_count] - output[:failed_count] - output.fetch(:cancelled_count, 0)
+    end
   end
 end
