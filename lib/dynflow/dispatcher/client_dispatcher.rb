@@ -42,9 +42,9 @@ module Dynflow
           @max_age = age
         end
 
-        def add_record(id)
+        def add_record(id, time = Time.now)
           record = find_world id
-          record.data[:meta].update(:last_seen => self.class.format_time)
+          record.data[:meta].update(:last_seen => self.class.format_time(time))
           @world.coordinator.update_record(record)
         end
 

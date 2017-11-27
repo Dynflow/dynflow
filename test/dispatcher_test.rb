@@ -84,15 +84,24 @@ module Dynflow
           end
 
           it 'caches the pings and pongs' do
+            # Spawn the worlds
+            client_world
+            executor_world
+
+            ping_cache = Dynflow::Dispatcher::ClientDispatcher::PingCache.new(executor_world)
+
+            assert ping_cache.fresh_record?(client_world.id)
+            assert ping_cache.fresh_record?(executor_world.id)
+
+            # Expire the record
+            ping_cache.add_record(executor_world.id, Time.now - 1000)
+
+            refute ping_cache.fresh_record?(executor_world.id)
             ping_response = client_world.ping(executor_world.id, 0.5)
             ping_response.wait
             assert ping_response.success?
-            client_cache = client_world.client_dispatcher.ask!(:ping_cache)
-            # Client now has fresh record for executor
-            assert client_cache.fresh_record?(executor_world.id)
-            executor_cache = executor_world.client_dispatcher.ask!(:ping_cache)
-            # Executor now has fresh record for client
-            assert executor_cache.fresh_record?(client_world.id)
+            assert ping_cache.fresh_record?(executor_world.id)
+
             ping_response = client_world.ping(executor_world.id, 0)
             ping_response.wait
             assert ping_response.success?

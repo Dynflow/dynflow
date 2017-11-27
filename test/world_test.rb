@@ -48,34 +48,6 @@ module Dynflow
           terminated_event.completed?.must_equal true
         end
       end
-
-      describe '#announce' do
-        include TestHelpers
-
-        let(:persistence_adapter) { WorldFactory.persistence_adapter }
-        let(:shared_connector) { Connectors::Direct.new() }
-        let(:connector) { Proc.new { |world| shared_connector.start_listening(world); shared_connector } }
-        let(:announce_world) do
-          create_world(false) { |config| config.announce = true }
-        end
-        let(:world) { create_world(false) }
-
-        it 'announces its availability on creation' do
-          # The test worlds are set not to announce themselves
-          world
-
-          # Force creation of another world
-          announce_world
-
-          # Both world should have each other's records in cache when the messages get delivered
-          wait_for do
-            cache = world.client_dispatcher.ask!(:ping_cache)
-            announce_cache = announce_world.client_dispatcher.ask!(:ping_cache)
-            cache.fresh_record?(announce_world.id) &&
-              announce_cache.fresh_record?(world.id)
-          end
-        end
-      end
     end
   end
 end
