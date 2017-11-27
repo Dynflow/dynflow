@@ -27,7 +27,6 @@ module Dynflow
         match(envelope.message,
               (on Dispatcher::Ping do
                  response_envelope = envelope.build_response_envelope(Dispatcher::Pong, world)
-                 world.client_dispatcher.tell([:add_ping_cache_record, envelope.sender_id])
                  send(response_envelope)
                end),
               (on Dispatcher::Request do

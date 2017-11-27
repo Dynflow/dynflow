@@ -49,6 +49,7 @@ module Dynflow
       @meta['queues']           = @config.queues if @executor
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
+      @meta['last_seen'] = Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new
@@ -61,7 +62,6 @@ module Dynflow
       end
       self.auto_execute if @config.auto_execute
       @delayed_executor.start if @delayed_executor
-      announce if config_for_world.announce
     end
 
     def before_termination(&block)
@@ -432,13 +432,6 @@ module Dynflow
         rescue => e
           logger.error e
         end
-      end
-    end
-
-    def announce
-      coordinator.find_worlds(false).each do |world|
-        # Ping all the other worlds
-        ping(world.id, self.validity_check_timeout) unless world.id == self.id
       end
     end
 

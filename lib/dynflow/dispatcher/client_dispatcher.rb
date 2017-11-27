@@ -27,17 +27,39 @@ module Dynflow
       end
 
       class PingCache
-        def initialize(age = 10)
-          @cache   = {}
+        TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'
+
+        def self.format_time(time = Time.now)
+          time.strftime(TIME_FORMAT)
+        end
+
+        def self.load_time(time)
+          Time.strptime(time, TIME_FORMAT)
+        end
+
+        def initialize(world, age = 10)
+          @world = world
           @max_age = age
         end
 
         def add_record(id)
-          @cache[id] = Time.now
+          record = find_world id
+          record.data[:meta].update(:last_seen => self.class.format_time)
+          @world.coordinator.update_record(record)
         end
 
         def fresh_record?(id)
-          @cache[id] && @cache[id] >= (Time.now - @max_age)
+          record = find_world(id)
+          return false if record.nil?
+          time = self.class.load_time(record.data[:meta][:last_seen])
+          time >= Time.now - @max_age
+        end
+
+        private
+
+        def find_world(id)
+          @world.coordinator.find_records(:id => id,
+                                          :class => ['Dynflow::Coordinator::ExecutorWorld', 'Dynflow::Coordinator::ClientWorld']).first
         end
       end
 
@@ -47,7 +69,7 @@ module Dynflow
         @last_id          = 0
         @tracked_requests = {}
         @terminated       = nil
-        @ping_cache       = PingCache.new
+        @ping_cache       = PingCache.new world
       end
 
       def publish_request(future, request, timeout)
