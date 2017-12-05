@@ -39,6 +39,12 @@ module Dynflow
         raise NotImplementedError
       end
 
+      # @option options [Hash{ String => Object,Array<object> }] filters hash represents
+      #   set of allowed values for a given key representing column
+      def find_execution_plan_counts(options = {})
+        filter(:execution_plan, options[:filters]).count
+      end
+
       # @param filters [Hash{ String => Object }] filters to determine
       #   what to delete
       # @param batch_size the size of the chunks to iterate over when
