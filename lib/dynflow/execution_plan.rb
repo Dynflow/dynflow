@@ -162,6 +162,10 @@ module Dynflow
       persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => self.id })
     end
 
+    def sub_plans_count
+      persistence.find_execution_plan_counts(filters: { 'caller_execution_plan_id' => self.id })
+    end
+
     def rescue_plan_id
       case rescue_strategy
       when Action::Rescue::Pause

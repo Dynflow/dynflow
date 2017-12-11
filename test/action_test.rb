@@ -433,6 +433,7 @@ module Dynflow
       specify "the sub-plan stores the information about its parent" do
         sub_plans = execution_plan.sub_plans
         sub_plans.size.must_equal 2
+        execution_plan.sub_plans_count.must_equal 2
         sub_plans.each { |sub_plan| sub_plan.caller_execution_plan_id.must_equal execution_plan.id }
       end
 
