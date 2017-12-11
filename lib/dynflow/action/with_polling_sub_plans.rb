@@ -64,7 +64,7 @@ module Dynflow
       failed     = sub_plans('state' => %w(paused stopped), 'result' => 'error').count
       success    = sub_plans('state' => 'stopped', 'result' => 'success').count
       output.update(:total_count   => total - output.fetch(:resumed_count, 0),
-                    :pending_count => 0,
+                    :pending_count => total - failed - success,
                     :failed_count  => failed - output.fetch(:resumed_count, 0),
                     :success_count => success)
     end
