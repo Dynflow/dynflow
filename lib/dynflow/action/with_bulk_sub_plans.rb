@@ -96,7 +96,7 @@ module Dynflow
     end
 
     def remaining_count
-      total_count - output[:planned_count] - output[:success_count] - output[:pending_count] - output[:failed_count] - output.fetch(:cancelled_count, 0)
+      total_count - output.fetch(:cancelled_count, 0) - output[:planned_count]
     end
   end
 end
