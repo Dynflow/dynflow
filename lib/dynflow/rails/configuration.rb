@@ -118,6 +118,7 @@ module Dynflow
 
       def default_sequel_adapter_options
         db_config            = ::ActiveRecord::Base.configurations[::Rails.env].dup
+        db_config['adapter'] = db_config['adapter'].gsub(/_?makara_?/, '')
         db_config['adapter'] = 'postgres' if db_config['adapter'] == 'postgresql'
         db_config['max_connections'] = db_pool_size if increase_db_pool_size?
 
