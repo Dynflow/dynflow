@@ -60,6 +60,10 @@ module Dynflow
         data_set.all.map { |record| load_data(record) }
       end
 
+      def find_execution_plan_counts(options = {})
+        filter(:execution_plan, table(:execution_plan), options[:filters]).count
+      end
+
       def delete_execution_plans(filters, batch_size = 1000, backup_dir = nil)
         count = 0
         filter(:execution_plan, table(:execution_plan), filters).each_slice(batch_size) do |plans|

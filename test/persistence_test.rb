@@ -123,6 +123,45 @@ module Dynflow
           end
         end
 
+        describe '#def find_execution_plan_counts' do
+          before do
+            # the tests expect clean field
+            adapter.delete_execution_plans({})
+          end
+
+          it 'supports filtering' do
+            prepare_plans
+            if adapter.ordering_by.include?('state')
+              loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'] })
+              loaded_plans.must_equal 1
+              loaded_plans = adapter.find_execution_plan_counts(filters: { state: ['paused'] })
+              loaded_plans.must_equal 3
+
+              loaded_plans = adapter.find_execution_plan_counts(filters: { state: ['stopped'] })
+              loaded_plans.must_equal 1
+
+              loaded_plans = adapter.find_execution_plan_counts(filters: { state: [] })
+              loaded_plans.must_equal 0
+
+              loaded_plans = adapter.find_execution_plan_counts(filters: { state: ['stopped', 'paused'] })
+              loaded_plans.must_equal 4
+
+              loaded_plans = adapter.find_execution_plan_counts(filters: { 'state' => ['stopped', 'paused'] })
+              loaded_plans.must_equal 4
+
+              loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'], :delayed => true })
+              loaded_plans.must_equal 0
+
+              adapter.save_delayed_plan('plan1',
+                                        :execution_plan_uuid => 'plan1',
+                                        :start_at => format_time(Time.now + 60),
+                                        :start_before => format_time(Time.now - 60))
+              loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'], :delayed => true })
+              loaded_plans.must_equal 1
+            end
+          end
+        end
+
         describe '#load_execution_plan and #save_execution_plan' do
           it 'serializes/deserializes the plan data' do
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError

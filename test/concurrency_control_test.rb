@@ -143,7 +143,7 @@ module Dynflow
         world.stub :clock, klok do
           plan = world.plan(ParentAction, total, 0)
           triggered = world.execute(plan.id)
-          wait_for { plan.sub_plans.count == total }
+          wait_for { plan.sub_plans_count == total }
           world.event(plan.id, plan.steps.values.last.id, ::Dynflow::Action::Cancellable::Cancel)
           wait_for { triggered.completed? }
           plan.entry_action.output[:failed_count].must_equal total
@@ -158,21 +158,21 @@ module Dynflow
 
           plan = world.plan(ParentAction, total, 1, 10)
           future = world.execute(plan.id)
-          wait_for { plan.sub_plans.count == total }
+          wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 10 tasks over 10 seconds, one task at a time, 1 task every second
           get_interval.call(plan).must_equal 1.0
 
           plan = world.plan(ParentAction, total, 4, 10)
           world.execute(plan.id)
-          wait_for { plan.sub_plans.count == total }
+          wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 10 tasks over 10 seconds, four tasks at a time, 1 task every 0.25 second
           get_interval.call(plan).must_equal 0.25
 
           plan = world.plan(ParentAction, total, nil, 10)
           world.execute(plan.id)
-          wait_for { plan.sub_plans.count == total }
+          wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 1o tasks over 10 seconds, one task at a time (default), 1 task every second
           get_interval.call(plan).must_equal 1.0
@@ -187,7 +187,7 @@ module Dynflow
           plan = world.plan(ParentAction, total, level, time_span)
           start_time = klok.current_time
           world.execute(plan.id)
-          wait_for { plan.sub_plans.count == total }
+          wait_for { plan.sub_plans_count == total }
           wait_for { plan.sub_plans.select { |sub| successful? sub }.count == level }
           finished = 2
           check_step(plan, total, finished)
@@ -224,7 +224,7 @@ module Dynflow
           total = 10
           plan = world.plan(ParentAction, total, level, time_span, true)
           future = world.execute(plan.id)
-          wait_for { plan.sub_plans.count == total && plan.sub_plans.all? { |sub| sub.result == :pending } }
+          wait_for { plan.sub_plans_count == total && plan.sub_plans.all? { |sub| sub.result == :pending } }
           planned, running = plan.sub_plans.partition { |sub| planned? sub }
           planned.count.must_equal total - level
           running.count.must_equal level

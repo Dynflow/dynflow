@@ -162,6 +162,12 @@ module Dynflow
       end
     end
 
+    def sub_plans_count(filter = {})
+      filters = { 'caller_execution_plan_id' => execution_plan_id,
+                  'caller_action_id' => self.id }
+      world.persistence.find_execution_plan_counts(filters: filters.merge(filter))
+    end
+
     def notify_on_finish(plans)
       suspend do |suspended_action|
         plans.each do |plan|

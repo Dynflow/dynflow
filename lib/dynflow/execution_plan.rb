@@ -1,7 +1,7 @@
 require 'securerandom'
 
 module Dynflow
-
+  # rubocop:disable Metrics/ClassLength
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
 
@@ -160,6 +160,10 @@ module Dynflow
 
     def sub_plans
       persistence.find_execution_plans(filters: { 'caller_execution_plan_id' => self.id })
+    end
+
+    def sub_plans_count
+      persistence.find_execution_plan_counts(filters: { 'caller_execution_plan_id' => self.id })
     end
 
     def rescue_plan_id
@@ -519,4 +523,5 @@ module Dynflow
 
     private_class_method :steps_from_hash
   end
+  # rubocop:enable Metrics/ClassLength
 end

@@ -92,7 +92,7 @@ module Dynflow
     end
 
     def can_spawn_next_batch?
-      total_count - output[:success_count] - output[:pending_count] - output[:failed_count] > 0
+      total_count - output.fetch(:planned_count, 0) > 0
     end
 
   end

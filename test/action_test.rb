@@ -433,6 +433,7 @@ module Dynflow
       specify "the sub-plan stores the information about its parent" do
         sub_plans = execution_plan.sub_plans
         sub_plans.size.must_equal 2
+        execution_plan.sub_plans_count.must_equal 2
         sub_plans.each { |sub_plan| sub_plan.caller_execution_plan_id.must_equal execution_plan.id }
       end
 
@@ -505,7 +506,7 @@ module Dynflow
 
               wait_for do # Waiting for the sub plans to be spawned
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
-                polling_plan.sub_plans.count == total
+                polling_plan.sub_plans_count == total
               end
 
               # Moving the clock to make the parent check on sub plans
@@ -522,7 +523,7 @@ module Dynflow
               world.execute(polling_plan.id) # The actual resume
 
               wait_for do # Waiting for new generation of sub plans to be spawned
-                polling_plan.sub_plans.count == 2 * total
+                polling_plan.sub_plans_count == 2 * total
               end
 
               # Move the clock again
@@ -545,7 +546,7 @@ module Dynflow
 
               wait_for do # Waiting for the sub plans to be spawned
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
-                polling_plan.sub_plans.count == total &&
+                polling_plan.sub_plans_count == total &&
                   polling_plan.sub_plans.all? { |sub| sub.state == :paused }
               end
 
@@ -629,7 +630,7 @@ module Dynflow
             world.execute(plan.id)
             clock.pending_pings.count.must_equal 0
             wait_for do
-              plan.sub_plans.count == total &&
+              plan.sub_plans_count == total &&
                 plan.sub_plans.all? { |sub| sub.result == :success }
             end
             clock.pending_pings.count.must_equal 1
@@ -658,7 +659,7 @@ module Dynflow
 
             # Wait for the sub plans to finish
             wait_for do
-              plan.sub_plans.count == total &&
+              plan.sub_plans_count == total &&
                 plan.sub_plans.all? { |sub| sub.result == :success }
             end
 
