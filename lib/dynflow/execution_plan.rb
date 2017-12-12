@@ -1,7 +1,7 @@
 require 'securerandom'
 
 module Dynflow
-
+  # rubocop:disable Metrics/ClassLength
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
 
@@ -523,4 +523,5 @@ module Dynflow
 
     private_class_method :steps_from_hash
   end
+  # rubocop:enable Metrics/ClassLength
 end

@@ -93,6 +93,19 @@ module Dynflow
         action.output[:success_count].must_equal action.total_count
       end
 
+      it 'is controlled only by total_count and output[:planned_count]' do
+        plan = world.plan(ParentAction, 10)
+        future = world.execute plan.id
+        wait_for { future.completed? }
+        action = plan.entry_action
+        action.send(:can_spawn_next_batch?).must_equal false
+        action.current_batch.must_be :empty?
+        action.output[:pending_count] = 0
+        action.output[:success_count] = 5
+        action.send(:can_spawn_next_batch?).must_equal false
+        action.current_batch.must_be :empty?
+      end
+
     end
   end
 end
