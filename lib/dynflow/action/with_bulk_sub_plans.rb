@@ -30,6 +30,7 @@ module Dynflow
 
     def initiate
       output[:planned_count] = 0
+      output[:cancelled_count] = 0
       output[:total_count]   = total_count
       super
     end
@@ -58,7 +59,8 @@ module Dynflow
     # The same logic as in Action::WithSubPlans, but calculated using the expected total count
     def run_progress
       if counts_set?
-        (output[:success_count] + output[:failed_count]).to_f / total_count
+        sum = output.values_at(:success_count, :cancelled_count, :failed_count).reduce(:+)
+        sum.to_f / total_count
       else
         0.1
       end
@@ -96,7 +98,7 @@ module Dynflow
     end
 
     def remaining_count
-      total_count - output.fetch(:cancelled_count, 0) - output[:planned_count]
+      total_count - output[:cancelled_count] - output[:planned_count]
     end
   end
 end
