@@ -31,7 +31,7 @@ module Dynflow
     def initiate
       output[:planned_count] = 0
       output[:cancelled_count] = 0
-      output[:total_count]   = total_count
+      output[:total_count] = total_count
       super
     end
 
