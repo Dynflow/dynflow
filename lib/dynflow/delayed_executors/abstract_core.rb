@@ -38,7 +38,7 @@ module Dynflow
       def with_error_handling(error_retval = nil, &block)
         block.call
       rescue Exception => e
-        @logger.fatal e.backtrace.join("\n")
+        @logger.warn e.backtrace.join("\n")
         error_retval
       end
 
