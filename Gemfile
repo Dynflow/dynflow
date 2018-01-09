@@ -3,7 +3,7 @@ source 'https://rubygems.org'
 gemspec
 
 group :concurrent_ruby_ext do
-  gem 'concurrent-ruby-ext', '= 1.0.3'
+  gem 'concurrent-ruby-ext', '= 1.0.5'
 end
 
 group :pry do
