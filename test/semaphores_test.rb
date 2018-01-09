@@ -61,7 +61,7 @@ module Dynflow
     end
 
     describe ::Dynflow::Semaphores::Aggregating do
-      let(:klass) { ::Dynflow::Semaphores::Aggregating }
+      let(:semaphore_class) { ::Dynflow::Semaphores::Aggregating }
       let(:child_class) { ::Dynflow::Semaphores::Stateful }
       let(:children) do
         {
@@ -77,7 +77,7 @@ module Dynflow
       end
 
       it 'can be used as counter' do
-        semaphore = klass.new(children)
+        semaphore = semaphore_class.new(children)
         assert_semaphore_state semaphore, 3, 2
         semaphore.get.must_equal 1
         assert_semaphore_state semaphore, 2, 1
