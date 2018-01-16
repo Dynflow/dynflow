@@ -55,6 +55,11 @@ module Dynflow
                         :args_serializer     => @args_serializer.class.name
     end
 
+    def args
+      @args_serializer.perform_deserialization! if @args_serializer.args.nil?
+      @args_serializer.args
+    end
+
     # @api private
     def self.new_from_hash(world, hash, *args)
       serializer = Utils.constantize(hash[:args_serializer]).new(nil, hash[:serialized_args])
