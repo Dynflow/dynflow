@@ -10,6 +10,7 @@ module Dynflow
       describe '#meta' do
         it 'by default informs about the hostname and the pid running the world' do
           registered_world = world.coordinator.find_worlds(false, id: world.id).first
+          registered_world.meta.delete('last_seen')
           registered_world.meta.must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid,
                                            'queues' => { 'default' => { 'pool_size' => 5 },
                                                          'slow' => { 'pool_size' => 1 }})
