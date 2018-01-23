@@ -26,28 +26,55 @@ module Dynflow
         end
       end
 
+      # Class used for reducing the number of sent Pings among worlds.
+      # World's coordinator record include the time when was the world
+      # seen for the last time. This class can be used to query this
+      # information and determine whether the record is "fresh enough"
+      # or whether the Ping really needs to be sent.
       class PingCache
-        TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'
+        # Format string used for formating and parsing times
+        TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'.freeze
+
+        # Maximum age of a record in seconds, older records are not considered fresh
         PING_CACHE_AGE = 10
 
+        # Formats time into a string
+        #
+        # @param time [Time] the time to format
+        # @return [String] the formatted time
         def self.format_time(time = Time.now)
           time.strftime(TIME_FORMAT)
         end
 
+        # Parses time from a string
+        #
+        # @param time [String] the time string to parse
+        # @return [Time] the parsed time
         def self.load_time(time)
           Time.strptime(time, TIME_FORMAT)
         end
 
+        # @param world [World] the world to which the PingCache belongs
         def initialize(world)
           @world = world
         end
 
+        # Records when was the world seen into the world's coordinator record
+        #
+        # @param id [String] Id of the world to be added to the cache
+        # @param time [Time] Time when was the world last seen
         def add_record(id, time = Time.now)
           record = find_world id
           record.data[:meta].update(:last_seen => self.class.format_time(time))
           @world.coordinator.update_record(record)
         end
 
+        # Loads the coordinator record from the database and checks whether the world
+        # was last seen within the time limit
+        #
+        # @param id [String] Id of the world to be checked
+        # @return [TrueClass] if the world was last seen within the limit
+        # @return [FalseClass] if the world was last seen after the limit passed
         def fresh_record?(id)
           record = find_world(id)
           return false if record.nil?
@@ -133,6 +160,10 @@ module Dynflow
                end)
       end
 
+      # Records when was the world with provided id last seen using a PingCache
+      #
+      # @param id [String] Id of the world
+      # @see PingCache#add_record
       def add_ping_cache_record(id)
         log Logger::DEBUG, "adding ping cache record for #{id}"
         @ping_cache.add_record id
@@ -191,6 +222,13 @@ module Dynflow
         end
       end
 
+      # Checks whether the request is a Ping and if the receiver of the request has a fresh ping
+      # cache record, in which case fulfills the future without actually sending the ping. Otherwise
+      # the Ping is sent.
+      #
+      # @param request [Dynflow::Dispatcher::Request] the request to send
+      # @param future [Concurrent::Future] the future to fulfill if the world was seen recently
+      # @return [Concurrent::Future] the future tracking the Ping
       def with_ping_request_caching(request, future)
         if request.is_a?(Dynflow::Dispatcher::Ping) && @ping_cache.fresh_record?(request.receiver_id)
           future.success true
