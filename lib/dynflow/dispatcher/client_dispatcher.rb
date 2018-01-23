@@ -28,6 +28,7 @@ module Dynflow
 
       class PingCache
         TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'
+        PING_CACHE_AGE = 10
 
         def self.format_time(time = Time.now)
           time.strftime(TIME_FORMAT)
@@ -37,9 +38,8 @@ module Dynflow
           Time.strptime(time, TIME_FORMAT)
         end
 
-        def initialize(world, age = 10)
+        def initialize(world)
           @world = world
-          @max_age = age
         end
 
         def add_record(id, time = Time.now)
@@ -52,7 +52,7 @@ module Dynflow
           record = find_world(id)
           return false if record.nil?
           time = self.class.load_time(record.data[:meta][:last_seen])
-          time >= Time.now - @max_age
+          time >= Time.now - PING_CACHE_AGE
         end
 
         private
