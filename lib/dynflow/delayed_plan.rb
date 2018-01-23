@@ -37,7 +37,10 @@ module Dynflow
     end
 
     def cancel
-      error("Delayed task cancelled", "Delayed task cancelled")
+      execution_plan.root_plan_step.state = :cancelled
+      execution_plan.root_plan_step.save
+      execution_plan.execution_history.add "Delayed task cancelled", @world.id
+      execution_plan.update_state :stopped
       @world.persistence.delete_delayed_plans(:execution_plan_uuid => @execution_plan_uuid)
       return true
     end
