@@ -54,7 +54,7 @@ module Dynflow
     require 'dynflow/execution_plan/hooks'
 
     def self.results
-      @results ||= [:pending, :success, :warning, :error]
+      @results ||= [:pending, :success, :warning, :error, :cancelled]
     end
 
     def self.state_transitions
@@ -148,7 +148,9 @@ module Dynflow
 
     def result
       all_steps = steps.values
-      if all_steps.any? { |step| step.state == :error }
+      if all_steps.any? { |step| step.state == :cancelled }
+        return :cancelled
+      elsif all_steps.any? { |step| step.state == :error }
         return :error
       elsif all_steps.any? { |step| [:skipping, :skipped].include?(step.state) }
         return :warning

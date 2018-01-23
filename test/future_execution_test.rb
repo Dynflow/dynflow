@@ -64,7 +64,7 @@ module Dynflow
           execution_plan.cancel.each(&:wait)
           execution_plan = world.persistence.load_execution_plan(self.execution_plan.id)
           execution_plan.state.must_equal :stopped
-          execution_plan.result.must_equal :error
+          execution_plan.result.must_equal :cancelled
           assert_nil execution_plan.delay_record
         end
 

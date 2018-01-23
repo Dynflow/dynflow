@@ -59,12 +59,13 @@ module Dynflow
       end
 
       def self.state_transitions
-        @state_transitions ||= { scheduling: [:pending, :error],
-                                 pending:    [:running, :error],
-                                 running:    [:success, :error],
+        @state_transitions ||= { scheduling: [:pending, :error, :cancelled],
+                                 pending:    [:running, :error, :cancelled],
+                                 running:    [:success, :error, :cancelled],
                                  success:    [],
                                  suspended:  [],
                                  skipped:    [],
+                                 cancelled:  [],
                                  error:      [] }
       end
 

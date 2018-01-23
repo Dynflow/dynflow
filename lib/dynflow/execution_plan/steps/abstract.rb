@@ -68,7 +68,7 @@ module Dynflow
       end
 
       def self.states
-        @states ||= [:scheduling, :pending, :running, :success, :suspended, :skipping, :skipped, :error]
+        @states ||= [:scheduling, :pending, :running, :success, :suspended, :skipping, :skipped, :error, :cancelled]
       end
 
       def execute(*args)

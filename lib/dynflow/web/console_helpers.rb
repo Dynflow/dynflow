@@ -131,6 +131,8 @@ module Dynflow
           "success"
         when :error
           "danger"
+        when :cancelled
+          "warning"
         else
           "default"
         end
