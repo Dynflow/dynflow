@@ -55,6 +55,9 @@ module Dynflow
                         :args_serializer     => @args_serializer.class.name
     end
 
+    # Retrieves arguments from the serializer
+    #
+    # @return [Array] array of the original arguments
     def args
       @args_serializer.perform_deserialization! if @args_serializer.args.nil?
       @args_serializer.args
