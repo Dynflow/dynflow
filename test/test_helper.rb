@@ -2,6 +2,7 @@ require 'bundler/setup'
 require 'minitest/reporters'
 require 'minitest/autorun'
 require 'minitest/spec'
+ENV['MT_NO_PLUGINS'] = 'true'
 
 MiniTest::Reporters.use! if ENV['RM_INFO']
 
