@@ -89,6 +89,10 @@ module Dynflow
       def meta
         @data[:meta]
       end
+
+      def executor?
+        raise NotImplementedError
+      end
     end
 
     class ExecutorWorld < WorldRecord
@@ -105,9 +109,16 @@ module Dynflow
         Type! value, Algebrick::Types::Boolean
         @data[:active] = value
       end
+
+      def executor?
+        true
+      end
     end
 
     class ClientWorld < WorldRecord
+      def executor?
+        false
+      end
     end
 
     class Lock < Record

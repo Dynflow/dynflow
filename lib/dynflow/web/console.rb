@@ -33,28 +33,30 @@ module Dynflow
       end
 
       get('/worlds') do
-        @worlds = world.coordinator.find_worlds
+        load_worlds
         erb :worlds
       end
 
       post('/worlds/execution_status') do
-        @worlds = world.coordinator.find_worlds(true)
-        @worlds.each do |w|
+        load_worlds
+        @executors.each do |w|
           hash = world.get_execution_status(w.data['id'], nil, 5).value!
-          hash[:execution_status] = hash[:execution_status].values.reduce(:+) || 0
-          w.data.update(hash)
+          hash.each do |_queue_name, info|
+            info[:queue_size] = info[:execution_status].values.reduce(:+) || 0
+          end
+          w.data.update(:status => hash)
         end
         erb :worlds
       end
 
       post('/worlds/check') do
-        @worlds = world.coordinator.find_worlds
+        load_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate])
         erb :worlds
       end
 
       post('/worlds/:id/check') do |id|
-        @worlds = world.coordinator.find_worlds
+        load_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate], id: params[:id])
         erb :worlds
       end

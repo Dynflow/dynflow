@@ -22,13 +22,14 @@ module Dynflow
 
       describe '#get_execution_status' do
         let(:base) do
-          { :pool_size => 5, :free_workers => 5, :execution_status => {} }
+          { :default => { :pool_size => 5, :free_workers => 5, :execution_status => {} }}
         end
 
         it 'retrieves correct execution items count' do
           world.get_execution_status(world.id, nil, 5).value!.must_equal(base)
           id = 'something like uuid'
-          expected = base.merge(:execution_status => { id => 0 })
+          expected = base.dup
+          expected[:default].merge!(:execution_status => { id => 0 })
           world.get_execution_status(world.id, id, 5).value!.must_equal(expected)
         end
       end

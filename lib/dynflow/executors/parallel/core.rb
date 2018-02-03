@@ -73,7 +73,9 @@ module Dynflow
         end
 
         def execution_status(execution_plan_id = nil)
-          @pool.ask!([:execution_status, execution_plan_id])
+          @pools.each_with_object({}) do |(pool_name, pool), hash|
+            hash[pool_name] = pool.ask!([:execution_status, execution_plan_id])
+          end
         end
 
         private
