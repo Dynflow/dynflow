@@ -93,7 +93,7 @@ module Dynflow
         return if execution_plan.finalize_flow.empty?
         raise 'finalize phase already started' if @finalize_manager
         @finalize_manager = SequentialManager.new(@world, execution_plan)
-        [FinalizeWorkItem.new(execution_plan.id, @finalize_manager, execution_plan.steps.values.first.queue)]
+        [FinalizeWorkItem.new(execution_plan.id, @finalize_manager, execution_plan.finalize_steps.first.queue)]
       end
 
       def finish

@@ -5,7 +5,7 @@ module Dynflow
       include Stateful
 
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
-                  :ended_at, :execution_time, :real_time
+                  :ended_at, :execution_time, :real_time, :queue
       attr_accessor :error
 
       def initialize(execution_plan_id,
@@ -20,7 +20,8 @@ module Dynflow
                      execution_time  = 0.0,
                      real_time       = 0.0,
                      progress_done   = nil,
-                     progress_weight = nil)
+                     progress_weight = nil,
+                     queue           = nil)
 
         @id                = id || raise(ArgumentError, 'missing id')
         @execution_plan_id = Type! execution_plan_id, String
@@ -33,6 +34,8 @@ module Dynflow
 
         @progress_done     = Type! progress_done, Numeric, NilClass
         @progress_weight   = Type! progress_weight, Numeric, NilClass
+
+        @queue             = Type! queue, Symbol, NilClass
 
         self.state = state.to_sym
 
@@ -75,6 +78,7 @@ module Dynflow
       end
 
       def to_hash
+<<<<<<< HEAD
         recursive_to_hash execution_plan_uuid: execution_plan_id,
                           id:                  id,
                           state:               state,
@@ -87,7 +91,8 @@ module Dynflow
                           execution_time:      execution_time,
                           real_time:           real_time,
                           progress_done:       progress_done,
-                          progress_weight:     progress_weight
+                          progress_weight:     progress_weight,
+                          queue:               queue
       end
 
       def progress_done
@@ -129,14 +134,14 @@ module Dynflow
       end
 
       def queue
-        action_class.queue
+        @queue
       end
 
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash
-        new execution_plan_id,
+        new(execution_plan_id,
             hash[:id],
             hash[:state],
             Action.constantize(hash[:action_class]),
@@ -148,7 +153,8 @@ module Dynflow
             hash[:execution_time].to_f,
             hash[:real_time].to_f,
             hash[:progress_done].to_f,
-            hash[:progress_weight].to_f
+            hash[:progress_weight].to_f,
+            (hash[:queue] && hash[:queue].to_sym))
       end
 
       private

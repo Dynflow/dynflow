@@ -389,7 +389,7 @@ module Dynflow
 
     def add_run_step(action)
       add_step(Steps::RunStep, action.class, action.id).tap do |step|
-        step.progress_weight = action.run_progress_weight
+        step.update_from_action(action)
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
@@ -397,7 +397,7 @@ module Dynflow
 
     def add_finalize_step(action)
       add_step(Steps::FinalizeStep, action.class, action.id).tap do |step|
-        step.progress_weight = action.finalize_progress_weight
+        step.update_from_action(action)
         finalize_flow << Flows::Atom.new(step.id)
       end
     end
