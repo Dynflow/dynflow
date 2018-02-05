@@ -619,6 +619,7 @@ module Dynflow
 
       describe ::Dynflow::Action::WithPollingSubPlans do
         include TestHelpers
+        include Testing
 
         let(:clock) { Dynflow::Testing::ManagedClock.new }
 
@@ -672,6 +673,11 @@ module Dynflow
             plan.entry_action.output[:poll].must_equal 1
             clock.pending_pings.count.must_equal 0
           end
+        end
+
+        it 'handles empty sub plans when calculating progress' do
+          action = create_and_plan_action(PollingBulkParentAction, :count => 0)
+          action.run_progress.must_equal 0.1
         end
 
         describe ::Dynflow::Action::Singleton do
