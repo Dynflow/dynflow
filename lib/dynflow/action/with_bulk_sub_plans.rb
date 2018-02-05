@@ -58,7 +58,7 @@ module Dynflow
 
     # The same logic as in Action::WithSubPlans, but calculated using the expected total count
     def run_progress
-      if counts_set?
+      if counts_set? && total_count > 0
         sum = output.values_at(:success_count, :cancelled_count, :failed_count).reduce(:+)
         sum.to_f / total_count
       else

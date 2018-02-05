@@ -154,10 +154,18 @@ module Dynflow
         @started_at ||= start
         block.call
       ensure
-        @progress_done, @progress_weight = action.calculated_progress
+        calculate_progress(action)
         @ended_at        = Time.now
         @execution_time += @ended_at - start
         @real_time       = @ended_at - @started_at
+      end
+
+      def calculate_progress(action)
+        @progress_done, @progress_weight = action.calculated_progress
+        if @progress_done.is_a?(Float) && !@progress_done.finite?
+          action_logger.error("Unexpected progress value #{@progress_done} for step #{execution_plan_id}##{id}")
+          @progress_done = 0
+        end
       end
     end
   end
