@@ -193,8 +193,10 @@ module TestHelpers
       executor_id_for_plan(triggered.id)
     end
 
+    plan = client_world.persistence.load_execution_plan(triggered.id)
+    step = plan.steps.values.last
     wait_for do
-      client_world.persistence.load_execution_plan(triggered.id).state == :running
+      client_world.persistence.load_step(step.execution_plan_id, step.id, client_world).state == :suspended
     end
 
     executor = WorldFactory.created_worlds.find { |e| e.id == executor_id }
