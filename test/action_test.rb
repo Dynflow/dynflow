@@ -628,8 +628,8 @@ module Dynflow
             total = 2
             plan = world.plan(PollingParentAction, count: total)
             plan.state.must_equal :planned
-            world.execute(plan.id)
             clock.pending_pings.count.must_equal 0
+            world.execute(plan.id)
             wait_for do
               plan.sub_plans_count == total &&
                 plan.sub_plans.all? { |sub| sub.result == :success }
