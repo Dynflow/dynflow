@@ -34,6 +34,7 @@ module Dynflow
 
     def self.inherited(child)
       children[child.name] = child
+      child.inherit_execution_plan_hooks(execution_plan_hooks.dup)
       super child
     end
 
@@ -43,6 +44,14 @@ module Dynflow
 
     def self.middleware
       @middleware ||= Middleware::Register.new
+    end
+
+    def self.execution_plan_hooks
+      @execution_plan_hooks ||= ExecutionPlan::Hooks::Register.new
+    end
+
+    def self.inherit_execution_plan_hooks(hooks)
+      @execution_plan_hooks = hooks
     end
 
     # FIND define subscriptions in world independent on action's classes,
