@@ -2,7 +2,7 @@ module Dynflow
   class ExecutionPlan
     module Hooks
 
-      HOOK_KINDS = [:stop, :pause, :success, :fail].freeze
+      HOOK_KINDS = (ExecutionPlan.states + [:success, :failure]).freeze
 
       require 'dynflow/execution_plan/hooks/abstract'
 
@@ -24,6 +24,7 @@ module Dynflow
         # @return [void]
         def use(class_name, on: HOOK_KINDS)
           on = Array[on] unless on.kind_of?(Array)
+          validate_kinds!(on)
           if hooks[class_name]
             hooks[class_name] += on
           else
@@ -38,6 +39,7 @@ module Dynflow
         # @return [void]
         def do_not_use(class_name, on: HOOK_KINDS)
           on = Array[on] unless on.kind_of?(Array)
+          validate_kinds!(on)
           if hooks[class_name]
             hooks[class_name] -= on
             hooks.delete(class_name) if hooks[class_name].empty?
@@ -78,6 +80,12 @@ module Dynflow
         # @return [Array<Class>] list of hook classes to execute
         def on(kind)
           hooks.select { |_key, on| on.include? kind }.keys
+        end
+
+        def validate_kinds!(kinds)
+          kinds.each do |kind|
+            raise "Unknown hook kind '#{kind}'" unless HOOK_KINDS.include?(kind)
+          end
         end
       end
     end

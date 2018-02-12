@@ -42,7 +42,6 @@ module Dynflow
     require 'dynflow/execution_plan/steps'
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
-    require 'dynflow/execution_plan/hooks'
 
     attr_reader :id, :world, :label,
                 :root_plan_step, :steps, :run_flow, :finalize_flow,
@@ -51,6 +50,8 @@ module Dynflow
     def self.states
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
     end
+
+    require 'dynflow/execution_plan/hooks'
 
     def self.results
       @results ||= [:pending, :success, :warning, :error]
@@ -110,6 +111,7 @@ module Dynflow
     end
 
     def update_state(state)
+      hooks_to_run = [state]
       original = self.state
       case self.state = state
       when :planning
@@ -118,11 +120,9 @@ module Dynflow
         @ended_at       = Time.now
         @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
-        run_hooks(:stop)
-        run_hooks(error? ? :fail : :success)
+        hooks_to_run << (error? ? :failure : :success)
         unlock_all_singleton_locks!
       when :paused
-        run_hooks(:pause)
         unlock_all_singleton_locks!
       else
         # ignore
@@ -130,6 +130,7 @@ module Dynflow
       logger.debug format('%13s %s    %9s >> %9s',
                           'ExecutionPlan', id, original, state)
       self.save
+      hooks_to_run.each { |kind| run_hooks kind }
     end
 
     def run_hooks(state)

@@ -28,7 +28,7 @@ module Dynflow
           Flag.raise!
         end
 
-        def on_stop(_execution_plan, _action)
+        def on_stopped(_execution_plan, _action)
           Flag.raise!
           raise "A controlled failure"
         end
@@ -39,7 +39,7 @@ module Dynflow
       end
 
       class ActionOnStop < ::Dynflow::Action
-        execution_plan_hooks.use FlagHook, :on => :stop
+        execution_plan_hooks.use FlagHook, :on => :stopped
       end
 
       class Inherited < ActionWithHooks; end
