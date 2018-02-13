@@ -1,6 +1,6 @@
 module Dynflow
   module ExecutionPlan::Hooks
-    # @abstract Subclass and override `#on_*` methods to implement the desired behavior.
+    # @abstract Subclass and override either {#execute} or `#on_*` methods to implement the desired behavior.
     class Abstract
       # @param kind [Symbol] one of {HOOK_KINDS}
       # @param execution_plan [ExecutionPlan] the execution plan which triggered the hook

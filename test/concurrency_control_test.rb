@@ -146,6 +146,7 @@ module Dynflow
           wait_for { plan.sub_plans_count == total }
           world.event(plan.id, plan.steps.values.last.id, ::Dynflow::Action::Cancellable::Cancel)
           wait_for { triggered.completed? }
+          plan = world.persistence.load_execution_plan(plan.id)
           plan.entry_action.output[:failed_count].must_equal total
           world.throttle_limiter.core.ask!(:running).max.must_be :<=, 0
         end
@@ -154,10 +155,13 @@ module Dynflow
       it 'calculates time interval correctly' do
         world.stub :clock, klok do
           total = 10
-          get_interval = ->(plan) { plan.entry_action.input[:concurrency_control][:time][:meta][:interval] }
+          get_interval = ->(plan) do
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.entry_action.input[:concurrency_control][:time][:meta][:interval]
+          end
 
           plan = world.plan(ParentAction, total, 1, 10)
-          future = world.execute(plan.id)
+          world.execute(plan.id)
           wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 10 tasks over 10 seconds, one task at a time, 1 task every second
