@@ -36,7 +36,7 @@ module Dynflow
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer)}
 
-      SERIALIZABLE_COLUMNS = { }
+      SERIALIZABLE_COLUMNS = { delayed: %w(serialized_args) }
 
       def initialize(config)
         config = config.dup
@@ -115,11 +115,12 @@ module Dynflow
       end
 
       def find_past_delayed_plans(time)
-        table(:delayed)
+        table_name = :delayed
+        table(table_name)
           .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
           .order_by(:start_at)
           .all
-          .map { |plan| load_data(plan) }
+          .map { |plan| load_data(plan, table_name) }
       end
 
       def load_delayed_plan(execution_plan_id)
@@ -129,7 +130,7 @@ module Dynflow
       end
 
       def save_delayed_plan(execution_plan_id, value)
-        save :delayed, { execution_plan_uuid: execution_plan_id }, value
+        save :delayed, { execution_plan_uuid: execution_plan_id }, value, false
       end
 
       def load_step(execution_plan_id, step_id)
@@ -288,7 +289,7 @@ module Dynflow
       def load_record(what, condition)
         table = table(what)
         if (record = with_retry { table.first(Utils.symbolize_keys(condition)) } )
-          load_data(record)
+          load_data(record, what)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
