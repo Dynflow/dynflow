@@ -364,6 +364,10 @@ module Dynflow
     end
 
     def self.new_from_hash(hash, world)
+      hash.delete(:output) if hash[:output].nil?
+      unless hash[:execution_plan_uuid].nil?
+        hash[:execution_plan_id] = hash[:execution_plan_uuid]
+      end
       new(hash, world)
     end
 

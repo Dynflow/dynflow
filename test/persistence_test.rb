@@ -221,7 +221,11 @@ module Dynflow
             prepare_action('plan1')
             loaded_action = adapter.load_action('plan1', action_id)
             loaded_action[:id].must_equal action_id
-            loaded_action.must_equal(Utils.stringify_keys(action_data))
+
+            # The action has full set of attributes
+            %w(data caller_execution_plan_id caller_action_id class input output plan_step_id run_step_id finalize_step_id).each do |key|
+              assert_nil loaded_action.fetch(key)
+            end
 
             adapter.save_action('plan1', action_id, nil)
             -> { adapter.load_action('plan1', action_id) }.must_raise KeyError

@@ -31,13 +31,14 @@ module Dynflow
       end
 
       META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time),
-                    action:              %w(caller_execution_plan_id caller_action_id),
+                    action:              %w(caller_execution_plan_id caller_action_id class plan_step_id run_step_id finalize_step_id),
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer)}
 
-      SERIALIZABLE_COLUMNS = { delayed: %w(serialized_args) }
+      SERIALIZABLE_COLUMNS = { action:  %w(input output),
+                               delayed: %w(serialized_args) }
 
       def initialize(config)
         config = config.dup
@@ -151,7 +152,7 @@ module Dynflow
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value
+        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, false
       end
 
       def connector_feature!
