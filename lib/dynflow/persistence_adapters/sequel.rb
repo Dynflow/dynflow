@@ -36,6 +36,8 @@ module Dynflow
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer)}
 
+      SERIALIZABLE_COLUMNS = { }
+
       def initialize(config)
         config = config.dup
         @additional_responsibilities = { coordinator: true, connector: true }
@@ -242,22 +244,35 @@ module Dynflow
         ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
-      def prepare_record(table_name, value, base = {})
+      def prepare_record(table_name, value, base = {}, with_data = true)
         record = base.dup
-        if table(table_name).columns.include?(:data)
+        if with_data && table(table_name).columns.include?(:data)
           record[:data] = dump_data(value)
         end
+
+        record.merge! serialize_columns(table_name, value)
         record.merge! extract_metadata(table_name, value)
         record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
+
         record
       end
 
-      def save(what, condition, value)
+      def serialize_columns(table_name, record)
+        record.reduce({}) do |acc, (key, value)|
+          if SERIALIZABLE_COLUMNS.fetch(table_name, []).include?(key.to_s)
+            acc.merge(key.to_sym => dump_data(value))
+          else
+            acc
+          end
+        end
+      end
+
+      def save(what, condition, value, with_data = true)
         table           = table(what)
         existing_record = with_retry { table.first condition } unless condition.empty?
 
         if value
-          record = prepare_record(what, value, (existing_record || condition))
+          record = prepare_record(what, value, (existing_record || condition), with_data)
           if existing_record
             with_retry { table.where(condition).update(record) }
           else
@@ -287,8 +302,17 @@ module Dynflow
         records.map { |record| load_data(record) }
       end
 
-      def load_data(record)
-        Utils.indifferent_hash(MultiJson.load(record[:data]))
+      def load_data(record, what = nil)
+        hash = if record[:data].nil?
+                 SERIALIZABLE_COLUMNS.fetch(what, []).each do |key|
+                   key = key.to_sym
+                   record[key] = MultiJson.load(record[key]) unless record[key].nil?
+                 end
+                 record
+               else
+                 MultiJson.load(record[:data])
+               end
+        Utils.indifferent_hash(hash)
       end
 
       def ensure_backup_dir(backup_dir)
@@ -314,13 +338,14 @@ module Dynflow
       end
 
       def extract_metadata(what, value)
-        meta_keys = META_DATA.fetch(what)
+        meta_keys = META_DATA.fetch(what) - SERIALIZABLE_COLUMNS.fetch(what, [])
         value     = Utils.indifferent_hash(value)
         meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
       end
 
       def dump_data(value)
-        MultiJson.dump Type!(value, Hash)
+        return if value.nil?
+        MultiJson.dump Type!(value, Hash, Array)
       end
 
       def paginate(data_set, options)
