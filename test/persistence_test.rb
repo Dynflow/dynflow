@@ -19,8 +19,8 @@ module Dynflow
       let :step_data do
         { id: 1,
           state: 'success',
-          started_at: '2015-02-24 10:00',
-          ended_at: '2015-02-24 10:01',
+          started_at: Time.now.utc - 60,
+          ended_at: Time.now.utc - 30,
           real_time: 1.1,
           execution_time: 0.1,
           action_id: 1,
@@ -46,7 +46,9 @@ module Dynflow
       end
 
       def prepare_step(plan)
-        adapter.save_step(plan, step_data[:id], step_data)
+        step = step_data.dup
+        step[:execution_plan_uuid] = plan
+        adapter.save_step(plan, step[:id], step)
       end
 
       def prepare_plans_with_actions
@@ -241,7 +243,14 @@ module Dynflow
             prepare_step('plan1')
             loaded_step = adapter.load_step('plan1', step_id)
             loaded_step[:id].must_equal step_id
-            loaded_step.must_equal(Utils.stringify_keys(step_data))
+            %w(data class error action_class children).each do |key|
+              assert_nil loaded_step.fetch(key)
+            end
+            loaded_step[:started_at].inspect.must_equal step_data.delete(:started_at).inspect
+            loaded_step[:ended_at].inspect.must_equal step_data.delete(:ended_at).inspect
+            step_data.each do |key, value|
+              loaded_step[key].must_equal value
+            end
           end
         end
 

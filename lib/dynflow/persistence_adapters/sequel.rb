@@ -32,13 +32,15 @@ module Dynflow
 
       META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time),
                     action:              %w(caller_execution_plan_id caller_action_id class plan_step_id run_step_id finalize_step_id),
-                    step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
+                    step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight
+                                            class action_class execution_plan_uuid),
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer)}
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
-                               delayed: %w(serialized_args) }
+                               delayed: %w(serialized_args),
+                               step:    %w(error children) }
 
       def initialize(config)
         config = config.dup
@@ -144,7 +146,7 @@ module Dynflow
       end
 
       def save_step(execution_plan_id, step_id, value)
-        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value
+        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, false
       end
 
       def load_action(execution_plan_id, action_id)
@@ -302,7 +304,7 @@ module Dynflow
       def load_records(what, condition)
         table = table(what)
         records = with_retry { table.filter(Utils.symbolize_keys(condition)).all }
-        records.map { |record| load_data(record) }
+        records.map { |record| load_data(record, what) }
       end
 
       def load_data(record, what = nil)
