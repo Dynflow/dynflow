@@ -30,7 +30,7 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time),
+      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time root_plan_step_id class),
                     action:              %w(caller_execution_plan_id caller_action_id class plan_step_id run_step_id finalize_step_id),
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight
                                             class action_class execution_plan_uuid),
@@ -40,6 +40,7 @@ module Dynflow
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
                                delayed: %w(serialized_args),
+                               execution_plan: %w(run_flow finalize_flow execution_history step_ids),
                                step:    %w(error children) }
 
       def initialize(config)
@@ -57,13 +58,14 @@ module Dynflow
       end
 
       def find_execution_plans(options = {})
+        table_name = :execution_plan
         options[:order_by] ||= :started_at
-        data_set = filter(:execution_plan,
-                          order(:execution_plan,
-                                paginate(table(:execution_plan), options),
+        data_set = filter(table_name,
+                          order(table_name,
+                                paginate(table(table_name), options),
                                 options),
                           options[:filters])
-        data_set.all.map { |record| load_data(record) }
+        data_set.all.map { |record| load_data(record, table_name) }
       end
 
       def find_execution_plan_counts(options = {})
@@ -98,7 +100,7 @@ module Dynflow
       end
 
       def save_execution_plan(execution_plan_id, value)
-        save :execution_plan, { uuid: execution_plan_id }, value
+        save :execution_plan, { uuid: execution_plan_id }, value, false
       end
 
       def delete_delayed_plans(filters, batch_size = 1000)
@@ -113,9 +115,10 @@ module Dynflow
       end
 
       def find_old_execution_plans(age)
-        table(:execution_plan)
+        table_name = :execution_plan
+        table(table_name)
           .where(::Sequel.lit('ended_at <= ? AND state = ?', age, 'stopped'))
-          .all.map { |plan| load_data plan }
+          .all.map { |plan| load_data plan, table_name }
       end
 
       def find_past_delayed_plans(time)
