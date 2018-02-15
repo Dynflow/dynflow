@@ -243,7 +243,7 @@ module Dynflow
 
         describe '#find_past_delayed_plans' do
           it 'finds plans with start_before in past' do
-            start_time = Time.now
+            start_time = Time.now.utc
             prepare_plans
             adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :start_at => format_time(start_time + 60),
                                       :start_before => format_time(start_time - 60))

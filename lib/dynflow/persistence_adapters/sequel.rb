@@ -7,6 +7,7 @@ module Dynflow
   module PersistenceAdapters
 
     Sequel.extension :migration
+    Sequel.database_timezone = :utc
 
     class Sequel < Abstract
       include Algebrick::TypeCheck
