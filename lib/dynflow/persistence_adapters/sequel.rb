@@ -65,7 +65,7 @@ module Dynflow
                                 paginate(table(table_name), options),
                                 options),
                           options[:filters])
-        data_set.all.map { |record| load_data(record, table_name) }
+        data_set.all.map { |record| execution_plan_column_map(load_data(record, table_name)) }
       end
 
       def find_execution_plan_counts(options = {})
@@ -96,7 +96,7 @@ module Dynflow
       end
 
       def load_execution_plan(execution_plan_id)
-        load :execution_plan, uuid: execution_plan_id
+        execution_plan_column_map(load :execution_plan, uuid: execution_plan_id)
       end
 
       def save_execution_plan(execution_plan_id, value)
@@ -118,7 +118,7 @@ module Dynflow
         table_name = :execution_plan
         table(table_name)
           .where(::Sequel.lit('ended_at <= ? AND state = ?', age, 'stopped'))
-          .all.map { |plan| load_data plan, table_name }
+          .all.map { |plan| execution_plan_column_map(load_data plan, table_name) }
       end
 
       def find_past_delayed_plans(time)
@@ -427,6 +427,11 @@ module Dynflow
             retry
           end
         end
+      end
+
+      def execution_plan_column_map(plan)
+        plan[:id] = plan[:uuid]
+        plan
       end
     end
   end

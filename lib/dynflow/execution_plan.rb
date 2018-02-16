@@ -407,7 +407,7 @@ module Dynflow
 
     def self.new_from_hash(hash, world)
       check_class_matching hash
-      execution_plan_id = hash[:uuid] || hash[:id]
+      execution_plan_id = hash[:id]
       steps             = steps_from_hash(hash[:step_ids], execution_plan_id, world)
       self.new(world,
                execution_plan_id,

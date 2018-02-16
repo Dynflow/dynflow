@@ -74,10 +74,10 @@ module Dynflow
             prepare_plans
             if adapter.pagination?
               loaded_plans = adapter.find_execution_plans(page: 0, per_page: 1)
-              loaded_plans.map { |h| h[:uuid] }.must_equal ['plan1']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
 
               loaded_plans = adapter.find_execution_plans(page: 1, per_page: 1)
-              loaded_plans.map { |h| h[:uuid] }.must_equal ['plan2']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
             end
           end
 
@@ -85,10 +85,10 @@ module Dynflow
             prepare_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(order_by: 'state')
-              loaded_plans.map { |h| h[:uuid] }.must_equal %w(plan1 plan3 plan4 plan2)
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan3 plan4 plan2)
 
               loaded_plans = adapter.find_execution_plans(order_by: 'state', desc: true)
-              loaded_plans.map { |h| h[:uuid] }.must_equal %w(plan2 plan1 plan3 plan4)
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan2 plan1 plan3 plan4)
             end
           end
 
@@ -96,21 +96,21 @@ module Dynflow
             prepare_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'] })
-              loaded_plans.map { |h| h[:uuid] }.must_equal ['plan1']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
               loaded_plans = adapter.find_execution_plans(filters: { state: ['paused'] })
-              loaded_plans.map { |h| h[:uuid] }.must_equal ['plan1', 'plan3', 'plan4']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3', 'plan4']
 
               loaded_plans = adapter.find_execution_plans(filters: { state: ['stopped'] })
-              loaded_plans.map { |h| h[:uuid] }.must_equal ['plan2']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
 
               loaded_plans = adapter.find_execution_plans(filters: { state: [] })
-              loaded_plans.map { |h| h[:uuid] }.must_equal []
+              loaded_plans.map { |h| h[:id] }.must_equal []
 
               loaded_plans = adapter.find_execution_plans(filters: { state: ['stopped', 'paused'] })
-              loaded_plans.map { |h| h[:uuid] }.must_equal %w(plan1 plan2 plan3 plan4)
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan2 plan3 plan4)
 
               loaded_plans = adapter.find_execution_plans(filters: { 'state' => ['stopped', 'paused'] })
-              loaded_plans.map { |h| h[:uuid] }.must_equal %w(plan1 plan2 plan3 plan4)
+              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan2 plan3 plan4)
 
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
               loaded_plans.must_be_empty
@@ -120,7 +120,7 @@ module Dynflow
                                         :start_at => format_time(Time.now + 60),
                                         :start_before => format_time(Time.now - 60))
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
-              loaded_plans.map { |h| h[:uuid] }.must_equal ['plan1']
+              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
             end
           end
         end
@@ -168,9 +168,9 @@ module Dynflow
           it 'serializes/deserializes the plan data' do
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
             prepare_plans
-            adapter.load_execution_plan('plan1')[:uuid].must_equal 'plan1'
-            adapter.load_execution_plan('plan1')['uuid'].must_equal 'plan1'
-            adapter.load_execution_plan('plan1').keys.size.must_equal 15
+            adapter.load_execution_plan('plan1')[:id].must_equal 'plan1'
+            adapter.load_execution_plan('plan1')['id'].must_equal 'plan1'
+            adapter.load_execution_plan('plan1').keys.size.must_equal 16
 
             adapter.save_execution_plan('plan1', nil)
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
