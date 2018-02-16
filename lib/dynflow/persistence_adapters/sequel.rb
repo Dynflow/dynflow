@@ -43,13 +43,14 @@ module Dynflow
                                execution_plan: %w(run_flow finalize_flow execution_history step_ids),
                                step:    %w(error children) }
 
-      def initialize(config)
+      def initialize(config, options = {})
         config = config.dup
         @additional_responsibilities = { coordinator: true, connector: true }
         if config.is_a?(Hash) && config.key?(:additional_responsibilities)
           @additional_responsibilities.merge!(config.delete(:additional_responsibilities))
         end
         @db = initialize_db config
+        @save_as_data = options.fetch(:save_as_data, false)
         migrate_db
       end
 
@@ -100,7 +101,7 @@ module Dynflow
       end
 
       def save_execution_plan(execution_plan_id, value)
-        save :execution_plan, { uuid: execution_plan_id }, value, false
+        save :execution_plan, { uuid: execution_plan_id }, value, @save_as_data
       end
 
       def delete_delayed_plans(filters, batch_size = 1000)
@@ -137,7 +138,7 @@ module Dynflow
       end
 
       def save_delayed_plan(execution_plan_id, value)
-        save :delayed, { execution_plan_uuid: execution_plan_id }, value, false
+        save :delayed, { execution_plan_uuid: execution_plan_id }, value, @save_as_data
       end
 
       def load_step(execution_plan_id, step_id)
@@ -149,7 +150,7 @@ module Dynflow
       end
 
       def save_step(execution_plan_id, step_id, value)
-        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, false
+        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, @save_as_data
       end
 
       def load_action(execution_plan_id, action_id)
@@ -157,7 +158,7 @@ module Dynflow
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, false
+        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, @save_as_data
       end
 
       def connector_feature!
@@ -256,9 +257,10 @@ module Dynflow
         record = base.dup
         if with_data && table(table_name).columns.include?(:data)
           record[:data] = dump_data(value)
+        else
+          record.merge! serialize_columns(table_name, value)
         end
 
-        record.merge! serialize_columns(table_name, value)
         record.merge! extract_metadata(table_name, value)
         record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
 
@@ -430,7 +432,7 @@ module Dynflow
       end
 
       def execution_plan_column_map(plan)
-        plan[:id] = plan[:uuid]
+        plan[:id] = plan[:uuid] unless plan[:uuid].nil?
         plan
       end
     end

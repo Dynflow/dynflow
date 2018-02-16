@@ -168,9 +168,14 @@ module Dynflow
           it 'serializes/deserializes the plan data' do
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
             prepare_plans
-            adapter.load_execution_plan('plan1')[:id].must_equal 'plan1'
-            adapter.load_execution_plan('plan1')['id'].must_equal 'plan1'
-            adapter.load_execution_plan('plan1').keys.size.must_equal 16
+            plan = adapter.load_execution_plan('plan1')
+            plan[:id].must_equal 'plan1'
+            plan['id'].must_equal 'plan1'
+
+            %w(id label root_plan_step_id class state result
+               started_at ended_at real_time execution_time).each do |key|
+               assert plan.key?(key)
+             end
 
             adapter.save_execution_plan('plan1', nil)
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
@@ -224,11 +229,6 @@ module Dynflow
             loaded_action = adapter.load_action('plan1', action_id)
             loaded_action[:id].must_equal action_id
 
-            # The action has full set of attributes
-            %w(data caller_execution_plan_id caller_action_id class input output plan_step_id run_step_id finalize_step_id).each do |key|
-              assert_nil loaded_action.fetch(key)
-            end
-
             adapter.save_action('plan1', action_id, nil)
             -> { adapter.load_action('plan1', action_id) }.must_raise KeyError
 
@@ -243,11 +243,13 @@ module Dynflow
             prepare_step('plan1')
             loaded_step = adapter.load_step('plan1', step_id)
             loaded_step[:id].must_equal step_id
-            %w(data class error action_class children).each do |key|
-              assert_nil loaded_step.fetch(key)
+            if loaded_step[:started_at].is_a?(Time)
+              loaded_step[:started_at].inspect.must_equal step_data.delete(:started_at).inspect
+              loaded_step[:ended_at].inspect.must_equal step_data.delete(:ended_at).inspect
+            else
+              loaded_step[:started_at].must_equal step_data.delete(:started_at).inspect
+              loaded_step[:ended_at].must_equal step_data.delete(:ended_at).inspect
             end
-            loaded_step[:started_at].inspect.must_equal step_data.delete(:started_at).inspect
-            loaded_step[:ended_at].inspect.must_equal step_data.delete(:ended_at).inspect
             step_data.each do |key, value|
               loaded_step[key].must_equal value
             end
@@ -272,6 +274,14 @@ module Dynflow
       end
 
       describe Dynflow::PersistenceAdapters::Sequel do
+        describe 'works in compatibility mode with data in data column' do
+          # Force the persistence adapter to put data into the data column
+          #   and run the persistence test suite
+          let(:adapter) { Dynflow::PersistenceAdapters::Sequel.new 'sqlite:/', :save_as_data => true }
+
+          it_acts_as_persistence_adapter
+        end
+
         let(:adapter) { Dynflow::PersistenceAdapters::Sequel.new 'sqlite:/' }
 
         it_acts_as_persistence_adapter
