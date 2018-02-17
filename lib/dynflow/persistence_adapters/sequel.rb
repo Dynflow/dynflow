@@ -16,7 +16,7 @@ module Dynflow
       MAX_RETRIES = 10
       RETRY_DELAY = 1
 
-      attr_reader :db
+      attr_reader :db, :save_as_data
 
       def pagination?
         true

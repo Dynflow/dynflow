@@ -48,6 +48,10 @@ module Dynflow
       def prepare_step(plan)
         step = step_data.dup
         step[:execution_plan_uuid] = plan
+        if adapter.save_as_data
+          step[:started_at] = format_time(step[:started_at])
+          step[:ended_at] = format_time(step[:ended_at])
+        end
         adapter.save_step(plan, step[:id], step)
       end
 
@@ -247,8 +251,8 @@ module Dynflow
               loaded_step[:started_at].inspect.must_equal step_data.delete(:started_at).inspect
               loaded_step[:ended_at].inspect.must_equal step_data.delete(:ended_at).inspect
             else
-              loaded_step[:started_at].must_equal step_data.delete(:started_at).inspect
-              loaded_step[:ended_at].must_equal step_data.delete(:ended_at).inspect
+              loaded_step[:started_at].must_equal format_time(step_data.delete(:started_at))
+              loaded_step[:ended_at].must_equal format_time(step_data.delete(:ended_at))
             end
             step_data.each do |key, value|
               loaded_step[key].must_equal value
