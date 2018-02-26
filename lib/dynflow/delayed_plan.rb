@@ -38,13 +38,13 @@ module Dynflow
 
     def cancel
       error("Delayed task cancelled", "Delayed task cancelled")
-      @world.persistence.delete_delayed_plans(:execution_plan_uuid => execution_plan.id)
+      @world.persistence.delete_delayed_plans(:execution_plan_uuid => @execution_plan_uuid)
       return true
     end
 
     def execute(future = Concurrent.future)
-      @world.execute(execution_plan.id, future)
-      ::Dynflow::World::Triggered[execution_plan.id, future]
+      @world.execute(@execution_plan_uuid, future)
+      ::Dynflow::World::Triggered[@execution_plan_uuid, future]
     end
 
     def to_hash
@@ -53,6 +53,14 @@ module Dynflow
                         :start_before        => time_to_str(@start_before),
                         :serialized_args     => @args_serializer.serialized_args,
                         :args_serializer     => @args_serializer.class.name
+    end
+
+    # Retrieves arguments from the serializer
+    #
+    # @return [Array] array of the original arguments
+    def args
+      @args_serializer.perform_deserialization! if @args_serializer.args.nil?
+      @args_serializer.args
     end
 
     # @api private

@@ -115,6 +115,9 @@ module Dynflow
       end
 
       describe 'serializers' do
+        let(:args) { %w(arg1 arg2) }
+        let(:serialized_serializer) { Dynflow::Serializers::Noop.new(nil, args) }
+        let(:deserialized_serializer) { Dynflow::Serializers::Noop.new(args, nil) }
         let(:save_and_load) do
           ->(thing) { MultiJson.load(MultiJson.dump(thing)) }
         end
@@ -133,6 +136,40 @@ module Dynflow
         it 'noop serializer [de]serializes correctly for simple types' do
           input = [1, 2.0, 'three', ['four-1', 'four-2'], { 'five' => 5 }]
           simulated_use.call(Dynflow::Serializers::Noop, input).must_equal input
+        end
+
+        it 'args! raises if not deserialized' do
+          proc { serialized_serializer.args! }.must_raise RuntimeError
+          deserialized_serializer.args! # Must not raise
+        end
+
+        it 'serialized_args! raises if not serialized' do
+          proc { deserialized_serializer.serialized_args! }.must_raise RuntimeError
+          serialized_serializer.serialized_args! # Must not raise
+        end
+
+        it 'performs_serialization!' do
+          deserialized_serializer.perform_serialization!
+          deserialized_serializer.serialized_args!.must_equal args
+        end
+
+        it 'performs_deserialization!' do
+          serialized_serializer.perform_deserialization!
+          serialized_serializer.args.must_equal args
+        end
+      end
+
+      describe 'delayed plan' do
+        let(:args) { %w(arg1 arg2) }
+        let(:serializer) { Dynflow::Serializers::Noop.new(nil, args) }
+        let(:delayed_plan) do
+          Dynflow::DelayedPlan.new(Dynflow::World.allocate, 'an uuid', nil, nil, serializer)
+        end
+
+        it "allows access to serializer's args" do
+          serializer.args.must_be :nil?
+          delayed_plan.args.must_equal args
+          serializer.args.must_equal args
         end
       end
     end
