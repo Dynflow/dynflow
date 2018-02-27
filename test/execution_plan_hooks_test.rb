@@ -23,28 +23,32 @@ module Dynflow
         end
       end
 
-      class FlagHook < ::Dynflow::ExecutionPlan::Hooks::Abstract
-        def on_success(_execution_plan, _action)
+      module FlagHook
+        def raise_flag(_kind, _execution_plan)
           Flag.raise!
         end
 
-        def on_stopped(_execution_plan, _action)
+        def controlled_failure(_kind, _execution_plan)
           Flag.raise!
           raise "A controlled failure"
         end
       end
 
       class ActionWithHooks < ::Dynflow::Action
-        execution_plan_hooks.use FlagHook, :on => :success
+        include FlagHook
+
+        execution_plan_hooks.use :raise_flag, :on => :success
       end
 
       class ActionOnStop < ::Dynflow::Action
-        execution_plan_hooks.use FlagHook, :on => :stopped
+        include FlagHook
+
+        execution_plan_hooks.use :controlled_failure, :on => :stopped
       end
 
       class Inherited < ActionWithHooks; end
       class Overriden < ActionWithHooks
-        execution_plan_hooks.do_not_use FlagHook
+        execution_plan_hooks.do_not_use :raise_flag
       end
 
       before { Flag.lower! }

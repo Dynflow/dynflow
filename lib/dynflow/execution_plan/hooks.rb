@@ -4,8 +4,6 @@ module Dynflow
 
       HOOK_KINDS = (ExecutionPlan.states + [:success, :failure]).freeze
 
-      require 'dynflow/execution_plan/hooks/abstract'
-
       # A register holding information about hook classes and events
       # which should trigger the hooks.
       #
@@ -64,7 +62,7 @@ module Dynflow
         def run(execution_plan, action, kind)
           on(kind).each do |hook|
             begin
-              hook.new.execute kind, execution_plan, action
+              action.send(hook, kind, execution_plan)
             rescue => e
               execution_plan.logger.error "Failed to run hook '#{hook}' for action '#{action.class}'"
               execution_plan.logger.debug e
