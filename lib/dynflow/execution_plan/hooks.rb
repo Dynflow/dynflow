@@ -62,7 +62,7 @@ module Dynflow
         def run(execution_plan, action, kind)
           on(kind).each do |hook|
             begin
-              action.send(hook, kind, execution_plan)
+              action.send(hook, execution_plan)
             rescue => e
               execution_plan.logger.error "Failed to run hook '#{hook}' for action '#{action.class}'"
               execution_plan.logger.debug e

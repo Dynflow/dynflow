@@ -24,11 +24,11 @@ module Dynflow
       end
 
       module FlagHook
-        def raise_flag(_kind, _execution_plan)
+        def raise_flag(_execution_plan)
           Flag.raise!
         end
 
-        def controlled_failure(_kind, _execution_plan)
+        def controlled_failure(_execution_plan)
           Flag.raise!
           raise "A controlled failure"
         end
