@@ -257,6 +257,7 @@ module Dynflow
         if with_data && table(table_name).columns.include?(:data)
           record[:data] = dump_data(value)
         else
+          record[:data] = nil
           record.merge! serialize_columns(table_name, value)
         end
 

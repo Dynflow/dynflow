@@ -378,8 +378,8 @@ module Dynflow
           db[:dynflow_execution_plans].insert plan_record.merge(:uuid => plan[:id])
 
           # Update and save the plan
-          plan_data[:state] = :stopped
-          plan_data[:result] = :success
+          plan_data[:state] = 'stopped'
+          plan_data[:result] = 'success'
           adapter.save_execution_plan(plan[:id], plan_data)
 
           # Check the plan has the changed columns populated
