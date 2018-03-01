@@ -365,6 +365,32 @@ module Dynflow
           assert_equal_attributes!(action_data, loaded_action)
           assert_equal_attributes!(step_data, loaded_step)
         end
+
+        it 'support updating data saved prior to normalization' do
+          db = adapter.send(:db)
+          plan = prepare_plans.first
+          plan_data = plan.dup
+          plan[:started_at] = format_time plan[:started_at]
+          plan[:ended_at] = format_time plan[:ended_at]
+          plan_record = adapter.send(:prepare_record, :execution_plan, plan.merge(:uuid => plan[:id]))
+
+          # Save the plan the old way
+          db[:dynflow_execution_plans].insert plan_record.merge(:uuid => plan[:id])
+
+          # Update and save the plan
+          plan_data[:state] = :stopped
+          plan_data[:result] = :success
+          adapter.save_execution_plan(plan[:id], plan_data)
+
+          # Check the plan has the changed columns populated
+          raw_plan = db[:dynflow_execution_plans].where(:uuid => 'plan1').first
+          raw_plan[:state].must_equal 'stopped'
+          raw_plan[:result].must_equal 'success'
+
+          # Load the plan and assert it doesn't read attributes from data
+          loaded_plan = adapter.load_execution_plan(plan[:id])
+          assert_equal_attributes!(plan_data, loaded_plan)
+        end
       end
     end
   end
