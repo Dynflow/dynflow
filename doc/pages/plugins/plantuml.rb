@@ -24,7 +24,7 @@ module Jekyll
       folder = "/images/plantuml/"
       create_tmp_folder(tmproot, folder)
 
-      code = @nodelist.join + background_color
+      code = nodelist.join + background_color
       filename = Digest::MD5.hexdigest(code) + ".png"
       filepath = tmproot + folder + filename
       if !File.exist?(filepath)
