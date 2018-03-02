@@ -69,6 +69,8 @@ Dynflow has been developed to be able to support orchestration of services in th
     talk to each other, which is helpful for production and
     high-availability setups,
     having multiple worlds on different hosts handle the execution of the execution plans.
+    If you're still confused and come from RoR world, think about it as similar thing 
+    that is Rails object for Ruby on Rails framework.
 
 ##  Examples
 
@@ -984,7 +986,27 @@ to the chain of middleware execution.
 ### Sub-plans
 
 -   *when to use?*
--   *how to use?*
+
+To use sub-plans, you must include the `Dynflow::Action::WithSubPlans` module
+and override the `create_sub_plans` method. Inside the `create_sub_plans`
+method, you use the `trigger` method to create sub-tasks that will be executed
+in no particular order during the run phase. The parent task will wait for the
+sub-tasks to finish without blocking a thread in a pool while waiting.
+
+```rb
+class MyAction < Actions::EntryAction
+  include Dynflow::Action::WithSubPlans
+
+  ...
+
+  def create_sub_plans
+    [
+      trigger(Actions::OtherAction, action_param1, action_opts),
+      trigger(Actions::AnotherAction)
+    ]
+  end
+end
+```
 
 ## How it works TODO
 
@@ -1318,6 +1340,34 @@ information as well. It's used for keeping information about what
 executor is actively working on what execution plan: the executor is
 not allowed to start executing the unless it has successfully acquired
 a lock for it.
+
+### Singleton Actions
+Dynflow has a special module for actions of which there should be only
+one instance active at a time. This module provides a number of methods
+for managing the action's locks as well as a middleware for automatic
+locking.
+
+It works in the following way. The middleware tries to acquire the
+lock for this action, which is owned by the execution plan. If another
+action already holds the lock, it fill fail and the execution plan
+will transition to stopped-error state. Having obtained the lock,
+the action goes through the planning as usually. In run phase, the
+middleware checks if the execution plan still owns the lock for the action.
+If the execution plan holds the lock or there is no lock at all and
+the action manages to acquire it again, the execution proceeds. If the
+lock is held by another execution plan, the current one fails. Unlocking
+can be either done manually from within the action or can be left to the
+execution plan. The execution plan unlocks all locks it holds whenever it
+transitions to paused or stopped state.
+
+All that is needed to make an action a singleton one is including the module
+into it.
+
+```ruby
+class ExampleSingletonAction < ::Dynflow::Action
+  include ::Dynflow::Action::Singleton
+end
+```
 
 ### Thread-pools TODO
 
