@@ -1008,6 +1008,51 @@ class MyAction < Actions::EntryAction
 end
 ```
 
+### Execution plan hooks
+
+Dynflow allows actions to hook into the lifecycle of their execution plans. To
+use the hooks, the user has to define a method on the action and register it as
+a hook. Currently there are hook events for every execution plan's state which
+are executed when the execution plan transitions into the state. Additionally
+there are two more hook events, `failure` and `success` which are run when the
+execution plan transitions into the `stopped` state with `error` or `success`
+result.
+
+Methods can be registered using `execution_plan_hooks.use` call, providing the
+method name as `Symbol` and optionally a `:on => HOOK_EVENT` parameter, where
+`HOOK_EVENT` can be one of the hook events or an array of them. In case the
+optional parameter is not provided, the method is executed on every state
+change. Similarly, for example inherited, hooks can be disabled by calling
+`execution_plan_hooks.do_not_use`, taking the same arguments. Hooks defined on
+an action are inherited when the action is sub-classed.
+
+The hooks are executed for every action in the execution plan and the order of
+execution is not guaranteed.
+
+```rb
+class MyAction < Actions::EntryAction
+  # Sets up a hook to call #state_change method when the execution plan changes
+  #   its state
+  execution_plan_hooks.use :state_change
+
+  # Sets up a hook to call #success_notification method when the execution plan
+  #   finishes successfully,
+  execution_plan_hooks.use :success_notification, :on => :success
+
+  # Disables running #state_change method when the execution plan starts or
+  #   finishes planning
+  execution_plan_hooks.do_not_use :state_change, :on => [:planning, :planned]
+
+  def state_change(_execution_plan)
+    # Do something on every state change
+  end
+
+  def success_notification(_execution_plan)
+    # Display a notification
+  end
+end
+```
+
 ## How it works TODO
 
 {% info_block %}
