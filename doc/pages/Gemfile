@@ -5,3 +5,5 @@ gem 'jekyll'
 gem 'pry'
 gem 'ruby-nuggets' # require by tags plugin
 gem 'therubyracer'
+gem 'redcarpet'
+gem 'pygments.rb'

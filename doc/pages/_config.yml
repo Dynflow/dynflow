@@ -7,7 +7,7 @@ highlighter: pygments
 
 source:       ./source
 destination:  ./public
-plugins:      ./plugins
+plugins_dir:  ./plugins
 include:
 - .nojekyll
 
