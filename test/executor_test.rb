@@ -221,8 +221,11 @@ module Dynflow
               result.started_at.wont_be_nil
               result.ended_at.wont_be_nil
               result.execution_time.must_be :<, result.real_time
-              result.execution_time.must_equal(
-                  result.steps.inject(0) { |sum, (_, step)| sum + step.execution_time })
+
+              step_sum = result.steps.values.map(&:execution_time).reduce(:+)
+
+              # Storing floats can lead to slight deviations, 1ns precision should be enough
+              result.execution_time.must_be_close_to step_sum, 0.000_001
 
               plan_step = result.steps[1]
               plan_step.started_at.wont_be_nil

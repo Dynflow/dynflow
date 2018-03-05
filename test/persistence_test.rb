@@ -6,21 +6,31 @@ module Dynflow
     describe 'persistence adapters' do
 
       let :execution_plans_data do
-        [{ id: 'plan1', :label => 'test1', state: 'paused' },
-         { id: 'plan2', :label => 'test2', state: 'stopped' },
-         { id: 'plan3', :label => 'test3', state: 'paused' },
-         { id: 'plan4', :label => 'test4', state: 'paused' }]
+        [{ id: 'plan1', :label => 'test1', root_plan_step_id: 1, class: 'Dynflow::ExecutionPlan', state: 'paused' },
+         { id: 'plan2', :label => 'test2', root_plan_step_id: 1, class: 'Dynflow::ExecutionPlan', state: 'stopped' },
+         { id: 'plan3', :label => 'test3', root_plan_step_id: 1, class: 'Dynflow::ExecutionPlan', state: 'paused' },
+         { id: 'plan4', :label => 'test4', root_plan_step_id: 1, class: 'Dynflow::ExecutionPlan', state: 'paused' }]
       end
 
       let :action_data do
-        { id: 1, caller_execution_plan_id: nil, caller_action_id: nil }
+        {
+         id: 1,
+         caller_execution_plan_id: nil,
+         caller_action_id: nil,
+         class: 'Dynflow::Action',
+         input: {key: 'value'},
+         output: {something: 'else'},
+         plan_step_id: 1,
+         run_step_id: 2,
+         finalize_step_id: 3
+        }
       end
 
       let :step_data do
         { id: 1,
           state: 'success',
-          started_at: '2015-02-24 10:00',
-          ended_at: '2015-02-24 10:01',
+          started_at: Time.now.utc - 60,
+          ended_at: Time.now.utc - 30,
           real_time: 1.1,
           execution_time: 0.1,
           action_id: 1,
@@ -30,11 +40,13 @@ module Dynflow
 
       def prepare_plans
         execution_plans_data.map do |h|
-          h.merge result:    nil, started_at: (Time.now-20).to_s, ended_at: (Time.now-10).to_s,
+          h.merge result:    nil, started_at: Time.now.utc - 20, ended_at: Time.now.utc - 10,
               real_time: 0.0, execution_time: 0.0
-        end.tap do |plans|
-          plans.each { |plan| adapter.save_execution_plan(plan[:id], plan) }
         end
+      end
+
+      def prepare_and_save_plans
+        prepare_plans.each { |plan| adapter.save_execution_plan(plan[:id], plan) }
       end
 
       def format_time(time)
@@ -46,18 +58,38 @@ module Dynflow
       end
 
       def prepare_step(plan)
-        adapter.save_step(plan, step_data[:id], step_data)
+        step = step_data.dup
+        step[:execution_plan_uuid] = plan
+        step
+      end
+
+      def prepare_and_save_step(plan)
+        step = prepare_step(plan)
+        adapter.save_step(plan, step[:id], step)
       end
 
       def prepare_plans_with_actions
-        prepare_plans.each do |plan|
+        prepare_and_save_plans.each do |plan|
           prepare_action(plan[:id])
         end
       end
 
       def prepare_plans_with_steps
         prepare_plans_with_actions.map do |plan|
-          prepare_step(plan[:id])
+          prepare_and_save_step(plan[:id])
+        end
+      end
+
+      def assert_equal_attributes!(original, loaded)
+        original.each do |key, value|
+          loaded_value = loaded[key.to_s]
+          if value.is_a?(Time)
+            loaded_value.inspect.must_equal value.inspect
+          elsif value.is_a?(Hash)
+            assert_equal_attributes!(value, loaded_value)
+          else
+            loaded[key.to_s].must_equal value
+          end
         end
       end
 
@@ -69,7 +101,7 @@ module Dynflow
         end
         describe '#find_execution_plans' do
           it 'supports pagination' do
-            prepare_plans
+            prepare_and_save_plans
             if adapter.pagination?
               loaded_plans = adapter.find_execution_plans(page: 0, per_page: 1)
               loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
@@ -80,7 +112,7 @@ module Dynflow
           end
 
           it 'supports ordering' do
-            prepare_plans
+            prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(order_by: 'state')
               loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan3 plan4 plan2)
@@ -91,7 +123,7 @@ module Dynflow
           end
 
           it 'supports filtering' do
-            prepare_plans
+            prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'] })
               loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
@@ -130,7 +162,7 @@ module Dynflow
           end
 
           it 'supports filtering' do
-            prepare_plans
+            prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'] })
               loaded_plans.must_equal 1
@@ -165,10 +197,12 @@ module Dynflow
         describe '#load_execution_plan and #save_execution_plan' do
           it 'serializes/deserializes the plan data' do
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
-            prepare_plans
-            adapter.load_execution_plan('plan1')[:id].must_equal 'plan1'
-            adapter.load_execution_plan('plan1')['id'].must_equal 'plan1'
-            adapter.load_execution_plan('plan1').keys.size.must_equal 8
+            plan = prepare_and_save_plans.first
+            loaded_plan = adapter.load_execution_plan('plan1')
+            loaded_plan[:id].must_equal 'plan1'
+            loaded_plan['id'].must_equal 'plan1'
+
+            assert_equal_attributes!(plan, loaded_plan)
 
             adapter.save_execution_plan('plan1', nil)
             -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
@@ -214,14 +248,16 @@ module Dynflow
 
         describe '#load_action and #save_action' do
           it 'serializes/deserializes the action data' do
-            prepare_plans
+            prepare_and_save_plans
+            action = action_data.dup
             action_id = action_data[:id]
             -> { adapter.load_action('plan1', action_id) }.must_raise KeyError
 
             prepare_action('plan1')
             loaded_action = adapter.load_action('plan1', action_id)
             loaded_action[:id].must_equal action_id
-            loaded_action.must_equal(Utils.stringify_keys(action_data))
+
+            assert_equal_attributes!(action, loaded_action)
 
             adapter.save_action('plan1', action_id, nil)
             -> { adapter.load_action('plan1', action_id) }.must_raise KeyError
@@ -234,17 +270,18 @@ module Dynflow
           it 'serializes/deserializes the step data' do
             prepare_plans_with_actions
             step_id = step_data[:id]
-            prepare_step('plan1')
+            prepare_and_save_step('plan1')
             loaded_step = adapter.load_step('plan1', step_id)
             loaded_step[:id].must_equal step_id
-            loaded_step.must_equal(Utils.stringify_keys(step_data))
+
+            assert_equal_attributes!(step_data, loaded_step)
           end
         end
 
         describe '#find_past_delayed_plans' do
           it 'finds plans with start_before in past' do
-            start_time = Time.now
-            prepare_plans
+            start_time = Time.now.utc
+            prepare_and_save_plans
             adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :start_at => format_time(start_time + 60),
                                       :start_before => format_time(start_time - 60))
             adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :start_at => format_time(start_time - 60))
@@ -264,15 +301,16 @@ module Dynflow
         it_acts_as_persistence_adapter
 
         it 'allows inspecting the persisted content' do
-          plans = prepare_plans
+          plans = prepare_and_save_plans
 
           plans.each do |original|
             stored = adapter.to_hash.fetch(:execution_plans).find { |ep| ep[:uuid].strip == original[:id] }
-            stored.each { |k, v| stored[k] = v.to_s if v.is_a? Time }
             adapter.class::META_DATA.fetch(:execution_plan).each do |name|
               value = original.fetch(name.to_sym)
               if value.nil?
                 stored.fetch(name.to_sym).must_be_nil
+              elsif value.is_a?(Time)
+                stored.fetch(name.to_sym).inspect.must_equal value.inspect
               else
                 stored.fetch(name.to_sym).must_equal value
               end
@@ -296,6 +334,63 @@ module Dynflow
           assert_equal [], adapter.pull_envelopes(executor_world_id)
         end
 
+        it 'supports reading data saved prior to normalization' do
+          db = adapter.send(:db)
+          # Prepare records for saving
+          plan = prepare_plans.first
+          step_data = prepare_step(plan[:id])
+
+          # We used to store times as strings
+          plan[:started_at] = format_time plan[:started_at]
+          plan[:ended_at] = format_time plan[:ended_at]
+          step_data[:started_at] = format_time step_data[:started_at]
+          step_data[:ended_at] = format_time step_data[:ended_at]
+
+          plan_record = adapter.send(:prepare_record, :execution_plan, plan.merge(:uuid => plan[:id]))
+          action_record = adapter.send(:prepare_record, :action, action_data.dup)
+          step_record = adapter.send(:prepare_record, :step, step_data)
+
+          # Insert the records
+          db[:dynflow_execution_plans].insert plan_record.merge(:uuid => plan[:id])
+          db[:dynflow_actions].insert action_record.merge(:execution_plan_uuid => plan[:id], :id => action_data[:id])
+          db[:dynflow_steps].insert step_record.merge(:execution_plan_uuid => plan[:id], :id => step_data[:id])
+
+          # Load the saved records
+          loaded_plan   = adapter.load_execution_plan(plan[:id])
+          loaded_action = adapter.load_action(plan[:id], action_data[:id])
+          loaded_step   = adapter.load_step(plan[:id], step_data[:id])
+
+          # Test
+          assert_equal_attributes!(plan, loaded_plan)
+          assert_equal_attributes!(action_data, loaded_action)
+          assert_equal_attributes!(step_data, loaded_step)
+        end
+
+        it 'support updating data saved prior to normalization' do
+          db = adapter.send(:db)
+          plan = prepare_plans.first
+          plan_data = plan.dup
+          plan[:started_at] = format_time plan[:started_at]
+          plan[:ended_at] = format_time plan[:ended_at]
+          plan_record = adapter.send(:prepare_record, :execution_plan, plan.merge(:uuid => plan[:id]))
+
+          # Save the plan the old way
+          db[:dynflow_execution_plans].insert plan_record.merge(:uuid => plan[:id])
+
+          # Update and save the plan
+          plan_data[:state] = 'stopped'
+          plan_data[:result] = 'success'
+          adapter.save_execution_plan(plan[:id], plan_data)
+
+          # Check the plan has the changed columns populated
+          raw_plan = db[:dynflow_execution_plans].where(:uuid => 'plan1').first
+          raw_plan[:state].must_equal 'stopped'
+          raw_plan[:result].must_equal 'success'
+
+          # Load the plan and assert it doesn't read attributes from data
+          loaded_plan = adapter.load_execution_plan(plan[:id])
+          assert_equal_attributes!(plan_data, loaded_plan)
+        end
       end
     end
   end

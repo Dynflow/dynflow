@@ -7,6 +7,7 @@ module Dynflow
   module PersistenceAdapters
 
     Sequel.extension :migration
+    Sequel.database_timezone = :utc
 
     class Sequel < Abstract
       include Algebrick::TypeCheck
@@ -29,12 +30,18 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time),
-                    action:              %w(caller_execution_plan_id caller_action_id),
-                    step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight),
+      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time root_plan_step_id class),
+                    action:              %w(caller_execution_plan_id caller_action_id class plan_step_id run_step_id finalize_step_id),
+                    step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight
+                                            class action_class execution_plan_uuid),
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer)}
+
+      SERIALIZABLE_COLUMNS = { action:  %w(input output),
+                               delayed: %w(serialized_args),
+                               execution_plan: %w(run_flow finalize_flow execution_history step_ids),
+                               step:    %w(error children) }
 
       def initialize(config)
         config = config.dup
@@ -51,13 +58,14 @@ module Dynflow
       end
 
       def find_execution_plans(options = {})
+        table_name = :execution_plan
         options[:order_by] ||= :started_at
-        data_set = filter(:execution_plan,
-                          order(:execution_plan,
-                                paginate(table(:execution_plan), options),
+        data_set = filter(table_name,
+                          order(table_name,
+                                paginate(table(table_name), options),
                                 options),
                           options[:filters])
-        data_set.all.map { |record| load_data(record) }
+        data_set.all.map { |record| execution_plan_column_map(load_data(record, table_name)) }
       end
 
       def find_execution_plan_counts(options = {})
@@ -88,11 +96,11 @@ module Dynflow
       end
 
       def load_execution_plan(execution_plan_id)
-        load :execution_plan, uuid: execution_plan_id
+        execution_plan_column_map(load :execution_plan, uuid: execution_plan_id)
       end
 
       def save_execution_plan(execution_plan_id, value)
-        save :execution_plan, { uuid: execution_plan_id }, value
+        save :execution_plan, { uuid: execution_plan_id }, value, false
       end
 
       def delete_delayed_plans(filters, batch_size = 1000)
@@ -107,17 +115,19 @@ module Dynflow
       end
 
       def find_old_execution_plans(age)
-        table(:execution_plan)
+        table_name = :execution_plan
+        table(table_name)
           .where(::Sequel.lit('ended_at <= ? AND state = ?', age, 'stopped'))
-          .all.map { |plan| load_data plan }
+          .all.map { |plan| execution_plan_column_map(load_data plan, table_name) }
       end
 
       def find_past_delayed_plans(time)
-        table(:delayed)
+        table_name = :delayed
+        table(table_name)
           .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
           .order_by(:start_at)
           .all
-          .map { |plan| load_data(plan) }
+          .map { |plan| load_data(plan, table_name) }
       end
 
       def load_delayed_plan(execution_plan_id)
@@ -127,7 +137,7 @@ module Dynflow
       end
 
       def save_delayed_plan(execution_plan_id, value)
-        save :delayed, { execution_plan_uuid: execution_plan_id }, value
+        save :delayed, { execution_plan_uuid: execution_plan_id }, value, false
       end
 
       def load_step(execution_plan_id, step_id)
@@ -139,7 +149,7 @@ module Dynflow
       end
 
       def save_step(execution_plan_id, step_id, value)
-        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value
+        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, false
       end
 
       def load_action(execution_plan_id, action_id)
@@ -147,7 +157,7 @@ module Dynflow
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value
+        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, false
       end
 
       def connector_feature!
@@ -242,22 +252,37 @@ module Dynflow
         ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
-      def prepare_record(table_name, value, base = {})
+      def prepare_record(table_name, value, base = {}, with_data = true)
         record = base.dup
-        if table(table_name).columns.include?(:data)
+        if with_data && table(table_name).columns.include?(:data)
           record[:data] = dump_data(value)
+        else
+          record[:data] = nil
+          record.merge! serialize_columns(table_name, value)
         end
+
         record.merge! extract_metadata(table_name, value)
         record.each { |k, v| record[k] = v.to_s if v.is_a? Symbol }
+
         record
       end
 
-      def save(what, condition, value)
+      def serialize_columns(table_name, record)
+        record.reduce({}) do |acc, (key, value)|
+          if SERIALIZABLE_COLUMNS.fetch(table_name, []).include?(key.to_s)
+            acc.merge(key.to_sym => dump_data(value))
+          else
+            acc
+          end
+        end
+      end
+
+      def save(what, condition, value, with_data = true)
         table           = table(what)
         existing_record = with_retry { table.first condition } unless condition.empty?
 
         if value
-          record = prepare_record(what, value, (existing_record || condition))
+          record = prepare_record(what, value, (existing_record || condition), with_data)
           if existing_record
             with_retry { table.where(condition).update(record) }
           else
@@ -273,7 +298,7 @@ module Dynflow
       def load_record(what, condition)
         table = table(what)
         if (record = with_retry { table.first(Utils.symbolize_keys(condition)) } )
-          load_data(record)
+          load_data(record, what)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
@@ -284,11 +309,20 @@ module Dynflow
       def load_records(what, condition)
         table = table(what)
         records = with_retry { table.filter(Utils.symbolize_keys(condition)).all }
-        records.map { |record| load_data(record) }
+        records.map { |record| load_data(record, what) }
       end
 
-      def load_data(record)
-        Utils.indifferent_hash(MultiJson.load(record[:data]))
+      def load_data(record, what = nil)
+        hash = if record[:data].nil?
+                 SERIALIZABLE_COLUMNS.fetch(what, []).each do |key|
+                   key = key.to_sym
+                   record[key] = MultiJson.load(record[key]) unless record[key].nil?
+                 end
+                 record
+               else
+                 MultiJson.load(record[:data])
+               end
+        Utils.indifferent_hash(hash)
       end
 
       def ensure_backup_dir(backup_dir)
@@ -314,13 +348,14 @@ module Dynflow
       end
 
       def extract_metadata(what, value)
-        meta_keys = META_DATA.fetch(what)
+        meta_keys = META_DATA.fetch(what) - SERIALIZABLE_COLUMNS.fetch(what, [])
         value     = Utils.indifferent_hash(value)
         meta_keys.inject({}) { |h, k| h.update k.to_sym => value[k] }
       end
 
       def dump_data(value)
-        MultiJson.dump Type!(value, Hash)
+        return if value.nil?
+        MultiJson.dump Type!(value, Hash, Array)
       end
 
       def paginate(data_set, options)
@@ -394,6 +429,11 @@ module Dynflow
             retry
           end
         end
+      end
+
+      def execution_plan_column_map(plan)
+        plan[:id] = plan[:uuid] unless plan[:uuid].nil?
+        plan
       end
     end
   end
