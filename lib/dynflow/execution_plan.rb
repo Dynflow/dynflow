@@ -134,7 +134,14 @@ module Dynflow
     end
 
     def run_hooks(state)
-      actions.each do |action|
+      records = persistence.load_actions_attributes(@id, [:id, :class]).select do |action|
+        Utils.constantize(action[:class])
+             .execution_plan_hooks
+             .on(state).any?
+      end
+      action_ids = records.compact.map { |record| record[:id] }
+      return if action_ids.empty?
+      persistence.load_actions(self, action_ids).each do |action|
         action.class.execution_plan_hooks.run(self, action, state)
       end
     end

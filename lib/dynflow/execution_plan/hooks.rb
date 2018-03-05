@@ -70,8 +70,6 @@ module Dynflow
           end
         end
 
-        private
-
         # Returns which hooks should be run on certain event.
         #
         # @param kind [Symbol] what kind of hook are we looking for
@@ -79,6 +77,8 @@ module Dynflow
         def on(kind)
           hooks.select { |_key, on| on.include? kind }.keys
         end
+
+        private
 
         def validate_kinds!(kinds)
           kinds.each do |kind|

@@ -91,6 +91,14 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def load_actions_attributes(execution_plan_id, attributes)
+        raise NotImplementedError
+      end
+
+      def load_actions(execution_plan_id, action_ids)
+        raise NotImplementedError
+      end
+
       def save_action(execution_plan_id, action_id, value)
         raise NotImplementedError
       end
