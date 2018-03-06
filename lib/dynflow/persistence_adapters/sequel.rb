@@ -156,6 +156,14 @@ module Dynflow
         load :action, execution_plan_uuid: execution_plan_id, id: action_id
       end
 
+      def load_actions(execution_plan_id, action_ids)
+        load_records :action, { execution_plan_uuid: execution_plan_id, id: action_ids }
+      end
+
+      def load_actions_attributes(execution_plan_id, attributes)
+        load_records :action, { execution_plan_uuid: execution_plan_id }, attributes
+      end
+
       def save_action(execution_plan_id, action_id, value)
         save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, false
       end
@@ -306,10 +314,21 @@ module Dynflow
 
       alias_method :load, :load_record
 
-      def load_records(what, condition)
+      def load_records(what, condition, keys = nil)
         table = table(what)
-        records = with_retry { table.filter(Utils.symbolize_keys(condition)).all }
-        records.map { |record| load_data(record, what) }
+        records = with_retry do
+          filtered = table.filter(Utils.symbolize_keys(condition))
+          # Filter out requested columns which the table doesn't have, load data just in case
+          filtered = filtered.select(:data, *(table.columns & keys)) unless keys.nil?
+          filtered.all
+        end
+        records = records.map { |record| load_data(record, what) }
+        return records if keys.nil?
+        records.map do |record|
+          keys.reduce({}) do |acc, key|
+            acc.merge(key => record[key])
+          end
+        end
       end
 
       def load_data(record, what = nil)

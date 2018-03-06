@@ -264,6 +264,26 @@ module Dynflow
 
             adapter.save_execution_plan('plan1', nil)
           end
+
+          it 'allow to retrieve specific attributes using #load_actions_attributes' do
+            prepare_and_save_plans
+            prepare_action('plan1')
+            loaded_data = adapter.load_actions_attributes('plan1', [:id, :run_step_id]).first
+            loaded_data.keys.count.must_equal 2
+            loaded_data[:id].must_equal action_data[:id]
+            loaded_data[:run_step_id].must_equal action_data[:run_step_id]
+          end
+
+          it 'allows to load actions in bulk using #load_actions' do
+            prepare_and_save_plans
+            prepare_action('plan1')
+            action = action_data.dup
+            loaded_actions = adapter.load_actions('plan1', [1])
+            loaded_actions.count.must_equal 1
+            loaded_action = loaded_actions.first
+
+            assert_equal_attributes!(action, loaded_action)
+          end
         end
 
         describe '#load_step and #save_step' do

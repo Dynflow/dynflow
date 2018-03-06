@@ -23,11 +23,22 @@ module Dynflow
       return Action.from_hash(attributes, step.world)
     end
 
+    def load_actions(execution_plan, action_ids)
+      attributes = adapter.load_actions(execution_plan.id, action_ids)
+      attributes.map do |action|
+        Action.from_hash(action.merge(phase: Action::Present, execution_plan: execution_plan), @world)
+      end
+    end
+
     def load_action_for_presentation(execution_plan, action_id, step = nil)
       attributes = adapter.load_action(execution_plan.id, action_id)
       Action.from_hash(attributes.update(phase: Action::Present, execution_plan: execution_plan, step: step), @world).tap do |present_action|
         @world.middleware.execute(:present, present_action) {}
       end
+    end
+
+    def load_actions_attributes(execution_plan_id, attributes)
+      adapter.load_actions_attributes(execution_plan_id, attributes).reject(&:empty?)
     end
 
     def save_action(execution_plan_id, action)

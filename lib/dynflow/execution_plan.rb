@@ -51,6 +51,8 @@ module Dynflow
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
     end
 
+    require 'dynflow/execution_plan/hooks'
+
     def self.results
       @results ||= [:pending, :success, :warning, :error]
     end
@@ -109,6 +111,7 @@ module Dynflow
     end
 
     def update_state(state)
+      hooks_to_run = [state]
       original = self.state
       case self.state = state
       when :planning
@@ -117,6 +120,7 @@ module Dynflow
         @ended_at       = Time.now
         @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
+        hooks_to_run << (error? ? :failure : :success)
         unlock_all_singleton_locks!
       when :paused
         unlock_all_singleton_locks!
@@ -126,6 +130,20 @@ module Dynflow
       logger.debug format('%13s %s    %9s >> %9s',
                           'ExecutionPlan', id, original, state)
       self.save
+      hooks_to_run.each { |kind| run_hooks kind }
+    end
+
+    def run_hooks(state)
+      records = persistence.load_actions_attributes(@id, [:id, :class]).select do |action|
+        Utils.constantize(action[:class])
+             .execution_plan_hooks
+             .on(state).any?
+      end
+      action_ids = records.compact.map { |record| record[:id] }
+      return if action_ids.empty?
+      persistence.load_actions(self, action_ids).each do |action|
+        action.class.execution_plan_hooks.run(self, action, state)
+      end
     end
 
     def result

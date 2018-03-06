@@ -69,6 +69,7 @@ module Dynflow
         plan = world.plan(ParentAction, 20)
         future = world.execute plan.id
         wait_for { future.completed? }
+        plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
 
         action.output[:batch_count].must_equal action.total_count / action.batch_size
@@ -79,6 +80,7 @@ module Dynflow
         plan = world.plan(ParentAction, 20)
         future = world.execute plan.id
         wait_for { future.completed? }
+        plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
         action.output[:batch_count].must_equal 1
         future.value.state.must_equal :paused
@@ -97,6 +99,7 @@ module Dynflow
         plan = world.plan(ParentAction, 10)
         future = world.execute plan.id
         wait_for { future.completed? }
+        plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
         action.send(:can_spawn_next_batch?).must_equal false
         action.current_batch.must_be :empty?
