@@ -940,6 +940,44 @@ Solutions are:
 -   **Offloading computation** - CPU heavy parts can be offloaded to different services
     notifying the suspended actions when the computation is done.
 
+### Multiple queues support
+
+By default, a single queue and a pool of workers is used to process
+all the actions in the system. This can cause some actions to block
+execution of some higher-priority ones in the system.
+
+To address this case, it's possible to define additional queues tied
+to additional pool of workers dedicated for it. This way, they can be
+processed more independently from the default queue.
+
+To us the queue, one needs to register additional queues when defining
+the executor world:
+
+```ruby
+config = Dynflow::Config.new
+config.queues.add(:slow, :pool_size => 5)
+world = Dynflow::World.new(config)
+```
+
+The action to use the queue just needs to override the `queue` method like this:
+
+
+```ruby
+class MyAction < Dynflow::Action
+  def queue
+    :slow
+  end
+
+  def run
+    sleep 60
+  end
+end
+```
+
+In the current implementation, it's expected all the executors would
+have the same set of queues defined. In the future implementation,
+dedicated executors with just a subset of queues should be possible.
+
 ### Middleware
 
 Each action class has chain of middlewares which wrap phases of the action execution.
