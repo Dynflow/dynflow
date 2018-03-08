@@ -11,7 +11,8 @@ module Dynflow
         it 'by default informs about the hostname and the pid running the world' do
           registered_world = world.coordinator.find_worlds(false, id: world.id).first
           registered_world.meta.must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid,
-                                           'queues' => { 'default' => { 'pool_size' => 5 }})
+                                           'queues' => { 'default' => { 'pool_size' => 5 },
+                                                         'slow' => { 'pool_size' => 1 }})
         end
 
         it 'is configurable' do
@@ -22,7 +23,8 @@ module Dynflow
 
       describe '#get_execution_status' do
         let(:base) do
-          { :default => { :pool_size => 5, :free_workers => 5, :execution_status => {} }}
+          { :default => { :pool_size => 5, :free_workers => 5, :execution_status => {} },
+            :slow => { :pool_size=> 1, :free_workers=> 1, :execution_status=> {}} }
         end
 
         it 'retrieves correct execution items count' do
@@ -30,6 +32,7 @@ module Dynflow
           id = 'something like uuid'
           expected = base.dup
           expected[:default][:execution_status] = { id => 0 }
+          expected[:slow][:execution_status] = { id => 0 }
           world.get_execution_status(world.id, id, 5).value!.must_equal(expected)
         end
       end

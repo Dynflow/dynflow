@@ -95,6 +95,7 @@ module WorldFactory
     config.auto_terminate       = false
     config.backup_deleted_plans = false
     config.backup_dir           = nil
+    config.queues.add(:slow, :pool_size => 1)
     yield config if block_given?
     return config
   end

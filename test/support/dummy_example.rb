@@ -38,6 +38,10 @@ module Support
         $slow_actions_done ||= 0
         $slow_actions_done +=1
       end
+
+      def queue
+        :slow
+      end
     end
 
     class Polling < Dynflow::Action
