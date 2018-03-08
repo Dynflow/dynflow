@@ -80,7 +80,6 @@ module Dynflow
       end
 
       def to_hash
-<<<<<<< HEAD
         recursive_to_hash execution_plan_uuid: execution_plan_id,
                           id:                  id,
                           state:               state,
