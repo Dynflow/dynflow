@@ -19,7 +19,7 @@ module Dynflow
       end
 
       def strip_heredoc(str)
-        strip_size = str.lines.reject { |l| l =~ /^\s*$/ }.map { |l| l[/^\s*/].length  }.min
+        strip_size = str.lines.reject { |l| l =~ /^\s*$/ }.map { |l| l[/^\s*/].length }.min
         str.lines.map do |line|
           line[strip_size..-1] || ''
         end.join

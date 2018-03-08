@@ -32,13 +32,49 @@ module Dynflow
         @config.validate(self)
       end
 
+      def queues
+        @queues ||= @config.queues.finalized_config(self)
+      end
+
       def method_missing(name)
         return @cache[name] if @cache.key?(name)
         value = @config.send(name)
         value = value.call(@world, self) if value.is_a? Proc
-        @config.send("validate_#{ name }!", value)
+        validation_method = "validate_#{ name }!"
+        @config.send(validation_method, value) if @config.respond_to?(validation_method)
         @cache[name] = value
       end
+    end
+
+    class QueuesConfig
+      attr_reader :queues
+
+      def initialize
+        @queues = {:default => {}}
+      end
+
+      # Add a new queue to the configuration
+      #
+      # @param [Hash] queue_options
+      # @option queue_options :pool_size The amount of workers available for the queue.
+      #   By default, it uses global pool_size config option.
+      def add(name, queue_options = {})
+        Utils.validate_keys!(queue_options, :pool_size)
+        name = name.to_sym
+        raise ArgumentError, "Queue #{name} is already defined" if @queues.key?(name)
+        @queues[name] = queue_options
+      end
+
+      def finalized_config(config_for_world)
+        @queues.values.each do |queue_options|
+          queue_options[:pool_size] ||= config_for_world.pool_size
+        end
+        @queues
+      end
+    end
+
+    def queues
+      @queues ||= QueuesConfig.new
     end
 
     config_attr :logger_adapter, LoggerAdapters::Abstract do
@@ -59,10 +95,6 @@ module Dynflow
 
     config_attr :pool_size, Integer do
       5
-    end
-
-    config_attr :queues, Hash do |_, config|
-      { :default => { :pool_size => config.pool_size } }
     end
 
     config_attr :executor, Executors::Abstract, FalseClass do |world, config|
@@ -143,22 +175,19 @@ module Dynflow
     end
 
     def validate(config_for_world)
-      default_queue = config_for_world.queues[:default]
-      if default_queue.nil? || default_queue[:pool_size].to_i <= 0
-        raise Errors::ConfigurationError, "Pool_size for defualt queue not defined"
-      end
       if defined? ::ActiveRecord::Base
-        ar_pool_size = ::ActiveRecord::Base.connection_pool.instance_variable_get(:@size)
-        if (config_for_world.pool_size / 2.0) > ar_pool_size
-          config_for_world.world.logger.warn 'Consider increasing ActiveRecord::Base.connection_pool size, ' +
-                                             "it's #{ar_pool_size} but there is #{config_for_world.pool_size} " +
-                                             'threads in Dynflow pool.'
+        begin
+          ar_pool_size = ::ActiveRecord::Base.connection_pool.instance_variable_get(:@size)
+          if (config_for_world.pool_size / 2.0) > ar_pool_size
+            config_for_world.world.logger.warn 'Consider increasing ActiveRecord::Base.connection_pool size, ' +
+                                               "it's #{ar_pool_size} but there is #{config_for_world.pool_size} " +
+                                               'threads in Dynflow pool.'
+          end
+        rescue ActiveRecord::ConnectionNotEstablished # rubocop:disable Lint/HandleExceptions
+          # If in tests or in an environment where ActiveRecord doesn't have a
+          # real DB connection, we want to skip AR configuration altogether
         end
       end
-
-    rescue ActiveRecord::ConnectionNotEstablished # rubocop:disable Lint/HandleExceptions
-      # If in tests or in an environment where ActiveRecord doesn't have a
-      # real DB connection, we want to skip AR configuration altogether
     end
   end
 end

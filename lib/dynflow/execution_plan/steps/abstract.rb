@@ -8,6 +8,7 @@ module Dynflow
                   :ended_at, :execution_time, :real_time, :queue
       attr_accessor :error
 
+      # rubocop:disable Metrics/ParameterLists
       def initialize(execution_plan_id,
                      id,
                      state,
@@ -44,6 +45,7 @@ module Dynflow
 
         @action_id = action_id || raise(ArgumentError, 'missing action_id')
       end
+      # rubocop:enable Metrics/ParameterLists
 
       def action_logger
         @world.action_logger

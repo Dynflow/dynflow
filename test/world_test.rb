@@ -29,7 +29,7 @@ module Dynflow
           world.get_execution_status(world.id, nil, 5).value!.must_equal(base)
           id = 'something like uuid'
           expected = base.dup
-          expected[:default].merge!(:execution_status => { id => 0 })
+          expected[:default][:execution_status] = { id => 0 }
           world.get_execution_status(world.id, id, 5).value!.must_equal(expected)
         end
       end
