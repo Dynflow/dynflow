@@ -111,6 +111,7 @@ module Dynflow
 
           # we can't do any operation until the Rails.application.dynflow.world is set
           config.auto_execute        = false
+          config.auto_validity_check = false
         end
       end
 

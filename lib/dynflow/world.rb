@@ -42,10 +42,8 @@ module Dynflow
         @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, config_for_world.executor_semaphore)
         executor.initialized.wait
       end
-      if auto_validity_check
-        self.worlds_validity_check
-        self.locks_validity_check
-      end
+      perform_validity_checks if auto_validity_check
+
       @delayed_executor         = try_spawn(config_for_world, :delayed_executor, Coordinator::DelayedExecutorLock)
       @execution_plan_cleaner   = try_spawn(config_for_world, :execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
       @meta                     = config_for_world.meta
@@ -335,6 +333,11 @@ module Dynflow
       end
     rescue Errors::PersistenceError
       logger.error "failed to write data while invalidating execution lock #{execution_lock}"
+    end
+
+    def perform_validity_checks
+      worlds_validity_check
+      locks_validity_check
     end
 
     def worlds_validity_check(auto_invalidate = true, worlds_filter = {})
