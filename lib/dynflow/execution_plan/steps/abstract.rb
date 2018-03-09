@@ -134,10 +134,6 @@ module Dynflow
         false
       end
 
-      def queue
-        @queue
-      end
-
       protected
 
       def self.new_from_hash(hash, execution_plan_id, world)
