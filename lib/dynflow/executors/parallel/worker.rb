@@ -8,12 +8,13 @@ module Dynflow
         end
 
         def on_message(work_item)
-          work_item.execute
+          Executors.run_user_code do
+            work_item.execute
+          end
         rescue Errors::PersistenceError => e
           @pool.tell([:handle_persistence_error, e])
         ensure
           @pool.tell([:worker_done, reference, work_item])
-          @transaction_adapter.cleanup
         end
       end
     end

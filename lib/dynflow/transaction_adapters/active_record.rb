@@ -8,10 +8,6 @@ module Dynflow
       def rollback
         raise ::ActiveRecord::Rollback
       end
-
-      def cleanup
-        ::ActiveRecord::Base.clear_active_connections!
-      end
     end
   end
 end
