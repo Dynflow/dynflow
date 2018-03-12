@@ -52,8 +52,10 @@ module Dynflow
               plan.timeout
             else
               @logger.debug "Executing plan #{plan.execution_plan_uuid}"
-              plan.plan
-              plan.execute
+              Executors.run_user_code do
+                plan.plan
+                plan.execute
+              end
             end
             processed_plan_uuids << plan.execution_plan_uuid
           end

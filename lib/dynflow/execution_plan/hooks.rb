@@ -60,12 +60,16 @@ module Dynflow
         # @param action [Action] the action which triggered the hooks
         # @param kind [Symbol] the kind of hooks to run, one of {HOOK_KINDS}
         def run(execution_plan, action, kind)
-          on(kind).each do |hook|
-            begin
-              action.send(hook, execution_plan)
-            rescue => e
-              execution_plan.logger.error "Failed to run hook '#{hook}' for action '#{action.class}'"
-              execution_plan.logger.debug e
+          hooks = on(kind)
+          return if hooks.empty?
+          Executors.run_user_code do
+            hooks.each do |hook|
+              begin
+                action.send(hook, execution_plan)
+              rescue => e
+                execution_plan.logger.error "Failed to run hook '#{hook}' for action '#{action.class}'"
+                execution_plan.logger.debug e
+              end
             end
           end
         end
