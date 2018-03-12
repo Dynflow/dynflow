@@ -16,6 +16,7 @@ class DaemonTest < ActiveSupport::TestCase
     @world_class = mock('dummy world factory')
     @dummy_world = ::Dynflow::Testing::DummyWorld.new
     @dummy_world.stubs(:auto_execute)
+    @dummy_world.stubs(:perform_validity_checks)
     @event = Concurrent.event
     @dummy_world.stubs(:terminated).returns(@event)
     @world_class.stubs(:new).returns(@dummy_world)
