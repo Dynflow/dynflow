@@ -7,7 +7,8 @@ module Dynflow
       # the number of threads in the pool handling the execution
       attr_accessor :pool_size
 
-      # the size of db connection pool
+      # the size of db connection pool, if not set, it's calculated
+      # from the amount of workers in the pool
       attr_accessor :db_pool_size
 
       # set true if the executor runs externally (by default true in procution, othewise false)
@@ -32,7 +33,6 @@ module Dynflow
 
       def initialize
         self.pool_size                = 5
-        self.db_pool_size             = pool_size + 5
         self.remote                   = ::Rails.env.production?
         self.transaction_adapter      = ::Dynflow::TransactionAdapters::ActiveRecord.new
         self.eager_load_paths         = []
@@ -83,13 +83,24 @@ module Dynflow
       end
 
       def increase_db_pool_size?
-        !::Rails.env.test?
+        !::Rails.env.test? && !remote?
+      end
+
+      def calculate_db_pool_size(world)
+        self.db_pool_size || world.config.queues.values.inject(5) do |pool_size, pool_options|
+          pool_size += pool_options[:pool_size]
+        end
       end
 
       # To avoid pottential timeouts on db connection pool, make sure
       # we have the pool bigger than the thread pool
-      def increase_db_pool_size
+      def increase_db_pool_size(world = nil)
+        if world.nil?
+          warn 'Deprecated: using `increase_db_pool_size` outside of Dynflow code is not needed anymore'
+          return
+        end
         if increase_db_pool_size?
+          db_pool_size = calculate_db_pool_size(world)
           ::ActiveRecord::Base.connection_pool.disconnect!
 
           config = ::ActiveRecord::Base.configurations[::Rails.env]
@@ -100,11 +111,11 @@ module Dynflow
 
       # generates the options hash consumable by the Dynflow's world
       def world_config
-        ::Dynflow::Config.new.tap do |config|
+        @world_config ||= ::Dynflow::Config.new.tap do |config|
           config.auto_rescue         = true
           config.logger_adapter      = ::Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
           config.pool_size           = 5
-          config.persistence_adapter = initialize_persistence
+          config.persistence_adapter = ->(world, _) { initialize_persistence(world) }
           config.transaction_adapter = transaction_adapter
           config.executor            = ->(world, _) { initialize_executor(world) }
           config.connector           = ->(world, _) { initialize_connector(world) }
@@ -115,13 +126,18 @@ module Dynflow
         end
       end
 
+      # expose the queues definition to Rails developers
+      def queues
+        world_config.queues
+      end
+
       protected
 
-      def default_sequel_adapter_options
+      def default_sequel_adapter_options(world)
         db_config            = ::ActiveRecord::Base.configurations[::Rails.env].dup
         db_config['adapter'] = db_config['adapter'].gsub(/_?makara_?/, '')
         db_config['adapter'] = 'postgres' if db_config['adapter'] == 'postgresql'
-        db_config['max_connections'] = db_pool_size if increase_db_pool_size?
+        db_config['max_connections'] = calculate_db_pool_size(world) if increase_db_pool_size?
 
         if db_config['adapter'] == 'sqlite3'
           db_config['adapter'] = 'sqlite'
@@ -139,7 +155,7 @@ module Dynflow
         if remote?
           false
         else
-          ::Dynflow::Executors::Parallel.new(world, pool_size)
+          ::Dynflow::Executors::Parallel.new(world, world.config.queues)
         end
       end
 
@@ -147,9 +163,13 @@ module Dynflow
         ::Dynflow::Connectors::Database.new(world)
       end
 
+      def persistence_class
+        ::Dynflow::PersistenceAdapters::Sequel
+      end
+
       # Sequel adapter based on Rails app database.yml configuration
-      def initialize_persistence
-        ::Dynflow::PersistenceAdapters::Sequel.new(default_sequel_adapter_options)
+      def initialize_persistence(world)
+        persistence_class.new(default_sequel_adapter_options(world))
       end
     end
   end
