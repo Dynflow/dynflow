@@ -23,9 +23,14 @@ module Dynflow
       end
 
       class JobWrapper < Dynflow::Action
+        def queue
+          input[:queue].to_sym
+        end
+
         def plan(attributes)
           input[:job_class] = attributes['job_class']
           input[:job_arguments] = attributes['arguments']
+          input[:queue] = attributes['queue_name']
           plan_self
         end
 
