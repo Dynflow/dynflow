@@ -950,7 +950,7 @@ To address this case, it's possible to define additional queues tied
 to additional pool of workers dedicated for it. This way, they can be
 processed more independently from the default queue.
 
-To us the queue, one needs to register additional queues when defining
+To use the queue, one needs to register additional queues when defining
 the executor world:
 
 ```ruby
@@ -975,8 +975,9 @@ end
 ```
 
 In the current implementation, it's expected all the executors would
-have the same set of queues defined. In the future implementation,
-dedicated executors with just a subset of queues should be possible.
+have the same set of queues defined. In the future implementation it
+should be possible to have dedicated executors with just a subset of
+queues
 
 ### Middleware
 
