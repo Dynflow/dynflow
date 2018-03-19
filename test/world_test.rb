@@ -17,7 +17,7 @@ module Dynflow
 
         it 'is configurable' do
           registered_world = world.coordinator.find_worlds(false, id: world_with_custom_meta.id).first
-          registered_world.meta.must_equal('fast' => true)
+          registered_world.meta['fast'].must_equal true
         end
       end
 

@@ -163,7 +163,7 @@ module Dynflow
     end
 
     config_attr :meta do |world, config|
-      { 'hostname' => Socket.gethostname, 'pid' => Process.pid, :queues => config.queues }
+      { 'hostname' => Socket.gethostname, 'pid' => Process.pid }
     end
 
     config_attr :backup_deleted_plans, Algebrick::Types::Boolean do

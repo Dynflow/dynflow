@@ -46,6 +46,7 @@ module Dynflow
       @delayed_executor         = try_spawn(:delayed_executor, Coordinator::DelayedExecutorLock)
       @execution_plan_cleaner   = try_spawn(:execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
       @meta                     = @config.meta
+      @meta['queues']           = @config.queues if @executor
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
       coordinator.register_world(registered_world)
