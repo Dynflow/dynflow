@@ -5,12 +5,12 @@ module Dynflow
         attr_reader :logger
 
         def initialize(world, queues_options)
-          @logger                  = world.logger
-          @world                   = Type! world, World
-          @queues_options          = queues_options
-          @pools                   = {}
-          @terminated              = nil
-          @director                = Director.new(@world)
+          @logger         = world.logger
+          @world          = Type! world, World
+          @queues_options = queues_options
+          @pools          = {}
+          @terminated     = nil
+          @director       = Director.new(@world)
 
           initialize_queues
         end
