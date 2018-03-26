@@ -10,24 +10,29 @@ module Dynflow
       describe '#meta' do
         it 'by default informs about the hostname and the pid running the world' do
           registered_world = world.coordinator.find_worlds(false, id: world.id).first
-          registered_world.meta.must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid)
+          registered_world.meta.must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid,
+                                           'queues' => { 'default' => { 'pool_size' => 5 },
+                                                         'slow' => { 'pool_size' => 1 }})
         end
 
         it 'is configurable' do
           registered_world = world.coordinator.find_worlds(false, id: world_with_custom_meta.id).first
-          registered_world.meta.must_equal('fast' => true)
+          registered_world.meta['fast'].must_equal true
         end
       end
 
       describe '#get_execution_status' do
         let(:base) do
-          { :pool_size => 5, :free_workers => 5, :execution_status => {} }
+          { :default => { :pool_size => 5, :free_workers => 5, :execution_status => {} },
+            :slow => { :pool_size=> 1, :free_workers=> 1, :execution_status=> {}} }
         end
 
         it 'retrieves correct execution items count' do
           world.get_execution_status(world.id, nil, 5).value!.must_equal(base)
           id = 'something like uuid'
-          expected = base.merge(:execution_status => { id => 0 })
+          expected = base.dup
+          expected[:default][:execution_status] = { id => 0 }
+          expected[:slow][:execution_status] = { id => 0 }
           world.get_execution_status(world.id, id, 5).value!.must_equal(expected)
         end
       end

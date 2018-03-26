@@ -13,6 +13,11 @@ module Dynflow
         }
       end
 
+      def update_from_action(action)
+        super
+        self.progress_weight = action.finalize_progress_weight
+      end
+
       def phase
         Action::Finalize
       end

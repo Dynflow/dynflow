@@ -9,6 +9,22 @@ module Dynflow
         end
       end
 
+      def value_field(key, value)
+        strip_heredoc(<<-HTML)
+          <p>
+            <b>#{key}:</b>
+            #{h(value)}
+          </p>
+        HTML
+      end
+
+      def strip_heredoc(str)
+        strip_size = str.lines.reject { |l| l =~ /^\s*$/ }.map { |l| l[/^\s*/].length }.min
+        str.lines.map do |line|
+          line[strip_size..-1] || ''
+        end.join
+      end
+
       def prettify_value(value)
         YAML.dump(value)
       end

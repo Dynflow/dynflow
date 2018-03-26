@@ -28,6 +28,11 @@ module Dynflow
         return @filtering_options
       end
 
+      def load_worlds(executors_only = false)
+        @worlds = world.coordinator.find_worlds(executors_only)
+        @executors, @clients = @worlds.partition(&:executor?)
+      end
+
       def find_execution_plans_options(show_all = false)
         options = Utils.indifferent_hash({})
         options.merge!(filtering_options(show_all))

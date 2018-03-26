@@ -6,41 +6,48 @@
   <li><a href="<%= url("/worlds/execution_status") %>" class="postlink">load execution items counts</a>: see counts of execution items per world</li>
 </ul>
 
+<h3>Executors</h3>
+<% @executors.each do |world| %>
+  <%= value_field('Id', world.id) %>
+  <%= value_field('Metadata', world.meta) %>
+  <p>
+    <b>Status:</b>
+    <%= erb :world_validation_result, locals: { world: world } %>
+  </p>
+  <% if world.data[:status] %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Queue name</th>
+          <th>Queue size</th>
+          <th>Free/Total workers</th>
+        </tr>
+      </thead>
+    <% world.data[:status].each do |queue_name, info| %>
+      <tr>
+        <td><%= h(queue_name) %></td>
+        <td><%= h(info[:queue_size]) %></td>
+        <td><%= h(info[:free_workers]) %>/<%= h(info[:pool_size]) %></td>
+      </tr>
+    <% end %>
+    </table>
+  <% end %>
+<% end %>
+<h3>Clients</h3>
 <table class="table">
   <thead>
     <tr>
       <th>Id</th>
       <th>Meta</th>
-      <th>Executor?</th>
-      <th>Execution items</th>
-      <th>Free/Total workers</th>
       <th></th>
     </tr>
   </thead>
-
-<% @worlds.each do |world| %>
+<% @clients.each do |world| %>
   <tr>
     <td><%= h(world.id) %></td>
     <td><%= h(world.meta) %></td>
-    <td><%= "true" if world.is_a? Dynflow::Coordinator::ExecutorWorld %></td>
-    <td><%= h(world.data['execution_status'] || 'N/A') %></td>
-    <td><%= world.data.key?('free_workers') ? "#{world.data['free_workers']}/#{world.data[:pool_size]}" : 'N/A' %></td>
     <td>
-      <% validation_result = @validation_results[world.id] if @validation_results %>
-
-      <% unless validation_result == :invalidated %>
-        <a href="<%= url("/worlds/#{world.id}/check") %>" class="postlink">check</a>
-      <% end %>
-
-      <% if validation_result %>
-        <% if validation_result == :invalid %>
-          <a href="<%= url("/worlds/#{world.id}/check?invalidate=true") %>" class="postlink">invalidate</a>
-        <% end %>
-
-        <span class="label label-<%= validation_result_css_class(validation_result) %>">
-          <%= h(validation_result) %>
-        </span>
-      <% end %>
+      <%= erb :world_validation_result, locals: { world: world } %>
     </td>
   </tr>
 <% end %>

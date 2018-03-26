@@ -180,6 +180,7 @@ module Dynflow
       @from_subscription = Type! from_subscription, TrueClass, FalseClass
     end
 
+    # action that caused this action to be planned. Available only in planning phase
     def triggering_action
       phase! Plan
       @triggering_action
@@ -314,6 +315,12 @@ module Dynflow
 
     def holds_singleton_lock?
       false
+    end
+
+    # @override define what pool should the action be run in. The
+    # queue defined here will also be used as the default queue for
+    # all the steps planned under this action, unless overrided by sub-action
+    def queue
     end
 
     protected

@@ -46,7 +46,8 @@ module Dynflow
           end
         end
 
-        def initialize(core, pool_size, transaction_adapter)
+        def initialize(core, name, pool_size, transaction_adapter)
+          @name = name
           @executor_core = core
           @pool_size     = pool_size
           @free_workers  = Array.new(pool_size) { |i| Worker.spawn("worker-#{i}", reference, transaction_adapter) }
@@ -84,7 +85,7 @@ module Dynflow
         def try_to_terminate
           if terminating? && @free_workers.size == @pool_size
             @free_workers.map { |worker| worker.ask(:terminate!) }.map(&:wait)
-            @executor_core.tell(:finish_termination)
+            @executor_core.tell([:finish_termination, @name])
             finish_termination
           end
         end

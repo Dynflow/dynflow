@@ -38,6 +38,7 @@ module Dynflow
         @world = world
 
         unless config.remote?
+          config.increase_db_pool_size(world)
           config.run_on_init_hooks(world)
           # leave this just for long-running executors
           unless config.rake_task_with_executor?

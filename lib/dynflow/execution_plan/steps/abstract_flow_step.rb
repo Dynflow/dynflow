@@ -2,6 +2,14 @@ module Dynflow
   module ExecutionPlan::Steps
     class AbstractFlowStep < Abstract
 
+      # Method called when initializing the step to customize the behavior based on the
+      # action definition during the planning phase
+      def update_from_action(action)
+        @queue = action.queue
+        @queue ||= action.triggering_action.queue if action.triggering_action
+        @queue ||= :default
+      end
+
       def execute(*args)
         return self if [:skipped, :success].include? self.state
         open_action do |action|

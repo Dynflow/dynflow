@@ -4,6 +4,8 @@ require 'dynflow/active_job/queue_adapter'
 
 module Dynflow
   class SampleJob < ::ActiveJob::Base
+    queue_as :slow
+
     def perform(msg)
       puts "This job says #{msg}"
     end
@@ -20,8 +22,10 @@ module Dynflow
       rails_app_mock .expect(:dynflow, dynflow_mock)
       rails_mock = Minitest::Mock.new
       rails_mock.expect(:application, rails_app_mock)
-      @original_rails = ::Rails
-      Object.send(:remove_const, 'Rails')
+      if defined? ::Rails
+        @original_rails = ::Rails
+        Object.send(:remove_const, 'Rails')
+      end
       Object.const_set('Rails', rails_mock)
     end
 

@@ -1,6 +1,16 @@
 module Dynflow
   module Utils
 
+    def self.validate_keys!(hash, *valid_keys)
+      valid_keys.flatten!
+      unexpected_options = hash.keys - valid_keys - valid_keys.map(&:to_s)
+      unless unexpected_options.empty?
+        raise ArgumentError, "Unexpected options #{unexpected_options.inspect}. "\
+            "Valid keys are: #{valid_keys.map(&:inspect).join(', ')}"
+      end
+      hash
+    end
+
     def self.symbolize_keys(hash)
       return hash.symbolize_keys if hash.respond_to?(:symbolize_keys)
       hash.reduce({}) do |new_hash, (key, value)|

@@ -4,7 +4,7 @@ module Dynflow
     include Algebrick::TypeCheck
     include Algebrick::Matching
 
-    attr_reader :id, :client_dispatcher, :executor_dispatcher, :executor, :connector,
+    attr_reader :id, :config, :client_dispatcher, :executor_dispatcher, :executor, :connector,
                 :transaction_adapter, :logger_adapter, :coordinator,
                 :persistence, :action_classes, :subscription_index,
                 :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
@@ -13,53 +13,53 @@ module Dynflow
     def initialize(config)
       @id                     = SecureRandom.uuid
       @clock                  = spawn_and_wait(Clock, 'clock')
-      config_for_world        = Config::ForWorld.new(config, self)
-      @logger_adapter         = config_for_world.logger_adapter
-      config_for_world.validate
-      @transaction_adapter    = config_for_world.transaction_adapter
-      @persistence            = Persistence.new(self, config_for_world.persistence_adapter,
-                                                :backup_deleted_plans => config_for_world.backup_deleted_plans,
-                                                :backup_dir => config_for_world.backup_dir)
-      @coordinator            = Coordinator.new(config_for_world.coordinator_adapter)
-      @executor               = config_for_world.executor
-      @action_classes         = config_for_world.action_classes
-      @auto_rescue            = config_for_world.auto_rescue
-      @exit_on_terminate      = Concurrent::AtomicBoolean.new(config_for_world.exit_on_terminate)
-      @connector              = config_for_world.connector
+      @config                 = Config::ForWorld.new(config, self)
+      @logger_adapter         = @config.logger_adapter
+      @config.validate
+      @transaction_adapter    = @config.transaction_adapter
+      @persistence            = Persistence.new(self, @config.persistence_adapter,
+                                                :backup_deleted_plans => @config.backup_deleted_plans,
+                                                :backup_dir => @config.backup_dir)
+      @coordinator            = Coordinator.new(@config.coordinator_adapter)
+      @executor               = @config.executor
+      @action_classes         = @config.action_classes
+      @auto_rescue            = @config.auto_rescue
+      @exit_on_terminate      = Concurrent::AtomicBoolean.new(@config.exit_on_terminate)
+      @connector              = @config.connector
       @middleware             = Middleware::World.new
       @middleware.use Middleware::Common::Transaction if @transaction_adapter
       @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
-      @dead_letter_handler    = spawn_and_wait(DeadLetterSilencer, 'default_dead_letter_handler', config_for_world.silent_dead_letter_matchers)
-      @meta                   = config_for_world.meta
-      @auto_validity_check    = config_for_world.auto_validity_check
-      @validity_check_timeout = config_for_world.validity_check_timeout
-      @throttle_limiter       = config_for_world.throttle_limiter
+      @dead_letter_handler    = spawn_and_wait(DeadLetterSilencer, 'default_dead_letter_handler', @config.silent_dead_letter_matchers)
+      @auto_validity_check    = @config.auto_validity_check
+      @validity_check_timeout = @config.validity_check_timeout
+      @throttle_limiter       = @config.throttle_limiter
       @terminated             = Concurrent.event
-      @termination_timeout    = config_for_world.termination_timeout
+      @termination_timeout    = @config.termination_timeout
       calculate_subscription_index
 
       if executor
-        @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, config_for_world.executor_semaphore)
+        @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, @config.executor_semaphore)
         executor.initialized.wait
       end
       perform_validity_checks if auto_validity_check
 
-      @delayed_executor         = try_spawn(config_for_world, :delayed_executor, Coordinator::DelayedExecutorLock)
-      @execution_plan_cleaner   = try_spawn(config_for_world, :execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
-      @meta                     = config_for_world.meta
+      @delayed_executor         = try_spawn(:delayed_executor, Coordinator::DelayedExecutorLock)
+      @execution_plan_cleaner   = try_spawn(:execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
+      @meta                     = @config.meta
+      @meta['queues']           = @config.queues if @executor
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new
 
-      if config_for_world.auto_terminate
+      if @config.auto_terminate
         at_exit do
           @exit_on_terminate.make_false # make sure we don't terminate twice
           self.terminate.wait
         end
       end
-      self.auto_execute if config_for_world.auto_execute
+      self.auto_execute if @config.auto_execute
       @delayed_executor.start if @delayed_executor
     end
 
@@ -402,9 +402,9 @@ module Dynflow
       []
     end
 
-    def try_spawn(config_for_world, what, lock_class = nil)
+    def try_spawn(what, lock_class = nil)
       object = nil
-      return nil if !executor || (object = config_for_world.public_send(what)).nil?
+      return nil if !executor || (object = @config.public_send(what)).nil?
 
       coordinator.acquire(lock_class.new(self)) if lock_class
       object.spawn.wait
