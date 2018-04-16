@@ -25,6 +25,20 @@ module Dynflow
         end
         let(:execution_plan) { delayed_plan.execution_plan }
 
+        describe 'abstract executor' do
+          let(:abstract_delayed_executor) { DelayedExecutors::AbstractCore.new(world) }
+
+          it 'handles wrong plan state' do
+            delayed_plan.execution_plan.state = :planning
+            abstract_delayed_executor.send(:process, [delayed_plan], @start_at)
+            delayed_plan.execution_plan.state.must_equal :planned
+
+            delayed_plan.execution_plan.set_state(:running, true)
+            abstract_delayed_executor.send(:process, [delayed_plan], @start_at)
+            delayed_plan.execution_plan.state.must_equal :running
+          end
+        end
+
         it 'returns the progress as 0' do
           execution_plan.progress.must_equal 0
         end

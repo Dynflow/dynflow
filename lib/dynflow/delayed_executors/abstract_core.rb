@@ -46,8 +46,12 @@ module Dynflow
       def process(delayed_plans, check_time)
         processed_plan_uuids = []
         delayed_plans.each do |plan|
+          fix_plan_state(plan)
           with_error_handling do
-            if !plan.start_before.nil? && plan.start_before < check_time
+            if plan.execution_plan.state != :scheduled
+              # in case the previous process was terminated after running the plan, but before deleting the delayed plan record.
+              @logger.info("Execution plan #{plan.execution_plan_uuid} is expected to be in 'scheduled' state, was '#{plan.execution_plan.state}', skipping")
+            elsif !plan.start_before.nil? && plan.start_before < check_time
               @logger.debug "Failing plan #{plan.execution_plan_uuid}"
               plan.timeout
             else
@@ -63,6 +67,16 @@ module Dynflow
         world.persistence.delete_delayed_plans(:execution_plan_uuid => processed_plan_uuids) unless processed_plan_uuids.empty?
       end
 
+      private
+
+      # handle the case, where the process was termintated while planning was in progress before
+      def fix_plan_state(plan)
+        if plan.execution_plan.state == :planning
+          @logger.info("Execution plan #{plan.execution_plan_uuid} is expected to be in 'scheduled' state, was '#{plan.execution_plan.state}', auto-fixing")
+          plan.execution_plan.set_state(:scheduled, true)
+          plan.execution_plan.save
+        end
+      end
     end
   end
 end
