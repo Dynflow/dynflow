@@ -8,9 +8,10 @@ module Dynflow
     # we should wrap it with this method, and we can ensure here to do
     # necessary cleanup, such as cleaning ActiveRecord connections
     def self.run_user_code
+      clear_connections = defined?(::ActiveRecord) && ActiveRecord::Base.connected? && ActiveRecord::Base.connection.open_transactions.zero?
       yield
     ensure
-      ::ActiveRecord::Base.clear_active_connections! if defined? ::ActiveRecord
+      ::ActiveRecord::Base.clear_active_connections! if clear_connections
     end
 
   end
