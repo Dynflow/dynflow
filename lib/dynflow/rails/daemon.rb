@@ -81,7 +81,8 @@ module Dynflow
               run(options[:rails_root], options)
             rescue => e
               STDERR.puts e.message
-              ::Rails.logger.exception('Failed running Dynflow daemon', e)
+              ::Rails.logger.fatal('Failed running Dynflow daemon')
+              ::Rails.logger.fatal(e)
               exit 1
             end
           end
