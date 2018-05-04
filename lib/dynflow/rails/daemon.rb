@@ -44,11 +44,8 @@ module Dynflow
         end
 
         require rails_env_file
-        world_id = if ::Rails.application.dynflow.initialized?
-                     ::Rails.application.dynflow.world.id
-                   else
-                     nil
-                   end
+        ::Rails.application.dynflow.initialize!
+        world_id = ::Rails.application.dynflow.world.id
         STDOUT.puts("Everything ready for world: #{world_id}")
         sleep
       ensure
