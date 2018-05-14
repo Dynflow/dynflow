@@ -46,17 +46,33 @@ module Dynflow
         execution_plan_hooks.use :controlled_failure, :on => :stopped
       end
 
+      class ActionOnFailure < ::Dynflow::Action
+        include FlagHook
+
+        execution_plan_hooks.use :raise_flag, :on => :failure
+      end
+
       class Inherited < ActionWithHooks; end
       class Overriden < ActionWithHooks
         execution_plan_hooks.do_not_use :raise_flag
       end
 
       before { Flag.lower! }
+      after { world.persistence.delete_delayed_plans({}) }
 
       it 'runs the on_success hook' do
         refute Flag.raised?
         plan = world.trigger(ActionWithHooks)
         plan.finished.wait!
+        assert Flag.raised?
+      end
+
+      it 'runs the on_failure hook on cancel' do
+        refute Flag.raised?
+        @start_at = Time.now.utc + 180
+        delay = world.delay(ActionOnFailure, { :start_at => @start_at })
+        delayed_plan = world.persistence.load_delayed_plan(delay.execution_plan_id)
+        delayed_plan.execution_plan.cancel.each(&:wait)
         assert Flag.raised?
       end
 
