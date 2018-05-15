@@ -120,7 +120,7 @@ module Dynflow
         @ended_at       = Time.now
         @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
-        hooks_to_run << (error? ? :failure : :success)
+        hooks_to_run << (failure? ? :failure : :success)
         unlock_all_singleton_locks!
       when :paused
         unlock_all_singleton_locks!
@@ -163,6 +163,10 @@ module Dynflow
 
     def error?
       result == :error
+    end
+
+    def failure?
+      [:error, :warning, :cancelled].include?(result)
     end
 
     def error_in_plan?
