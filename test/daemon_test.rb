@@ -15,6 +15,7 @@ class DaemonTest < ActiveSupport::TestCase
     )
     @world_class = mock('dummy world factory')
     @dummy_world = ::Dynflow::Testing::DummyWorld.new
+    @dummy_world.stubs(:id => '123')
     @dummy_world.stubs(:auto_execute)
     @dummy_world.stubs(:perform_validity_checks)
     @event = Concurrent.event
@@ -28,6 +29,7 @@ class DaemonTest < ActiveSupport::TestCase
     ::Rails.stubs(:root).returns('support/rails')
     ::Rails.stubs(:logger).returns(Logging.logger(STDOUT))
     @dynflow.require!
+    @dynflow.config.stubs(:increase_db_pool_size? => false)
     @daemon.stubs(:sleep).returns(true) # don't pause the execution
     @current_folder = File.expand_path('../support/rails/', __FILE__)
     ::ActiveRecord::Base.configurations = { 'development' => {} }
