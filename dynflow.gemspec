@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.version     = Dynflow::VERSION
   s.authors     = ["Ivan Necas", "Petr Chalupa"]
   s.email       = ["inecas@redhat.com"]
-  s.homepage    = "http://github.com/Dynflow/dynflow"
+  s.homepage    = "https://github.com/Dynflow/dynflow"
   s.summary     = "DYNamic workFLOW engine"
   s.description = "Ruby workflow/orchestration engine"
   s.license     = "MIT"
