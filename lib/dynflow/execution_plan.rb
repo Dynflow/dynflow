@@ -142,7 +142,9 @@ module Dynflow
       action_ids = records.compact.map { |record| record[:id] }
       return if action_ids.empty?
       persistence.load_actions(self, action_ids).each do |action|
-        action.class.execution_plan_hooks.run(self, action, state)
+        world.middleware.execute(:hook, action, self) do
+          action.class.execution_plan_hooks.run(self, action, state)
+        end
       end
     end
 

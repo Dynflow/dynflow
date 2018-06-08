@@ -50,5 +50,9 @@ module Dynflow
     def present
       pass
     end
+
+    def hook(*args)
+      pass(*args)
+    end
   end
 end
