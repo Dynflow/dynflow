@@ -14,7 +14,7 @@ module Dynflow
       @middleware_class = Child! middleware_class, Middleware
       @middleware       = middleware_class.new self
       @action           = Type! action, Dynflow::Action, NilClass
-      @method           = Match! method, :delay, :plan, :run, :finalize, :plan_phase, :finalize_phase, :present
+      @method           = Match! method, :delay, :plan, :run, :finalize, :plan_phase, :finalize_phase, :present, :hook
       @next_stack       = Type! next_stack, Middleware::Stack, Proc
     end
 
