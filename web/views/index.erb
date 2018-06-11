@@ -20,7 +20,7 @@
 <% @plans.each do |plan| %>
   <tr>
     <td><%= h(plan.id) %></td>
-    <td><%= h(plan.label || plan.root_plan_step.action_class.name) %></td>
+    <td><%= h(plan.label || (plan.root_plan_step && plan.root_plan_step.action_class.name)) %></td>
     <th><%= h(plan.state) %></th>
     <th><%= h(plan.result) %></th>
     <th><%= h(plan.started_at) %></th>
