@@ -12,8 +12,11 @@ module Dynflow
   end
 
   describe 'running jobs' do
+    let :world do
+      WorldFactory.create_world
+    end
+
     before(:all) do
-      world = WorldFactory.create_world
       ::ActiveJob::QueueAdapters.send(:include, ::Dynflow::ActiveJob::QueueAdapters)
       ::ActiveJob::Base.queue_adapter = :dynflow
       dynflow_mock = Minitest::Mock.new
@@ -42,16 +45,20 @@ module Dynflow
     end
 
     it 'enqueues the job' do
+      job = nil
       out, = capture_subprocess_io do
-        SampleJob.perform_later 'hello'
+        job = SampleJob.perform_later 'hello'
       end
+      assert world.persistence.load_execution_plan(job.provider_job_id)
       assert_match(/Enqueued Dynflow::SampleJob/, out)
     end
 
     it 'schedules job in the future' do
+      job = nil
       out, = capture_subprocess_io do
-        SampleJob.set(:wait => 1.seconds).perform_later 'hello'
+        job = SampleJob.set(:wait => 1.seconds).perform_later 'hello'
       end
+      assert world.persistence.load_execution_plan(job.provider_job_id)
       assert_match(/Enqueued Dynflow::SampleJob.*at.*UTC/, out)
     end
   end
