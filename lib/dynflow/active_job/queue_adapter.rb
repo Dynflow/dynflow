@@ -3,11 +3,15 @@ module Dynflow
     module QueueAdapters
       module QueueMethods
         def enqueue(job)
-          ::Rails.application.dynflow.world.trigger(JobWrapper, job.serialize)
+          ::Rails.application.dynflow.world.trigger(JobWrapper, job.serialize).tap do |plan|
+            job.provider_job_id = plan.id
+          end
         end
 
         def enqueue_at(job, timestamp)
-          ::Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize)
+          ::Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize).tap do |plan|
+            job.provider_job_id = plan.id
+          end
         end
       end
 
