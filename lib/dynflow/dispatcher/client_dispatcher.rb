@@ -36,7 +36,7 @@ module Dynflow
         TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'.freeze
 
         # Maximum age of a record in seconds, older records are not considered fresh
-        PING_CACHE_AGE = 10
+        PING_CACHE_AGE = 60
 
         # Formats time into a string
         #
@@ -57,6 +57,7 @@ module Dynflow
         # @param world [World] the world to which the PingCache belongs
         def initialize(world)
           @world = world
+          @executor = {}
         end
 
         # Records when was the world seen into the world's coordinator record
@@ -65,8 +66,18 @@ module Dynflow
         # @param time [Time] Time when was the world last seen
         def add_record(id, time = Time.now)
           record = find_world id
+          @executor[id] ||= record.data[:class] == 'Dynflow::Coordinator::ExecutorWorld'
           record.data[:meta].update(:last_seen => self.class.format_time(time))
           @world.coordinator.update_record(record)
+        end
+
+        # Looks into the cache whether the world has an executor
+        #
+        # @param id [String] Id of the world
+        # @return [TrueClass] if the world has an executor
+        # @return [FalseClass] if the world is a client world
+        def executor?(id)
+          @executor[id]
         end
 
         # Loads the coordinator record from the database and checks whether the world
@@ -222,19 +233,24 @@ module Dynflow
         end
       end
 
-      # Checks whether the request is a Ping and if the receiver of the request has a fresh ping
-      # cache record, in which case fulfills the future without actually sending the ping. Otherwise
-      # the Ping is sent.
+      # Tries to reduce the number of sent Ping requests by first looking into a cache. If the
+      # destination world is an executor world, the result is resolved solely from the cache.
+      # For client worlds the Ping might be sent if the cache record is stale.
       #
       # @param request [Dynflow::Dispatcher::Request] the request to send
       # @param future [Concurrent::Future] the future to fulfill if the world was seen recently
-      # @return [Concurrent::Future] the future tracking the Ping
+      # @return [Concurrent::Future] the future tracking the request
       def with_ping_request_caching(request, future)
-        if request.is_a?(Dynflow::Dispatcher::Ping) && @ping_cache.fresh_record?(request.receiver_id)
-          future.success true
-          future
+        return yield unless request.is_a?(Dynflow::Dispatcher::Ping)
+
+        if @ping_cache.fresh_record?(request.receiver_id)
+          future.success(true)
         else
-          yield
+          if @ping_cache.executor?(request.receiver_id)
+            future.fail
+          else
+            yield
+          end
         end
       end
     end
