@@ -96,7 +96,6 @@ module WorldFactory
     config.backup_deleted_plans = false
     config.backup_dir           = nil
     config.queues.add(:slow, :pool_size => 1)
-    config.announce             = false
     yield config if block_given?
     return config
   end
