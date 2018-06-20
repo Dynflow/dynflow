@@ -99,6 +99,17 @@ module Dynflow
       def finish
         execution_plan.execution_history.add('finish execution', @world.id)
         @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
+
+        Dynflow::Telemetry.with_instance do |t|
+          @execution_plan.finalize_steps.each do |step|
+            t.observe_histogram(:dynflow_step_real_time,
+                                step.real_time,
+                                :action => self.class.to_s, :phase => 'finalize')
+            t.observe_histogram(:dynflow_step_execution_time,
+                                step.execution_time,
+                                :action => self.class.to_s, :phase => 'finalize')
+          end
+        end
         return no_work
       end
 

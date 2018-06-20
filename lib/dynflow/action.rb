@@ -507,10 +507,13 @@ module Dynflow
           end
         end
 
+        update_step_telemetry 'plan'
         check_serializable :input
       end
     end
 
+    # TODO: This is getting out of hand, refactoring needed
+    # rubocop:disable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
     def execute_run(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
@@ -545,10 +548,13 @@ module Dynflow
           check_serializable :output
         end
 
+        # Only update the telemetry data if the step stopped for good
+        update_step_telemetry 'run' if [:success, :skipped].include? self.state
       else
         raise "wrong state #{state} when event:#{event}"
       end
     end
+    # rubocop:enable Metrics/CyclomaticComplexity,Metrics/PerceivedComplexity
 
     def execute_finalize
       phase! Finalize
@@ -583,6 +589,18 @@ module Dynflow
       else
         false
       end
+    end
+
+    def update_step_telemetry(phase)
+      Dynflow::Telemetry.with_instance do |t|
+        t.observe_histogram(:dynflow_step_real_time,
+                            @step.real_time,
+                            :action => self.class.to_s, :phase => phase)
+        t.observe_histogram(:dynflow_step_execution_time,
+                            @step.execution_time,
+                            :action => self.class.to_s, :phase => phase)
+      end
+
     end
   end
   # rubocop:enable Metrics/ClassLength

@@ -46,12 +46,17 @@ module Dynflow
           end
         end
 
-        def initialize(core, name, pool_size, transaction_adapter)
+        def initialize(world, core, name, pool_size, transaction_adapter)
+          @world = world
           @name = name
           @executor_core = core
           @pool_size     = pool_size
-          @free_workers  = Array.new(pool_size) { |i| Worker.spawn("worker-#{i}", reference, transaction_adapter) }
           @jobs          = JobStorage.new
+          @free_workers  = Array.new(pool_size) do |i|
+            name = "worker-#{i}"
+            telemetry_options = { :world => @world.id, :worker => name, :queue => @name }
+            Worker.spawn(name, reference, transaction_adapter, telemetry_options)
+          end
         end
 
         def schedule_work(work)
@@ -62,6 +67,7 @@ module Dynflow
         def worker_done(worker, work)
           @executor_core.tell([:work_finished, work])
           @free_workers << worker
+          Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_active_workers, -1, telemetry_options) }
           distribute_jobs
         end
 
@@ -94,7 +100,14 @@ module Dynflow
 
         def distribute_jobs
           try_to_terminate
-          @free_workers.pop << @jobs.pop until @free_workers.empty? || @jobs.empty?
+          until @free_workers.empty? || @jobs.empty?
+            Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_active_workers, 1, telemetry_options) }
+            @free_workers.pop << @jobs.pop
+          end
+        end
+
+        def telemetry_options
+          { :queue => @name.to_s, :world => @world.id }
         end
       end
     end
