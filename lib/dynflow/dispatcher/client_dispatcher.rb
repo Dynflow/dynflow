@@ -77,7 +77,10 @@ module Dynflow
         # @return [TrueClass] if the world has an executor
         # @return [FalseClass] if the world is a client world
         def executor?(id)
-          @executor[id]
+          return @executor[id] unless @executor[id].nil?
+          record = find_world id
+          return false if record.nil?
+          @executor[id] = record.data[:class] == 'Dynflow::Coordinator::ExecutorWorld'
         end
 
         # Loads the coordinator record from the database and checks whether the world
