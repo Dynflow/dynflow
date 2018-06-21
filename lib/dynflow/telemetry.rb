@@ -22,6 +22,8 @@ module Dynflow
       # Registers the metrics to be collected
       # @return [void]
       def register_metrics!
+        return if @registered
+        @registered = true
         with_instance do |t|
           # Worker related
           t.add_gauge   :dynflow_active_workers, 'The number of currently busy workers',
