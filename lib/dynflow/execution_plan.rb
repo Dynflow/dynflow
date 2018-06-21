@@ -567,7 +567,7 @@ module Dynflow
     end
 
     def telemetry_common_options
-      { :world => @world.id, :label => @label }
+      { :world => @world.id, :action => @label }
     end
 
     private_class_method :steps_from_hash

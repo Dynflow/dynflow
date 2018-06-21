@@ -31,9 +31,9 @@ module Dynflow
 
           # Execution plan related
           t.add_gauge   :dynflow_active_execution_plans, 'The number of active execution plans',
-                        [:label, :world, :state]
+                        [:action, :world, :state]
           t.add_counter :dynflow_finished_execution_plans, 'The number of execution plans',
-                        [:label, :world, :result]
+                        [:action, :world, :result]
 
           # Step related
           # TODO: Configure buckets in a sane manner
@@ -41,6 +41,10 @@ module Dynflow
                           [:action, :phase]
           t.add_histogram :dynflow_step_execution_time, 'The real time spent executing a step',
                           [:action, :phase]
+
+          # Connector related
+          t.add_counter :dynflow_connector_envelopes, 'The number of envelopes handled by a connector',
+                        [:world, :direction]
         end
       end
     end

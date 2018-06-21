@@ -101,7 +101,7 @@ module Dynflow
         def distribute_jobs
           try_to_terminate
           until @free_workers.empty? || @jobs.empty?
-            Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_active_workers, 1, telemetry_options) }
+            Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_active_workers, '+1', telemetry_options) }
             @free_workers.pop << @jobs.pop
           end
         end

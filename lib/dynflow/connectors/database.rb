@@ -168,6 +168,7 @@ module Dynflow
       end
 
       def send(envelope)
+        Telemetry.with_instance { |t| t.increment_counter(:dynflow_connector_envelopes, 1, :world => envelope.sender_id, :direction => 'outgoing') }
         @core.ask([:handle_envelope, envelope])
       end
     end
