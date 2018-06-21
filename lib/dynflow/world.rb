@@ -18,7 +18,7 @@ module Dynflow
 
       # Set the telemetry instance as soon as possible
       Dynflow::Telemetry.set_adapter @config.telemetry_adapter
-      Dynflow::Telemetry.instance.register_metrics!
+      Dynflow::Telemetry.register_metrics!
 
       @id                     = SecureRandom.uuid
       @clock                  = spawn_and_wait(Clock, 'clock')
