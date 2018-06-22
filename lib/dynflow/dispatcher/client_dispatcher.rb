@@ -74,11 +74,9 @@ module Dynflow
         # @param id [String] Id of the world
         # @return [TrueClass] if the world has an executor
         # @return [FalseClass] if the world is a client world
+        # @return [NilClass] if unknown
         def executor?(id)
-          return @executor[id] unless @executor[id].nil?
-          record = find_world id
-          return false if record.nil?
-          @executor[id] = record.data[:class] == 'Dynflow::Coordinator::ExecutorWorld'
+          @executor[id]
         end
 
         # Loads the coordinator record from the database and checks whether the world
@@ -90,6 +88,7 @@ module Dynflow
         def fresh_record?(id)
           record = find_world(id)
           return false if record.nil?
+          @executor[id] = record.data[:class] == 'Dynflow::Coordinator::ExecutorWorld'
           time = self.class.load_time(record.data[:meta][:last_seen])
           time >= Time.now - @max_age
         end
