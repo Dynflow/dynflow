@@ -302,15 +302,29 @@ module Dynflow
           it 'finds plans with start_before in past' do
             start_time = Time.now.utc
             prepare_and_save_plans
-            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :start_at => format_time(start_time + 60),
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false, :start_at => format_time(start_time + 60),
                                       :start_before => format_time(start_time - 60))
-            adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :start_at => format_time(start_time - 60))
-            adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :start_at => format_time(start_time + 60))
-            adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :start_at => format_time(start_time - 60),
+            adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :frozen => false, :start_at => format_time(start_time - 60))
+            adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :frozen => false, :start_at => format_time(start_time + 60))
+            adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :frozen => false, :start_at => format_time(start_time - 60),
                                       :start_before => format_time(start_time - 60))
             plans = adapter.find_past_delayed_plans(start_time)
             plans.length.must_equal 3
             plans.map { |plan| plan[:execution_plan_uuid] }.must_equal %w(plan2 plan4 plan1)
+          end
+
+          it 'does not find plans that are frozen' do
+            start_time = Time.now.utc
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false, :start_at => format_time(start_time + 60),
+                                      :start_before => format_time(start_time - 60))
+            adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :frozen => true, :start_at => format_time(start_time + 60),
+                                      :start_before => format_time(start_time - 60))
+
+            plans = adapter.find_past_delayed_plans(start_time)
+            plans.length.must_equal 1
+            plans.first[:execution_plan_uuid].must_equal 'plan1'
           end
         end
       end

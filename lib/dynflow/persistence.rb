@@ -93,6 +93,13 @@ module Dynflow
       adapter.save_delayed_plan(delayed_plan.execution_plan_uuid, delayed_plan.to_hash)
     end
 
+    def set_delayed_plan_frozen(execution_plan_id, frozen = true, new_start_at = nil)
+      plan = load_delayed_plan(execution_plan_id)
+      plan.frozen = frozen
+      plan.start_at = new_start_at if new_start_at
+      save_delayed_plan(plan)
+    end
+
     def load_delayed_plan(execution_plan_id)
       hash = adapter.load_delayed_plan(execution_plan_id)
       return nil unless hash

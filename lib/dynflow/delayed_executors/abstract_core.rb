@@ -46,6 +46,7 @@ module Dynflow
       def process(delayed_plans, check_time)
         processed_plan_uuids = []
         delayed_plans.each do |plan|
+          next if plan.frozen
           fix_plan_state(plan)
           with_error_handling do
             if plan.execution_plan.state != :scheduled

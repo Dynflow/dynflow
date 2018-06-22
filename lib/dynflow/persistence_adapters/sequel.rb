@@ -36,7 +36,7 @@ module Dynflow
                                             class action_class execution_plan_uuid queue),
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
-                    delayed:             %w(execution_plan_uuid start_at start_before args_serializer)}
+                    delayed:             %w(execution_plan_uuid start_at start_before args_serializer frozen)}
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
                                delayed: %w(serialized_args),
@@ -125,6 +125,7 @@ module Dynflow
         table_name = :delayed
         table(table_name)
           .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
+          .where(:frozen => false)
           .order_by(:start_at)
           .all
           .map { |plan| load_data(plan, table_name) }
