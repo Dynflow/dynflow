@@ -41,3 +41,7 @@ group :rails do
   gem 'rails', '>= 4.2.9'
   gem 'logging'
 end
+
+group :telemetry do
+  gem 'statsd-instrument'
+end
