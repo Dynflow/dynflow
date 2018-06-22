@@ -98,11 +98,19 @@ module Dynflow
     end
 
     config_attr :executor, Executors::Abstract, FalseClass do |world, config|
-      Executors::Parallel.new(world, config.queues)
+      Executors::Parallel.new(world, config.executor_heartbeat_interval, config.queues)
     end
 
     config_attr :executor_semaphore, Semaphores::Abstract, FalseClass do |world, config|
       Semaphores::Dummy.new
+    end
+
+    config_attr :executor_heartbeat_interval, Integer do
+      15
+    end
+
+    config_attr :ping_cache_age, Integer do
+      60
     end
 
     config_attr :connector, Connectors::Abstract do |world|

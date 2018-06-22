@@ -4,15 +4,14 @@ module Dynflow
       class Core < Actor
         attr_reader :logger
 
-        HEARTBEAT_INTERVAL = 15
-
-        def initialize(world, queues_options)
+        def initialize(world, heartbeat_interval, queues_options)
           @logger         = world.logger
           @world          = Type! world, World
           @queues_options = queues_options
           @pools          = {}
           @terminated     = nil
           @director       = Director.new(@world)
+          @heartbeat_interval = heartbeat_interval
 
           initialize_queues
           schedule_heartbeat
@@ -93,7 +92,7 @@ module Dynflow
         private
 
         def schedule_heartbeat
-          @world.clock.ping(self, HEARTBEAT_INTERVAL, :heartbeat)
+          @world.clock.ping(self, @heartbeat_interval, :heartbeat)
         end
 
         def on_message(message)

@@ -28,7 +28,7 @@ module Dynflow
       @connector              = @config.connector
       @middleware             = Middleware::World.new
       @middleware.use Middleware::Common::Transaction if @transaction_adapter
-      @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self, @config.ping_cache_age)
       @dead_letter_handler    = spawn_and_wait(DeadLetterSilencer, 'default_dead_letter_handler', @config.silent_dead_letter_matchers)
       @auto_validity_check    = @config.auto_validity_check
       @validity_check_timeout = @config.validity_check_timeout

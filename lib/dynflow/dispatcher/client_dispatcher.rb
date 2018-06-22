@@ -35,9 +35,6 @@ module Dynflow
         # Format string used for formating and parsing times
         TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'.freeze
 
-        # Maximum age of a record in seconds, older records are not considered fresh
-        PING_CACHE_AGE = 60
-
         # Formats time into a string
         #
         # @param time [Time] the time to format
@@ -55,8 +52,9 @@ module Dynflow
         end
 
         # @param world [World] the world to which the PingCache belongs
-        def initialize(world)
+        def initialize(world, max_age)
           @world = world
+          @max_age = max_age
           @executor = {}
         end
 
@@ -93,7 +91,7 @@ module Dynflow
           record = find_world(id)
           return false if record.nil?
           time = self.class.load_time(record.data[:meta][:last_seen])
-          time >= Time.now - PING_CACHE_AGE
+          time >= Time.now - @max_age
         end
 
         private
@@ -105,12 +103,12 @@ module Dynflow
       end
 
       attr_reader :ping_cache
-      def initialize(world)
+      def initialize(world, ping_cache_age)
         @world            = Type! world, World
         @last_id          = 0
         @tracked_requests = {}
         @terminated       = nil
-        @ping_cache       = PingCache.new world
+        @ping_cache       = PingCache.new world, ping_cache_age
       end
 
       def publish_request(future, request, timeout)
