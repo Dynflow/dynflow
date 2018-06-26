@@ -72,6 +72,33 @@ module Dynflow
             end
           end
 
+          it "honors rescue strategy when invalidating execution locks" do
+            coordinator = executor_world_2.coordinator
+            # Plan and action
+            plan = client_world.plan(Support::DummyExample::SkippableDummy)
+            plan.update_state :running
+            plan.save
+
+            # Simulate leaving behind an execution lock for it
+            lock = Coordinator::ExecutionLock.new(executor_world, plan.id, client_world.id, 0)
+            coordinator.acquire(lock)
+
+            # Simulate abnormal termination
+            step = plan.steps.values.last
+            step.state = :error
+            step.save
+
+            # Invalidate the world's lock
+            world_lock = coordinator.find_worlds(false, :id => executor_world.id).first
+            executor_world_2.invalidate(world_lock)
+
+            wait_for do
+              plan = executor_world_2.persistence.load_execution_plan(plan.id)
+              step = plan.steps.values.last
+              plan.state == :stopped && step.state == :skipped
+            end
+          end
+
           it "prevents from running the invalidation twice on the same world" do
             client_world.invalidate(executor_world.registered_world)
             expected_locks = ["lock world-invalidation:#{executor_world.id}",

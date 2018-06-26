@@ -6,6 +6,12 @@ module Support
       def run; end
     end
 
+    class SkippableDummy < Dummy
+      def rescue_strategy_for_self
+        Dynflow::Action::Rescue::Skip
+      end
+    end
+
     class MySerializer < Dynflow::Serializers::Noop
       def serialize(arg)
         raise 'Enforced serializer failure' if arg == :fail

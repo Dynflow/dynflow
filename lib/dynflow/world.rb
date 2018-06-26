@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+require 'dynflow/world/invalidation'
+
 module Dynflow
   class World
     include Algebrick::TypeCheck
     include Algebrick::Matching
+    include Invalidation
 
     attr_reader :id, :config, :client_dispatcher, :executor_dispatcher, :executor, :connector,
                 :transaction_adapter, :logger_adapter, :coordinator,
@@ -268,121 +271,6 @@ module Dynflow
 
     def terminating?
       defined?(@terminating)
-    end
-
-    # Invalidate another world, that left some data in the runtime,
-    # but it's not really running
-    def invalidate(world)
-      Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
-      coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
-        if world.is_a? Coordinator::ExecutorWorld
-          old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
-                                                       owner_id: "world:#{world.id}")
-
-          coordinator.deactivate_world(world)
-
-          old_execution_locks.each do |execution_lock|
-            invalidate_execution_lock(execution_lock)
-          end
-        end
-
-        coordinator.delete_world(world)
-      end
-    end
-
-    def invalidate_execution_lock(execution_lock)
-      begin
-        plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
-      rescue => e
-        if e.is_a?(KeyError)
-          logger.error "invalidated execution plan #{execution_lock.execution_plan_id} missing, skipping"
-        else
-          logger.error e
-          logger.error "unexpected error when invalidating execution plan #{execution_lock.execution_plan_id}, skipping"
-        end
-        coordinator.release(execution_lock)
-        coordinator.release_by_owner(execution_lock.execution_plan_id)
-        return
-      end
-      unless plan.valid?
-        logger.error "invalid plan #{plan.id}, skipping"
-        coordinator.release(execution_lock)
-        coordinator.release_by_owner(execution_lock.execution_plan_id)
-        return
-      end
-      plan.execution_history.add('terminate execution', execution_lock.world_id)
-
-      plan.steps.values.each do |step|
-        if step.state == :running
-          step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
-          step.state = :error
-          step.save
-        end
-      end
-
-      plan.update_state(:paused) if plan.state == :running
-      plan.save
-      coordinator.release(execution_lock)
-
-      available_executors = coordinator.find_worlds(true)
-      if available_executors.any? && !plan.error?
-        client_dispatcher.tell([:dispatch_request,
-                                Dispatcher::Execution[execution_lock.execution_plan_id],
-                                execution_lock.client_world_id,
-                                execution_lock.request_id])
-      end
-    rescue Errors::PersistenceError
-      logger.error "failed to write data while invalidating execution lock #{execution_lock}"
-    end
-
-    def perform_validity_checks
-      worlds_validity_check
-      locks_validity_check
-    end
-
-    def worlds_validity_check(auto_invalidate = true, worlds_filter = {})
-      worlds = coordinator.find_worlds(false, worlds_filter)
-
-      world_checks = worlds.reduce({}) do |hash, world|
-        hash.update(world => ping(world.id, self.validity_check_timeout))
-      end
-      world_checks.values.each(&:wait)
-
-      results = {}
-      world_checks.each do |world, check|
-        if check.success?
-          result = :valid
-        else
-          if auto_invalidate
-            begin
-              invalidate(world)
-              result = :invalidated
-            rescue => e
-              logger.error e
-              result = e.message
-            end
-          else
-            result = :invalid
-          end
-        end
-        results[world.id] = result
-      end
-
-      unless results.values.all? { |result| result == :valid }
-        logger.error "invalid worlds found #{results.inspect}"
-      end
-
-      return results
-    end
-
-    def locks_validity_check
-      orphaned_locks = coordinator.clean_orphaned_locks
-
-      unless orphaned_locks.empty?
-        logger.error "invalid coordinator locks found and invalidated: #{orphaned_locks.inspect}"
-      end
-
-      return orphaned_locks
     end
 
     # executes plans that are planned/paused and haven't reported any error yet (usually when no executor
