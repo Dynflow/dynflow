@@ -3,6 +3,10 @@ module Dynflow
     module Invalidation
       # Invalidate another world, that left some data in the runtime,
       # but it's not really running
+      #
+      # @param world [Coordinator::ClientWorld, Coordinator::ExecutorWorld] coordinator record
+      #   left behind by the world we're trying to invalidate
+      # @return [void]
       def invalidate(world)
         Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
         coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
@@ -21,6 +25,11 @@ module Dynflow
         end
       end
 
+      # Invalidate an execution lock, left behind by a executor that
+      # was executing an execution plan when it was terminated.
+      #
+      # @param execution_lock [Coordinator::ExecutionLock] the lock to invalidate
+      # @return [void]
       def invalidate_execution_lock(execution_lock)
         with_valid_execution_plan_for_lock(execution_lock) do |plan|
           plan.execution_history.add('terminate execution', execution_lock.world_id)
@@ -57,6 +66,11 @@ module Dynflow
       # lock. If the execution plan cannot be loaded or is invalid,
       # the lock is released. If the plan gets loaded successfully, it
       # is yielded to a given block.
+      #
+      # @param execution_lock [Coordinator::ExecutionLock] the lock for which we're trying
+      #   to load the execution plan
+      # @yieldparam [ExecutionPlan] execution_plan the successfully loaded execution plan
+      # @return [void]
       def with_valid_execution_plan_for_lock(execution_lock)
         begin
           plan = persistence.load_execution_plan(execution_lock.execution_plan_id)
@@ -80,11 +94,19 @@ module Dynflow
         yield plan
       end
 
+      # Performs world validity checks
+      #
+      # @return [void]
       def perform_validity_checks
         worlds_validity_check
         locks_validity_check
       end
 
+      # Checks if all worlds are valid and optionally invalidates them
+      #
+      # @param auto_invalidate [Boolean] whether automatic invalidation should be performed
+      # @param worlds_filter [Hash] hash of filters to select only matching worlds
+      # @return [Hash{String=>Symbol}] hash containg validation results, mapping world id to a result
       def worlds_validity_check(auto_invalidate = true, worlds_filter = {})
         worlds = coordinator.find_worlds(false, worlds_filter)
 
@@ -120,6 +142,9 @@ module Dynflow
         return results
       end
 
+      # Cleans up locks which don't have a resource
+      #
+      # @return [Array<Coordinator::Lock>] the removed locks
       def locks_validity_check
         orphaned_locks = coordinator.clean_orphaned_locks
 
