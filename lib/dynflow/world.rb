@@ -324,8 +324,10 @@ module Dynflow
       plan.save
       coordinator.release(execution_lock)
 
-      rescue_id = plan.rescue_plan_id
-      execute(rescue_id) if rescue_id
+      if plan.error?
+        rescue_id = plan.rescue_plan_id
+        execute(rescue_id) if rescue_id
+      end
 
       available_executors = coordinator.find_worlds(true)
       if available_executors.any? && !plan.error?
