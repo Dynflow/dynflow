@@ -90,21 +90,13 @@ module Dynflow
 
             ping_cache = Dynflow::Dispatcher::ClientDispatcher::PingCache.new(executor_world)
 
+            # Records are fresh because of the heartbeat
             assert ping_cache.fresh_record?(client_world.id)
             assert ping_cache.fresh_record?(executor_world.id)
 
             # Expire the record
             ping_cache.add_record(executor_world.id, Time.now - 1000)
-
             refute ping_cache.fresh_record?(executor_world.id)
-            ping_response = client_world.ping(executor_world.id, 0.5)
-            ping_response.wait
-            assert ping_response.success?
-            assert ping_cache.fresh_record?(executor_world.id)
-
-            ping_response = client_world.ping(executor_world.id, 0)
-            ping_response.wait
-            assert ping_response.success?
           end
         end
       end

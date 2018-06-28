@@ -34,6 +34,7 @@ module Dynflow
       class PingCache
         # Format string used for formating and parsing times
         TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'.freeze
+        DEFAULT_MAX_AGE = 60
 
         # Formats time into a string
         #
@@ -52,7 +53,7 @@ module Dynflow
         end
 
         # @param world [World] the world to which the PingCache belongs
-        def initialize(world, max_age)
+        def initialize(world, max_age = DEFAULT_MAX_AGE)
           @world = world
           @max_age = max_age
           @executor = {}
