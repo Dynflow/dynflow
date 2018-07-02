@@ -50,14 +50,14 @@ module Dynflow
       end
 
       post('/worlds/check') do
-        load_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate])
+        load_worlds
         erb :worlds
       end
 
       post('/worlds/:id/check') do |id|
-        load_worlds
         @validation_results = world.worlds_validity_check(params[:invalidate], id: params[:id])
+        load_worlds
         erb :worlds
       end
 

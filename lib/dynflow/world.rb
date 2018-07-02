@@ -31,7 +31,7 @@ module Dynflow
       @connector              = @config.connector
       @middleware             = Middleware::World.new
       @middleware.use Middleware::Common::Transaction if @transaction_adapter
-      @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self)
+      @client_dispatcher      = spawn_and_wait(Dispatcher::ClientDispatcher, "client-dispatcher", self, @config.ping_cache_age)
       @dead_letter_handler    = spawn_and_wait(DeadLetterSilencer, 'default_dead_letter_handler', @config.silent_dead_letter_matchers)
       @auto_validity_check    = @config.auto_validity_check
       @validity_check_timeout = @config.validity_check_timeout
@@ -52,6 +52,7 @@ module Dynflow
       @meta['queues']           = @config.queues if @executor
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
+      @meta['last_seen'] = Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time
       coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new

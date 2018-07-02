@@ -9,7 +9,8 @@
 <h3>Executors</h3>
 <% @executors.each do |world| %>
   <%= value_field('Id', world.id) %>
-  <%= value_field('Metadata', world.meta) %>
+  <%= value_field('Metadata', world.meta.reject { |key, _| key == 'last_seen' }) %>
+  <%= value_field('Last seen', world.meta['last_seen']) %>
   <p>
     <b>Status:</b>
     <%= erb :world_validation_result, locals: { world: world } %>
@@ -39,13 +40,15 @@
     <tr>
       <th>Id</th>
       <th>Meta</th>
+      <th>Last seen</th>
       <th></th>
     </tr>
   </thead>
 <% @clients.each do |world| %>
   <tr>
     <td><%= h(world.id) %></td>
-    <td><%= h(world.meta) %></td>
+    <td><%= h(world.meta.reject { |key, _| key == 'last_seen' }) %></td>
+    <td><%= h(world.meta[:last_seen]) %></td>
     <td>
       <%= erb :world_validation_result, locals: { world: world } %>
     </td>

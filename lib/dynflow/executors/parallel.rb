@@ -5,10 +5,10 @@ module Dynflow
       require 'dynflow/executors/parallel/pool'
       require 'dynflow/executors/parallel/worker'
 
-      def initialize(world, queues_options = { :default => { :pool_size => 5 }})
+      def initialize(world, heartbeat_interval, queues_options = { :default => { :pool_size => 5 }})
         super(world)
         @core = Core.spawn name:        'parallel-executor-core',
-                           args:        [world, queues_options],
+                           args:        [world, heartbeat_interval, queues_options],
                            initialized: @core_initialized = Concurrent.future
       end
 

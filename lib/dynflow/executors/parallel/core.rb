@@ -4,15 +4,17 @@ module Dynflow
       class Core < Actor
         attr_reader :logger
 
-        def initialize(world, queues_options)
+        def initialize(world, heartbeat_interval, queues_options)
           @logger         = world.logger
           @world          = Type! world, World
           @queues_options = queues_options
           @pools          = {}
           @terminated     = nil
           @director       = Director.new(@world)
+          @heartbeat_interval = heartbeat_interval
 
           initialize_queues
+          schedule_heartbeat
         end
 
         def initialize_queues
@@ -78,7 +80,20 @@ module Dynflow
           end
         end
 
+        def heartbeat
+          @logger.debug('Executor heartbeat')
+          record = @world.coordinator.find_records(:id => @world.id,
+                                                   :class => ['Dynflow::Coordinator::ExecutorWorld', 'Dynflow::Coordinator::ClientWorld']).first
+          record.data[:meta].update(:last_seen => Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time)
+          @world.coordinator.update_record(record)
+          schedule_heartbeat
+        end
+
         private
+
+        def schedule_heartbeat
+          @world.clock.ping(self, @heartbeat_interval, :heartbeat)
+        end
 
         def on_message(message)
           super

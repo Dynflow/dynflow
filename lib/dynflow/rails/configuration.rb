@@ -155,7 +155,9 @@ module Dynflow
         if remote?
           false
         else
-          ::Dynflow::Executors::Parallel.new(world, world.config.queues)
+          ::Dynflow::Executors::Parallel.new(world,
+                                             world.config.executor_heartbeat_interval,
+                                             world.config.queues)
         end
       end
 

@@ -82,6 +82,22 @@ module Dynflow
             ping_response.wait
             assert ping_response.failed?
           end
+
+          it 'caches the pings and pongs' do
+            # Spawn the worlds
+            client_world
+            executor_world
+
+            ping_cache = Dynflow::Dispatcher::ClientDispatcher::PingCache.new(executor_world)
+
+            # Records are fresh because of the heartbeat
+            assert ping_cache.fresh_record?(client_world.id)
+            assert ping_cache.fresh_record?(executor_world.id)
+
+            # Expire the record
+            ping_cache.add_record(executor_world.id, Time.now - 1000)
+            refute ping_cache.fresh_record?(executor_world.id)
+          end
         end
       end
 
