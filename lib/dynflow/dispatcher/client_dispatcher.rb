@@ -138,7 +138,7 @@ module Dynflow
                             (on ~Event do |event|
                                find_executor(event.execution_plan_id)
                              end),
-                            (on Ping.(~any) | Status.(~any, ~any) do |receiver_id, _|
+                            (on Ping.(~any, ~any) | Status.(~any, ~any) do |receiver_id, _|
                                receiver_id
                              end)
         envelope = Envelope[request_id, client_world_id, executor_id, request]
@@ -243,6 +243,7 @@ module Dynflow
       # @return [Concurrent::Future] the future tracking the request
       def with_ping_request_caching(request, future)
         return yield unless request.is_a?(Dynflow::Dispatcher::Ping)
+        return yield unless request.use_cache
 
         if @ping_cache.fresh_record?(request.receiver_id)
           future.success(true)

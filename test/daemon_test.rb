@@ -17,7 +17,7 @@ class DaemonTest < ActiveSupport::TestCase
     @dummy_world = ::Dynflow::Testing::DummyWorld.new
     @dummy_world.stubs(:id => '123')
     @dummy_world.stubs(:auto_execute)
-    @dummy_world.stubs(:perform_validity_checks)
+    @dummy_world.stubs(:perform_validity_checks => 0)
     @event = Concurrent.event
     @dummy_world.stubs(:terminated).returns(@event)
     @world_class.stubs(:new).returns(@dummy_world)
@@ -42,7 +42,14 @@ class DaemonTest < ActiveSupport::TestCase
     @event.wait
   end
 
-  test 'run command works withou memory_limit option specified' do
+  test 'run command works without memory_limit option specified' do
+    @daemon.run(@current_folder)
+    @dynflow.initialize!
+  end
+
+  test 'runs post_initialization when there are invalid worlds detected' do
+    @dummy_world.stubs(:perform_validity_checks => 1)
+    @dummy_world.expects(:post_initialization)
     @daemon.run(@current_folder)
     @dynflow.initialize!
   end
