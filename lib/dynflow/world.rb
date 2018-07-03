@@ -44,6 +44,7 @@ module Dynflow
         @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, @config.executor_semaphore)
         executor.initialized.wait
       end
+      update_register
       perform_validity_checks if auto_validity_check
 
       @termination_barrier = Mutex.new

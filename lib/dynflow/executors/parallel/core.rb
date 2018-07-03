@@ -84,6 +84,12 @@ module Dynflow
           @logger.debug('Executor heartbeat')
           record = @world.coordinator.find_records(:id => @world.id,
                                                    :class => ['Dynflow::Coordinator::ExecutorWorld', 'Dynflow::Coordinator::ClientWorld']).first
+          unless record
+            logger.error(%{Executor's world record for #{@world.id} missing: terminating})
+            @world.terminate
+            return
+          end
+
           record.data[:meta].update(:last_seen => Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time)
           @world.coordinator.update_record(record)
           schedule_heartbeat
