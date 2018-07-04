@@ -42,8 +42,9 @@ module Dynflow
           config.run_on_init_hooks(world)
           # leave this just for long-running executors
           unless config.rake_task_with_executor?
-            world.perform_validity_checks
+            invalidated_worlds = world.perform_validity_checks
             world.auto_execute
+            world.post_initialization if invalidated_worlds > 0
           end
         end
       end

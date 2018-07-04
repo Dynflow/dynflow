@@ -7,11 +7,18 @@ module Dynflow
       def initialize(world, options = {})
         @world = world
         @options = options
+        @started = false
         spawn
       end
 
+      def started?
+        @started
+      end
+
       def start
-        @core.ask(:start)
+        @core.ask(:start).tap do
+          @started = true
+        end
       end
 
       def terminate

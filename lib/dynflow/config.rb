@@ -126,7 +126,7 @@ module Dynflow
     end
 
     config_attr :validity_check_timeout, Numeric do
-      5
+      30
     end
 
     config_attr :exit_on_terminate, Algebrick::Types::Boolean do

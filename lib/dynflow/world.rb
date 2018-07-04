@@ -44,16 +44,9 @@ module Dynflow
         @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, @config.executor_semaphore)
         executor.initialized.wait
       end
+      update_register
       perform_validity_checks if auto_validity_check
 
-      @delayed_executor         = try_spawn(:delayed_executor, Coordinator::DelayedExecutorLock)
-      @execution_plan_cleaner   = try_spawn(:execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
-      @meta                     = @config.meta
-      @meta['queues']           = @config.queues if @executor
-      @meta['delayed_executor'] = true if @delayed_executor
-      @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
-      @meta['last_seen'] = Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time
-      coordinator.register_world(registered_world)
       @termination_barrier = Mutex.new
       @before_termination_hooks = Queue.new
 
@@ -63,12 +56,36 @@ module Dynflow
           self.terminate.wait
         end
       end
+      post_initialization
+    end
+
+    # performs steps once the executor is ready and invalidation of previous worls is finished.
+    # Needs to be indempotent, as it can be called several times (expecially when auto_validity_check
+    # if false, as it should be called after `perform_validity_checks` method)
+    def post_initialization
+      @delayed_executor ||= try_spawn(:delayed_executor, Coordinator::DelayedExecutorLock)
+      @execution_plan_cleaner ||= try_spawn(:execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
+      update_register
+      @delayed_executor.start if @delayed_executor && !@delayed_executor.started?
       self.auto_execute if @config.auto_execute
-      @delayed_executor.start if @delayed_executor
     end
 
     def before_termination(&block)
       @before_termination_hooks << block
+    end
+
+    def update_register
+      @meta                     ||= @config.meta
+      @meta['queues']           = @config.queues if @executor
+      @meta['delayed_executor'] = true if @delayed_executor
+      @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
+      @meta['last_seen'] = Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time
+      if @already_registered
+        coordinator.update_record(registered_world)
+      else
+        coordinator.register_world(registered_world)
+        @already_registered = true
+      end
     end
 
     def registered_world
@@ -197,7 +214,11 @@ module Dynflow
     end
 
     def ping(world_id, timeout, done = Concurrent.future)
-      publish_request(Dispatcher::Ping[world_id], done, false, timeout)
+      publish_request(Dispatcher::Ping[world_id, true], done, false, timeout)
+    end
+
+    def ping_without_cache(world_id, timeout, done = Concurrent.future)
+      publish_request(Dispatcher::Ping[world_id, false], done, false, timeout)
     end
 
     def get_execution_status(world_id, execution_plan_id, timeout, done = Concurrent.future)
@@ -274,6 +295,7 @@ module Dynflow
       defined?(@terminating)
     end
 
+    # 24119 - ensure delayed executor is preserved after invalidation
     # executes plans that are planned/paused and haven't reported any error yet (usually when no executor
     # was available by the time of planning or terminating)
     def auto_execute

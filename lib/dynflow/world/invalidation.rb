@@ -96,10 +96,11 @@ module Dynflow
 
       # Performs world validity checks
       #
-      # @return [void]
+      # @return [Integer] number of invalidated worlds
       def perform_validity_checks
-        worlds_validity_check
+        world_invalidation_result = worlds_validity_check
         locks_validity_check
+        world_invalidation_result.values.select { |result| result == :invalidated }.size
       end
 
       # Checks if all worlds are valid and optionally invalidates them
@@ -111,7 +112,7 @@ module Dynflow
         worlds = coordinator.find_worlds(false, worlds_filter)
 
         world_checks = worlds.reduce({}) do |hash, world|
-          hash.update(world => ping(world.id, self.validity_check_timeout))
+          hash.update(world => ping_without_cache(world.id, self.validity_check_timeout))
         end
         world_checks.values.each(&:wait)
 

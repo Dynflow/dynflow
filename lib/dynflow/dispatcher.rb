@@ -12,7 +12,8 @@ module Dynflow
       end
 
       Ping = type do
-        fields! receiver_id: String
+        fields! receiver_id: String,
+                use_cache: type { variants TrueClass, FalseClass }
       end
 
       Status = type do
