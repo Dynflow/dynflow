@@ -24,16 +24,16 @@ module Dynflow
 
       describe '#get_execution_status' do
         let(:base) do
-          { :default => { :pool_size => 5, :free_workers => 5, :execution_status => {} },
-            :slow => { :pool_size=> 1, :free_workers=> 1, :execution_status=> {}} }
+          { :default => { :pool_size => 5, :free_workers => 5, :queue_size => 0 },
+            :slow => { :pool_size=> 1, :free_workers=> 1, :queue_size => 0} }
         end
 
         it 'retrieves correct execution items count' do
           world.get_execution_status(world.id, nil, 5).value!.must_equal(base)
           id = 'something like uuid'
           expected = base.dup
-          expected[:default][:execution_status] = { id => 0 }
-          expected[:slow][:execution_status] = { id => 0 }
+          expected[:default][:queue_size] = 0
+          expected[:slow][:queue_size] =  0
           world.get_execution_status(world.id, id, 5).value!.must_equal(expected)
         end
       end

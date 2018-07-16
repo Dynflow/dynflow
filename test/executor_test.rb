@@ -594,12 +594,12 @@ module Dynflow
         let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
         it do
           storage.must_be_empty
-          storage.execution_status.must_equal({})
+          storage.queue_size.must_equal(0)
           storage.pop.must_be_nil
           storage.pop.must_be_nil
 
           storage.add s = FakeStep.new(1)
-          storage.execution_status.must_equal(1 => 1)
+          storage.queue_size.must_equal(1)
           storage.pop.must_equal s
           storage.must_be_empty
           storage.pop.must_be_nil
@@ -611,19 +611,19 @@ module Dynflow
           storage.add s22 = FakeStep.new(2)
           storage.add s31 = FakeStep.new(3)
 
-          storage.execution_status(1).must_equal(1 => 3)
-          storage.execution_status(4).must_equal(4 => 0)
-          storage.execution_status.must_equal({1 => 3, 2 => 2, 3 => 1})
+          storage.queue_size(1).must_equal(3)
+          storage.queue_size(4).must_equal(0)
+          storage.queue_size.must_equal(6)
 
-          storage.pop.must_equal s21
-          storage.pop.must_equal s31
           storage.pop.must_equal s11
-          storage.pop.must_equal s22
           storage.pop.must_equal s12
           storage.pop.must_equal s13
+          storage.pop.must_equal s21
+          storage.pop.must_equal s22
+          storage.pop.must_equal s31
 
           storage.must_be_empty
-          storage.execution_status.must_equal({})
+          storage.queue_size.must_equal(0)
           storage.pop.must_be_nil
         end
       end

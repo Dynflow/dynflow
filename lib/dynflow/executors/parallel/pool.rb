@@ -4,19 +4,15 @@ module Dynflow
       class Pool < Actor
         class JobStorage
           def initialize
-            @round_robin = RoundRobin.new
-            @jobs        = Hash.new { |h, k| h[k] = [] }
+            @jobs = []
           end
 
           def add(work)
-            @round_robin.add work.execution_plan_id unless tracked?(work)
-            @jobs[work.execution_plan_id] << work
+            @jobs << work
           end
 
           def pop
-            return nil if empty?
-            execution_plan_id = @round_robin.next
-            @jobs[execution_plan_id].shift.tap { delete execution_plan_id if @jobs[execution_plan_id].empty? }
+            @jobs.shift
           end
 
           def queue_size
@@ -27,26 +23,14 @@ module Dynflow
             @jobs.empty?
           end
 
-          def execution_status(execution_plan_id = nil)
-            source = if execution_plan_id.nil?
-                       @jobs
-                     else
-                       { execution_plan_id => @jobs.fetch(execution_plan_id, []) }
-                     end
-            source.reduce({}) do |acc, (plan_id, work_items)|
-              acc.update(plan_id => work_items.count)
+          def queue_size(execution_plan_id = nil)
+            if execution_plan_id
+              @jobs.count do |item|
+                item.respond_to?(:execution_plan_id) && item.execution_plan_id == execution_plan_id
+              end
+            else
+              @jobs.size
             end
-          end
-
-          private
-
-          def tracked?(work)
-            @jobs.has_key? work.execution_plan_id
-          end
-
-          def delete(execution_plan_id)
-            @round_robin.delete execution_plan_id
-            @jobs.delete execution_plan_id
           end
         end
 
@@ -89,7 +73,7 @@ module Dynflow
         def execution_status(execution_plan_id = nil)
           { :pool_size => @pool_size,
             :free_workers => @free_workers.count,
-            :execution_status => @jobs.execution_status(execution_plan_id) }
+            :queue_size => @jobs.queue_size(execution_plan_id) }
         end
 
         private

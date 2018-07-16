@@ -41,9 +41,6 @@ module Dynflow
         load_worlds
         @executors.each do |w|
           hash = world.get_execution_status(w.data['id'], nil, 5).value!
-          hash.each do |_queue_name, info|
-            info[:queue_size] = info[:execution_status].values.reduce(:+) || 0
-          end
           w.data.update(:status => hash)
         end
         erb :worlds
