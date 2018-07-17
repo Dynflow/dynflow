@@ -8,13 +8,15 @@ module Dynflow
         end
 
         def on_message(work_item)
+          already_responded = false
           Executors.run_user_code do
             work_item.execute
           end
         rescue Errors::PersistenceError => e
-          @pool.tell([:handle_persistence_error, e])
+          @pool.tell([:handle_persistence_error, reference, e, work_item])
+          already_responded = true
         ensure
-          @pool.tell([:worker_done, reference, work_item])
+          @pool.tell([:worker_done, reference, work_item]) unless already_responded
         end
       end
     end

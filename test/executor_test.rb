@@ -94,6 +94,7 @@ module Dynflow
         end
 
         describe "when being executed" do
+          include TestHelpers
 
           let :execution_plan do
             world.plan(Support::CodeWorkflowExample::IncomingIssue, { 'text' => 'get a break' })
@@ -126,6 +127,16 @@ module Dynflow
           it "fails when trying to execute again" do
             TestPause.when_paused do
               assert_raises(Dynflow::Error) { world.execute(execution_plan.id).value! }
+            end
+          end
+
+          it "handles when the execution plan is deleted" do
+            TestPause.when_paused do
+              world.persistence.delete_execution_plans(uuid: [execution_plan.id])
+            end
+            director = get_director(world)
+            wait_for('execution plan removed from executor') do
+              !director.current_execution_plan_ids.include?(execution_plan.id)
             end
           end
         end
