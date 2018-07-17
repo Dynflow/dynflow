@@ -34,12 +34,17 @@ module Dynflow
     class DataConsistencyError < Dynflow::Error
     end
 
+    # any persistence errors
     class PersistenceError < Dynflow::Error
       def self.delegate(original_exception)
         self.new("caused by #{original_exception.class}: #{original_exception.message}").tap do |e|
           e.set_backtrace original_exception.backtrace
         end
       end
+    end
+
+    # persistence errors that can't be recovered from, such as continuous connection issues
+    class FatalPersistenceError < PersistenceError
     end
   end
 end

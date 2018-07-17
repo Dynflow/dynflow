@@ -84,6 +84,10 @@ module Dynflow
       @rescued_steps = {}
     end
 
+    def current_execution_plan_ids
+      @execution_plan_managers.keys
+    end
+
     def start_execution(execution_plan_id, finished)
       manager = track_execution_plan(execution_plan_id, finished)
       return [] unless manager
@@ -106,6 +110,17 @@ module Dynflow
     def work_finished(work)
       manager = @execution_plan_managers[work.execution_plan_id]
       unless_done(manager, manager.what_is_next(work))
+    end
+
+    # called when there was an unhandled exception during the execution
+    # of the work (such as persistence issue) - in this case we just clean up the
+    # runtime from the execution plan and let it go (common cause for this is the execution
+    # plan being removed from database by external user)
+    def work_failed(work)
+      if (manager = @execution_plan_managers[work.execution_plan_id])
+        manager.terminate
+        finish_manager(manager)
+      end
     end
 
     def terminate

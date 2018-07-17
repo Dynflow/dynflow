@@ -435,19 +435,19 @@ module Dynflow
         attempts = 0
         begin
           yield
-        rescue ::Sequel::UniqueConstraintViolation => e
-          raise e
-        rescue Exception => e
+        rescue ::Sequel::DatabaseConnectionError, ::Sequel::DatabaseDisconnectError => e
           attempts += 1
           log(:error, e)
           if attempts > MAX_RETRIES
             log(:error, "The number of MAX_RETRIES exceeded")
-            raise Errors::PersistenceError.delegate(e)
+            raise Errors::FatalPersistenceError.delegate(e)
           else
             log(:error, "Persistence retry no. #{attempts}")
             sleep RETRY_DELAY
             retry
           end
+        rescue Exception => e
+          raise Errors::PersistenceError.delegate(e)
         end
       end
 

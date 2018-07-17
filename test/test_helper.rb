@@ -162,15 +162,21 @@ module TestHelpers
     end
   end
 
+  # get director for deeper investigation of the current execution state
+  def get_director(world)
+    core_context = world.executor.instance_variable_get('@core').instance_variable_get('@core').context
+    core_context.instance_variable_get('@director')
+  end
+
   # waits for the passed block to return non-nil value and reiterates it while getting false
   # (till some reasonable timeout). Useful for forcing the tests for some event to occur
-  def wait_for
+  def wait_for(waiting_message = 'something to happen')
     30.times do
       ret = yield
       return ret if ret
       sleep 0.3
     end
-    raise 'waiting for something to happen was not successful'
+    raise "waiting for #{waiting_message} was not successful"
   end
 
   def executor_id_for_plan(execution_plan_id)

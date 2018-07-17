@@ -65,8 +65,10 @@ module Dynflow
           distribute_jobs
         end
 
-        def handle_persistence_error(error)
-          @executor_core.tell([:handle_persistence_error, error])
+        def handle_persistence_error(worker, error, work = nil)
+          @executor_core.tell([:handle_persistence_error, error, work])
+          @free_workers << worker
+          distribute_jobs
         end
 
         def start_termination(*args)

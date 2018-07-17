@@ -49,10 +49,14 @@ module Dynflow
           feed_pool(@director.work_finished(work))
         end
 
-        def handle_persistence_error(error)
-          logger.fatal "PersistenceError in executor: terminating"
-          logger.fatal error
-          @world.terminate
+        def handle_persistence_error(error, work = nil)
+          logger.error "PersistenceError in executor"
+          logger.error error
+          @director.work_failed(work) if work
+          if error.is_a? Errors::FatalPersistenceError
+            logger.fatal "Terminating"
+            @world.terminate
+          end
         end
 
         def start_termination(*args)
@@ -66,7 +70,7 @@ module Dynflow
           # we expect this message from all worker pools
           return unless @pools.empty?
           @director.terminate
-          logger.error '... core terminated.'
+          logger.info '... Dynflow core terminated.'
           super()
         end
 
