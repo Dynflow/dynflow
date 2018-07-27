@@ -594,10 +594,10 @@ module Dynflow
     def update_step_telemetry(phase)
       Dynflow::Telemetry.with_instance do |t|
         t.observe_histogram(:dynflow_step_real_time,
-                            @step.real_time,
+                            @step.real_time * 1000,
                             :action => self.class.to_s, :phase => phase)
         t.observe_histogram(:dynflow_step_execution_time,
-                            @step.execution_time,
+                            @step.execution_time * 1000,
                             :action => self.class.to_s, :phase => phase)
       end
 

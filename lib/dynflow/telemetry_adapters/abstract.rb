@@ -2,7 +2,7 @@ module Dynflow
   module TelemetryAdapters
     class Abstract
       # Default buckets to use when defining a histogram
-      DEFAULT_BUCKETS = [10, 50, 200, 1000, 15_000].freeze
+      DEFAULT_BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 20, 30, 60, 120, 300, 600, 1200].freeze
 
       # Configures a counter to be collected
       #

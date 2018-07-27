@@ -54,8 +54,7 @@ module Dynflow
           @jobs          = JobStorage.new
           @free_workers  = Array.new(pool_size) do |i|
             name = "worker-#{i}"
-            telemetry_options = { :world => @world.id, :worker => name, :queue => @name }
-            Worker.spawn(name, reference, transaction_adapter, telemetry_options)
+            Worker.spawn(name, reference, transaction_adapter, telemetry_options.merge(:worker => name))
           end
         end
 
