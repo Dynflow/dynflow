@@ -507,7 +507,6 @@ module Dynflow
           end
         end
 
-        update_step_telemetry 'plan'
         check_serializable :input
       end
     end
@@ -547,9 +546,6 @@ module Dynflow
 
           check_serializable :output
         end
-
-        # Only update the telemetry data if the step stopped for good
-        update_step_telemetry 'run' if [:success, :skipped].include? self.state
       else
         raise "wrong state #{state} when event:#{event}"
       end
@@ -589,18 +585,6 @@ module Dynflow
       else
         false
       end
-    end
-
-    def update_step_telemetry(phase)
-      Dynflow::Telemetry.with_instance do |t|
-        t.observe_histogram(:dynflow_step_real_time,
-                            @step.real_time * 1000,
-                            :action => self.class.to_s, :phase => phase)
-        t.observe_histogram(:dynflow_step_execution_time,
-                            @step.execution_time * 1000,
-                            :action => self.class.to_s, :phase => phase)
-      end
-
     end
   end
   # rubocop:enable Metrics/ClassLength

@@ -19,6 +19,10 @@ module Dynflow
             @jobs[execution_plan_id].shift.tap { delete execution_plan_id if @jobs[execution_plan_id].empty? }
           end
 
+          def queue_size
+            execution_status.values.reduce(0, :+)
+          end
+
           def empty?
             @jobs.empty?
           end
@@ -61,6 +65,7 @@ module Dynflow
         def schedule_work(work)
           @jobs.add work
           distribute_jobs
+          update_telemetry
         end
 
         def worker_done(worker, work)
@@ -84,7 +89,7 @@ module Dynflow
         def execution_status(execution_plan_id = nil)
           { :pool_size => @pool_size,
             :free_workers => @free_workers.count,
-            :execution_status => @jobs.execution_status(execution_plan_id) }
+            :execution_status => execution_status(execution_plan_id) }
         end
 
         private
@@ -102,11 +107,16 @@ module Dynflow
           until @free_workers.empty? || @jobs.empty?
             Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_active_workers, '+1', telemetry_options) }
             @free_workers.pop << @jobs.pop
+            update_telemetry
           end
         end
 
         def telemetry_options
           { :queue => @name.to_s, :world => @world.id }
+        end
+
+        def update_telemetry
+          Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_queue_size, @jobs.queue_size, telemetry_options) }
         end
       end
     end
