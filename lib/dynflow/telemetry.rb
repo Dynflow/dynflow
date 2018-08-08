@@ -20,6 +20,10 @@ module Dynflow
         @instance.with_instance &block
       end
 
+      def measure(name, tags = {}, &block)
+        @instance.measure name, tags, &block
+      end
+
       # Registers the metrics to be collected
       # @return [void]
       def register_metrics!
@@ -50,6 +54,10 @@ module Dynflow
           # Connector related
           t.add_counter :dynflow_connector_envelopes, 'The number of envelopes handled by a connector',
                         [:world, :direction]
+
+          # Persistence related
+          t.add_histogram :dynflow_persistence, 'The time spent communicating with the database',
+                          [:world, :method]
         end
       end
     end

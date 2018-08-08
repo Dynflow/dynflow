@@ -8,6 +8,11 @@ module Dynflow
       def with_instance
         # Do nothing
       end
+
+      def measure(_name, _tags = {})
+        # Just call the block
+        yield
+      end
     end
   end
 end

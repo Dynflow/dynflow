@@ -66,6 +66,15 @@ module Dynflow
       def with_instance
         yield self if block_given?
       end
+
+      def measure(name, tags = {})
+        before = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        yield
+      ensure
+        after = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        duration = (after - before) * 1000 # In miliseconds
+        observe_histogram(name, duration, tags)
+      end
     end
   end
 end
