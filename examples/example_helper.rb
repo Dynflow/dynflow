@@ -17,6 +17,7 @@ class ExampleHelper
       config.persistence_adapter = persistence_adapter
       config.logger_adapter      = logger_adapter
       config.auto_rescue         = false
+      config.telemetry_adapter   = telemetry_adapter
       yield config if block_given?
       Dynflow::World.new(config).tap do |world|
         puts "World #{world.id} started..."
@@ -25,6 +26,14 @@ class ExampleHelper
 
     def persistence_conn_string
       ENV['DB_CONN_STRING'] || 'sqlite:/'
+    end
+
+    def telemetry_adapter
+      if (host = ENV['TELEMETRY_STATSD_HOST'])
+        Dynflow::TelemetryAdapters::StatsD.new host
+      else
+        Dynflow::TelemetryAdapters::Dummy.new
+      end
     end
 
     def persistence_adapter

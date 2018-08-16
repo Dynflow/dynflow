@@ -50,6 +50,7 @@ module Dynflow
   require 'dynflow/delayed_executors'
   require 'dynflow/semaphores'
   require 'dynflow/throttle_limiter'
+  require 'dynflow/telemetry'
   require 'dynflow/config'
 
   if defined? ::ActiveJob

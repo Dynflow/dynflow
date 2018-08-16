@@ -162,9 +162,11 @@ module Dynflow
         block.call
       ensure
         calculate_progress(action)
-        @ended_at        = Time.now
-        @execution_time += @ended_at - start
+        @ended_at = Time.now
+        current_execution_time = @ended_at - start
+        @execution_time += current_execution_time
         @real_time       = @ended_at - @started_at
+        update_step_telemetry(current_execution_time)
       end
 
       def calculate_progress(action)
@@ -172,6 +174,19 @@ module Dynflow
         if @progress_done.is_a?(Float) && !@progress_done.finite?
           action_logger.error("Unexpected progress value #{@progress_done} for step #{execution_plan_id}##{id}")
           @progress_done = 0
+        end
+      end
+
+      def update_step_telemetry(current_execution_time)
+        Dynflow::Telemetry.with_instance do |t|
+          if [:success, :skipped].include?(state)
+            t.observe_histogram(:dynflow_step_real_time,
+                                real_time * 1000,
+                                :action => action_class.to_s, :phase => phase.to_s_humanized)
+          end
+          t.observe_histogram(:dynflow_step_execution_time,
+                              current_execution_time * 1000,
+                              :action => action_class.to_s, :phase => phase.to_s_humanized)
         end
       end
     end

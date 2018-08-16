@@ -14,9 +14,14 @@ module Dynflow
                 :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
 
     def initialize(config)
+      @config = Config::ForWorld.new(config, self)
+
+      # Set the telemetry instance as soon as possible
+      Dynflow::Telemetry.set_adapter @config.telemetry_adapter
+      Dynflow::Telemetry.register_metrics!
+
       @id                     = SecureRandom.uuid
       @clock                  = spawn_and_wait(Clock, 'clock')
-      @config                 = Config::ForWorld.new(config, self)
       @logger_adapter         = @config.logger_adapter
       @config.validate
       @transaction_adapter    = @config.transaction_adapter

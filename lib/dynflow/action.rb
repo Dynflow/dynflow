@@ -511,6 +511,7 @@ module Dynflow
       end
     end
 
+    # TODO: This is getting out of hand, refactoring needed
     def execute_run(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
@@ -544,7 +545,6 @@ module Dynflow
 
           check_serializable :output
         end
-
       else
         raise "wrong state #{state} when event:#{event}"
       end

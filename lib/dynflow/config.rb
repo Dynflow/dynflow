@@ -182,6 +182,10 @@ module Dynflow
       './backup'
     end
 
+    config_attr :telemetry_adapter, ::Dynflow::TelemetryAdapters::Abstract do |world|
+      ::Dynflow::TelemetryAdapters::Dummy.new
+    end
+
     def validate(config_for_world)
       if defined? ::ActiveRecord::Base
         begin

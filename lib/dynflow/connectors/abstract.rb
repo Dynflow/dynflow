@@ -24,6 +24,7 @@ module Dynflow
       # between words: we need to know the one to send the message to
       def receive(world, envelope)
         Type! envelope, Dispatcher::Envelope
+        Telemetry.with_instance { |t| t.increment_counter(:dynflow_connector_envelopes, 1, :world => world.id, :direction => 'incoming') }
         match(envelope.message,
               (on Dispatcher::Ping do
                  response_envelope = envelope.build_response_envelope(Dispatcher::Pong, world)

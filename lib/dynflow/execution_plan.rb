@@ -120,7 +120,12 @@ module Dynflow
         @ended_at       = Time.now
         @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
-        hooks_to_run << (failure? ? :failure : :success)
+        key = failure? ? :failure : :success
+        Dynflow::Telemetry.with_instance do |t|
+          t.increment_counter(:dynflow_finished_execution_plans, 1,
+                              telemetry_common_options.merge(:result => key.to_s))
+        end
+        hooks_to_run << key
         unlock_all_singleton_locks!
       when :paused
         unlock_all_singleton_locks!
@@ -130,6 +135,8 @@ module Dynflow
       logger.debug format('%13s %s    %9s >> %9s',
                           'ExecutionPlan', id, original, state)
       self.save
+      toggle_telemetry_state original == :pending ? nil : original.to_s,
+                             self.state == :stopped ? nil : self.state.to_s
       hooks_to_run.each { |kind| run_hooks kind }
     end
 
@@ -546,6 +553,21 @@ module Dynflow
       world.coordinator.find_locks(filter).each do |lock|
         world.coordinator.release(lock)
       end
+    end
+
+    def toggle_telemetry_state(original, new)
+      return if original == new
+      @label = root_plan_step.action_class if @label.nil?
+      Dynflow::Telemetry.with_instance do |t|
+        t.set_gauge(:dynflow_active_execution_plans, '-1',
+                    telemetry_common_options.merge(:state => original)) unless original.nil?
+        t.set_gauge(:dynflow_active_execution_plans, '+1',
+                    telemetry_common_options.merge(:state => new)) unless new.nil?
+      end
+    end
+
+    def telemetry_common_options
+      { :world => @world.id, :action => @label }
     end
 
     private_class_method :steps_from_hash
