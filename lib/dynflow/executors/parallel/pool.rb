@@ -89,7 +89,7 @@ module Dynflow
         def execution_status(execution_plan_id = nil)
           { :pool_size => @pool_size,
             :free_workers => @free_workers.count,
-            :execution_status => execution_status(execution_plan_id) }
+            :execution_status => @jobs.execution_status(execution_plan_id) }
         end
 
         private
