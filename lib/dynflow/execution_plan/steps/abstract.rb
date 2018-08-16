@@ -162,7 +162,7 @@ module Dynflow
         block.call
       ensure
         calculate_progress(action)
-        @ended_at        = Time.now
+        @ended_at = Time.now
         current_execution_time = @ended_at - start
         @execution_time += current_execution_time
         @real_time       = @ended_at - @started_at

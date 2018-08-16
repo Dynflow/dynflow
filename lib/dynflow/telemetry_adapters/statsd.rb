@@ -8,7 +8,7 @@ module Dynflow
         @host = host
         ::StatsD.backend = ::StatsD::Instrument::Backends::UDPBackend.new(host, :statsd)
       end
-      
+
       def add_counter(name, description, instance_labels)
         raise "Metric already registered: #{name}" if @instances[name]
         @instances[name] = instance_labels
