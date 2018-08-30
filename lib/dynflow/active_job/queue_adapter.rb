@@ -45,6 +45,10 @@ module Dynflow
         def label
           input[:job_class]
         end
+
+        def rescue_strategy
+          Action::Rescue::Skip
+        end
       end
     end
   end
