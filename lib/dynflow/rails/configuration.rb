@@ -114,7 +114,7 @@ module Dynflow
         @world_config ||= ::Dynflow::Config.new.tap do |config|
           config.auto_rescue         = true
           config.logger_adapter      = ::Dynflow::LoggerAdapters::Delegator.new(action_logger, dynflow_logger)
-          config.pool_size           = 5
+          config.pool_size           = self.pool_size
           config.persistence_adapter = ->(world, _) { initialize_persistence(world) }
           config.transaction_adapter = transaction_adapter
           config.executor            = ->(world, _) { initialize_executor(world) }
