@@ -41,7 +41,7 @@ module Dynflow
       @auto_validity_check    = @config.auto_validity_check
       @validity_check_timeout = @config.validity_check_timeout
       @throttle_limiter       = @config.throttle_limiter
-      @terminated             = Concurrent.event
+      @terminated             = Concurrent::Promises.resolvable_event
       @termination_timeout    = @config.termination_timeout
       calculate_subscription_index
 

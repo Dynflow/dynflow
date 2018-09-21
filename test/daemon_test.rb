@@ -18,7 +18,7 @@ class DaemonTest < ActiveSupport::TestCase
     @dummy_world.stubs(:id => '123')
     @dummy_world.stubs(:auto_execute)
     @dummy_world.stubs(:perform_validity_checks => 0)
-    @event = Concurrent.event
+    @event = Concurrent::Promises.resolvable_event
     @dummy_world.stubs(:terminated).returns(@event)
     @world_class.stubs(:new).returns(@dummy_world)
     @dynflow = ::Dynflow::Rails.new(
