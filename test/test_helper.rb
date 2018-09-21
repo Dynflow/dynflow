@@ -255,7 +255,7 @@ events_test = -> do
     end
   end
 
-  [Concurrent::Edge::Event, Concurrent::Edge::Future].each do |future_class|
+  [Concurrent::Edge::Event, Concurrent::Promises::ResolvableFuture].each do |future_class|
     original_complete_method = future_class.instance_method :complete_with
     future_class.send :define_method, :complete_with do |*args|
       begin

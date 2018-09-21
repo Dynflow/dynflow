@@ -132,7 +132,7 @@ module Dynflow
       PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
       # Returned by #trigger when planning is successful, #future will resolve after
       # ExecutionPlan is executed.
-      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Edge::Future }
+      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Promises::ResolvableFuture }
 
       Scheduled       = type { fields! execution_plan_id: String }
 
@@ -208,7 +208,7 @@ module Dynflow
       end
     end
 
-    # @return [Concurrent::Edge::Future] containing execution_plan when finished
+    # @return [Concurrent::Promises::ResolvableFuture] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
     def execute(execution_plan_id, done = Concurrent.future)
       publish_request(Dispatcher::Execution[execution_plan_id], done, true)

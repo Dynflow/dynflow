@@ -4,7 +4,7 @@ module Dynflow
 
       TrackedRequest = Algebrick.type do
         fields! id: Integer, request: Request,
-                accepted: Concurrent::Edge::Future, finished: Concurrent::Edge::Future
+                accepted: Concurrent::Promises::ResolvableFuture, finished: Concurrent::Promises::ResolvableFuture
       end
 
       module TrackedRequest

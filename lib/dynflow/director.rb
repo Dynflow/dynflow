@@ -13,7 +13,7 @@ module Dynflow
       fields! execution_plan_id: String,
               step_id:           Integer,
               event:             Object,
-              result:            Concurrent::Edge::Future
+              result:            Concurrent::Promises::ResolvableFuture
     end
 
     UnprocessableEvent = Class.new(Dynflow::Error)
