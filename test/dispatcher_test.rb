@@ -40,7 +40,7 @@ module Dynflow
               step   = plan.steps.values.first
               future = client_world.event(plan.id, step.id, 'finish')
               future.wait
-              assert future.failed?
+              assert future.rejected?
             end
 
             it 'succeeds when executor acts as client' do
@@ -86,14 +86,14 @@ module Dynflow
             executor_world.terminate.wait
             ping_response = client_world.ping(executor_world.id, 0.5)
             ping_response.wait
-            assert ping_response.failed?
+            assert ping_response.rejected?
           end
 
           it 'time-outs when the world is not responding without cache' do
             executor_world.terminate.wait
             ping_response = client_world.ping_without_cache(executor_world.id, 0.5)
             ping_response.wait
-            assert ping_response.failed?
+            assert ping_response.rejected?
           end
 
           it 'caches the pings and pongs' do
@@ -121,7 +121,7 @@ module Dynflow
           executor_world_2.terminate.wait
           result = client_world.trigger(Support::DummyExample::Dummy)
           result.finished.wait
-          assert result.finished.failed?
+          assert result.finished.rejected?
           assert_match(/No executor available/, result.finished.reason.message)
         end
       end
