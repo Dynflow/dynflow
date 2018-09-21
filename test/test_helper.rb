@@ -249,13 +249,13 @@ events_test = -> do
   event_creations  = {}
   non_ready_events = {}
 
-  Concurrent::Edge::Event.singleton_class.send :define_method, :new do |*args, &block|
+  Concurrent::Promises::Event.singleton_class.send :define_method, :new do |*args, &block|
     super(*args, &block).tap do |event|
       event_creations[event.object_id] = caller(4)
     end
   end
 
-  [Concurrent::Edge::Event, Concurrent::Promises::ResolvableFuture].each do |future_class|
+  [Concurrent::Promises::Event, Concurrent::Promises::ResolvableFuture].each do |future_class|
     original_resolved_method = future_class.instance_method :resolve_with
     future_class.send :define_method, :resolve_with do |*args|
       begin
@@ -269,7 +269,7 @@ events_test = -> do
   MiniTest.after_run do
     Concurrent::Actor.root.ask!(:terminate!)
 
-    non_ready_events = ObjectSpace.each_object(Concurrent::Edge::Event).map do |event|
+    non_ready_events = ObjectSpace.each_object(Concurrent::Promises::Event).map do |event|
       event.wait(1)
       unless event.resolved?
         event.object_id
@@ -294,9 +294,9 @@ events_test = -> do
 
   # time out all futures by default
   default_timeout = 8
-  wait_method     = Concurrent::Edge::Event.instance_method(:wait)
+  wait_method     = Concurrent::Promises::Event.instance_method(:wait)
 
-  Concurrent::Edge::Event.class_eval do
+  Concurrent::Promises::Event.class_eval do
     define_method :wait do |timeout = nil|
       wait_method.bind(self).call(timeout || default_timeout)
     end
