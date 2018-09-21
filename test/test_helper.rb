@@ -38,7 +38,7 @@ class TestPause
   def self.pause
     if !@pause
       raise 'the TestPause class was not setup'
-    elsif @ready.completed?
+    elsif @ready.resolved?
       raise 'you can pause only once'
     else
       @ready.success(true)
@@ -256,10 +256,10 @@ events_test = -> do
   end
 
   [Concurrent::Edge::Event, Concurrent::Promises::ResolvableFuture].each do |future_class|
-    original_complete_method = future_class.instance_method :complete_with
-    future_class.send :define_method, :complete_with do |*args|
+    original_resolved_method = future_class.instance_method :resolved_with
+    future_class.send :define_method, :resolved_with do |*args|
       begin
-        original_complete_method.bind(self).call(*args)
+        original_resolved_method.bind(self).call(*args)
       ensure
         event_creations.delete(self.object_id)
       end
@@ -271,7 +271,7 @@ events_test = -> do
 
     non_ready_events = ObjectSpace.each_object(Concurrent::Edge::Event).map do |event|
       event.wait(1)
-      unless event.completed?
+      unless event.resolved?
         event.object_id
       end
     end.compact

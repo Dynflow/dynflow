@@ -18,10 +18,10 @@ module Dynflow
         finished
       rescue Concurrent::Actor::ActorTerminated => error
         dynflow_error = Dynflow::Error.new('executor terminated')
-        finished.fail dynflow_error unless finished.completed?
+        finished.fail dynflow_error unless finished.resolved?
         raise dynflow_error
       rescue => e
-        finished.fail e unless finished.completed?
+        finished.fail e unless finished.resolved?
         raise e
       end
 

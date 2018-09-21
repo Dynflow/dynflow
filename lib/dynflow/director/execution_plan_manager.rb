@@ -20,7 +20,7 @@ module Dynflow
       end
 
       def start
-        raise "The future was already set" if @future.completed?
+        raise "The future was already set" if @future.resolved?
         start_run or start_finalize or finish
       end
 

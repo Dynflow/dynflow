@@ -9,18 +9,18 @@ module Dynflow
 
       module TrackedRequest
         def accept!
-          accepted.success true unless accepted.completed?
+          accepted.success true unless accepted.resolved?
           self
         end
 
         def fail!(error)
-          accepted.fail error unless accepted.completed?
+          accepted.fail error unless accepted.resolved?
           finished.fail error
           self
         end
 
         def success!(resolve_to)
-          accepted.success true unless accepted.completed?
+          accepted.success true unless accepted.resolved?
           finished.success(resolve_to)
           self
         end
@@ -208,10 +208,10 @@ module Dynflow
       end
 
       def reset_tracked_request(tracked_request)
-        if tracked_request.finished.completed?
+        if tracked_request.finished.resolved?
           raise Dynflow::Error.new('Can not reset resolved tracked request')
         end
-        unless tracked_request.accepted.completed?
+        unless tracked_request.accepted.resolved?
           tracked_request.accept! # otherwise nobody would set the accept future
         end
         @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, Concurrent::Promises.resolvable_future, tracked_request.finished]

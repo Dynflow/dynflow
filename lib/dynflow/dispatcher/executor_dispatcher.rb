@@ -29,7 +29,7 @@ module Dynflow
         @world.executor.execute(execution.execution_plan_id, future)
         respond(envelope, Accepted)
       rescue Dynflow::Error => e
-        future.fail(e) if future && !future.completed?
+        future.fail(e) if future && !future.resolved?
         respond(envelope, Failed[e.message])
       end
 
@@ -52,7 +52,7 @@ module Dynflow
         end
         @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
       rescue Dynflow::Error => e
-        future.fail(e) if future && !future.completed?
+        future.fail(e) if future && !future.resolved?
       end
 
       def start_termination(*args)
