@@ -256,8 +256,8 @@ events_test = -> do
   end
 
   [Concurrent::Edge::Event, Concurrent::Promises::ResolvableFuture].each do |future_class|
-    original_resolved_method = future_class.instance_method :resolved_with
-    future_class.send :define_method, :resolved_with do |*args|
+    original_resolved_method = future_class.instance_method :resolve_with
+    future_class.send :define_method, :resolve_with do |*args|
       begin
         original_resolved_method.bind(self).call(*args)
       ensure
