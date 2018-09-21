@@ -285,7 +285,7 @@ module Dynflow
     def start_termination
       @termination_barrier.synchronize do
         return @terminating if @terminating
-        termination_future ||= Concurrent::Promises.resolvable_future do
+        termination_future ||= Concurrent::Promises.future do
           begin
             run_before_termination_hooks
 
@@ -323,7 +323,7 @@ module Dynflow
             end
 
             coordinator.delete_world(registered_world)
-            @terminated.complete
+            @terminated.resolve
             true
           rescue => e
             logger.fatal(e)
