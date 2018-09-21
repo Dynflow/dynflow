@@ -84,7 +84,7 @@ module Dynflow
         # terminate until the execution is finished (including
         # cleaning of locks etc)
         @current_futures << callbacks_future
-        callbacks_future.on_completion! { reference.tell([:finish_execution, callbacks_future]) }
+        callbacks_future.on_resolution! { reference.tell([:finish_execution, callbacks_future]) }
         return future
       end
 

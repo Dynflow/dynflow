@@ -32,7 +32,7 @@ if $0 == __FILE__
     config.exit_on_terminate = false
   end
 
-  world.terminated.on_completion do
+  world.terminated.on_resolution do
     puts '[world] The world has been terminated'
   end
 

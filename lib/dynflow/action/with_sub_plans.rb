@@ -171,7 +171,7 @@ module Dynflow
     def notify_on_finish(plans)
       suspend do |suspended_action|
         plans.each do |plan|
-          plan.finished.on_completion! do |success, value|
+          plan.finished.on_resolution! do |success, value|
             suspended_action << SubPlanFinished[plan.id, success && (value.result == :success)]
           end
         end

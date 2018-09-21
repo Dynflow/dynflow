@@ -36,7 +36,7 @@ module Dynflow
         if options[:memory_limit] && options[:memory_limit].to_i > 0
           ::Rails.application.dynflow.config.on_init do |world|
             memory_watcher = initialize_memory_watcher(world, options[:memory_limit], options)
-            world.terminated.on_completion do
+            world.terminated.on_resolution do
               STDOUT.puts("World has been terminated")
               memory_watcher = nil # the object can be disposed
             end
