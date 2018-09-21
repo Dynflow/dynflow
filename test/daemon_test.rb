@@ -38,7 +38,7 @@ class DaemonTest < ActiveSupport::TestCase
   end
 
   teardown do
-    @event.complete
+    @event.resolve
     @event.wait
   end
 
