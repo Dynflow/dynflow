@@ -118,7 +118,7 @@ module Dynflow
 
         results = {}
         world_checks.each do |world, check|
-          if check.fulfill?
+          if check.fulfilled?
             result = :valid
           else
             if auto_invalidate
