@@ -25,8 +25,8 @@ Concurrent.disable_at_exit_handlers!
 class TestPause
 
   def self.setup
-    @pause = Concurrent.future
-    @ready = Concurrent.future
+    @pause = Concurrent::Promises.resolvable_future
+    @ready = Concurrent::Promises.resolvable_future
   end
 
   def self.teardown
@@ -308,7 +308,7 @@ events_test.call
 
 class ConcurrentRunTester
   def initialize
-    @enter_future, @exit_future = Concurrent.future, Concurrent.future
+    @enter_future, @exit_future = Concurrent::Promises.resolvable_future, Concurrent::Promises.resolvable_future
   end
 
   def while_executing(&block)

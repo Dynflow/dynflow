@@ -198,7 +198,7 @@ module Dynflow
 
       def track_request(finished, request, timeout)
         id = @last_id += 1
-        tracked_request = TrackedRequest[id, request, Concurrent.future, finished]
+        tracked_request = TrackedRequest[id, request, Concurrent::Promises.resolvable_future, finished]
         @tracked_requests[id] = tracked_request
         @world.clock.ping(self, timeout, [:timeout, id]) if timeout
         yield tracked_request
@@ -214,7 +214,7 @@ module Dynflow
         unless tracked_request.accepted.completed?
           tracked_request.accept! # otherwise nobody would set the accept future
         end
-        @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, Concurrent.future, tracked_request.finished]
+        @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, Concurrent::Promises.resolvable_future, tracked_request.finished]
       end
 
       def resolve_tracked_request(id, error = nil)

@@ -39,7 +39,7 @@ module Dynflow
     private
 
     def spawn
-      Concurrent.future.tap do |initialized|
+      Concurrent::Promises.resolvable_future.tap do |initialized|
         @core = core_class.spawn(:name => 'throttle-limiter',
                                  :args => [@world],
                                  :initialized => initialized)
@@ -59,13 +59,13 @@ module Dynflow
 
       def handle_plans(parent_id, planned_ids, failed_ids)
         failed = failed_ids.map do |plan_id|
-          ::Dynflow::World::Triggered[plan_id, Concurrent.future].tap do |triggered|
+          ::Dynflow::World::Triggered[plan_id, Concurrent::Promises.resolvable_future].tap do |triggered|
             execute_triggered(triggered)
           end
         end
 
         planned_ids.map do |child_id|
-          ::Dynflow::World::Triggered[child_id, Concurrent.future].tap do |triggered|
+          ::Dynflow::World::Triggered[child_id, Concurrent::Promises.resolvable_future].tap do |triggered|
             triggered.future.on_completion! { self << [:release, parent_id] }
             execute_triggered(triggered) if @semaphores[parent_id].wait(triggered)
           end

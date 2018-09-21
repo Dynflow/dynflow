@@ -13,7 +13,7 @@ module Dynflow
       end
 
       def spawn
-        Concurrent.future.tap do |initialized|
+        Concurrent::Promises.resolvable_future.tap do |initialized|
           @core = core_class.spawn(:name => 'execution-plan-cleaner',
                                    :args => [@world, @options],
                                    :initialized => initialized)

@@ -78,7 +78,7 @@ module Dynflow
 
       def on_finish
         raise "Dispatcher terminating: no new work can be started" if terminating?
-        future = Concurrent.future
+        future = Concurrent::Promises.resolvable_future
         callbacks_future = (yield future).rescue { |reason| @world.logger.error("Unexpected fail on future #{reason}") }
         # we track currently running futures to make sure to not
         # terminate until the execution is finished (including

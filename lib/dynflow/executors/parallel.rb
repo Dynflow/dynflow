@@ -9,10 +9,10 @@ module Dynflow
         super(world)
         @core = Core.spawn name:        'parallel-executor-core',
                            args:        [world, heartbeat_interval, queues_options],
-                           initialized: @core_initialized = Concurrent.future
+                           initialized: @core_initialized = Concurrent::Promises.resolvable_future
       end
 
-      def execute(execution_plan_id, finished = Concurrent.future, wait_for_acceptance = true)
+      def execute(execution_plan_id, finished = Concurrent::Promises.resolvable_future, wait_for_acceptance = true)
         accepted = @core.ask([:handle_execution, execution_plan_id, finished])
         accepted.value! if wait_for_acceptance
         finished
@@ -25,12 +25,12 @@ module Dynflow
         raise e
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent.future)
+      def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future)
         @core.ask([:handle_event, Director::Event[execution_plan_id, step_id, event, future]])
         future
       end
 
-      def terminate(future = Concurrent.future)
+      def terminate(future = Concurrent::Promises.resolvable_future)
         @core.tell([:start_termination, future])
         future
       end

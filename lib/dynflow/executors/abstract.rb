@@ -15,15 +15,15 @@ module Dynflow
       # the event, disable if calling executor from within executor
       # @return [Concurrent::Promises::ResolvableFuture]
       # @raise when execution_plan_id is not accepted
-      def execute(execution_plan_id, finished = Concurrent.future, wait_for_acceptance = true)
+      def execute(execution_plan_id, finished = Concurrent::Promises.resolvable_future, wait_for_acceptance = true)
         raise NotImplementedError
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent.future)
+      def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future)
         raise NotImplementedError
       end
 
-      def terminate(future = Concurrent.future)
+      def terminate(future = Concurrent::Promises.resolvable_future)
         raise NotImplementedError
       end
 
