@@ -294,9 +294,9 @@ events_test = -> do
 
   # time out all futures by default
   default_timeout = 8
-  wait_method     = Concurrent::Promises::Event.instance_method(:wait)
+  wait_method     = Concurrent::Promises::AbstractEventFuture.instance_method(:wait)
 
-  Concurrent::Promises::Event.class_eval do
+  Concurrent::Promises::AbstractEventFuture.class_eval do
     define_method :wait do |timeout = nil|
       wait_method.bind(self).call(timeout || default_timeout)
     end
