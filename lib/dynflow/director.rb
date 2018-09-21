@@ -103,7 +103,7 @@ module Dynflow
         raise Dynflow::Error, "no manager for #{event.inspect}"
       end
     rescue Dynflow::Error => e
-      event.result.fail e.message
+      event.result.reject e.message
       raise e
     end
 
@@ -203,7 +203,7 @@ module Dynflow
       @execution_plan_managers[execution_plan_id] =
           ExecutionPlanManager.new(@world, execution_plan, finished)
     rescue Dynflow::Error => e
-      finished.fail e
+      finished.reject e
       nil
     end
 

@@ -14,8 +14,8 @@ module Dynflow
         end
 
         def fail!(error)
-          accepted.fail error unless accepted.resolved?
-          finished.fail error
+          accepted.reject error unless accepted.resolved?
+          finished.reject error
           self
         end
 
@@ -250,7 +250,7 @@ module Dynflow
           future.fulfill(true)
         else
           if @ping_cache.executor?(request.receiver_id)
-            future.fail
+            future.reject
           else
             yield
           end

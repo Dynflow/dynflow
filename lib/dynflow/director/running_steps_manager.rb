@@ -15,7 +15,7 @@ module Dynflow
         pending_work = @events.clear.values.flatten(1)
         pending_work.each do |w|
           if EventWorkItem === w
-            w.event.result.fail UnprocessableEvent.new("dropping due to termination")
+            w.event.result.reject UnprocessableEvent.new("dropping due to termination")
           end
         end
       end
@@ -41,7 +41,7 @@ module Dynflow
           while (event = @events.shift(step.id))
             message = "step #{step.execution_plan_id}:#{step.id} dropping event #{event.event}"
             @world.logger.warn message
-            event.event.result.fail UnprocessableEvent.new(message).
+            event.event.result.reject UnprocessableEvent.new(message).
                 tap { |e| e.set_backtrace(caller) }
           end
           raise 'assert' unless @events.empty?(step.id)
@@ -64,7 +64,7 @@ module Dynflow
 
         step = @running_steps[event.step_id]
         unless step
-          event.result.fail UnprocessableEvent.new('step is not suspended, it cannot process events')
+          event.result.reject UnprocessableEvent.new('step is not suspended, it cannot process events')
           return next_work_items
         end
 

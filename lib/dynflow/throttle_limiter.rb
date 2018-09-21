@@ -99,7 +99,7 @@ module Dynflow
           reason ||= 'The task was cancelled.'
           @semaphores[parent_id].waiting.each do |triggered|
             cancel_plan_id(triggered.execution_plan_id, reason)
-            triggered.future.fail(reason)
+            triggered.future.reject(reason)
           end
           finish(parent_id)
         end

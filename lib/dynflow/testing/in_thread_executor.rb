@@ -45,7 +45,7 @@ module Dynflow
         @director.terminate
         future.fulfill true
       rescue => e
-        future.fail e
+        future.reject e
       end
     end
   end

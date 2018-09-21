@@ -233,13 +233,13 @@ module Dynflow
     def publish_request(request, done, wait_for_accepted, timeout = nil)
       accepted = Concurrent::Promises.resolvable_future
       accepted.rescue do |reason|
-        done.fail reason if reason
+        done.reject reason if reason
       end
       client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
       accepted.wait if wait_for_accepted
       done
     rescue => e
-      accepted.fail e
+      accepted.reject e
     end
 
     def terminate(future = Concurrent::Promises.resolvable_future)

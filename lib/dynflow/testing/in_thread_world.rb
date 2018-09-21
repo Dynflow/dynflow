@@ -54,7 +54,7 @@ module Dynflow
         future.fulfill true
         @terminated.complete
       rescue => e
-        future.fail e
+        future.reject e
       end
 
       def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future)
