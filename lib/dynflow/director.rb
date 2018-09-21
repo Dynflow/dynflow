@@ -209,7 +209,7 @@ module Dynflow
 
     def set_future(manager)
       @rescued_steps.delete(manager.execution_plan.id)
-      manager.future.success manager.execution_plan
+      manager.future.fulfill manager.execution_plan
     end
   end
 end

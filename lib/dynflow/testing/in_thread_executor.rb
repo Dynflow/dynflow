@@ -43,7 +43,7 @@ module Dynflow
 
       def terminate(future = Concurrent::Promises.resolvable_future)
         @director.terminate
-        future.success true
+        future.fulfill true
       rescue => e
         future.fail e
       end

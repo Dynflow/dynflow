@@ -17,7 +17,7 @@ module Dynflow
         events = @events_to_process.dup
         clear
         events.each do |execution_plan_id, step_id, event, future|
-          future.success true
+          future.fulfill true
           if event && world.action.state != :suspended
             return false
           end

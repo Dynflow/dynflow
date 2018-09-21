@@ -73,13 +73,13 @@ module Dynflow
           it 'succeeds when the world is available' do
             ping_response = client_world.ping(executor_world.id, 0.5)
             ping_response.wait
-            assert ping_response.success?
+            assert ping_response.fulfill?
           end
 
           it 'succeeds when the world is available without cache' do
             ping_response = client_world.ping_without_cache(executor_world.id, 0.5)
             ping_response.wait
-            assert ping_response.success?
+            assert ping_response.fulfill?
           end
 
           it 'time-outs when the world is not responding' do

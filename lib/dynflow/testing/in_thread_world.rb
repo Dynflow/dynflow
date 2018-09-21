@@ -51,7 +51,7 @@ module Dynflow
         run_before_termination_hooks
         @executor.terminate
         coordinator.delete_world(registered_world)
-        future.success true
+        future.fulfill true
         @terminated.complete
       rescue => e
         future.fail e

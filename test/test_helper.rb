@@ -41,7 +41,7 @@ class TestPause
     elsif @ready.resolved?
       raise 'you can pause only once'
     else
-      @ready.success(true)
+      @ready.fulfill(true)
       @pause.wait
     end
   end
@@ -51,7 +51,7 @@ class TestPause
     if @pause
       @ready.wait # wait till we are paused
       yield
-      @pause.success(true) # resume the run
+      @pause.fulfill(true) # resume the run
     else
       raise 'the TestPause class was not setup'
     end
@@ -319,12 +319,12 @@ class ConcurrentRunTester
   end
 
   def pause
-    @enter_future.success(true)
+    @enter_future.fulfill(true)
     @exit_future.wait(1)
   end
 
   def finish
-    @exit_future.success(true)
+    @exit_future.fulfill(true)
     @thread.join
   end
 end

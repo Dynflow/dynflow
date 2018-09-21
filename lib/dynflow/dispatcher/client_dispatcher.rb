@@ -9,7 +9,7 @@ module Dynflow
 
       module TrackedRequest
         def accept!
-          accepted.success true unless accepted.resolved?
+          accepted.fulfill true unless accepted.resolved?
           self
         end
 
@@ -20,8 +20,8 @@ module Dynflow
         end
 
         def success!(resolve_to)
-          accepted.success true unless accepted.resolved?
-          finished.success(resolve_to)
+          accepted.fulfill true unless accepted.resolved?
+          finished.fulfill(resolve_to)
           self
         end
       end
@@ -168,7 +168,7 @@ module Dynflow
                  resolve_tracked_request(envelope.request_id)
                end),
               (on ExecutionStatus.(~any) do |steps|
-                 @tracked_requests.delete(envelope.request_id).success! steps
+                 @tracked_requests.delete(envelope.request_id).fulfill! steps
                end)
       end
 
@@ -230,7 +230,7 @@ module Dynflow
                              (on Event | Ping do
                                 true
                               end)
-          @tracked_requests.delete(id).success! resolve_to
+          @tracked_requests.delete(id).fulfill! resolve_to
         end
       end
 
@@ -246,7 +246,7 @@ module Dynflow
         return yield unless request.use_cache
 
         if @ping_cache.fresh_record?(request.receiver_id)
-          future.success(true)
+          future.fulfill(true)
         else
           if @ping_cache.executor?(request.receiver_id)
             future.fail

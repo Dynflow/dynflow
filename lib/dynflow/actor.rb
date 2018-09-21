@@ -20,7 +20,7 @@ module Dynflow
         message, terminated_future = envelope
         if :start_termination == message
           context.start_termination(terminated_future)
-          envelope.future.success true if !envelope.future.nil?
+          envelope.future.fulfill true if !envelope.future.nil?
           Concurrent::Actor::Behaviour::MESSAGE_PROCESSED
         else
           pass envelope
@@ -35,7 +35,7 @@ module Dynflow
     end
 
     def finish_termination
-      @terminated.success(true)
+      @terminated.fulfill(true)
       reference.tell(:terminate!)
     end
 
