@@ -60,7 +60,7 @@ module Dynflow
         if @current_futures.empty?
           reference.tell(:finish_termination)
         else
-          Concurrent.zip(*@current_futures).then { reference.tell(:finish_termination) }
+          Concurrent::Promises.zip_futures(*@current_futures).then { reference.tell(:finish_termination) }
         end
       end
 
