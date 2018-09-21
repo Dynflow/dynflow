@@ -214,7 +214,8 @@ module Dynflow
         unless tracked_request.accepted.resolved?
           tracked_request.accept! # otherwise nobody would set the accept future
         end
-        @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, Concurrent::Promises.resolvable_future, tracked_request.finished]
+        future = Concurrent::Promises.resolvable_future
+        @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, future, tracked_request.finished]
       end
 
       def resolve_tracked_request(id, error = nil)
