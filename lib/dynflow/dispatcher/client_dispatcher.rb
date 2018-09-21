@@ -168,7 +168,7 @@ module Dynflow
                  resolve_tracked_request(envelope.request_id)
                end),
               (on ExecutionStatus.(~any) do |steps|
-                 @tracked_requests.delete(envelope.request_id).fulfill! steps
+                 @tracked_requests.delete(envelope.request_id).success! steps
                end)
       end
 
@@ -230,7 +230,7 @@ module Dynflow
                              (on Event | Ping do
                                 true
                               end)
-          @tracked_requests.delete(id).fulfill! resolve_to
+          @tracked_requests.delete(id).success! resolve_to
         end
       end
 
