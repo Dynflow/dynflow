@@ -243,7 +243,48 @@ module Dynflow
     end
 
     def terminate(future = Concurrent.future)
+      start_termination.tangle(future)
+      future
+    end
+
+    def terminating?
+      defined?(@terminating)
+    end
+
+    # 24119 - ensure delayed executor is preserved after invalidation
+    # executes plans that are planned/paused and haven't reported any error yet (usually when no executor
+    # was available by the time of planning or terminating)
+    def auto_execute
+      coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
+        planned_execution_plans =
+            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
+        planned_execution_plans.map do |ep|
+          if coordinator.find_locks(Dynflow::Coordinator::ExecutionLock.unique_filter(ep.id)).empty?
+            execute(ep.id)
+          end
+        end.compact
+      end
+    rescue Coordinator::LockError => e
+      logger.info "auto-executor lock already aquired: #{e.message}"
+      []
+    end
+
+    def try_spawn(what, lock_class = nil)
+      object = nil
+      return nil if !executor || (object = @config.public_send(what)).nil?
+
+      coordinator.acquire(lock_class.new(self)) if lock_class
+      object.spawn.wait
+      object
+    rescue Coordinator::LockError => e
+      nil
+    end
+
+    private
+
+    def start_termination
       @termination_barrier.synchronize do
+        return @terminating if @terminating
         termination_future ||= Concurrent.future do
           begin
             run_before_termination_hooks
@@ -294,45 +335,8 @@ module Dynflow
           Thread.new { Kernel.exit } if @exit_on_terminate.true?
         end
       end
-
-      @terminating.tangle(future)
-      future
     end
 
-    def terminating?
-      defined?(@terminating)
-    end
-
-    # 24119 - ensure delayed executor is preserved after invalidation
-    # executes plans that are planned/paused and haven't reported any error yet (usually when no executor
-    # was available by the time of planning or terminating)
-    def auto_execute
-      coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
-        planned_execution_plans =
-            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
-        planned_execution_plans.map do |ep|
-          if coordinator.find_locks(Dynflow::Coordinator::ExecutionLock.unique_filter(ep.id)).empty?
-            execute(ep.id)
-          end
-        end.compact
-      end
-    rescue Coordinator::LockError => e
-      logger.info "auto-executor lock already aquired: #{e.message}"
-      []
-    end
-
-    def try_spawn(what, lock_class = nil)
-      object = nil
-      return nil if !executor || (object = @config.public_send(what)).nil?
-
-      coordinator.acquire(lock_class.new(self)) if lock_class
-      object.spawn.wait
-      object
-    rescue Coordinator::LockError => e
-      nil
-    end
-
-    private
     def calculate_subscription_index
       @subscription_index =
           action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
