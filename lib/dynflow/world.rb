@@ -244,7 +244,7 @@ module Dynflow
 
     def terminate(future = Concurrent.future)
       @termination_barrier.synchronize do
-        @terminating ||= Concurrent.future do
+        termination_future ||= Concurrent.future do
           begin
             run_before_termination_hooks
 
@@ -257,7 +257,7 @@ module Dynflow
             throttle_limiter.terminate.wait(termination_timeout)
 
             if executor
-              connector.stop_receiving_new_work(self)
+              connector.stop_receiving_new_work(self, termination_timeout)
 
               logger.info "start terminating executor..."
               executor.terminate.wait(termination_timeout)
@@ -274,7 +274,7 @@ module Dynflow
             client_dispatcher_terminated.wait(termination_timeout)
 
             logger.info "stop listening for new events..."
-            connector.stop_listening(self)
+            connector.stop_listening(self, termination_timeout)
 
             if @clock
               logger.info "start terminating clock..."
@@ -287,6 +287,9 @@ module Dynflow
           rescue => e
             logger.fatal(e)
           end
+        end
+        @terminating = Concurrent.future do
+          termination_future.wait(termination_timeout)
         end.on_completion do
           Thread.new { Kernel.exit } if @exit_on_terminate.true?
         end
@@ -342,11 +345,14 @@ module Dynflow
 
     def run_before_termination_hooks
       until @before_termination_hooks.empty?
-        begin
-          @before_termination_hooks.pop.call
-        rescue => e
-          logger.error e
+        hook_run = Concurrent.future do
+          begin
+            @before_termination_hooks.pop.call
+          rescue => e
+            logger.error e
+          end
         end
+        logger.error "timeout running before_termination_hook" unless hook_run.wait(termination_timeout)
       end
     end
 
