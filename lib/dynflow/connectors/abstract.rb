@@ -8,7 +8,11 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def stop_listening(world)
+      def stop_receiving_new_work(_, timeout = nil)
+        raise NotImplementedError
+      end
+
+      def stop_listening(world, timeout = nil)
         raise NotImplementedError
       end
 

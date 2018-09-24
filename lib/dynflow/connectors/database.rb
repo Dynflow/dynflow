@@ -159,12 +159,12 @@ module Dynflow
         @core.ask([:start_listening, world])
       end
 
-      def stop_receiving_new_work(_)
-        @core.ask(:stop_receiving_new_work).wait
+      def stop_receiving_new_work(_, timeout = nil)
+        @core.ask(:stop_receiving_new_work).wait(timeout)
       end
 
-      def stop_listening(_)
-        @core.ask(:stop_listening).then { @core.ask(:terminate!) }.wait
+      def stop_listening(_, timeout = nil)
+        @core.ask(:stop_listening).then { @core.ask(:terminate!) }.wait(timeout)
       end
 
       def send(envelope)
