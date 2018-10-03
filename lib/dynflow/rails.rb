@@ -37,9 +37,10 @@ module Dynflow
       init_world.tap do |world|
         @world = world
 
+        config.run_on_init_hooks(true, world)
         unless config.remote?
           config.increase_db_pool_size(world)
-          config.run_on_init_hooks(world)
+          config.run_on_init_hooks(false, world)
           # leave this just for long-running executors
           unless config.rake_task_with_executor?
             invalidated_worlds = world.perform_validity_checks
