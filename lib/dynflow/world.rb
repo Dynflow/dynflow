@@ -329,7 +329,7 @@ module Dynflow
             logger.fatal(e)
           end
         end
-        @terminating = Concurrent.future do
+        @terminating = Concurrent::Promises.future do
           termination_future.wait(termination_timeout)
         end.on_resolution do
           @terminated.complete
@@ -350,7 +350,7 @@ module Dynflow
 
     def run_before_termination_hooks
       until @before_termination_hooks.empty?
-        hook_run = Concurrent.future do
+        hook_run = Concurrent::Promises.future do
           begin
             @before_termination_hooks.pop.call
           rescue => e
