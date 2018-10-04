@@ -55,13 +55,13 @@ module Dynflow
         ::Rails.logger
       end
 
-      def on_init(for_all = false, &block)
-        destination = for_all ? @on_init : @on_executor_init
+      def on_init(executor = true, &block)
+        destination = executor ? @on_executor_init : @on_init
         destination << block
       end
 
-      def run_on_init_hooks(client, world)
-        source = client ? @on_executor_init : @on_init
+      def run_on_init_hooks(executor, world)
+        source = executor ? @on_executor_init : @on_init
         source.each { |init| init.call(world) }
       end
 
