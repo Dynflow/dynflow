@@ -46,6 +46,18 @@ module Dynflow
           end
         end
 
+        def respond_to_missing?(method_name, include_private = false)
+          @logger.respond_to?(method_name, include_private) || super
+        end
+
+        def method_missing(name, *args, &block)
+          if @logger.respond_to?(name)
+            @logger.send(name, *args, &block)
+          else
+            super
+          end
+        end
+
         def level=(v)
           @logger.level = v
         end
