@@ -37,7 +37,7 @@ module Dynflow
 
     def increase_counts(planned, failed)
       super(planned, failed, false)
-      output[:planned_count] += planned
+      output[:planned_count] += planned + failed
     end
 
     # Should return the expected total count of tasks
