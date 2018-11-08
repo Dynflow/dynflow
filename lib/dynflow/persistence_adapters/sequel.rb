@@ -30,7 +30,7 @@ module Dynflow
         META_DATA.fetch :execution_plan
       end
 
-      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time root_plan_step_id class),
+      META_DATA = { execution_plan:      %w(label state result started_at ended_at real_time execution_time root_plan_step_id class rescue_plan_id rescued_plan_id),
                     action:              %w(caller_execution_plan_id caller_action_id class plan_step_id run_step_id finalize_step_id),
                     step:                %w(state started_at ended_at real_time execution_time action_id progress_done progress_weight
                                             class action_class execution_plan_uuid queue),
