@@ -1,7 +1,7 @@
 module Dynflow
   class Middleware
 
-    METHODS = [:delay, :plan, :run, :finalize, :plan_phase, :finalize_phase, :present, :revert, :revert_plan, :revert_run]
+    METHODS = [:delay, :plan, :run, :finalize, :plan_phase, :finalize_phase, :present, :revert, :revert_plan, :revert_run, :hook]
 
     require 'dynflow/middleware/register'
     require 'dynflow/middleware/world'

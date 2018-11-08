@@ -26,7 +26,6 @@ module Dynflow
     require 'dynflow/action/with_bulk_sub_plans'
     require 'dynflow/action/with_polling_sub_plans'
     require 'dynflow/action/revertible'
-    require 'dynflow/action/reverting'
 
     def self.all_children
       children.values.inject(children.values) do |children, child|
