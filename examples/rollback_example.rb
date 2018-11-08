@@ -49,13 +49,13 @@ class RunPreFlightChecks < ::Dynflow::Action
     output[:log] = 'All checks passed'
   end
 
-  def revert_run
-    # Not doing anything
-  end
+  # def revert_run
+  #   # Not doing anything
+  # end
 
-  def revert_plan
-    # Not doing anything either
-  end
+  # def revert_plan
+  #   # Not doing anything either
+  # end
 end
 
 class Load < Dynflow::Action

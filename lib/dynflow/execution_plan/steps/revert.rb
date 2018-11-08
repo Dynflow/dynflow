@@ -3,9 +3,9 @@ module Dynflow
     module Revert
 
       def original_step(action, kind)
-        @original_step ||= world.persistence.load_step(action.input['execution_plan_id'],
-                                                       action.input[kind + '_step_id'],
-                                                       world)
+        world.persistence.load_step(action.input['execution_plan_id'],
+                                    action.input[kind + '_step_id'],
+                                    world)
       end
 
       def reset_original_step!(action, kind)
@@ -22,7 +22,6 @@ module Dynflow
       def entry_action?(action)
         action.plan_step_id == 1
       end
-
     end
   end
 end

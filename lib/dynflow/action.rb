@@ -429,12 +429,16 @@ module Dynflow
       phase! Plan
       self.input.update input
 
-      run_step = @execution_plan.add_revert_run_step(self)
-      @run_step_id = run_step.id
-      @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
+      if self.respond_to?(:revert_run)
+        run_step = @execution_plan.add_revert_run_step(self)
+        @run_step_id = run_step.id
+        @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
+      end
 
-      finalize_step = @execution_plan.add_revert_plan_step(self)
-      @finalize_step_id = finalize_step.id
+      if self.respond_to?(:revert_plan)
+        finalize_step = @execution_plan.add_revert_plan_step(self)
+        @finalize_step_id = finalize_step.id
+      end
 
       return self
     end

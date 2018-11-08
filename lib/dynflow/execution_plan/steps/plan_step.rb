@@ -120,6 +120,8 @@ module Dynflow
         @action.send(:in_plan_phase, *args) do |action|
           action.revert(*args)
         end
+        reset_original_step!(@action, 'run') unless @action.respond_to?(:revert_run)
+        reset_original_step!(@action, 'plan') unless @action.respond_to?(:revert_plan)
         reset_original_step!(@action, 'finalize')
       end
     end

@@ -7,12 +7,14 @@ module Dynflow
       end
 
       def revert_run
-        raise NotImplementedError
+        # just a rdoc placeholder
       end
+      remove_method :revert_run
 
       def revert_plan
-        raise NotImplementedError
+        # just a rdoc placeholder
       end
+      remove_method :revert_plan
 
       def original_input
         input.fetch(:input, {})
