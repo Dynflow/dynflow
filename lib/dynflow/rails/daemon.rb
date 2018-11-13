@@ -142,12 +142,12 @@ module Dynflow
 
       def log_memory_limit_exceeded(current_memory, memory_limit)
         message = "Memory level exceeded, registered #{current_memory} bytes, which is greater than #{memory_limit} limit."
-        world.dynflow_logger.error(message)
+        world.logger.error(message)
       end
 
       def log_memory_within_limit(current_memory, memory_limit)
         message = "Memory level OK, registered #{current_memory} bytes, which is less than #{memory_limit} limit."
-        world.dynflow_logger.debug(message)
+        world.logger.debug(message)
       end
 
       private
