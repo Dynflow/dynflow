@@ -332,6 +332,7 @@ module Dynflow
         @terminating = Concurrent.future do
           termination_future.wait(termination_timeout)
         end.on_completion do
+          @terminated.complete
           Thread.new { Kernel.exit } if @exit_on_terminate.true?
         end
       end
