@@ -294,6 +294,22 @@ module Dynflow
       end
     end
 
+    class PlanningLock < LockByWorld
+      def initialize(world, execution_plan_id)
+        super(world)
+        @data.merge!(id: self.class.lock_id(execution_plan_id),
+                     execution_plan_id: execution_plan_id)
+      end
+
+      def self.lock_id(execution_plan_id)
+        'execution-plan:' + execution_plan_id
+      end
+
+      def execution_plan_id
+        @data[:execution_plan_id]
+      end
+    end
+
     attr_reader :adapter
 
     def initialize(coordinator_adapter)

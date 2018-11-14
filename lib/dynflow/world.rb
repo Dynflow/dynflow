@@ -200,8 +200,10 @@ module Dynflow
 
     def plan_with_options(action_class:, args:, id: nil, caller_action: nil)
       ExecutionPlan.new(self, id).tap do |execution_plan|
-        execution_plan.prepare(action_class, caller_action: caller_action)
-        execution_plan.plan(*args)
+        coordinator.acquire(Coordinator::PlanningLock.new(self, execution_plan.id)) do
+          execution_plan.prepare(action_class, caller_action: caller_action)
+          execution_plan.plan(*args)
+        end
       end
     end
 
