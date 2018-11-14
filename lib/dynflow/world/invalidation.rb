@@ -35,9 +35,10 @@ module Dynflow
         with_valid_execution_plan_for_lock(planning_lock) do |plan|
           plan.steps.values.each { |step| invalidate_step step }
 
-          plan.update_state(:stopped)
-          plan.save
+          state = plan.steps.values.all? { |step| step.state == :success } ? :planned : :stopped
+          plan.update_state(state)
           coordinator.release(planning_lock)
+          execute(plan.id) if plan.state == :planned
         end
       end
 
