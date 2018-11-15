@@ -4,7 +4,7 @@ module Dynflow
       # assert that +assert_actioned_plan+ was planned by +action+ with arguments +plan_input+
       # alternatively plan-input can be asserted with +block+
       def assert_action_planned_with(action, planned_action_class, *plan_input, &block)
-        found_classes = assert_action_planed(action, planned_action_class)
+        found_classes = assert_action_planned(action, planned_action_class)
         found         = found_classes.select do |a|
           if plan_input.empty?
             block.call a.plan_input
