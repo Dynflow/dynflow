@@ -41,7 +41,7 @@ module Dynflow
       def prepare_plans
         execution_plans_data.map do |h|
           h.merge result:    nil, started_at: Time.now.utc - 20, ended_at: Time.now.utc - 10,
-              real_time: 0.0, execution_time: 0.0
+                  real_time: 0.0, execution_time: 0.0, :rescue_plan_id => nil, :rescued_plan_id => nil
         end
       end
 

@@ -247,8 +247,8 @@ module Dynflow
     end
 
     def rescue_from_error
-      if rescue_plan_id || generate_rescue_plan_id
-        @world.execute(rescue_plan_id)
+      if (id = generate_rescue_plan_id)
+        @world.execute(id)
       else
         raise Errors::RescueError, 'Unable to rescue from the error'
       end
