@@ -408,39 +408,38 @@ module Dynflow
     end
 
     def plan_self(input = {})
-      phase! Plan
-      self.input.update input
-
-      if self.respond_to?(:run)
-        run_step          = @execution_plan.add_run_step(self)
-        @run_step_id      = run_step.id
-        @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
-      end
-
-      if self.respond_to?(:finalize)
-        finalize_step     = @execution_plan.add_finalize_step(self)
-        @finalize_step_id = finalize_step.id
-      end
-
-      return self # to stay consistent with plan_action
+      prepare_self(input, false)
     end
 
     def revert_self(input = {})
+      prepare_self(input, true)
+    end
+
+    def prepare_self(input, rollback = false)
       phase! Plan
       self.input.update input
 
-      if self.respond_to?(:revert_run)
-        run_step = @execution_plan.add_revert_run_step(self)
+      add_run_phase_step(rollback)
+      add_finalize_phase_step(rollback)
+
+      self
+    end
+
+    def add_run_phase_step(rollback = false)
+      method, step_class = rollback ? [:revert_run, ExecutionPlan::Steps::RevertRunStep] : [:run, ExecutionPlan::Steps::RunStep]
+      if self.respond_to?(method)
+        run_step = @execution_plan.add_run_phase_step(step_class, self)
         @run_step_id = run_step.id
         @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
       end
+    end
 
-      if self.respond_to?(:revert_plan)
-        finalize_step = @execution_plan.add_revert_plan_step(self)
+    def add_finalize_phase_step(rollback = false)
+      method, step_class = rollback ? [:revert_plan, ExecutionPlan::Steps::RevertPlanStep] : [:finalize, ExecutionPlan::Steps::FinalizeStep]
+      if self.respond_to?(method)
+        finalize_step = @execution_plan.add_finalize_phase_step(step_class, self)
         @finalize_step_id = finalize_step.id
       end
-
-      return self
     end
 
     def revert_action(action, *args)

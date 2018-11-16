@@ -23,18 +23,22 @@ module Dynflow
         @planned_action_stubbers[klass] = block
       end
 
+      def add_plan_phase_step(_step_class, klass, *args)
+        add_plan_step(klass, *args)
+      end
+
       def add_plan_step(klass, _)
         dummy_planned_action(klass).tap do |action|
           @planned_plan_steps << action
         end
       end
 
-      def add_run_step(action)
+      def add_run_phase_step(_step_class, action)
         @planned_run_steps << action
         action
       end
 
-      def add_finalize_step(action)
+      def add_finalize_phase_step(_step_class, action)
         @planned_finalize_steps << action
         action
       end

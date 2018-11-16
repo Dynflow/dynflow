@@ -430,17 +430,15 @@ module Dynflow
     end
 
     def add_revert_step(action_class, caller_action = nil)
-      add_step(Steps::RevertStep, action_class, generate_action_id).tap do |step|
-        # TODO: to be removed and preferred by the caller_action
-        if caller_action && caller_action.execution_plan_id == self.id
-          @steps[caller_action.plan_step_id].children << step.id
-        end
-        step.initialize_action(caller_action)
-      end
+      add_plan_phase_step(Steps::RevertStep, action_class, caller_action)
     end
 
     def add_plan_step(action_class, caller_action = nil)
-      add_step(Steps::PlanStep, action_class, generate_action_id).tap do |step|
+      add_plan_phase_step(Steps::PlanStep, action_class, caller_action)
+    end
+
+    def add_plan_phase_step(step_class, action_class, caller_action = nil)
+      add_step(step_class, action_class, generate_action_id).tap do |step|
         # TODO: to be removed and preferred by the caller_action
         if caller_action && caller_action.execution_plan_id == self.id
           @steps[caller_action.plan_step_id].children << step.id
@@ -449,31 +447,16 @@ module Dynflow
       end
     end
 
-    def add_run_step(action)
-      add_step(Steps::RunStep, action.class, action.id).tap do |step|
-        step.update_from_action(action)
-        @dependency_graph.add_dependencies(step, action)
-        current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
-      end
-    end
-
-    def add_finalize_step(action)
-      add_step(Steps::FinalizeStep, action.class, action.id).tap do |step|
-        step.update_from_action(action)
-        finalize_flow << Flows::Atom.new(step.id)
-      end
-    end
-
-    def add_revert_run_step(action)
-      add_step(Steps::RevertRunStep, action.class, action.id).tap do |step|
+    def add_run_phase_step(step_class, action)
+      add_step(step_class, action.class, action.id).tap do |step|
         step.progress_weight = action.run_progress_weight
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end
 
-    def add_revert_plan_step(action)
-      add_step(Steps::RevertPlanStep, action.class, action.id).tap do |step|
+    def add_finalize_phase_step(step_class, action)
+      add_step(step_class, action.class, action.id).tap do |step|
         step.progress_weight = action.finalize_progress_weight
         finalize_flow << Flows::Atom.new(step.id)
       end
