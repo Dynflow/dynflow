@@ -28,6 +28,10 @@ module Dynflow
       def find_records(filter_options)
         @sequel_adapter.find_coordinator_records(filters: filter_options)
       end
+
+      def find_execution_plans(filter_options)
+        @sequel_adapter.find_execution_plans(filters: filter_options)
+      end
     end
   end
 end
