@@ -23,6 +23,10 @@ module Dynflow
       def find_records(record)
         raise NotImplementedError
       end
+
+      def find_execution_plans(filter_options)
+        raise NotImplementedError
+      end
     end
   end
 end

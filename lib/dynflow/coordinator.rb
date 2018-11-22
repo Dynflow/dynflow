@@ -251,6 +251,18 @@ module Dynflow
       def self.lock_id(action_class)
         'singleton-action:' + action_class
       end
+
+      def self.valid_owner_ids(coordinator)
+        lock_ids = coordinator.find_locks(:class => self.name).map(&:owner_id)
+        plans = coordinator.adapter.find_execution_plans(:uuid => lock_ids)
+        plans = Hash[*plans.map { |plan| [plan[:uuid], plan[:state]] }.flatten]
+        lock_ids.select { |id| plans.key?(id) && !%w(stopped paused).include?(plans[id]) }
+                .map { |id| 'execution-plan:' + id }
+      end
+
+      def self.valid_classes
+        [self]
+      end
     end
 
     class ExecutionLock < LockByWorld
@@ -367,7 +379,7 @@ module Dynflow
     end
 
     def clean_orphaned_locks
-      cleanup_classes = [LockByWorld]
+      cleanup_classes = [LockByWorld, SingletonActionLock]
       ret = []
       cleanup_classes.each do |cleanup_class|
         valid_owner_ids = cleanup_class.valid_owner_ids(self)

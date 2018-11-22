@@ -122,6 +122,20 @@ module Dynflow
                               "unlock world-invalidation:#{executor_world.id}"]
             client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
           end
+
+          it 'releases singleton locks belonging to missing execution plan' do
+            execution_plan_id = 'missing'
+            action_class = 'ActionClass'
+            locks = [Coordinator::ExecutionLock.new(executor_world, "missing", nil, nil),
+                     Coordinator::SingletonActionLock.new(action_class, execution_plan_id)]
+            locks.each { |lock| executor_world.coordinator.acquire lock }
+            client_world.invalidate(executor_world.registered_world)
+            expected_locks = ["lock world-invalidation:#{executor_world.id}",
+                              "unlock execution-plan:#{execution_plan_id}",
+                              "unlock singleton-action:#{action_class}",
+                              "unlock world-invalidation:#{executor_world.id}"]
+            client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          end
         end
       end
 
@@ -288,6 +302,33 @@ module Dynflow
             current_locks.must_include(valid_lock)
             current_locks.wont_include(invalid_lock)
             invalid_locks.must_include(invalid_lock)
+            invalid_locks.wont_include(valid_lock)
+          end
+        end
+
+        describe 'with singleton action locks' do
+          def plan_in_state(state)
+            plan = executor_world.persistence.load_execution_plan(trigger_waiting_action.id)
+            plan.state = state if plan.state != state
+            plan.save
+            plan
+          end
+
+          let(:valid_plan) { plan_in_state :running }
+          let(:invalid_plan) { plan_in_state :stopped }
+          let(:valid_lock)    { Coordinator::SingletonActionLock.new('MyClass1', valid_plan.id) }
+          let(:invalid_lock)  { Coordinator::SingletonActionLock.new('MyClass2', 'plan-id') }
+          let(:invalid_lock2) { Coordinator::SingletonActionLock.new('MyClass3', invalid_plan.id) }
+
+          it 'unlocks orphaned singleton action locks' do
+            executor_world
+            client_world.coordinator.acquire(valid_lock)
+            client_world.coordinator.acquire(invalid_lock)
+            client_world.coordinator.acquire(invalid_lock2)
+            invalid_locks = client_world.coordinator.clean_orphaned_locks
+            # It must invalidate locks which are missing or in paused/stopped
+            invalid_locks.must_include(invalid_lock)
+            invalid_locks.must_include(invalid_lock2)
             invalid_locks.wont_include(valid_lock)
           end
         end
