@@ -40,6 +40,7 @@ module Dynflow
         self.rake_tasks_with_executor = %w(db:migrate db:seed)
 
         @on_init           = []
+        @post_init         = []
         @on_executor_init  = []
       end
 
@@ -63,6 +64,14 @@ module Dynflow
       def run_on_init_hooks(executor, world)
         source = executor ? @on_executor_init : @on_init
         source.each { |init| init.call(world) }
+      end
+
+      def post_init(&block)
+        @post_init << block
+      end
+
+      def run_post_init_hooks(world)
+        @post_init.each { |init| init.call(world) }
       end
 
       def initialize_world(world_class = ::Dynflow::World)
