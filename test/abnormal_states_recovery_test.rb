@@ -309,6 +309,10 @@ module Dynflow
         describe 'with singleton action locks' do
           def plan_in_state(state)
             plan = executor_world.persistence.load_execution_plan(trigger_waiting_action.id)
+            step = plan.steps.values.last
+            wait_for do
+              executor_world.persistence.load_step(step.execution_plan_id, step.id, executor_world).state == :suspended
+            end
             plan.state = state if plan.state != state
             plan.save
             plan
