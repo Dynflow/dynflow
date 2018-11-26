@@ -45,6 +45,7 @@ module Dynflow
             invalidated_worlds = world.perform_validity_checks
             world.auto_execute
             world.post_initialization if invalidated_worlds > 0
+            config.run_post_executor_init_hooks(world)
           end
         end
       end
