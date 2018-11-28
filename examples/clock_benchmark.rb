@@ -14,7 +14,6 @@ class Receiver
   end
 end
 
-
 def test_case(count)
   future   = Concurrent.future
   clock    = Dynflow::Clock.spawn(:name => 'clock')

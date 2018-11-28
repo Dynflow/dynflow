@@ -45,8 +45,8 @@ module Dynflow
         upper = array.size - 1
         lower = 0
 
-        while(upper >= lower) do
-          center  = lower + (upper - lower) / 2
+        while upper >= lower
+          center = lower + (upper - lower) / 2
 
           case @comparator.call(target, array[center])
           when 0
