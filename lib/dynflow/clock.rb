@@ -46,7 +46,8 @@ module Dynflow
                Pill = type { fields Float }
     end
 
-    def initialize
+    def initialize(logger = nil)
+      @logger        = logger
       @timers        = Utils::PriorityQueue.new { |a, b| b <=> a }
       @sleeping_pill = None
       @sleep_barrier = Mutex.new
@@ -83,7 +84,11 @@ module Dynflow
 
     def run_ready_timers
       while first_timer && first_timer.when <= Time.now
-        first_timer.apply
+        begin
+          first_timer.apply
+        rescue => e
+          @logger && @logger.error("Failed to apply clock event #{first_timer}, exception: #{e}")
+        end
         @timers.pop
       end
     end

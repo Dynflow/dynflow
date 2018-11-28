@@ -21,8 +21,8 @@ module Dynflow
       Dynflow::Telemetry.register_metrics!
 
       @id                     = SecureRandom.uuid
-      @clock                  = spawn_and_wait(Clock, 'clock')
       @logger_adapter         = @config.logger_adapter
+      @clock                  = spawn_and_wait(Clock, 'clock', logger)
       @config.validate
       @transaction_adapter    = @config.transaction_adapter
       @persistence            = Persistence.new(self, @config.persistence_adapter,
