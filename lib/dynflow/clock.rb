@@ -3,7 +3,6 @@ module Dynflow
 
     include Algebrick::Types
 
-    Tick  = Algebrick.atom
     Timer = Algebrick.type do
       fields! who:   Object, # to ping back
               when:  Time, # to deliver
@@ -40,19 +39,9 @@ module Dynflow
       end
     end
 
-    Pills = Algebrick.type do
-      variants None = atom,
-               Took = atom,
-               Pill = type { fields Float }
-    end
-
     def initialize(logger = nil)
-      @logger        = logger
-      @timers        = Utils::PriorityQueue.new { |a, b| b <=> a }
-      @sleeping_pill = None
-      @sleep_barrier = Mutex.new
-      @sleeper       = Thread.new { sleeping }
-      Thread.pass until @sleep_barrier.locked? || @sleeper.status == 'sleep'
+      @logger = logger
+      @timers = Utils::PriorityQueue.new { |a, b| b <=> a }
     end
 
     def default_reference_class
@@ -60,9 +49,7 @@ module Dynflow
     end
 
     def on_event(event)
-      if event == :terminated
-        @sleeper.kill
-      end
+      wakeup if event == :terminated
     end
 
     def tick
@@ -97,34 +84,25 @@ module Dynflow
     end
 
     def wakeup
-      while @sleep_barrier.synchronize { Pill === @sleeping_pill }
-        Thread.pass
-      end
-      @sleep_barrier.synchronize do
-        @sleeper.wakeup if Took === @sleeping_pill
+      if @timer
+        @timer.cancel
+        tick unless terminating?
       end
     end
 
     def sleep_to(timer)
       return unless timer
-      sec = [timer.when - Time.now, 0.0].max
-      @sleep_barrier.synchronize do
-        @sleeping_pill = Pill[sec]
-        @sleeper.wakeup
-      end
+      schedule(timer.when - Time.now) { reference.tell(:tick) unless terminating? }
+      nil
     end
 
-    def sleeping
-      @sleep_barrier.synchronize do
-        loop do
-          @sleeping_pill = None
-          @sleep_barrier.sleep
-          pill           = @sleeping_pill
-          @sleeping_pill = Took
-          @sleep_barrier.sleep pill.value
-          reference.tell(:tick)
-        end
-      end
+    def schedule(delay, &block)
+      @timer = if delay.positive?
+                 Concurrent::ScheduledTask.execute(delay, &block)
+               else
+                 yield
+                 nil
+               end
     end
   end
 
@@ -135,14 +113,7 @@ module Dynflow
       Type! time, Time, Numeric
       time  = Time.now + time if time.is_a? Numeric
       timer = Clock::Timer[who, time, with_what.nil? ? Algebrick::Types::None : Some[Object][with_what], where]
-      # if self.ask!(:terminated?) # FIXME not thread safe
-      #   Thread.new do
-      #     sleep [timer.when - Time.now, 0].max
-      #     timer.apply
-      #   end
-      # else
       self.tell([:add_timer, timer])
-      # end
     end
   end
 
