@@ -9,16 +9,17 @@ module Dynflow
         end
 
         def on_message(work_item)
-          already_responded = false
+          ok = false
           Executors.run_user_code do
             work_item.execute
+            ok = true
           end
         rescue Errors::PersistenceError => e
           @pool.tell([:handle_persistence_error, reference, e, work_item])
-          already_responded = true
+          ok = false
         ensure
           Dynflow::Telemetry.with_instance { |t| t.increment_counter(:dynflow_worker_events, 1, @telemetry_options) }
-          @pool.tell([:worker_done, reference, work_item]) unless already_responded
+          @pool.tell([:worker_done, reference, work_item]) if ok
         end
       end
     end

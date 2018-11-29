@@ -95,10 +95,14 @@ module Dynflow
         private
 
         def try_to_terminate
-          if terminating? && @free_workers.size == @pool_size
+          if terminating?
             @free_workers.map { |worker| worker.ask(:terminate!) }.map(&:wait)
-            @executor_core.tell([:finish_termination, @name])
-            finish_termination
+            @pool_size -= @free_workers.count
+            @free_workers = []
+            if @pool_size.zero?
+              @executor_core.tell([:finish_termination, @name])
+              finish_termination
+            end
           end
         end
 
