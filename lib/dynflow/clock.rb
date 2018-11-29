@@ -71,7 +71,6 @@ module Dynflow
     end
 
     def add_timer(timer)
-      # @timers.add timer
       @timers.push timer
       if @timers.size == 1
         sleep_to timer
