@@ -161,11 +161,11 @@ module Dynflow
     end
 
     def caller_action
-      plase! Present
+      phase! Present
       return nil if @caller_action_id
       return @caller_action if @caller_action
 
-      caller_execution_plan = if @caller_execution_plan_id == execution_plan.id
+      caller_execution_plan = if @caller_execution_plan_id.nil?
                                 execution_plan
                               else
                                 world.persistence.load_execution_plan(@caller_execution_plan_id)
