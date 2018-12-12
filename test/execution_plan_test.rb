@@ -141,6 +141,17 @@ module Dynflow
 
       end
 
+      describe 'sub plans' do
+        let(:execution_plan) do
+          world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
+        end
+
+        it 'does not have itself as a sub plan' do
+          assert execution_plan.actions.count >= 2
+          execution_plan.sub_plans.must_be :empty?
+        end
+      end
+
       describe 'plan steps' do
         let :execution_plan do
           world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
