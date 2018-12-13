@@ -10,12 +10,12 @@ class Receiver
 
   def null
     @counter += 1
-    @future.success(true) if @counter >= @limit
+    @future.fulfill(true) if @counter >= @limit
   end
 end
 
 def test_case(count)
-  future   = Concurrent.future
+  future   = Concurrent::Promises.resolvable_future
   clock    = Dynflow::Clock.spawn(:name => 'clock')
   receiver = Receiver.new(count, future)
 
