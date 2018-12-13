@@ -29,7 +29,7 @@ module Dynflow
         @world.executor.execute(execution.execution_plan_id, future)
         respond(envelope, Accepted)
       rescue Dynflow::Error => e
-        future.fail(e) if future && !future.completed?
+        future.reject(e) if future && !future.resolved?
         respond(envelope, Failed[e.message])
       end
 
@@ -52,7 +52,7 @@ module Dynflow
         end
         @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
       rescue Dynflow::Error => e
-        future.fail(e) if future && !future.completed?
+        future.reject(e) if future && !future.resolved?
       end
 
       def start_termination(*args)
@@ -60,7 +60,7 @@ module Dynflow
         if @current_futures.empty?
           reference.tell(:finish_termination)
         else
-          Concurrent.zip(*@current_futures).then { reference.tell(:finish_termination) }
+          Concurrent::Promises.zip_futures(*@current_futures).then { reference.tell(:finish_termination) }
         end
       end
 
@@ -78,13 +78,13 @@ module Dynflow
 
       def on_finish
         raise "Dispatcher terminating: no new work can be started" if terminating?
-        future = Concurrent.future
+        future = Concurrent::Promises.resolvable_future
         callbacks_future = (yield future).rescue { |reason| @world.logger.error("Unexpected fail on future #{reason}") }
         # we track currently running futures to make sure to not
         # terminate until the execution is finished (including
         # cleaning of locks etc)
         @current_futures << callbacks_future
-        callbacks_future.on_completion! { reference.tell([:finish_execution, callbacks_future]) }
+        callbacks_future.on_resolution! { reference.tell([:finish_execution, callbacks_future]) }
         return future
       end
 

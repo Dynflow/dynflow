@@ -671,7 +671,7 @@ module Dynflow
         result = world.trigger(Support::DummyExample::Slow, 0.02)
         result.must_be :planned?
         result.finished.wait
-        assert result.finished.failed?
+        assert result.finished.rejected?
         result.finished.reason.must_be_kind_of Concurrent::Actor::ActorTerminated
       end
 

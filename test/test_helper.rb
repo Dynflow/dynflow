@@ -25,8 +25,8 @@ Concurrent.disable_at_exit_handlers!
 class TestPause
 
   def self.setup
-    @pause = Concurrent.future
-    @ready = Concurrent.future
+    @pause = Concurrent::Promises.resolvable_future
+    @ready = Concurrent::Promises.resolvable_future
   end
 
   def self.teardown
@@ -38,10 +38,10 @@ class TestPause
   def self.pause
     if !@pause
       raise 'the TestPause class was not setup'
-    elsif @ready.completed?
+    elsif @ready.resolved?
       raise 'you can pause only once'
     else
-      @ready.success(true)
+      @ready.fulfill(true)
       @pause.wait
     end
   end
@@ -51,7 +51,7 @@ class TestPause
     if @pause
       @ready.wait # wait till we are paused
       yield
-      @pause.success(true) # resume the run
+      @pause.fulfill(true) # resume the run
     else
       raise 'the TestPause class was not setup'
     end
@@ -249,17 +249,17 @@ events_test = -> do
   event_creations  = {}
   non_ready_events = {}
 
-  Concurrent::Edge::Event.singleton_class.send :define_method, :new do |*args, &block|
+  Concurrent::Promises::Event.singleton_class.send :define_method, :new do |*args, &block|
     super(*args, &block).tap do |event|
       event_creations[event.object_id] = caller(4)
     end
   end
 
-  [Concurrent::Edge::Event, Concurrent::Edge::Future].each do |future_class|
-    original_complete_method = future_class.instance_method :complete_with
-    future_class.send :define_method, :complete_with do |*args|
+  [Concurrent::Promises::Event, Concurrent::Promises::ResolvableFuture].each do |future_class|
+    original_resolved_method = future_class.instance_method :resolve_with
+    future_class.send :define_method, :resolve_with do |*args|
       begin
-        original_complete_method.bind(self).call(*args)
+        original_resolved_method.bind(self).call(*args)
       ensure
         event_creations.delete(self.object_id)
       end
@@ -269,9 +269,9 @@ events_test = -> do
   MiniTest.after_run do
     Concurrent::Actor.root.ask!(:terminate!)
 
-    non_ready_events = ObjectSpace.each_object(Concurrent::Edge::Event).map do |event|
+    non_ready_events = ObjectSpace.each_object(Concurrent::Promises::Event).map do |event|
       event.wait(1)
-      unless event.completed?
+      unless event.resolved?
         event.object_id
       end
     end.compact
@@ -294,9 +294,9 @@ events_test = -> do
 
   # time out all futures by default
   default_timeout = 8
-  wait_method     = Concurrent::Edge::Event.instance_method(:wait)
+  wait_method     = Concurrent::Promises::AbstractEventFuture.instance_method(:wait)
 
-  Concurrent::Edge::Event.class_eval do
+  Concurrent::Promises::AbstractEventFuture.class_eval do
     define_method :wait do |timeout = nil|
       wait_method.bind(self).call(timeout || default_timeout)
     end
@@ -308,7 +308,7 @@ events_test.call
 
 class ConcurrentRunTester
   def initialize
-    @enter_future, @exit_future = Concurrent.future, Concurrent.future
+    @enter_future, @exit_future = Concurrent::Promises.resolvable_future, Concurrent::Promises.resolvable_future
   end
 
   def while_executing(&block)
@@ -319,12 +319,12 @@ class ConcurrentRunTester
   end
 
   def pause
-    @enter_future.success(true)
+    @enter_future.fulfill(true)
     @exit_future.wait(1)
   end
 
   def finish
-    @exit_future.success(true)
+    @exit_future.fulfill(true)
     @thread.join
   end
 end

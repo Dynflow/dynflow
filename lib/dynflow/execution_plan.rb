@@ -305,7 +305,7 @@ module Dynflow
     # array with the future value of the cancel result)
     def cancel(force = false)
       if state == :scheduled
-        [Concurrent.future.tap { |f| f.success delay_record.cancel }]
+        [Concurrent::Promises.resolvable_future.tap { |f| f.fulfill delay_record.cancel }]
       else
         event = force ? ::Dynflow::Action::Cancellable::Abort : ::Dynflow::Action::Cancellable::Cancel
         steps_to_cancel.map do |step|

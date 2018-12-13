@@ -8,7 +8,7 @@ module Dynflow
       @step_id           = action.run_step_id
     end
 
-    def event(event, future = Concurrent.future)
+    def event(event, future = Concurrent::Promises.resolvable_future)
       @world.event execution_plan_id, step_id, event, future
     end
 

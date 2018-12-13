@@ -7,7 +7,7 @@ module Dynflow
         @work_items = Queue.new
       end
 
-      def execute(execution_plan_id, finished = Concurrent.future, _wait_for_acceptance = true)
+      def execute(execution_plan_id, finished = Concurrent::Promises.resolvable_future, _wait_for_acceptance = true)
         feed_queue(@director.start_execution(execution_plan_id, finished))
         process_work_items
         finished
@@ -25,7 +25,7 @@ module Dynflow
         @director.work_finished(work_item)
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent.future)
+      def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future)
         event = (Director::Event[execution_plan_id, step_id, event, future])
         @director.handle_event(event).each do |work_item|
           @work_items << work_item
@@ -41,11 +41,11 @@ module Dynflow
         work_items.each { |work_item| @work_items.push(work_item) }
       end
 
-      def terminate(future = Concurrent.future)
+      def terminate(future = Concurrent::Promises.resolvable_future)
         @director.terminate
-        future.success true
+        future.fulfill true
       rescue => e
-        future.fail e
+        future.reject e
       end
     end
   end

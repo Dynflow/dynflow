@@ -62,7 +62,7 @@ module Dynflow
         def start_termination(*args)
           super
           logger.info 'shutting down Core ...'
-          @pools.values.each { |pool| pool.tell([:start_termination, Concurrent.future]) }
+          @pools.values.each { |pool| pool.tell([:start_termination, Concurrent::Promises.resolvable_future]) }
         end
 
         def finish_termination(pool_name)

@@ -4,24 +4,24 @@ module Dynflow
 
       TrackedRequest = Algebrick.type do
         fields! id: Integer, request: Request,
-                accepted: Concurrent::Edge::Future, finished: Concurrent::Edge::Future
+                accepted: Concurrent::Promises::ResolvableFuture, finished: Concurrent::Promises::ResolvableFuture
       end
 
       module TrackedRequest
         def accept!
-          accepted.success true unless accepted.completed?
+          accepted.fulfill true unless accepted.resolved?
           self
         end
 
         def fail!(error)
-          accepted.fail error unless accepted.completed?
-          finished.fail error
+          accepted.reject error unless accepted.resolved?
+          finished.reject error
           self
         end
 
         def success!(resolve_to)
-          accepted.success true unless accepted.completed?
-          finished.success(resolve_to)
+          accepted.fulfill true unless accepted.resolved?
+          finished.fulfill(resolve_to)
           self
         end
       end
@@ -198,7 +198,7 @@ module Dynflow
 
       def track_request(finished, request, timeout)
         id = @last_id += 1
-        tracked_request = TrackedRequest[id, request, Concurrent.future, finished]
+        tracked_request = TrackedRequest[id, request, Concurrent::Promises.resolvable_future, finished]
         @tracked_requests[id] = tracked_request
         @world.clock.ping(self, timeout, [:timeout, id]) if timeout
         yield tracked_request
@@ -208,13 +208,14 @@ module Dynflow
       end
 
       def reset_tracked_request(tracked_request)
-        if tracked_request.finished.completed?
+        if tracked_request.finished.resolved?
           raise Dynflow::Error.new('Can not reset resolved tracked request')
         end
-        unless tracked_request.accepted.completed?
+        unless tracked_request.accepted.resolved?
           tracked_request.accept! # otherwise nobody would set the accept future
         end
-        @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, Concurrent.future, tracked_request.finished]
+        future = Concurrent::Promises.resolvable_future
+        @tracked_requests[tracked_request.id] = TrackedRequest[tracked_request.id, tracked_request.request, future, tracked_request.finished]
       end
 
       def resolve_tracked_request(id, error = nil)
@@ -246,10 +247,10 @@ module Dynflow
         return yield unless request.use_cache
 
         if @ping_cache.fresh_record?(request.receiver_id)
-          future.success(true)
+          future.fulfill(true)
         else
           if @ping_cache.executor?(request.receiver_id)
-            future.fail
+            future.reject
           else
             yield
           end

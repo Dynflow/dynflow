@@ -143,7 +143,7 @@ module Support
                      world.clock.ping suspended_action, input[:timeout], "timeout"
                    end
 
-                   sub_plan.finished.on_success! { suspended_action << 'finish' }
+                   sub_plan.finished.on_fulfillment! { suspended_action << 'finish' }
                  end
                end),
               (on 'finish' do

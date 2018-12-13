@@ -68,7 +68,7 @@ module Dynflow
         FailureSimulator.wont_fail!
         plan = world.plan(ParentAction, 20)
         future = world.execute plan.id
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
 
@@ -79,7 +79,7 @@ module Dynflow
         FailureSimulator.should_fail!
         plan = world.plan(ParentAction, 20)
         future = world.execute plan.id
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
         action.output[:batch_count].must_equal 1
@@ -87,7 +87,7 @@ module Dynflow
 
         FailureSimulator.wont_fail!
         future = world.execute plan.id
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         action = future.value.entry_action
         future.value.state.must_equal :stopped
         action.output[:batch_count].must_equal (action.total_count / action.batch_size) + 1
@@ -98,7 +98,7 @@ module Dynflow
       it 'is controlled only by total_count and output[:planned_count]' do
         plan = world.plan(ParentAction, 10)
         future = world.execute plan.id
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
         action.send(:can_spawn_next_batch?).must_equal false

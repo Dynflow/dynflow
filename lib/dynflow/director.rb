@@ -13,7 +13,7 @@ module Dynflow
       fields! execution_plan_id: String,
               step_id:           Integer,
               event:             Object,
-              result:            Concurrent::Edge::Future
+              result:            Concurrent::Promises::ResolvableFuture
     end
 
     UnprocessableEvent = Class.new(Dynflow::Error)
@@ -103,7 +103,7 @@ module Dynflow
         raise Dynflow::Error, "no manager for #{event.inspect}"
       end
     rescue Dynflow::Error => e
-      event.result.fail e.message
+      event.result.reject e.message
       raise e
     end
 
@@ -203,13 +203,13 @@ module Dynflow
       @execution_plan_managers[execution_plan_id] =
           ExecutionPlanManager.new(@world, execution_plan, finished)
     rescue Dynflow::Error => e
-      finished.fail e
+      finished.reject e
       nil
     end
 
     def set_future(manager)
       @rescued_steps.delete(manager.execution_plan.id)
-      manager.future.success manager.execution_plan
+      manager.future.fulfill manager.execution_plan
     end
   end
 end

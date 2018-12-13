@@ -41,7 +41,7 @@ module Dynflow
       @auto_validity_check    = @config.auto_validity_check
       @validity_check_timeout = @config.validity_check_timeout
       @throttle_limiter       = @config.throttle_limiter
-      @terminated             = Concurrent.event
+      @terminated             = Concurrent::Promises.resolvable_event
       @termination_timeout    = @config.termination_timeout
       calculate_subscription_index
 
@@ -132,7 +132,7 @@ module Dynflow
       PlaningFailed   = type { fields! execution_plan_id: String, error: Exception }
       # Returned by #trigger when planning is successful, #future will resolve after
       # ExecutionPlan is executed.
-      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Edge::Future }
+      Triggered       = type { fields! execution_plan_id: String, future: Concurrent::Promises::ResolvableFuture }
 
       Scheduled       = type { fields! execution_plan_id: String }
 
@@ -176,7 +176,7 @@ module Dynflow
       planned = execution_plan.state == :planned
 
       if planned
-        done = execute(execution_plan.id, Concurrent.future)
+        done = execute(execution_plan.id, Concurrent::Promises.resolvable_future)
         Triggered[execution_plan.id, done]
       else
         PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
@@ -208,41 +208,41 @@ module Dynflow
       end
     end
 
-    # @return [Concurrent::Edge::Future] containing execution_plan when finished
+    # @return [Concurrent::Promises::ResolvableFuture] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, done = Concurrent.future)
+    def execute(execution_plan_id, done = Concurrent::Promises.resolvable_future)
       publish_request(Dispatcher::Execution[execution_plan_id], done, true)
     end
 
-    def event(execution_plan_id, step_id, event, done = Concurrent.future)
+    def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future)
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
     end
 
-    def ping(world_id, timeout, done = Concurrent.future)
+    def ping(world_id, timeout, done = Concurrent::Promises.resolvable_future)
       publish_request(Dispatcher::Ping[world_id, true], done, false, timeout)
     end
 
-    def ping_without_cache(world_id, timeout, done = Concurrent.future)
+    def ping_without_cache(world_id, timeout, done = Concurrent::Promises.resolvable_future)
       publish_request(Dispatcher::Ping[world_id, false], done, false, timeout)
     end
 
-    def get_execution_status(world_id, execution_plan_id, timeout, done = Concurrent.future)
+    def get_execution_status(world_id, execution_plan_id, timeout, done = Concurrent::Promises.resolvable_future)
       publish_request(Dispatcher::Status[world_id, execution_plan_id], done, false, timeout)
     end
 
     def publish_request(request, done, wait_for_accepted, timeout = nil)
-      accepted = Concurrent.future
+      accepted = Concurrent::Promises.resolvable_future
       accepted.rescue do |reason|
-        done.fail reason if reason
+        done.reject reason if reason
       end
       client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
       accepted.wait if wait_for_accepted
       done
     rescue => e
-      accepted.fail e
+      accepted.reject e
     end
 
-    def terminate(future = Concurrent.future)
+    def terminate(future = Concurrent::Promises.resolvable_future)
       start_termination.tangle(future)
       future
     end
@@ -285,7 +285,7 @@ module Dynflow
     def start_termination
       @termination_barrier.synchronize do
         return @terminating if @terminating
-        termination_future ||= Concurrent.future do
+        termination_future ||= Concurrent::Promises.future do
           begin
             run_before_termination_hooks
 
@@ -304,13 +304,13 @@ module Dynflow
               executor.terminate.wait(termination_timeout)
 
               logger.info "start terminating executor dispatcher..."
-              executor_dispatcher_terminated = Concurrent.future
+              executor_dispatcher_terminated = Concurrent::Promises.resolvable_future
               executor_dispatcher.ask([:start_termination, executor_dispatcher_terminated])
               executor_dispatcher_terminated.wait(termination_timeout)
             end
 
             logger.info "start terminating client dispatcher..."
-            client_dispatcher_terminated = Concurrent.future
+            client_dispatcher_terminated = Concurrent::Promises.resolvable_future
             client_dispatcher.ask([:start_termination, client_dispatcher_terminated])
             client_dispatcher_terminated.wait(termination_timeout)
 
@@ -323,15 +323,15 @@ module Dynflow
             end
 
             coordinator.delete_world(registered_world)
-            @terminated.complete
+            @terminated.resolve
             true
           rescue => e
             logger.fatal(e)
           end
         end
-        @terminating = Concurrent.future do
+        @terminating = Concurrent::Promises.future do
           termination_future.wait(termination_timeout)
-        end.on_completion do
+        end.on_resolution do
           @terminated.complete
           Thread.new { Kernel.exit } if @exit_on_terminate.true?
         end
@@ -350,7 +350,7 @@ module Dynflow
 
     def run_before_termination_hooks
       until @before_termination_hooks.empty?
-        hook_run = Concurrent.future do
+        hook_run = Concurrent::Promises.future do
           begin
             @before_termination_hooks.pop.call
           rescue => e
@@ -362,7 +362,7 @@ module Dynflow
     end
 
     def spawn_and_wait(klass, name, *args)
-      initialized = Concurrent.future
+      initialized = Concurrent::Promises.resolvable_future
       actor = klass.spawn(name: name, args: args, initialized: initialized)
       initialized.wait
       return actor

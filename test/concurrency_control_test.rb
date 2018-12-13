@@ -124,7 +124,7 @@ module Dynflow
         total = 10
         plan = world.plan(ParentAction, 10)
         future = world.execute plan.id
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         plan.sub_plans.all? { |sub| successful? sub }
         world.throttle_limiter.core.ask!(:running).must_equal [0]
       end
@@ -134,7 +134,7 @@ module Dynflow
         level = 4
         plan = world.plan(ParentAction, total, level)
         future = world.execute plan.id
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         world.throttle_limiter.core.ask!(:running).max.must_be :<=, level
       end
 
@@ -145,7 +145,7 @@ module Dynflow
           triggered = world.execute(plan.id)
           wait_for { plan.sub_plans_count == total }
           world.event(plan.id, plan.steps.values.last.id, ::Dynflow::Action::Cancellable::Cancel)
-          wait_for { triggered.completed? }
+          wait_for { triggered.resolved? }
           plan = world.persistence.load_execution_plan(plan.id)
           plan.entry_action.output[:failed_count].must_equal total
           world.throttle_limiter.core.ask!(:running).max.must_be :<=, 0
@@ -198,7 +198,7 @@ module Dynflow
           world.throttle_limiter.observe(plan.id).dup.each do |triggered|
             triggered.future.tap do |future|
               klok.progress
-              wait_for { future.completed? }
+              wait_for { future.resolved? }
             end
             finished += 1
             check_step(plan, total, finished)
@@ -217,7 +217,7 @@ module Dynflow
         time_span = 10
         plan = world.plan(ParentAction, total, level, time_span)
         future = world.execute(plan.id)
-        wait_for { future.completed? }
+        wait_for { future.resolved? }
         plan.sub_plans.all? { |sub| sub.result == :error }.must_equal true
       end
 
@@ -234,7 +234,7 @@ module Dynflow
           running.count.must_equal level
           world.throttle_limiter.observe(plan.id).length.must_equal (total - 1)
           4.times { klok.progress }
-          wait_for { future.completed? }
+          wait_for { future.resolved? }
           finished, stopped = plan.sub_plans.partition { |sub| successful? sub }
           finished.count.must_equal level
           stopped.count.must_equal (total - level)

@@ -47,7 +47,7 @@ module Dynflow
       return true
     end
 
-    def execute(future = Concurrent.future)
+    def execute(future = Concurrent::Promises.resolvable_future)
       @world.execute(@execution_plan_uuid, future)
       ::Dynflow::World::Triggered[@execution_plan_uuid, future]
     end

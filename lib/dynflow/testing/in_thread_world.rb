@@ -43,21 +43,21 @@ module Dynflow
         @executor = InThreadExecutor.new(self)
       end
 
-      def execute(execution_plan_id, done = Concurrent.future)
+      def execute(execution_plan_id, done = Concurrent::Promises.resolvable_future)
         @executor.execute(execution_plan_id, done)
       end
 
-      def terminate(future = Concurrent.future)
+      def terminate(future = Concurrent::Promises.resolvable_future)
         run_before_termination_hooks
         @executor.terminate
         coordinator.delete_world(registered_world)
-        future.success true
-        @terminated.complete
+        future.fulfill true
+        @terminated.resolve
       rescue => e
-        future.fail e
+        future.reject e
       end
 
-      def event(execution_plan_id, step_id, event, done = Concurrent.future)
+      def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future)
         @executor.event(execution_plan_id, step_id, event, done)
       end
     end
