@@ -1,6 +1,4 @@
 module Dynflow
-  require 'set'
-
   class Clock < Actor
 
     include Algebrick::Types
@@ -48,8 +46,9 @@ module Dynflow
                Pill = type { fields Float }
     end
 
-    def initialize
-      @timers        = SortedSet.new
+    def initialize(logger = nil)
+      @logger        = logger
+      @timers        = Utils::PriorityQueue.new { |a, b| b <=> a }
       @sleeping_pill = None
       @sleep_barrier = Mutex.new
       @sleeper       = Thread.new { sleeping }
@@ -72,7 +71,7 @@ module Dynflow
     end
 
     def add_timer(timer)
-      @timers.add timer
+      @timers.push timer
       if @timers.size == 1
         sleep_to timer
       else
@@ -84,13 +83,17 @@ module Dynflow
 
     def run_ready_timers
       while first_timer && first_timer.when <= Time.now
-        first_timer.apply
-        @timers.delete(first_timer)
+        begin
+          first_timer.apply
+        rescue => e
+          @logger && @logger.error("Failed to apply clock event #{first_timer}, exception: #{e}")
+        end
+        @timers.pop
       end
     end
 
     def first_timer
-      @timers.first
+      @timers.top
     end
 
     def wakeup
