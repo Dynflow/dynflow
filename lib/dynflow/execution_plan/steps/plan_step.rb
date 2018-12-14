@@ -98,8 +98,10 @@ module Dynflow
                        finalize_step_id:  nil,
                        phase:             phase }
         if caller_action
-          attributes.update(caller_execution_plan_id: caller_action.execution_plan_id,
-                            caller_action_id:         caller_action.id)
+          if caller_action.execution_plan_id != execution_plan_id
+            attributes.update(caller_execution_plan_id: caller_action.execution_plan_id)
+          end
+          attributes.update(caller_action_id: caller_action.id)
         end
         @action = action_class.new(attributes, world)
         persistence.save_action(execution_plan_id, @action)
