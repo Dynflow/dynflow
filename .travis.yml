@@ -2,6 +2,11 @@ sudo: false
 language:
   - ruby
 
+before_install: >-
+  if ruby -v | grep 'ruby 2.2'; then
+    gem install bundler -v '~> 1.17'
+  fi
+
 rvm:
   - "2.2.2"
   - "2.3.1"
