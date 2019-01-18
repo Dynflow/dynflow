@@ -214,6 +214,7 @@ module Dynflow
       when Action::Rescue::Pause
         nil
       when Action::Rescue::Revert
+        update_state :stopped
         revert
       when Action::Rescue::Fail
         update_state :stopped
@@ -449,6 +450,7 @@ module Dynflow
 
     def add_run_phase_step(step_class, action)
       add_step(step_class, action.class, action.id).tap do |step|
+        step.update_from_action(action)
         step.progress_weight = action.run_progress_weight
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
@@ -457,6 +459,7 @@ module Dynflow
 
     def add_finalize_phase_step(step_class, action)
       add_step(step_class, action.class, action.id).tap do |step|
+        step.update_from_action(action)
         step.progress_weight = action.finalize_progress_weight
         finalize_flow << Flows::Atom.new(step.id)
       end
