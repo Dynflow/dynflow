@@ -197,7 +197,6 @@ module Dynflow
     end
 
     def action_logger
-      phase! Executable
       world.action_logger
     end
 

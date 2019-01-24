@@ -12,6 +12,7 @@ module Dynflow
       yield
     ensure
       ::ActiveRecord::Base.clear_active_connections! if clear_connections
+      ::Logging.mdc.clear if defined? ::Logging
     end
 
   end
