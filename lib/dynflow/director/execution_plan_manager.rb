@@ -24,6 +24,12 @@ module Dynflow
         start_run or start_finalize or finish
       end
 
+      def restart
+        @run_manager = nil
+        @finalize_manager = nil
+        start
+      end
+
       def prepare_next_step(step)
         StepWorkItem.new(execution_plan.id, step, step.queue).tap do |work|
           @running_steps_manager.add(step, work)
@@ -97,8 +103,6 @@ module Dynflow
       end
 
       def finish
-        execution_plan.execution_history.add('finish execution', @world.id)
-        @execution_plan.update_state(execution_plan.error? ? :paused : :stopped)
         return no_work
       end
 

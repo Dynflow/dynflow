@@ -144,24 +144,38 @@ module Dynflow
     def unless_done(manager, work_items)
       return [] unless manager
       if manager.done?
-        finish_manager(manager)
-        return []
+        try_to_rescue(manager) || finish_manager(manager)
       else
         return work_items
       end
     end
 
+    def try_to_rescue(manager)
+      rescue!(manager) if rescue?(manager)
+    end
+
     def finish_manager(manager)
-      @execution_plan_managers.delete(manager.execution_plan.id)
-      if rescue?(manager)
-        rescue!(manager)
-      else
-        set_future(manager)
+      execution_plan = manager.execution_plan
+      if execution_plan.state == :running
+        if execution_plan.error?
+          execution_plan.update_state(:paused)
+          execution_plan.execution_history.add('pause execution', @world.id)
+        elsif manager.done?
+          execution_plan.execution_history.add('finish execution', @world.id)
+          execution_plan.update_state(:stopped)
+        end
+        # If the state is marked as running without errors but manager is not done,
+        # we let the invalidation procedure to handle re-execution on other executor
       end
+      execution_plan.save
+      return []
+    ensure
+      @execution_plan_managers.delete(execution_plan.id)
+      set_future(manager)
     end
 
     def rescue?(manager)
-      if @world.terminating? || !(@world.auto_rescue && manager.execution_plan.state == :paused)
+      if @world.terminating? || !(@world.auto_rescue && manager.execution_plan.error?)
         false
       elsif !@rescued_steps.key?(manager.execution_plan.id)
         # we have not rescued this plan yet
@@ -179,11 +193,12 @@ module Dynflow
       # to put this logic of making sure we don't run rescues in endless loop
       @rescued_steps[manager.execution_plan.id] ||= Set.new
       @rescued_steps[manager.execution_plan.id].merge(manager.execution_plan.failed_steps.map(&:id))
-      rescue_plan_id = manager.execution_plan.rescue_plan_id
-      if rescue_plan_id
-        @world.executor.execute(rescue_plan_id, manager.future, false)
+      new_state = manager.execution_plan.prepare_for_rescue
+      if new_state == :running
+        return manager.restart
       else
-        set_future(manager)
+        manager.execution_plan.update_state(new_state)
+        return false
       end
     end
 
