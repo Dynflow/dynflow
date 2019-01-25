@@ -55,7 +55,6 @@ module Dynflow
           end
         end
         reset_original_step!(action, 'run')
-        original_execution_plan(action).update_state(:planned) if entry_action?(action)
       end
 
     end
