@@ -179,7 +179,8 @@ module Dynflow
       # to put this logic of making sure we don't run rescues in endless loop
       @rescued_steps[manager.execution_plan.id] ||= Set.new
       @rescued_steps[manager.execution_plan.id].merge(manager.execution_plan.failed_steps.map(&:id))
-      rescue_plan_id = manager.execution_plan.rescue_plan_id
+      rescue_plan_id = manager.execution_plan.generate_rescue_plan_id
+
       if rescue_plan_id
         @world.executor.execute(rescue_plan_id, manager.future, false)
       else

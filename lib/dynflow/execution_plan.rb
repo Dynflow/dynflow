@@ -43,9 +43,11 @@ module Dynflow
     require 'dynflow/execution_plan/output_reference'
     require 'dynflow/execution_plan/dependency_graph'
 
-    attr_reader :id, :world, :label,
+    attr_reader :id, :world, :label, :rescue_plan_id,
                 :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time, :execution_history
+
+    attr_accessor :rescued_plan_id
 
     def self.states
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
@@ -54,7 +56,7 @@ module Dynflow
     require 'dynflow/execution_plan/hooks'
 
     def self.results
-      @results ||= [:pending, :success, :warning, :error, :cancelled]
+      @results ||= [:pending, :success, :warning, :error, :cancelled, :reverted]
     end
 
     def self.state_transitions
@@ -63,10 +65,11 @@ module Dynflow
                                planning: [:planned, :stopped],
                                planned:  [:running, :stopped],
                                running:  [:paused, :stopped],
-                               paused:   [:running, :stopped],
+                               paused:   [:running, :stopped, :planned],
                                stopped:  [] }
     end
 
+    # rubocop:disable Metrics/ParameterLists
     # all params with default values are part of *private* api
     def initialize(world,
                    id                = SecureRandom.uuid,
@@ -80,7 +83,9 @@ module Dynflow
                    ended_at          = nil,
                    execution_time    = nil,
                    real_time         = 0.0,
-                   execution_history = ExecutionHistory.new)
+                   execution_history = ExecutionHistory.new,
+                   rescue_plan_id    = nil,
+                   rescued_plan_id   = nil)
 
       @id                = Type! id, String
       @world             = Type! world, World
@@ -94,6 +99,8 @@ module Dynflow
       @execution_time    = Type! execution_time, Numeric, NilClass
       @real_time         = Type! real_time, Numeric
       @execution_history = Type! execution_history, ExecutionHistory
+      @rescue_plan_id    = Type! rescue_plan_id, String, NilClass
+      @rescued_plan_id   = Type! rescued_plan_id, String, NilClass
 
       steps.all? do |k, v|
         Type! k, Integer
@@ -101,6 +108,7 @@ module Dynflow
       end
       @steps = steps
     end
+    # rubocop:enable Metric/ParameterLists
 
     def valid?
       true
@@ -165,6 +173,8 @@ module Dynflow
         return :warning
       elsif all_steps.all? { |step| step.state == :success }
         return :success
+      elsif all_steps.all? { |step| step.state == :reverted || step.state == :pending || (step.class == Steps::PlanStep && step.state == :success) }
+        return :reverted
       else
         return :pending
       end
@@ -199,17 +209,22 @@ module Dynflow
       persistence.find_execution_plan_counts(filters: { 'caller_execution_plan_id' => self.id })
     end
 
-    def rescue_plan_id
+    def generate_rescue_plan_id
       case rescue_strategy
       when Action::Rescue::Pause
         nil
+      when Action::Rescue::Revert
+        update_state :stopped
+        revert
       when Action::Rescue::Fail
         update_state :stopped
         nil
       when Action::Rescue::Skip
         failed_steps.each { |step| self.skip(step) }
-        self.id
+        @rescue_plan_id = @rescued_plan_id = self.id
       end
+    ensure
+      self.save
     end
 
     def plan_steps
@@ -233,8 +248,8 @@ module Dynflow
     end
 
     def rescue_from_error
-      if rescue_plan_id = self.rescue_plan_id
-        @world.execute(rescue_plan_id)
+      if (id = generate_rescue_plan_id)
+        @world.execute(id)
       else
         raise Errors::RescueError, 'Unable to rescue from the error'
       end
@@ -273,9 +288,14 @@ module Dynflow
     def prepare(action_class, options = {})
       options = options.dup
       caller_action = Type! options.delete(:caller_action), Dynflow::Action, NilClass
+      reverting = Type! options.delete(:reverting), TrueClass, FalseClass, NilClass
       raise "Unexpected options #{options.keys.inspect}" unless options.empty?
       save
-      @root_plan_step = add_plan_step(action_class, caller_action)
+      @root_plan_step = if reverting
+                          add_revert_step(action_class, caller_action)
+                        else
+                          add_plan_step(action_class, caller_action)
+                        end
       @root_plan_step.save
     end
 
@@ -320,6 +340,19 @@ module Dynflow
       steps_to_cancel.any?
     end
 
+    def revert
+      plan = @world.revert(entry_action)
+      plan.rescued_plan_id = id
+      plan.save
+      @rescue_plan_id = plan.id
+    end
+
+    def revertible?
+      state == :paused &&
+        rescue_strategy == Action::Rescue::Revert &&
+        actions.all? { |action| action.is_a? ::Dynflow::Action::Revertible }
+    end
+
     def steps_to_cancel
       steps_in_state(:running, :suspended).find_all do |step|
         step.action(self).is_a?(::Dynflow::Action::Cancellable)
@@ -330,6 +363,10 @@ module Dynflow
       steps_to_skip = steps_to_skip(step).each(&:mark_to_skip)
       self.save
       return steps_to_skip
+    end
+
+    def rescued_plan
+      @rescued_plan ||= world.persistence.load_execution_plan(rescued_plan_id)
     end
 
     # All the steps that need to get skipped when wanting to skip the step
@@ -393,8 +430,16 @@ module Dynflow
       end
     end
 
+    def add_revert_step(action_class, caller_action = nil)
+      add_plan_phase_step(Steps::RevertStep, action_class, caller_action)
+    end
+
     def add_plan_step(action_class, caller_action = nil)
-      add_step(Steps::PlanStep, action_class, generate_action_id).tap do |step|
+      add_plan_phase_step(Steps::PlanStep, action_class, caller_action)
+    end
+
+    def add_plan_phase_step(step_class, action_class, caller_action = nil)
+      add_step(step_class, action_class, generate_action_id).tap do |step|
         # TODO: to be removed and preferred by the caller_action
         if caller_action && caller_action.execution_plan_id == self.id
           @steps[caller_action.plan_step_id].children << step.id
@@ -403,17 +448,19 @@ module Dynflow
       end
     end
 
-    def add_run_step(action)
-      add_step(Steps::RunStep, action.class, action.id).tap do |step|
+    def add_run_phase_step(step_class, action)
+      add_step(step_class, action.class, action.id).tap do |step|
         step.update_from_action(action)
+        step.progress_weight = action.run_progress_weight
         @dependency_graph.add_dependencies(step, action)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end
 
-    def add_finalize_step(action)
-      add_step(Steps::FinalizeStep, action.class, action.id).tap do |step|
+    def add_finalize_phase_step(step_class, action)
+      add_step(step_class, action.class, action.id).tap do |step|
         step.update_from_action(action)
+        step.progress_weight = action.finalize_progress_weight
         finalize_flow << Flows::Atom.new(step.id)
       end
     end
@@ -432,7 +479,9 @@ module Dynflow
                         ended_at:          time_to_str(ended_at),
                         execution_time:    execution_time,
                         real_time:         real_time,
-                        execution_history: execution_history.to_hash
+                        execution_history: execution_history.to_hash,
+                        rescue_plan_id:    rescue_plan_id,
+                        rescued_plan_id:   rescued_plan_id
     end
 
     def save
@@ -455,7 +504,9 @@ module Dynflow
                string_to_time(hash[:ended_at]),
                hash[:execution_time].to_f,
                hash[:real_time].to_f,
-               ExecutionHistory.new_from_hash(hash[:execution_history]))
+               ExecutionHistory.new_from_hash(hash[:execution_history]),
+               hash[:rescue_plan_id],
+               hash[:rescued_plan_id])
     rescue => plan_exception
       begin
         world.logger.error("Could not load execution plan #{execution_plan_id}")

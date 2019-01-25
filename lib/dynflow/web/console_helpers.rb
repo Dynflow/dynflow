@@ -29,6 +29,14 @@ module Dynflow
         YAML.dump(value)
       end
 
+      def action_name(plan)
+        prefix = ''
+        if plan.rescued_plan_id
+          prefix = '(rollback) '
+        end
+        prefix + plan.entry_action.class.name
+      end
+
       def prettyprint(value)
         value = prettyprint_references(value)
         if value

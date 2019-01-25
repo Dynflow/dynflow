@@ -2,7 +2,7 @@ module Dynflow
   module Action::Rescue
 
     Strategy = Algebrick.type do
-      variants Skip = atom, Pause = atom, Fail = atom
+      variants Skip = atom, Pause = atom, Revert = atom, Fail = atom
     end
 
     SuggestedStrategy = Algebrick.type do
@@ -21,7 +21,8 @@ module Dynflow
     def rescue_strategy
       suggested_strategies = []
 
-      if self.steps.compact.any? { |step| step.state == :error }
+      # We need to consider that action if it has at least one non-pending step
+      if self.steps.compact.any? { |step| step.state != :pending }
         suggested_strategies << SuggestedStrategy[self, rescue_strategy_for_self]
       end
 
@@ -48,19 +49,34 @@ module Dynflow
 
     # Override when different approach should be taken for combining
     # the suggested strategies
+    # The default behavior is:
+    #   If all the actions can and want to revert, revert
+    #   If all the actions which have an error in their subtree want to skip/fail, skip/fail
+    #   Fail otherwise
     def combine_suggested_strategies(suggested_strategies)
-      if suggested_strategies.empty?
-        nil
-      else
-        # TODO: Find the safest rescue strategy among the suggested ones
-        if suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Skip }
-          return Skip
-        elsif suggested_strategies.all? { |suggested_strategy| suggested_strategy.strategy == Fail }
-          return Fail
-        else
-          return Pause # We don't know how to handle this case, so we'll just pause
-        end
+      # Return Revert if all the strategies want to revert
+      return Revert if suggested_strategies.all? { |strategy| strategy.strategy == Revert }
+
+      # Select those action which have an error in their subtree
+      error = suggested_strategies.select { |strategy| strategy.action.has_children_in_error? }
+
+      # If we are in a subtree with errors
+      unless error.empty?
+        strategies = error.map(&:strategy).uniq # Get all the strategies
+        # Check if all the strategies are the same and they're not Revert
+        # We want to skip/fail if all errorneous steps want to skip/fail
+        return strategies.first if strategies.count == 1 && strategies.first != Revert
       end
+
+      # Don't know what to do, just Pause
+      return Pause
+    end
+
+    # We need to keep track if there is an action with steps in error state
+    def has_children_in_error?
+      # TODO: Cache planned_action somewhere
+      @has_children_in_error ||= self.steps.compact.any? { |step| step.state == :error } ||
+                                 self.planned_actions.any? { |action| action.has_children_in_error? }
     end
   end
 end

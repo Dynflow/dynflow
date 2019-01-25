@@ -17,9 +17,8 @@ module Support
       end
 
       def rescue_strategy_for_self
-        Dynflow::Action::Rescue::Skip
+        ::Dynflow::Action::Rescue::Skip
       end
-
     end
 
     class ComplexActionWithoutSkip < ComplexActionWithSkip
@@ -76,6 +75,22 @@ module Support
 
     end
 
+    class DeepActionWithFail < AbstractAction
+
+      def plan(error_state, count)
+        if count == 0
+          super(count, error_state)
+        else
+          plan_action(self.class, error_state, count - 1)
+          plan_self(:desired_state => :success)
+        end
+      end
+
+      def rescue_strategy_for_self
+        Dynflow::Action::Rescue::Fail
+      end
+    end
+
     class ActionWithFail < AbstractAction
 
       def rescue_strategy_for_self
@@ -94,6 +109,33 @@ module Support
           end
           plan_action(ActionWithFail, 5, :success)
           plan_action(ActionWithSkip, 6, :success)
+        end
+      end
+
+    end
+
+    class ActionWithRollback < AbstractAction
+
+      include ::Dynflow::Action::Revertible
+
+      def rescue_strategy_for_self
+        Dynflow::Action::Rescue::Revert
+      end
+
+      def revert_run; end
+      def revert_plan; end
+
+    end
+
+    class ComplexActionWithRollback < ActionWithRollback
+
+      def plan(error_state)
+        sequence do
+          concurrence do
+            plan_action(ActionWithRollback, 3, :success)
+            plan_action(ActionWithRollback, 4, error_state)
+          end
+          plan_action(ActionWithRollback, 5, :success)
         end
       end
 

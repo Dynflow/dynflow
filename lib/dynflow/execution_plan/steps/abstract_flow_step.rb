@@ -14,7 +14,7 @@ module Dynflow
         return self if [:skipped, :success].include? self.state
         open_action do |action|
           with_meta_calculation(action) do
-            action.execute(*args)
+            real_execute(action, *args)
           end
         end
       end
@@ -24,6 +24,10 @@ module Dynflow
       end
 
       private
+
+      def real_execute(action, *args)
+        action.execute(*args)
+      end
 
       def open_action
         action = persistence.load_action(self)

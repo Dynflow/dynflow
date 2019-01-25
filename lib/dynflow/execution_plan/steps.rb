@@ -2,6 +2,7 @@ module Dynflow
   module ExecutionPlan::Steps
 
     require 'dynflow/execution_plan/steps/error'
+    require 'dynflow/execution_plan/steps/revert'
     require 'dynflow/execution_plan/steps/abstract'
     require 'dynflow/execution_plan/steps/abstract_flow_step'
     require 'dynflow/execution_plan/steps/plan_step'

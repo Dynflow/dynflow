@@ -25,6 +25,7 @@ module Dynflow
     require 'dynflow/action/with_sub_plans'
     require 'dynflow/action/with_bulk_sub_plans'
     require 'dynflow/action/with_polling_sub_plans'
+    require 'dynflow/action/revertible'
 
     def self.all_children
       children.values.inject(children.values) do |children, child|
@@ -68,7 +69,8 @@ module Dynflow
       Executable = type do
         variants Plan     = atom,
                  Run      = atom,
-                 Finalize = atom
+                 Finalize = atom,
+                 Revert   = atom
       end
       variants Executable, Present = atom
     end
@@ -378,6 +380,10 @@ module Dynflow
       method(:run).arity != 0
     end
 
+    def revert_run_accepts_events?
+      method(:revert_run).arity != 0
+    end
+
     def self.new_from_hash(hash, world)
       hash.delete(:output) if hash[:output].nil?
       unless hash[:execution_plan_uuid].nil?
@@ -401,21 +407,43 @@ module Dynflow
     end
 
     def plan_self(input = {})
+      prepare_self(input, false)
+    end
+
+    def revert_self(input = {})
+      prepare_self(input, true)
+    end
+
+    def prepare_self(input, rollback = false)
       phase! Plan
       self.input.update input
 
-      if self.respond_to?(:run)
-        run_step          = @execution_plan.add_run_step(self)
-        @run_step_id      = run_step.id
+      add_run_phase_step(rollback)
+      add_finalize_phase_step(rollback)
+
+      self
+    end
+
+    def add_run_phase_step(rollback = false)
+      method, step_class = rollback ? [:revert_run, ExecutionPlan::Steps::RevertRunStep] : [:run, ExecutionPlan::Steps::RunStep]
+      if self.respond_to?(method)
+        run_step = @execution_plan.add_run_phase_step(step_class, self)
+        @run_step_id = run_step.id
         @output_reference = OutputReference.new(@execution_plan.id, run_step.id, id)
       end
+    end
 
-      if self.respond_to?(:finalize)
-        finalize_step     = @execution_plan.add_finalize_step(self)
+    def add_finalize_phase_step(rollback = false)
+      method, step_class = rollback ? [:revert_plan, ExecutionPlan::Steps::RevertPlanStep] : [:finalize, ExecutionPlan::Steps::FinalizeStep]
+      if self.respond_to?(method)
+        finalize_step = @execution_plan.add_finalize_phase_step(step_class, self)
         @finalize_step_id = finalize_step.id
       end
+    end
 
-      return self # to stay consistent with plan_action
+    def revert_action(action, *args)
+      phase! Plan
+      @execution_plan.add_revert_step(action.class, self).execute(@execution_plan, self, false, action, *args)
     end
 
     def plan_action(action_class, *args)
@@ -479,7 +507,7 @@ module Dynflow
       @step.error = ExecutionPlan::Steps::Error.new(error)
     end
 
-    def execute_plan(*args)
+    def in_plan_phase(*args)
       phase! Plan
       self.state = :running
       save_state
@@ -487,6 +515,13 @@ module Dynflow
       # when the error occurred inside the planning, catch that
       # before getting out of the planning phase
       with_error_handling(!root_action?) do
+        yield self
+        check_serializable :input
+      end
+    end
+
+    def execute_plan(*args)
+      in_plan_phase(*args) do
         concurrence do
           world.middleware.execute(:plan, self, *args) do |*new_args|
             plan(*new_args)
@@ -505,13 +540,11 @@ module Dynflow
             end
           end
         end
-
-        check_serializable :input
       end
     end
 
-    # TODO: This is getting out of hand, refactoring needed
-    def execute_run(event)
+    # rubocop:disable Style/CyclomaticComplexity, Style/PerceivedComplexity
+    def in_run_phase(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
                                  'Step', execution_plan_id, @step.id, event) if event
@@ -530,13 +563,11 @@ module Dynflow
         save_state
         with_error_handling do
           event = Skip if state == :skipping
-
-          # we run the Skip event only when the run accepts events
-          if event != Skip || run_accepts_events?
+          # we run the Skip event only when the right method for run phase accepts arguments
+          if event != Skip || ((@step.is_a?(ExecutionPlan::Steps::RunStep) && run_accepts_events?) ||
+                               (@step.is_a?(ExecutionPlan::Steps::RevertRunStep) && revert_run_accepts_events?))
             result = catch(SUSPEND) do
-              world.middleware.execute(:run, self, *[event].compact) do |*args|
-                run(*args)
-              end
+              yield self, event
             end
 
             self.state = :suspended if result == SUSPEND
@@ -548,15 +579,30 @@ module Dynflow
         raise "wrong state #{state} when event:#{event}"
       end
     end
+    # rubocop:enable Style/CyclomaticComplexity, Style/PerceivedComplexity
 
-    def execute_finalize
+    def execute_run(event)
+      in_run_phase(event) do |action, event|
+        world.middleware.execute(:run, self, *[event].compact) do |*args|
+          action.run(*args)
+        end
+      end
+    end
+
+    def in_finalize_phase
       phase! Finalize
       @input     = OutputReference.dereference @input, world.persistence
       self.state = :running
       save_state
       with_error_handling do
+        yield self
+      end
+    end
+
+    def execute_finalize
+      in_finalize_phase do |action|
         world.middleware.execute(:finalize, self) do
-          finalize
+          action.finalize
         end
       end
     end
