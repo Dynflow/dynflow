@@ -173,7 +173,7 @@ module Dynflow
         return :warning
       elsif all_steps.all? { |step| step.state == :success }
         return :success
-      elsif all_steps.all? { |step| step.state == :reverted }
+      elsif all_steps.all? { |step| step.state == :reverted || step.state == :pending || (step.class == Steps::PlanStep && step.state == :success) }
         return :reverted
       else
         return :pending

@@ -31,7 +31,7 @@ module Dynflow
       def revert(parent_action)
         sequence do
           parent_action.planned_actions.reverse.each do |action|
-            revert_action(action) if action.plan_step.state != :pending
+            revert_action(action) if action.plan_step.state != :pending && action.run_step.state != :pending
           end
           revert_self(parent_action)
         end
