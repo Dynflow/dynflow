@@ -183,26 +183,23 @@ module Dynflow
       end
     end
 
-    def delay(*args)
-      delay_with_caller(nil, *args)
+    def delay(action_class, delay_options, *args)
+      delay_with_options(action_class: action_class, args: args, delay_options: delay_options)
     end
 
-    def delay_with_caller(caller_action, action_class, delay_options, *args)
+    def delay_with_options(action_class:, args:, delay_options:, id: nil, caller_action: nil)
       raise 'No action_class given' if action_class.nil?
-      execution_plan = ExecutionPlan.new(self)
+      execution_plan = ExecutionPlan.new(self, id)
       execution_plan.delay(caller_action, action_class, delay_options, *args)
       Scheduled[execution_plan.id]
     end
 
     def plan(action_class, *args)
-      ExecutionPlan.new(self).tap do |execution_plan|
-        execution_plan.prepare(action_class)
-        execution_plan.plan(*args)
-      end
+      plan_with_options(action_class: action_class, args: args)
     end
 
-    def plan_with_caller(caller_action, action_class, *args)
-      ExecutionPlan.new(self).tap do |execution_plan|
+    def plan_with_options(action_class:, args:, id: nil, caller_action: nil)
+      ExecutionPlan.new(self, id).tap do |execution_plan|
         execution_plan.prepare(action_class, caller_action: caller_action)
         execution_plan.plan(*args)
       end

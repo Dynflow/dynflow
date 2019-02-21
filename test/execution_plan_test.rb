@@ -191,6 +191,18 @@ module Dynflow
         end
       end
 
+      describe 'custom plan id' do
+        let :execution_plan do
+          world.plan_with_options(action_class: Support::CodeWorkflowExample::IncomingIssues,
+                                  args: [issues_data],
+                                  id: 'my-unique-id')
+        end
+
+        it 'allows setting custom id for the execution plan' do
+          execution_plan.id.must_equal 'my-unique-id'
+        end
+      end
+
       describe 'planning algorithm' do
 
         describe 'single dependencies' do

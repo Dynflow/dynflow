@@ -76,16 +76,16 @@ module Dynflow
     end
 
     # Helper for creating sub plans
-    def trigger(*args)
+    def trigger(action_class, *args)
       if uses_concurrency_control
-        trigger_with_concurrency_control(*args)
+        trigger_with_concurrency_control(action_class, *args)
       else
-        world.trigger { world.plan_with_caller(self, *args) }
+        world.trigger { world.plan_with_options(action_class: action_class, args: args, caller_action: self) }
       end
     end
 
-    def trigger_with_concurrency_control(*args)
-      record = world.plan_with_caller(self, *args)
+    def trigger_with_concurrency_control(action_class, *args)
+      record = world.plan_with_options(action_class: action_class, args: args, caller_action: self)
       records = [[record.id], []]
       records.reverse! unless record.state == :planned
       @world.throttle_limiter.handle_plans!(execution_plan_id, *records).first

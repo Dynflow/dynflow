@@ -69,7 +69,7 @@ module Dynflow
 
     # all params with default values are part of *private* api
     def initialize(world,
-                   id                = SecureRandom.uuid,
+                   id                = nil,
                    label             = nil,
                    state             = :pending,
                    root_plan_step    = nil,
@@ -81,7 +81,7 @@ module Dynflow
                    execution_time    = nil,
                    real_time         = 0.0,
                    execution_history = ExecutionHistory.new)
-
+      id ||= SecureRandom.uuid
       @id                = Type! id, String
       @world             = Type! world, World
       @label             = Type! label, String, NilClass
