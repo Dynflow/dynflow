@@ -3,15 +3,19 @@ module Dynflow
     module QueueAdapters
       module QueueMethods
         def enqueue(job)
-          ::Rails.application.dynflow.world.trigger(JobWrapper, job.serialize).tap do |plan|
-            job.provider_job_id = plan.id
+          ::Rails.application.dynflow.world.trigger do |world|
+            job.provider_job_id = job.job_id
+            world.plan_with_options(id: job.provider_job_id, action_class: JobWrapper, args: [job.serialize])
           end
         end
 
         def enqueue_at(job, timestamp)
-          ::Rails.application.dynflow.world.delay(JobWrapper, { :start_at => Time.at(timestamp) }, job.serialize).tap do |plan|
-            job.provider_job_id = plan.id
-          end
+          job.provider_job_id = job.job_id
+          ::Rails.application.dynflow.world
+            .delay_with_options(id: job.provider_job_id,
+                                action_class: JobWrapper,
+                                delay_options: { :start_at => Time.at(timestamp) },
+                                args: [job.serialize])
         end
       end
 
@@ -33,13 +37,13 @@ module Dynflow
 
         def plan(attributes)
           input[:job_class] = attributes['job_class']
-          input[:job_arguments] = attributes['arguments']
           input[:queue] = attributes['queue_name']
+          input[:job_data] = attributes
           plan_self
         end
 
         def run
-          input[:job_class].constantize.perform_now(*input[:job_arguments])
+          ::ActiveJob::Base.execute(input[:job_data])
         end
 
         def label
