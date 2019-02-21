@@ -8,10 +8,13 @@ module Dynflow
 
     def perform(msg)
       puts "This job says #{msg}"
+      puts "provider_job_id is #{provider_job_id}"
     end
   end
 
   describe 'running jobs' do
+    include TestHelpers
+
     let :world do
       WorldFactory.create_world
     end
@@ -48,9 +51,13 @@ module Dynflow
       job = nil
       out, = capture_subprocess_io do
         job = SampleJob.perform_later 'hello'
+        wait_for do
+          plan = world.persistence.load_execution_plan(job.provider_job_id)
+          plan.state == :stopped
+        end
       end
-      assert world.persistence.load_execution_plan(job.provider_job_id)
       assert_match(/Enqueued Dynflow::SampleJob/, out)
+      assert_match(/provider_job_id is #{job.provider_job_id}/, out)
     end
 
     it 'schedules job in the future' do

@@ -192,14 +192,15 @@ module Dynflow
       end
 
       describe 'custom plan id' do
+        let(:sample_uuid) { '60366107-9910-4815-a6c6-bc45ee2ea2b8' }
         let :execution_plan do
           world.plan_with_options(action_class: Support::CodeWorkflowExample::IncomingIssues,
                                   args: [issues_data],
-                                  id: 'my-unique-id')
+                                  id: sample_uuid)
         end
 
         it 'allows setting custom id for the execution plan' do
-          execution_plan.id.must_equal 'my-unique-id'
+          execution_plan.id.must_equal sample_uuid
         end
       end
 
