@@ -138,6 +138,7 @@ module Dynflow
             wait_for('execution plan removed from executor') do
               !director.current_execution_plan_ids.include?(execution_plan.id)
             end
+            world.persistence.find_execution_plans(filters: { uuid: [execution_plan.id] }).must_be :empty?
           end
         end
       end

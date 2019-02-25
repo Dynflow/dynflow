@@ -119,7 +119,9 @@ module Dynflow
     def work_failed(work)
       if (manager = @execution_plan_managers[work.execution_plan_id])
         manager.terminate
-        finish_manager(manager)
+        # work failed means there was probably a database issue (execution plan gone missing). Don't try
+        # to store the status in that case.
+        finish_manager(manager, store: false)
       end
     end
 
@@ -154,23 +156,11 @@ module Dynflow
       rescue!(manager) if rescue?(manager)
     end
 
-    def finish_manager(manager)
-      execution_plan = manager.execution_plan
-      if execution_plan.state == :running
-        if execution_plan.error?
-          execution_plan.update_state(:paused)
-          execution_plan.execution_history.add('pause execution', @world.id)
-        elsif manager.done?
-          execution_plan.execution_history.add('finish execution', @world.id)
-          execution_plan.update_state(:stopped)
-        end
-        # If the state is marked as running without errors but manager is not done,
-        # we let the invalidation procedure to handle re-execution on other executor
-      end
-      execution_plan.save
+    def finish_manager(manager, store: true)
+      update_execution_plan_state(manager) if store
       return []
     ensure
-      @execution_plan_managers.delete(execution_plan.id)
+      @execution_plan_managers.delete(manager.execution_plan.id)
       set_future(manager)
     end
 
@@ -220,6 +210,22 @@ module Dynflow
     rescue Dynflow::Error => e
       finished.reject e
       nil
+    end
+
+    def update_execution_plan_state(manager)
+      execution_plan = manager.execution_plan
+      if execution_plan.state == :running
+        if execution_plan.error?
+          execution_plan.update_state(:paused)
+          execution_plan.execution_history.add('pause execution', @world.id)
+        elsif manager.done?
+          execution_plan.execution_history.add('finish execution', @world.id)
+          execution_plan.update_state(:stopped)
+        end
+        # If the state is marked as running without errors but manager is not done,
+        # we let the invalidation procedure to handle re-execution on other executor
+      end
+      execution_plan.save
     end
 
     def set_future(manager)
