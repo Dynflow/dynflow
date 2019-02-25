@@ -142,13 +142,7 @@ module Dynflow
       describe 'auto execute' do
 
         before do
-          client_world.persistence.find_execution_plans({}).each do |plan|
-            # make sure we don't handle plans from previous tests
-            # TODO: delete the plans instead, once we have
-            # https://github.com/Dynflow/dynflow/pull/141 merged
-            plan.set_state(:stopped, true)
-            plan.save
-          end
+          client_world.persistence.delete_execution_plans({})
         end
 
         it "prevents from running the auto-execution twice" do
