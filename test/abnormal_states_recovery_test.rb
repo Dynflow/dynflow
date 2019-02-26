@@ -318,10 +318,11 @@ module Dynflow
             plan
           end
 
+          let(:sample_uuid) { '60366107-9910-4815-a6c6-bc45ee2ea2b8' }
           let(:valid_plan) { plan_in_state :running }
           let(:invalid_plan) { plan_in_state :stopped }
           let(:valid_lock)    { Coordinator::SingletonActionLock.new('MyClass1', valid_plan.id) }
-          let(:invalid_lock)  { Coordinator::SingletonActionLock.new('MyClass2', 'plan-id') }
+          let(:invalid_lock)  { Coordinator::SingletonActionLock.new('MyClass2', sample_uuid) }
           let(:invalid_lock2) { Coordinator::SingletonActionLock.new('MyClass3', invalid_plan.id) }
 
           it 'unlocks orphaned singleton action locks' do
