@@ -216,8 +216,8 @@ module Dynflow
       execution_plan = manager.execution_plan
       if execution_plan.state == :running
         if execution_plan.error?
-          execution_plan.update_state(:paused)
           execution_plan.execution_history.add('pause execution', @world.id)
+          execution_plan.update_state(:paused)
         elsif manager.done?
           execution_plan.execution_history.add('finish execution', @world.id)
           execution_plan.update_state(:stopped)
@@ -225,7 +225,6 @@ module Dynflow
         # If the state is marked as running without errors but manager is not done,
         # we let the invalidation procedure to handle re-execution on other executor
       end
-      execution_plan.save
     end
 
     def set_future(manager)
