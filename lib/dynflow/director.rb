@@ -119,9 +119,9 @@ module Dynflow
     def work_failed(work)
       if (manager = @execution_plan_managers[work.execution_plan_id])
         manager.terminate
-        # work failed means there was probably a database issue (execution plan gone missing). Don't try
-        # to store the status in that case.
-        finish_manager(manager, store: false)
+        # Don't try to store when the execution plan went missing
+        plan_missing = @world.persistence.find_execution_plans(:filters => { uuid: work.execution_plan_id }).empty?
+        finish_manager(manager, store: !plan_missing)
       end
     end
 

@@ -202,14 +202,14 @@ module Dynflow
     def prepare_for_rescue
       case rescue_strategy
       when Action::Rescue::Pause
-        return :paused
+        :paused
       when Action::Rescue::Fail
-        return :stopped
+        :stopped
       when Action::Rescue::Skip
         failed_steps.each { |step| self.skip(step) }
-        return :running
+        :running
       else
-        return :paused
+        :paused
       end
     end
 
