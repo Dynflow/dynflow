@@ -38,7 +38,7 @@ end
 
 Sequel.migration do
   up do
-    if database_type == :postgresql
+    if database_type.to_s.include?('postgres')
       with_foreign_key_recreation do
         to_uuid :dynflow_execution_plans, :uuid
         to_uuid :dynflow_actions,         :execution_plan_uuid
@@ -49,7 +49,7 @@ Sequel.migration do
   end
 
   down do
-    if database_type == :postgresql
+    if database_type.to_s.include?('postgres')
       with_foreign_key_recreation do
         from_uuid :dynflow_execution_plans, :uuid
         from_uuid :dynflow_actions,         :execution_plan_uuid
