@@ -318,7 +318,7 @@ module Dynflow
             plan
           end
 
-          let(:sample_uuid) { '60366107-9910-4815-a6c6-bc45ee2ea2b8' }
+          let(:sample_uuid) { '11111111-2222-3333-4444-555555555555' }
           let(:valid_plan) { plan_in_state :running }
           let(:invalid_plan) { plan_in_state :stopped }
           let(:valid_lock)    { Coordinator::SingletonActionLock.new('MyClass1', valid_plan.id) }
