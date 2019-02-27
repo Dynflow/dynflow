@@ -199,16 +199,17 @@ module Dynflow
       persistence.find_execution_plan_counts(filters: { 'caller_execution_plan_id' => self.id })
     end
 
-    def rescue_plan_id
+    def prepare_for_rescue
       case rescue_strategy
       when Action::Rescue::Pause
-        nil
+        :paused
       when Action::Rescue::Fail
-        update_state :stopped
-        nil
+        :stopped
       when Action::Rescue::Skip
         failed_steps.each { |step| self.skip(step) }
-        self.id
+        :running
+      else
+        :paused
       end
     end
 
@@ -230,14 +231,6 @@ module Dynflow
 
     def steps_in_state(*states)
       self.steps.values.find_all {|step| states.include?(step.state) }
-    end
-
-    def rescue_from_error
-      if rescue_plan_id = self.rescue_plan_id
-        @world.execute(rescue_plan_id)
-      else
-        raise Errors::RescueError, 'Unable to rescue from the error'
-      end
     end
 
     def generate_action_id

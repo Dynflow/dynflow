@@ -9,6 +9,7 @@ module Dynflow
       # @return [void]
       def invalidate(world)
         Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
+
         coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
           if world.is_a? Coordinator::ExecutorWorld
             old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
@@ -47,8 +48,8 @@ module Dynflow
           coordinator.release(execution_lock)
 
           if plan.error?
-            rescue_id = plan.rescue_plan_id
-            execute(rescue_id) if rescue_id
+            new_state = plan.prepare_for_rescue
+            execute(plan.id) if new_state == :running
           else
             if coordinator.find_worlds(true).any? # Check if there are any executors
               client_dispatcher.tell([:dispatch_request,
