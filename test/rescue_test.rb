@@ -192,6 +192,9 @@ module Dynflow
           it 'skips the action and continues automatically' do
             execution_plan.state.must_equal :paused
             execution_plan.result.must_equal :error
+            expected_history = [['start execution', world.id],
+                                ['pause execution', world.id]]
+            execution_plan.execution_history.map { |h| [h.name, h.world_id] }.must_equal(expected_history)
           end
         end
 
@@ -206,6 +209,9 @@ module Dynflow
             execution_plan.steps_in_state(:success).count.must_equal 6
             execution_plan.steps_in_state(:pending).count.must_equal 6
             execution_plan.steps_in_state(:error).count.must_equal 1
+            expected_history = [['start execution', world.id],
+                                ['finish execution', world.id]]
+            execution_plan.execution_history.map { |h| [h.name, h.world_id] }.must_equal(expected_history)
           end
         end
 

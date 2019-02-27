@@ -187,7 +187,7 @@ module Dynflow
       if new_state == :running
         return manager.restart
       else
-        manager.execution_plan.update_state(new_state)
+        manager.execution_plan.state = new_state
         return false
       end
     end
@@ -214,7 +214,8 @@ module Dynflow
 
     def update_execution_plan_state(manager)
       execution_plan = manager.execution_plan
-      if execution_plan.state == :running
+      case execution_plan.state
+      when :running
         if execution_plan.error?
           execution_plan.execution_history.add('pause execution', @world.id)
           execution_plan.update_state(:paused)
@@ -224,6 +225,12 @@ module Dynflow
         end
         # If the state is marked as running without errors but manager is not done,
         # we let the invalidation procedure to handle re-execution on other executor
+      when :paused
+        execution_plan.execution_history.add('pause execution', @world.id)
+        execution_plan.save
+      when :stopped
+        execution_plan.execution_history.add('finish execution', @world.id)
+        execution_plan.save
       end
     end
 
