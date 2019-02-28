@@ -28,6 +28,10 @@ if RUBY_VERSION < "2.2.2"
   gem 'sinatra', '~> 1.4.8'
 end
 
+if RUBY_VERSION < '2.3.0'
+  gem 'i18n', '<= 1.5.1'
+end
+
 group :lint do
   gem 'rubocop', '0.39.0'
 end
