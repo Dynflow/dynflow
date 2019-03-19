@@ -7,7 +7,7 @@ module Dynflow
         end
 
         [:fatal, :error, :warn, :info, :debug].each do |method|
-          define_method method do |message, &block|
+          define_method method do |message = nil, &block|
             if block
               @base.send method, &-> { format(block.call) }
             else

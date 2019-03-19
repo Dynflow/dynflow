@@ -41,7 +41,7 @@ module Dynflow
         end
 
         { fatal: 4, error: 3, warn: 2, info: 1, debug: 0 }.each do |method, level|
-          define_method method do |message, &block|
+          define_method method do |message = nil, &block|
             @logger.add level, message, @prog_name, &block
           end
         end
