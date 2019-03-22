@@ -110,7 +110,13 @@ module Dynflow
       @world.logger
     end
 
-    def update_state(state)
+    # @param state [Symbol] representing the new state
+    # @param history_notice [Symbol|string|false] should a note to execution_history be added as well?
+    #   Possible values:
+    #     - :auto (default) - the history notice will be added based on the new state
+    #     - string - custom history notice is added
+    #     - false - don't add any notice
+    def update_state(state, history_notice: :auto)
       hooks_to_run = [state]
       original = self.state
       case self.state = state
@@ -134,6 +140,7 @@ module Dynflow
       end
       logger.debug format('%13s %s    %9s >> %9s',
                           'ExecutionPlan', id, original, state)
+      add_history_notice(history_notice)
       self.save
       toggle_telemetry_state original == :pending ? nil : original.to_s,
                              self.state == :stopped ? nil : self.state.to_s
@@ -246,7 +253,6 @@ module Dynflow
     def delay(caller_action, action_class, delay_options, *args)
       save
       @root_plan_step = add_scheduling_step(action_class, caller_action)
-      execution_history.add("delay", @world.id)
       serializer = root_plan_step.delay(delay_options, args)
       delayed_plan = DelayedPlan.new(@world,
                                      id,
@@ -561,6 +567,22 @@ module Dynflow
 
     def telemetry_common_options
       { :world => @world.id, :action => @label }
+    end
+
+    def add_history_notice(history_notice)
+      if history_notice == :auto
+        history_notice = case state
+                         when :running
+                           'start execution'
+                         when :paused
+                           'pause execution'
+                         when :stopped
+                           'finish execution'
+                         when :scheduled
+                           'delay'
+                         end
+      end
+      execution_history.add(history_notice, @world.id) if history_notice
     end
 
     private_class_method :steps_from_hash

@@ -52,6 +52,20 @@ module Dynflow
         execution_plan_hooks.use :raise_flag, :on => :failure
       end
 
+      class ActionOnPause < ::Dynflow::Action
+        include FlagHook
+
+        def run
+          error!("pause")
+        end
+
+        def rescue_strategy
+          Dynflow::Action::Rescue::Pause
+        end
+
+        execution_plan_hooks.use :raise_flag, :on => :paused
+      end
+
       class Inherited < ActionWithHooks; end
       class Overriden < ActionWithHooks
         execution_plan_hooks.do_not_use :raise_flag
@@ -65,6 +79,28 @@ module Dynflow
         plan = world.trigger(ActionWithHooks)
         plan.finished.wait!
         assert Flag.raised?
+      end
+
+      it 'runs the on_pause hook' do
+        refute Flag.raised?
+        plan = world.trigger(ActionOnPause)
+        plan.finished.wait!
+        assert Flag.raised?
+      end
+
+      describe 'with auto_rescue' do
+        let(:world) do
+          WorldFactory.create_world do |config|
+            config.auto_rescue = true
+          end
+        end
+
+        it 'runs the on_pause hook' do
+          refute Flag.raised?
+          plan = world.trigger(ActionOnPause)
+          plan.finished.wait!
+          assert Flag.raised?
+        end
       end
 
       it 'runs the on_failure hook on cancel' do

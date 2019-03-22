@@ -34,15 +34,13 @@ module Dynflow
       execution_plan.root_plan_step.state = :error
       execution_plan.root_plan_step.error = ::Dynflow::ExecutionPlan::Steps::Error.new(message)
       execution_plan.root_plan_step.save
-      execution_plan.execution_history.add history_entry, @world.id unless history_entry.nil?
-      execution_plan.update_state :stopped
+      execution_plan.update_state :stopped, history_notice: history_entry
     end
 
     def cancel
       execution_plan.root_plan_step.state = :cancelled
       execution_plan.root_plan_step.save
-      execution_plan.execution_history.add "Delayed task cancelled", @world.id
-      execution_plan.update_state :stopped
+      execution_plan.update_state :stopped, history_notice: "Delayed task cancelled"
       @world.persistence.delete_delayed_plans(:execution_plan_uuid => @execution_plan_uuid)
       return true
     end
