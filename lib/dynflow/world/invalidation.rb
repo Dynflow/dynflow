@@ -33,8 +33,6 @@ module Dynflow
       # @return [void]
       def invalidate_execution_lock(execution_lock)
         with_valid_execution_plan_for_lock(execution_lock) do |plan|
-          plan.execution_history.add('terminate execution', execution_lock.world_id)
-
           plan.steps.values.each do |step|
             if step.state == :running
               step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
@@ -43,7 +41,8 @@ module Dynflow
             end
           end
 
-          plan.update_state(:paused) if plan.state == :running
+          plan.execution_history.add('terminate execution', execution_lock.world_id)
+          plan.update_state(:paused, history_notice: false) if plan.state == :running
           plan.save
           coordinator.release(execution_lock)
 
