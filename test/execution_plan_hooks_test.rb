@@ -9,16 +9,19 @@ module Dynflow
 
       class Flag
         class << self
+          attr_accessor :raised_count
+
           def raise!
-            @raised = true
+            self.raised_count ||= 0
+            self.raised_count += 1
           end
 
           def raised?
-            @raised
+            raised_count > 0
           end
 
           def lower!
-            @raised = false
+            self.raised_count = 0
           end
         end
       end
@@ -32,6 +35,10 @@ module Dynflow
           Flag.raise!
           raise "A controlled failure"
         end
+
+        def raise_flag_root_only(_execution_plan)
+          Flag.raise! if root_action?
+        end
       end
 
       class ActionWithHooks < ::Dynflow::Action
@@ -44,6 +51,19 @@ module Dynflow
         include FlagHook
 
         execution_plan_hooks.use :controlled_failure, :on => :stopped
+      end
+
+      class RootOnlyAction < ::Dynflow::Action
+        include FlagHook
+
+        execution_plan_hooks.use :raise_flag_root_only, :on => :stopped
+      end
+
+      class ComposedAction < RootOnlyAction
+        def plan
+          plan_action(RootOnlyAction)
+          plan_action(RootOnlyAction)
+        end
       end
 
       class ActionOnFailure < ::Dynflow::Action
@@ -132,6 +152,13 @@ module Dynflow
         plan = world.trigger(Overriden)
         plan.finished.wait!
         refute Flag.raised?
+      end
+
+      it 'can determine in side the hook, whether the hook is running for root action or sub-action' do
+        refute Flag.raised?
+        plan = world.trigger(ComposedAction)
+        plan.finished.wait!
+        Flag.raised_count.must_equal 1
       end
     end
   end

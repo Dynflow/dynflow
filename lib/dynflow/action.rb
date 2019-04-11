@@ -571,7 +571,15 @@ module Dynflow
     end
 
     def root_action?
-      @triggering_action.nil?
+      # in planning phase, the @triggered_action can be used to check whether the is root (the main action used
+      # to create the execution plan).
+      # For post-planning phases, the action is in root when either:
+      #   - the @caller_action_id is not set OR
+      #   - the @caller_action_id is set but the @caller_execution_plan_id is set as well
+      #     which means, the @caller_action_id is actually referencing different execution plan
+      #     and this action is creating a new execution plan, that's tracked as sub-plan
+      #     for the @caller_execution_plan_id
+      @triggering_action.nil? && (@caller_action_id.nil? || @caller_execution_plan_id)
     end
 
     # An action must be a singleton and have a singleton lock
