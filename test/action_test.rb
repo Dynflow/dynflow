@@ -344,9 +344,18 @@ module Dynflow
         end
       end
 
+      class DummyAction < Dynflow::Action
+        def run; end
+      end
+
       class ParentAction < Dynflow::Action
 
         include Dynflow::Action::WithSubPlans
+
+        def plan(*_)
+          super
+          plan_action(DummyAction, {})
+        end
 
         def create_sub_plans
           input[:count].times.map { trigger(ChildAction, suspend: input[:suspend]) }
@@ -365,6 +374,7 @@ module Dynflow
           if FailureSimulator.fail_in_child_plan
             raise "Fail in child plan"
           end
+          plan_action(DummyAction, {})
           super
         end
 
@@ -435,6 +445,14 @@ module Dynflow
         sub_plans.size.must_equal 2
         execution_plan.sub_plans_count.must_equal 2
         sub_plans.each { |sub_plan| sub_plan.caller_execution_plan_id.must_equal execution_plan.id }
+      end
+
+      specify "the parent and sub-plan actions return root_action? properly" do
+        assert execution_plan.actions.first.send(:root_action?), 'main action of parent task should be considered a root_action?'
+        refute execution_plan.actions.last.send(:root_action?), 'sub action of parent task should not be considered a root_action?'
+        sub_plan = execution_plan.sub_plans.first
+        assert sub_plan.actions.first.send(:root_action?), 'main action of sub-task should be considered a root_action?'
+        refute sub_plan.actions.last.send(:root_action?), 'sub action of sub-task should not be considered a root_action?'
       end
 
       specify "it saves the information about number for sub plans in the output" do
