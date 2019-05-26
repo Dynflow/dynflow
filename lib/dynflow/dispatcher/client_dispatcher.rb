@@ -145,7 +145,7 @@ module Dynflow
         if Dispatcher::UnknownWorld === envelope.receiver_id
           raise Dynflow::Error, "Could not find an executor for #{envelope}"
         end
-        connector.send(envelope).value!
+        connector.send(envelope)
       rescue => e
         log(Logger::ERROR, e)
         respond(envelope, Failed[e.message]) if envelope

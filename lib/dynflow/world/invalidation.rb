@@ -111,11 +111,13 @@ module Dynflow
       def worlds_validity_check(auto_invalidate = true, worlds_filter = {})
         worlds = coordinator.find_worlds(false, worlds_filter)
 
-        world_checks = worlds.reduce({}) do |hash, world|
-          hash.update(world => ping_without_cache(world.id, self.validity_check_timeout))
-        end
-        world_checks.values.each(&:wait)
-
+        world_checks = {}
+        # TODO AJ: update after solving how to the pinging without need of response + updating
+        # to the fact, that there will be at most one orchestrator at any given time.
+        # world_checks = worlds.reduce({}) do |hash, world|
+        #   hash.update(world => ping_without_cache(world.id, self.validity_check_timeout))
+        # end
+        # world_checks.values.each(&:wait)
         results = {}
         world_checks.each do |world, check|
           if check.fulfilled?

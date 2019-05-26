@@ -75,19 +75,13 @@ class RemoteExecutorExample
     end
 
     def run_client
-      while true do
-        puts "running"
-        # ExampleJob.perform_later
-        CoordinatorJob.perform_later
-        sleep 0.5
+      world = ExampleHelper.create_world do |config|
+        config.persistence_adapter = persistence_adapter
+        config.executor            = false
+        config.connector           = connector
       end
-      # world = ExampleHelper.create_world do |config|
-      #   config.persistence_adapter = persistence_adapter
-      #   config.executor            = false
-      #   config.connector           = connector
-      # end
 
-      # world.trigger(OrchestrateEvented::CreateInfrastructure)
+      world.trigger(OrchestrateEvented::CreateInfrastructure)
       # world.trigger(OrchestrateEvented::CreateInfrastructure, true)
 
       # loop do

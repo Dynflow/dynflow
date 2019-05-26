@@ -214,7 +214,7 @@ module Dynflow
     # @return [Concurrent::Promises::ResolvableFuture] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
     def execute(execution_plan_id, done = Concurrent::Promises.resolvable_future)
-      publish_request(Dispatcher::Execution[execution_plan_id], done, true)
+      publish_request(Dispatcher::Execution[execution_plan_id], done, false)
     end
 
     def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future)
@@ -238,8 +238,18 @@ module Dynflow
       accepted.rescue do |reason|
         done.reject reason if reason
       end
-      client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
-      accepted.wait if wait_for_accepted
+      client_dispatcher.tell([:publish_request, done, request, timeout])
+      # TODO AJ: drop waiting for accepted - we will just assume it happened or an exception would be raised
+      # if there is communication issue - if anyone would need to wait for the results, there should be polling
+      # mechanism to learn about the status.
+      accepted.fulfill(true)
+      if wait_for_accepted
+        raise "wait_for_accepted will be removed for simplification"
+        # accepted.wait if wait_for_accepted
+      end
+      # TODO AJ: remove done future and provide other means for waiting for the task to finish -
+      # probably a custom class implementing `wait` method - the advantage is there would be
+      # no additional code needed tjo be handled on client side in case the client doesn't wait for it.
       done
     rescue => e
       accepted.reject e
