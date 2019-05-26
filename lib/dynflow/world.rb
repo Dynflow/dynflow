@@ -29,6 +29,7 @@ module Dynflow
                                                 :backup_deleted_plans => @config.backup_deleted_plans,
                                                 :backup_dir => @config.backup_dir)
       @coordinator            = Coordinator.new(@config.coordinator_adapter)
+      # TODO AJ: split executor to orchestrator and workers
       @executor               = @config.executor
       @action_classes         = @config.action_classes
       @auto_rescue            = @config.auto_rescue
@@ -62,6 +63,9 @@ module Dynflow
         end
       end
       post_initialization
+      if connector.is_a?(Connectors::ActiveJob) && executor
+        ::Dynflow.orchestrator = self
+      end
     end
 
     # performs steps once the executor is ready and invalidation of previous worls is finished.
@@ -176,6 +180,8 @@ module Dynflow
       planned = execution_plan.state == :planned
 
       if planned
+        # TODO AJ: remove the done future completely as we will not be sending the response
+        # about it being done
         done = execute(execution_plan.id, Concurrent::Promises.resolvable_future)
         Triggered[execution_plan.id, done]
       else

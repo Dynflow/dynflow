@@ -1,0 +1,3 @@
+:queues:
+  - dynflow_orchestrator
+  - dynflow_worker

@@ -2,6 +2,7 @@ $:.unshift(File.expand_path('../../lib', __FILE__))
 
 require 'dynflow'
 
+
 class ExampleHelper
   class << self
     def world
@@ -46,10 +47,13 @@ class ExampleHelper
 
     def run_web_console(world = ExampleHelper.world)
       require 'dynflow/web'
+      require 'sidekiq/web'
       dynflow_console = Dynflow::Web.setup do
         set :world, world
       end
-      Rack::Server.new(:app => dynflow_console, :Port => 4567).start
+      app = Rack::URLMap.new("/dynflow" => dynflow_console,
+                             "/sidekiq" => Sidekiq::Web)
+      Rack::Server.new(:app => app, :Port => 4567).start
     end
 
     # for simulation of the execution failing for the first time

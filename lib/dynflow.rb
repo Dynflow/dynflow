@@ -5,6 +5,7 @@ require 'set'
 require 'base64'
 require 'concurrent'
 require 'concurrent-edge'
+require 'active_job'
 
 logger                          = Logger.new($stderr)
 logger.level                    = Logger::INFO
@@ -17,6 +18,29 @@ end
 # TODO profiling, find bottlenecks
 # FIND change ids to uuid, uuid-<action_id>, uuid-<action_id-(plan, run, finalize)
 module Dynflow
+
+  class << self
+    # Return the orchestrator world that is representing this process - it's assumed there
+    # will be only orchestrator present in the deployment.
+    #
+    # Multiple orchestrators could be achieved by introducing multiple orchestrator queues
+    # with a smart connector that would know to what queue distribute the messages, based
+    # on the content
+    #
+    # @return [Dynflow::World, nil]
+    def orchestrator
+      @orchestrator
+    end
+
+    def orchestrator=(orchestrator)
+      raise "orchestrator is already set" if @orchestrator
+      @orchestrator = orchestrator
+    end
+
+    def orchestrator_reset
+      @orchestrator = nil
+    end
+  end
 
   class Error < StandardError
   end
@@ -53,7 +77,7 @@ module Dynflow
   require 'dynflow/telemetry'
   require 'dynflow/config'
 
-  if defined? ::ActiveJob
+  if defined? Rails
     require 'dynflow/active_job/queue_adapter'
 
     class Railtie < Rails::Railtie

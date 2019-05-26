@@ -1,6 +1,7 @@
 module Dynflow
   module Executors
 
+    require 'dynflow/executors/active_job'
     require 'dynflow/executors/abstract'
     require 'dynflow/executors/parallel'
 

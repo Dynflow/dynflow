@@ -22,15 +22,21 @@ module Dynflow
           f.then do |plan|
             when_done(plan, envelope, execution, execution_lock)
           end.rescue do |reason|
+            # TODO AJ: the coorinator would be needed only in cases when there are multiple
+            # orchestrators - we might not need them at all, if we stick to the
+            # one orchestrator per deployment.
             @world.coordinator.release(execution_lock)
-            respond(envelope, Failed[reason.to_s])
+            # TODO AJ: DEAD get rid of all the code handling the responses
+            # respond(envelope, Failed[reason.to_s])
           end
         end
         @world.executor.execute(execution.execution_plan_id, future)
-        respond(envelope, Accepted)
+        # TODO AJ: DEAD
+        # respond(envelope, Accepted)
       rescue Dynflow::Error => e
         future.reject(e) if future && !future.resolved?
-        respond(envelope, Failed[e.message])
+        # TODO AJ: DEAD
+        # respond(envelope, Failed[e.message])
       end
 
       def when_done(plan, envelope, execution, execution_lock)
@@ -43,16 +49,19 @@ module Dynflow
       end
 
       def perform_event(envelope, event_request)
-        future = on_finish do |f|
-          f.then do
-            respond(envelope, Done)
-          end.rescue do |reason|
-            respond(envelope, Failed[reason.to_s])
-          end
-        end
-        @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
+        # TODO AJ: DEAD
+        # future = on_finish do |f|
+        #   f.then do
+        #     respond(envelope, Done)
+        #   end.rescue do |reason|
+        #     respond(envelope, Failed[reason.to_s])
+        #   end
+        # end
+        @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event)
       rescue Dynflow::Error => e
-        future.reject(e) if future && !future.resolved?
+        # TODO AJ: log the error
+        # TODO AJ: DEAD
+        # future.reject(e) if future && !future.resolved?
       end
 
       def start_termination(*args)
@@ -65,8 +74,12 @@ module Dynflow
       end
 
       def get_execution_status(envelope, envelope_message)
-        items = @world.executor.execution_status envelope_message.execution_plan_id
-        respond(envelope, ExecutionStatus[execution_status: items])
+        # TODO AJ: figure out how to get the execution status without using responses, e.g.
+        # via updating the world registry with current values
+        raise NotImplementedError
+        # TODO AJ: DEAD
+        # items = @world.executor.execution_status envelope_message.execution_plan_id
+        # respond(envelope, ExecutionStatus[execution_status: items])
       end
 
       private
