@@ -1,8 +1,6 @@
 source 'https://rubygems.org'
 
 gemspec
-gem 'concurrent-ruby', :path => '../concurrent-ruby'
-gem 'concurrent-ruby-edge', :path => '../concurrent-ruby'
 
 group :concurrent_ruby_ext do
   gem 'concurrent-ruby-ext', '~> 1.1.3'
