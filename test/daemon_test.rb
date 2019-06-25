@@ -85,7 +85,8 @@ class DaemonTest < ActiveSupport::TestCase
     @daemon.expects(:run).twice.with do |_folder, options|
       options[:memory_limit] == 1000 &&
         options[:memory_init_delay] == 100 &&
-        options[:memory_polling_interval] == 200
+        options[:memory_polling_interval] == 200 &&
+        options[:force_kill_waittime] == 40
     end
     @daemons.expects(:run_proc).twice.yields
 
@@ -94,7 +95,8 @@ class DaemonTest < ActiveSupport::TestCase
       executors_count: 2,
       memory_limit: 1000,
       memory_init_delay: 100,
-      memory_polling_interval: 200
+      memory_polling_interval: 200,
+      force_kill_waittime: 40
     )
   end
 
@@ -103,6 +105,7 @@ class DaemonTest < ActiveSupport::TestCase
     ENV['EXECUTOR_MEMORY_LIMIT'] = '1gb'
     ENV['EXECUTOR_MEMORY_MONITOR_DELAY'] = '3'
     ENV['EXECUTOR_MEMORY_MONITOR_INTERVAL'] = '4'
+    ENV['EXECUTOR_FORCE_KILL_WAITTIME'] = '40'
 
     actual = @daemon.send(:default_options)
 
@@ -110,5 +113,6 @@ class DaemonTest < ActiveSupport::TestCase
     assert_equal 1.gigabytes, actual[:memory_limit]
     assert_equal 3, actual[:memory_init_delay]
     assert_equal 4, actual[:memory_polling_interval]
+    assert_equal 40, actual[:force_kill_waittime]
   end
 end
