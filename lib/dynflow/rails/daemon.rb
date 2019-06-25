@@ -104,6 +104,7 @@ module Dynflow
           :log_output => true,
           :log_output_syslog => true,
           :monitor_interval => [options[:memory_polling_interval] / 2, 30].min,
+          :force_kill_waittime => options[:force_kill_waittime].try(:to_i),
           :ARGV => [command]
         }
       end
@@ -123,7 +124,8 @@ module Dynflow
                           ENV['EXECUTOR_MEMORY_LIMIT'].to_i
                         end,
           memory_init_delay: (ENV['EXECUTOR_MEMORY_MONITOR_DELAY'] || 7200).to_i, # 2 hours
-          memory_polling_interval: (ENV['EXECUTOR_MEMORY_MONITOR_INTERVAL'] || 60).to_i
+          memory_polling_interval: (ENV['EXECUTOR_MEMORY_MONITOR_INTERVAL'] || 60).to_i,
+          force_kill_waittime: (ENV['EXECUTOR_FORCE_KILL_WAITTIME'] || 60).to_i
         }
       end
 
