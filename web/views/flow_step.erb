@@ -23,6 +23,7 @@
 
 <div class="action">
   <% unless @plan.state == :pending %>
+    <p><b>Queue:</b> <%= step.queue %></p>
     <p><b>Started at:</b> <%= h(step.started_at) %></p>
     <p><b>Ended at:</b> <%= h(step.ended_at) %></p>
     <p><b>Real time:</b> <%= duration_to_s(step.real_time) %></p>
