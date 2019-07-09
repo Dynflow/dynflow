@@ -12,24 +12,11 @@ group :pry do
 end
 
 group :postgresql do
-  if RUBY_VERSION <= '2'
-    gem 'pg', '< 0.19'
-  else
-    gem "pg"
-  end
+  gem "pg"
 end
 
 group :mysql do
   gem "mysql2"
-end
-
-if RUBY_VERSION < "2.2.2"
-  gem 'activesupport', '~> 4.2'
-  gem 'sinatra', '~> 1.4.8'
-end
-
-if RUBY_VERSION < '2.3.0'
-  gem 'i18n', '<= 1.5.1'
 end
 
 group :lint do
