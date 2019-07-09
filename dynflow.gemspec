@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
 
-  s.required_ruby_version = '>= 2.0.0'
+  s.required_ruby_version = '>= 2.3.0'
 
   s.add_dependency "multi_json"
   s.add_dependency "apipie-params"
