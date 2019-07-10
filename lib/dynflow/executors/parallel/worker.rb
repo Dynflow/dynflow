@@ -1,6 +1,6 @@
 module Dynflow
   module Executors
-    class Parallel < Abstract
+    class Parallel
       class Worker < Actor
         def initialize(pool, transaction_adapter, telemetry_options = {})
           @pool                = Type! pool, Concurrent::Actor::Reference

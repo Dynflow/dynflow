@@ -1,12 +1,12 @@
 module Dynflow
   module Executors
-    class Parallel < Abstract
+    class Parallel
+      require 'dynflow/executors/abstract/core'
       require 'dynflow/executors/parallel/core'
-      require 'dynflow/executors/parallel/pool'
-      require 'dynflow/executors/parallel/worker'
 
       def initialize(world, heartbeat_interval, queues_options = { :default => { :pool_size => 5 }})
-        super(world)
+        @world  = world
+        @logger = world.logger
         @core = Core.spawn name:        'parallel-executor-core',
                            args:        [world, heartbeat_interval, queues_options],
                            initialized: @core_initialized = Concurrent::Promises.resolvable_future

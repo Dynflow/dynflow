@@ -1,6 +1,6 @@
 module Dynflow
   module Executors
-    class Parallel < Abstract
+    class Parallel
       class Pool < Actor
         class JobStorage
           def initialize

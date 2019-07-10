@@ -97,7 +97,7 @@ module Dynflow
       5
     end
 
-    config_attr :executor, Executors::Abstract, FalseClass do |world, config|
+    config_attr :executor, Executors::Parallel, FalseClass do |world, config|
       Executors::Parallel.new(world, config.executor_heartbeat_interval, config.queues)
     end
 
