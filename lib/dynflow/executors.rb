@@ -1,7 +1,6 @@
 module Dynflow
   module Executors
 
-    require 'dynflow/executors/abstract'
     require 'dynflow/executors/parallel'
 
     # Every time we run a code that can be defined outside of Dynflow,

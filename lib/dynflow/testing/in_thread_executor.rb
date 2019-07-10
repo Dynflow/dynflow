@@ -1,6 +1,6 @@
 module Dynflow
   module Testing
-    class InThreadExecutor < Dynflow::Executors::Abstract
+    class InThreadExecutor
       def initialize(world)
         @world = world
         @director = Director.new(@world)
