@@ -136,6 +136,52 @@ module Dynflow
                               "unlock world-invalidation:#{executor_world.id}"]
             client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
           end
+
+          describe 'planning locks' do
+            it 'releases orphaned planning locks and executes associated execution plans' do
+              plan = client_world.plan(Support::DummyExample::Dummy)
+              plan.set_state(:planning, true)
+              plan.save
+              client_world.coordinator.acquire Coordinator::PlanningLock.new(client_world, plan.id)
+              executor_world.invalidate(client_world.registered_world)
+              expected_locks = ["lock world-invalidation:#{client_world.id}",
+                                "unlock execution-plan:#{plan.id}", # planning lock
+                                "lock execution-plan:#{plan.id}", # execution lock
+                                "unlock world-invalidation:#{client_world.id}"]
+              executor_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+              wait_for do
+                plan = client_world_2.persistence.load_execution_plan(plan.id)
+                plan.state == :stopped
+              end
+            end
+
+            it 'releases orphaned planning locks and stops associated execution plans which did not finish planning' do
+              plan = client_world.plan(Support::DummyExample::Dummy)
+              plan.set_state(:planning, true)
+              plan.save
+              step = plan.plan_steps.first
+              step.set_state(:pending, true)
+              step.save
+              client_world.coordinator.acquire Coordinator::PlanningLock.new(client_world, plan.id)
+              client_world_2.invalidate(client_world.registered_world)
+              expected_locks = ["lock world-invalidation:#{client_world.id}",
+                                "unlock execution-plan:#{plan.id}",
+                                "unlock world-invalidation:#{client_world.id}"]
+              client_world_2.coordinator.adapter.lock_log.must_equal(expected_locks)
+              plan = client_world_2.persistence.load_execution_plan(plan.id)
+              plan.state.must_equal :stopped
+            end
+
+            it 'releases orphaned planning locks without execution plans' do
+              uuid = SecureRandom.uuid
+              client_world.coordinator.acquire Coordinator::PlanningLock.new(client_world, uuid)
+              client_world_2.invalidate(client_world.registered_world)
+              expected_locks = ["lock world-invalidation:#{client_world.id}",
+                                "unlock execution-plan:#{uuid}",
+                                "unlock world-invalidation:#{client_world.id}"]
+              client_world_2.coordinator.adapter.lock_log.must_equal(expected_locks)
+            end
+          end
         end
       end
 
