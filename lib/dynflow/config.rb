@@ -108,6 +108,18 @@ module Dynflow
       end
     end
 
+    # does the work represent some process-wide role (important for sikekiq-based deployments)
+    config_attr :process_role do |world, config|
+      nil
+    end
+
+    def validate_process_role(value)
+      accepted_roles = [:orchestrator, :worker]
+      if value && !accepted_roles.include?(value)
+        raise ArgumentError, "Process role #{value} is expected to be one of #{accepted_roles.inspect}"
+      end
+    end
+
     config_attr :executor_semaphore, Semaphores::Abstract, FalseClass do |world, config|
       Semaphores::Dummy.new
     end

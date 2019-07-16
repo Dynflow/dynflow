@@ -17,6 +17,20 @@ end
 # TODO profiling, find bottlenecks
 # FIND change ids to uuid, uuid-<action_id>, uuid-<action_id-(plan, run, finalize)
 module Dynflow
+  class << self
+    # Return the world that representing this process - this is mainly used by
+    # Sidekiq deployments, where there is a need for a global-level context.
+    #
+    # @return [Dynflow::World, nil]
+    def process_world
+      @process_world
+    end
+
+    def process_world=(world)
+      raise "process world is already set" if @process_world
+      @process_world = world
+    end
+  end
 
   class Error < StandardError
   end
