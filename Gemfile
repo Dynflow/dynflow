@@ -11,6 +11,10 @@ group :pry do
   gem 'pry-byebug'
 end
 
+group :sidekiq do
+  gem 'sidekiq'
+end
+
 group :postgresql do
   gem "pg"
 end
