@@ -43,10 +43,6 @@ module Dynflow
         world.persistence.load_execution_plan(execution_plan.id)
       end
 
-      let :executor_class do
-        Executors::Parallel
-      end
-
       describe "execution plan state" do
 
         describe "after successful planning" do

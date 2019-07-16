@@ -4,12 +4,15 @@ module Dynflow
       require 'dynflow/executors/abstract/core'
       require 'dynflow/executors/parallel/core'
 
-      def initialize(world, heartbeat_interval, queues_options = { :default => { :pool_size => 5 }})
+      def initialize(world,
+                     executor_class:,
+                     heartbeat_interval:,
+                     queues_options: { :default => { :pool_size => 5 }})
         @world  = world
         @logger = world.logger
-        @core = Core.spawn name:        'parallel-executor-core',
-                           args:        [world, heartbeat_interval, queues_options],
-                           initialized: @core_initialized = Concurrent::Promises.resolvable_future
+        @core = executor_class.spawn name:        'parallel-executor-core',
+                                     args:        [world, heartbeat_interval, queues_options],
+                                     initialized: @core_initialized = Concurrent::Promises.resolvable_future
       end
 
       def execute(execution_plan_id, finished = Concurrent::Promises.resolvable_future, wait_for_acceptance = true)
