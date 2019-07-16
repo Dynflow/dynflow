@@ -11,6 +11,11 @@ module Dynflow
         Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
 
         coordinator.acquire(Coordinator::WorldInvalidationLock.new(self, world)) do
+          coordinator.find_locks(class: Coordinator::PlanningLock.name,
+                                 owner_id: 'world:' + world.id).each do |lock|
+            invalidate_planning_lock lock
+          end
+
           if world.is_a? Coordinator::ExecutorWorld
             old_execution_locks = coordinator.find_locks(class: Coordinator::ExecutionLock.name,
                                                          owner_id: "world:#{world.id}")
@@ -26,6 +31,17 @@ module Dynflow
         end
       end
 
+      def invalidate_planning_lock(planning_lock)
+        with_valid_execution_plan_for_lock(planning_lock) do |plan|
+          plan.steps.values.each { |step| invalidate_step step }
+
+          state = plan.plan_steps.all? { |step| step.state == :success } ? :planned : :stopped
+          plan.update_state(state)
+          coordinator.release(planning_lock)
+          execute(plan.id) if plan.state == :planned
+        end
+      end
+
       # Invalidate an execution lock, left behind by a executor that
       # was executing an execution plan when it was terminated.
       #
@@ -33,14 +49,7 @@ module Dynflow
       # @return [void]
       def invalidate_execution_lock(execution_lock)
         with_valid_execution_plan_for_lock(execution_lock) do |plan|
-          plan.steps.values.each do |step|
-            if step.state == :running
-              step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
-              step.state = :error
-              step.save
-            end
-          end
-
+          plan.steps.values.each { |step| invalidate_step step }
           plan.execution_history.add('terminate execution', execution_lock.world_id)
           plan.update_state(:paused, history_notice: false) if plan.state == :running
           plan.save
@@ -154,6 +163,16 @@ module Dynflow
         end
 
         return orphaned_locks
+      end
+
+      private
+
+      def invalidate_step(step)
+        if step.state == :running
+          step.error = ExecutionPlan::Steps::Error.new("Abnormal termination (previous state: #{step.state})")
+          step.state = :error
+          step.save
+        end
       end
     end
   end

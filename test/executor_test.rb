@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 require_relative 'test_helper'
+require 'mocha/minitest'
 
 module Dynflow
   module ExecutorTest
@@ -669,6 +670,7 @@ module Dynflow
 
       it 'does not accept new work' do
         assert world.terminate.wait
+        ::Dynflow::Coordinator::PlanningLock.any_instance.stubs(:validate!)
         result = world.trigger(Support::DummyExample::Slow, 0.02)
         result.must_be :planned?
         result.finished.wait
