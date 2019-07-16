@@ -66,6 +66,9 @@ module Dynflow
           self.terminate.wait
         end
       end
+      if @config.process_role
+        Dynflow.process_world = self
+      end
       post_initialization
     end
 
@@ -90,6 +93,7 @@ module Dynflow
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
       @meta['last_seen'] = Dynflow::Dispatcher::ClientDispatcher::PingCache.format_time
+      @meta['role'] = @config.process_role if @config.process_role
       if @already_registered
         coordinator.update_record(registered_world)
       else
