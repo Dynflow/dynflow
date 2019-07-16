@@ -15,7 +15,7 @@ example_description = <<DESC
   It also simulates a failure and demonstrates the Dynflow ability to rescue
   from the error and consinue with the run.
 
-  Once the Sinatra web console starts, you can navigate to http://localhost:4567
+  Once the Sinatra web console starts, you can navigate to #{ExampleHelper::DYNFLOW_URL}
   to see what's happening in the Dynflow world.
 
 DESC
@@ -135,7 +135,7 @@ module Orchestrate
         puts <<-MSG.gsub(/^.*\|/, '')
 
                 | Execution plan #{execution_plan_id} is failing
-                | You can resume it at http://localhost:4567/#{execution_plan_id}
+                | You can resume it at #{ExampleHelper::DYNFLOW_URL}/#{execution_plan_id}
 
         MSG
         raise "temporary unavailabe"

@@ -44,9 +44,9 @@ if $0 == __FILE__
     |  #{t2.id} should fail because #{t1.id} holds the lock
     |
     |  You can see the details at
-    |    http://localhost:4567/#{t1.id}
-    |    http://localhost:4567/#{t2.id}
-    |    http://localhost:4567/#{t3.id}
+    |    #{ExampleHelper::DYNFLOW_URL}/#{t1.id}
+    |    #{ExampleHelper::DYNFLOW_URL}/#{t2.id}
+    |    #{ExampleHelper::DYNFLOW_URL}/#{t3.id}
     |
   MSG
   ExampleHelper.run_web_console

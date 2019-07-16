@@ -64,7 +64,7 @@ if $0 == __FILE__
     |    #{near_future_plan.id} is delayed to execute at #{near_future} and should run successfully.
     |    #{future_plan.id} is delayed to execute at #{future} and should run successfully.
     |
-    |  Visit http://localhost:4567 to see their status.
+    |  Visit #{ExampleHelper::DYNFLOW_URL} to see their status.
     |
   MSG
 

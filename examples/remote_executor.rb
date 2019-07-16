@@ -1,6 +1,26 @@
 #!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 
+# For using sidekiq as the worker infrastructure:
+#
+# To run the orchestrator:
+#
+#      bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator
+#
+# To run the worker:
+#
+#      bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator
+#
+# To run the observer:
+#
+#      bundle exec ruby ./examples/remote_executor.rb observer
+#
+#  TODO: info about sidekiq console
+#
+# To run the client:
+#
+#      bundle exec ruby ./examples/remote_executor.rb client
+
 require_relative 'example_helper'
 require_relative 'orchestrate_evented'
 require 'tmpdir'
@@ -35,6 +55,23 @@ class RemoteExecutorExample
         config.connector           = connector
       end
       run(world)
+    end
+
+    def initialize_sidekiq_orchestrator
+      ExampleHelper.create_world do |config|
+        config.persistence_adapter = persistence_adapter
+        config.connector           = connector
+        config.process_role        = :orchestrator
+      end
+    end
+
+    def initialize_sidekiq_worker
+      ExampleHelper.create_world do |config|
+        config.persistence_adapter = persistence_adapter
+        config.connector           = connector
+        config.executor            = false
+        config.process_role        = :worker
+      end
     end
 
     def run(world)
@@ -105,5 +142,15 @@ MSG
   else
     puts "Unknown command #{comment}"
     exit 1
+  end
+elsif defined?(Sidekiq)
+  # TODO:
+  Sidekiq.default_worker_options = { :retry => 0, 'backtrace' => true }
+  # assuming the remote executor was required as part of initialization
+  # of the ActiveJob worker
+  if Sidekiq.options[:queues].include?("dynflow_orchestrator")
+    RemoteExecutorExample.initialize_sidekiq_orchestrator
+  elsif (Sidekiq.options[:queues] - ['dynflow_orchestrator']).any?
+    RemoteExecutorExample.initialize_sidekiq_worker
   end
 end
