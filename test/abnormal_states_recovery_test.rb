@@ -275,7 +275,7 @@ module Dynflow
             client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world )
             client_world_config.auto_validity_check.must_equal false
 
-            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = lambda { |w, _| Executors::Parallel.new(w, 15) } }, create_world )
+            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = lambda { |w, _| Executors::Parallel::Core } }, create_world )
             executor_world_config.auto_validity_check.must_equal true
           end
 

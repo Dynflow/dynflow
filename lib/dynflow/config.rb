@@ -97,8 +97,15 @@ module Dynflow
       5
     end
 
-    config_attr :executor, Executors::Parallel, FalseClass do |world, config|
-      Executors::Parallel.new(world, config.executor_heartbeat_interval, config.queues)
+    config_attr :executor do |world, config|
+      Executors::Parallel::Core
+    end
+
+    def validate_executor!(value)
+      accepted_executors = [Executors::Parallel::Core]
+      if value && !accepted_executors.include?(value)
+        raise ArgumentError, "Executor #{value} is expected to be one of #{accepted_executors.inspect}"
+      end
     end
 
     config_attr :executor_semaphore, Semaphores::Abstract, FalseClass do |world, config|

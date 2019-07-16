@@ -29,7 +29,12 @@ module Dynflow
                                                 :backup_deleted_plans => @config.backup_deleted_plans,
                                                 :backup_dir => @config.backup_dir)
       @coordinator            = Coordinator.new(@config.coordinator_adapter)
-      @executor               = @config.executor
+      if @config.executor
+        @executor = Executors::Parallel.new(self,
+                                            executor_class: @config.executor,
+                                            heartbeat_interval: @config.executor_heartbeat_interval,
+                                            queues_options: @config.queues)
+      end
       @action_classes         = @config.action_classes
       @auto_rescue            = @config.auto_rescue
       @exit_on_terminate      = Concurrent::AtomicBoolean.new(@config.exit_on_terminate)
