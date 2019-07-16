@@ -3,6 +3,10 @@ $:.unshift(File.expand_path('../../lib', __FILE__))
 require 'dynflow'
 
 class ExampleHelper
+  CONSOLE_URL='http://localhost:4567'
+  DYNFLOW_URL="#{CONSOLE_URL}/dynflow"
+  SIDEKIQ_URL="#{CONSOLE_URL}/sidekiq"
+
   class << self
     def world
       @world ||= create_world
@@ -49,7 +53,18 @@ class ExampleHelper
       dynflow_console = Dynflow::Web.setup do
         set :world, world
       end
-      Rack::Server.new(:app => dynflow_console, :Port => 4567).start
+      apps = { '/dynflow' => dynflow_console }
+      puts "Starting Dynflow console at #{DYNFLOW_URL}"
+      begin
+        require 'sidekiq/web'
+        apps['/sidekiq'] = Sidekiq::Web
+        puts "Starting Sidekiq console at #{SIDEKIQ_URL}"
+      rescue LoadError
+        puts 'Sidekiq not around, not mounting the console'
+      end
+
+      app = Rack::URLMap.new(apps)
+      Rack::Server.new(:app => app, :Port => URI.parse(CONSOLE_URL).port).start
     end
 
     # for simulation of the execution failing for the first time

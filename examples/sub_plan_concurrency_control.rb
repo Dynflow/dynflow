@@ -62,7 +62,7 @@ if $0 == __FILE__
   puts example_description
   puts <<-MSG.gsub(/^.*\|/, '')
     |  Execution plan #{triggered.id} with 10 sub plans triggered
-    |  You can see the details at http://localhost:4567/#{triggered.id}/actions/1/sub_plans
+    |  You can see the details at #{ExampleHelper::DYNFLOW_URL}/#{triggered.id}/actions/1/sub_plans
     |  Or simply watch in the console that there are never more than #{ConcurrencyControlExample::ConcurrencyLevel} running at the same time.
     |
     |  The tasks are distributed over #{ConcurrencyControlExample::RunWithin} seconds.

@@ -17,7 +17,7 @@ example_description = <<DESC
   send external events to the action while it's suspended. One use case is being
   able to cancel the action while it's running.
 
-  Once the Sinatra web console starts, you can navigate to http://localhost:4567
+  Once the Sinatra web console starts, you can navigate to #{ExampleHelper::DYNFLOW_URL}
   to see what's happening in the Dynflow world.
 
 DESC
@@ -154,7 +154,7 @@ module OrchestrateEvented
 
             | Execution plan #{execution_plan_id} got stuck
             | You can cancel the stucked step at
-            | http://localhost:4567/#{execution_plan_id}
+            | #{ExampleHelper::DYNFLOW_URL}/#{execution_plan_id}
 
         MSG
         # we suspend the action but don't plan the wakeup event,

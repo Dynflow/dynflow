@@ -51,8 +51,8 @@ if $0 == __FILE__
   puts <<-MSG.gsub(/^.*\|/, '')
     |  Execution plans #{t1.id} and #{t2.id} with sub plans triggered
     |  You can see the details at
-    |    http://localhost:4567/#{t2.id}
-    |    http://localhost:4567/#{t1.id}
+    |    #{ExampleHelper::DYNFLOW_URL}/#{t2.id}
+    |    #{ExampleHelper::DYNFLOW_URL}/#{t1.id}
   MSG
 
   ExampleHelper.run_web_console
