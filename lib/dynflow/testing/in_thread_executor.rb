@@ -38,7 +38,10 @@ module Dynflow
       end
 
       def feed_queue(work_items)
-        work_items.each { |work_item| @work_items.push(work_item) }
+        work_items.each do |work_item|
+          work_item.world = @world
+          @work_items.push(work_item)
+        end
       end
 
       def terminate(future = Concurrent::Promises.resolvable_future)

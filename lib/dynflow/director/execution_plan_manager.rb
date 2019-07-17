@@ -47,8 +47,17 @@ module Dynflow
           work = compute_next_from_step(step) unless suspended
           work
         when FinalizeWorkItem
+          if work.finalize_steps_data
+            steps = work.finalize_steps_data.map do |step_data|
+              Serializable.from_hash(step_data, execution_plan.id, @world)
+            end
+            update_steps(steps)
+          end
           raise "Finalize work item without @finalize_manager ready" unless @finalize_manager
+          @finalize_manager.done!
           finish
+        else
+          raise "Unexpected work #{work}"
         end
       end
 
@@ -102,7 +111,7 @@ module Dynflow
         return if execution_plan.finalize_flow.empty?
         raise 'finalize phase already started' if @finalize_manager
         @finalize_manager = SequentialManager.new(@world, execution_plan)
-        [FinalizeWorkItem.new(execution_plan.id, @finalize_manager, execution_plan.finalize_steps.first.queue)]
+        [FinalizeWorkItem.new(execution_plan.id, execution_plan.finalize_steps.first.queue)]
       end
 
       def finish
