@@ -30,11 +30,20 @@ module Dynflow
         @done = true
       end
 
+      def finalize_steps
+        execution_plan.finalize_flow.all_step_ids.map do |step_id|
+          execution_plan.steps[step_id]
+        end
+      end
+
       def reset_finalize_steps
-        execution_plan.finalize_flow.all_step_ids.each do |step_id|
-          step       = execution_plan.steps[step_id]
+        finalize_steps.each do |step|
           step.state = :pending if [:success, :error].include? step.state
         end
+      end
+
+      def done!
+        @done = true
       end
 
       def done?

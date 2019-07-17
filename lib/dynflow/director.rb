@@ -19,7 +19,7 @@ module Dynflow
 
     UnprocessableEvent = Class.new(Dynflow::Error)
 
-    class WorkItem
+    class WorkItem < Serializable
       attr_reader :execution_plan_id, :queue
 
       def initialize(execution_plan_id, queue)
@@ -27,8 +27,29 @@ module Dynflow
         @queue = queue
       end
 
+      def world
+        raise "World expected but not set for the work item #{self}" unless @world
+        @world
+      end
+
+      # the world to be used for execution purposes of the step. Setting it separately and explicitly
+      # as the world can't be serialized
+      def world=(world)
+        @world = world
+      end
+
       def execute
         raise NotImplementedError
+      end
+
+      def to_hash
+        { class: self.class.name,
+          execution_plan_id: execution_plan_id,
+          queue: queue }
+      end
+
+      def self.new_from_hash(hash, *_args)
+        self.new(hash[:execution_plan_id], hash[:queue])
       end
     end
 
@@ -42,6 +63,16 @@ module Dynflow
 
       def execute
         @step.execute(nil)
+      end
+
+      def to_hash
+        super.merge(step: step.to_hash)
+      end
+
+      def self.new_from_hash(hash, *_args)
+        self.new(hash[:execution_plan_id],
+                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], world),
+                 hash[:queue])
       end
     end
 
@@ -57,16 +88,42 @@ module Dynflow
       def execute
         @step.execute(@event)
       end
+
+      def to_hash
+        super.merge(request_id: @request_id, event: Dynflow.serializer.dump(@event))
+      end
+
+      def self.new_from_hash(hash, *_args)
+        self.new(hash[:request_id],
+                 hash[:execution_plan_id],
+                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], world),
+                 Dynflow.serializer.load(hash[:event]),
+                 hash[:queue])
+      end
     end
 
     class FinalizeWorkItem < WorkItem
-      def initialize(execution_plan_id, sequential_manager, queue)
+      attr_reader :finalize_steps_data
+
+      # @param finalize_steps_data - used to pass the result steps from the worker back to orchestrator
+      def initialize(execution_plan_id, queue, finalize_steps_data = nil)
         super(execution_plan_id, queue)
-        @sequential_manager = sequential_manager
+        @finalize_steps_data = finalize_steps_data
       end
 
       def execute
-        @sequential_manager.finalize
+        execution_plan = world.persistence.load_execution_plan(execution_plan_id)
+        manager = Director::SequentialManager.new(world, execution_plan)
+        manager.finalize
+        @finalize_steps_data = manager.finalize_steps.map(&:to_hash)
+      end
+
+      def to_hash
+        super.merge(finalize_steps_data: @finalize_steps_data)
+      end
+
+      def self.new_from_hash_(hash, *_args)
+        self.new(hash[:execution_plan_id], hash[:queue], hash[:finalize_steps_data])
       end
     end
 
