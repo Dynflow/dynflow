@@ -46,7 +46,7 @@ class ExampleHelper
     end
 
     def logger_adapter
-      Dynflow::LoggerAdapters::Simple.new $stderr, 4
+      Dynflow::LoggerAdapters::Simple.new $stderr, 1
     end
 
     def run_web_console(world = ExampleHelper.world)

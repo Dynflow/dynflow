@@ -24,6 +24,7 @@ module Dynflow
       end
 
       def match?(dead_letter)
+        return unless dead_letter.sender.respond_to?(:actor_class)
         evaluate(dead_letter.sender.actor_class, @from) &&
           evaluate(dead_letter.message, @message) &&
           evaluate(dead_letter.address.actor_class, @to)

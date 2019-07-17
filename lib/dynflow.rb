@@ -23,6 +23,7 @@ module Dynflow
     #
     # @return [Dynflow::World, nil]
     def process_world
+      raise "process world is not set" unless @process_world
       @process_world
     end
 
