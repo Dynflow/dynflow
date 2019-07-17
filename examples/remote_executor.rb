@@ -112,7 +112,10 @@ class RemoteExecutorExample
       world.trigger(OrchestrateEvented::CreateInfrastructure, true)
 
       loop do
+        start_time = Time.now
         world.trigger(SampleAction).finished.wait
+        finished_in = Time.now - start_time
+        puts "Finished in #{finished_in}s"
         sleep 0.5
       end
     end
