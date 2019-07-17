@@ -1,5 +1,9 @@
+require 'date'
 module Dynflow
   class Serializable
+    TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'
+    LEGACY_TIME_FORMAT = '%Y-%m-%d %H:%M:%S'
+
     def self.from_hash(hash, *args)
       check_class_key_present hash
       constantize(hash[:class]).new_from_hash(hash, *args)
@@ -58,15 +62,19 @@ module Dynflow
     def self.string_to_time(string)
       return if string.nil?
       return string if string.is_a?(Time)
-      _, year, month, day, hour, min, sec =
-          */(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/.match(string)
-      Time.utc(year.to_i, month.to_i, day.to_i, hour.to_i, min.to_i, sec.to_i)
+      time = begin
+               DateTime.strptime(string, TIME_FORMAT)
+             rescue ArgumentError => _
+               DateTime.strptime(string, LEGACY_TIME_FORMAT)
+             end
+
+      time.to_time.utc
     end
 
     def time_to_str(time)
       return if time.nil?
       Type! time, Time
-      time.utc.strftime '%Y-%m-%d %H:%M:%S'
+      time.utc.strftime(TIME_FORMAT)
     end
 
     def self.hash_to_error(hash)

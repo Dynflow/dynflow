@@ -121,9 +121,9 @@ module Dynflow
       original = self.state
       case self.state = state
       when :planning
-        @started_at = Time.now
+        @started_at = Time.now.utc
       when :stopped
-        @ended_at       = Time.now
+        @ended_at       = Time.now.utc
         @real_time      = @ended_at - @started_at unless @started_at.nil?
         @execution_time = compute_execution_time
         key = failure? ? :failure : :success
