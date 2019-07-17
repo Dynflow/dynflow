@@ -43,6 +43,7 @@ module Dynflow
 
         def feed_pool(work_items)
           work_items.each do |new_work|
+            new_work.world = @world
             @pools.fetch(suggest_queue(new_work)).tell([:schedule_work, new_work])
           end
         end
