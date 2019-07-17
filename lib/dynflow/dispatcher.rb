@@ -33,7 +33,7 @@ module Dynflow
     end
 
     Envelope = Algebrick.type do
-      fields! request_id: Integer,
+      fields! request_id: String,
               sender_id: String,
               receiver_id: type { variants String, AnyExecutor = atom, UnknownWorld = atom },
               message: type { variants Request, Response }

@@ -1,23 +1,23 @@
 module Dynflow
   class Director
-    class WorkQueue
+    class QueueHash
       include Algebrick::TypeCheck
 
-      def initialize(key_type = Object, work_type = Object)
-        @key_type  = key_type
-        @work_type = work_type
+      def initialize(key_type = Object, value_type = Object)
+        @key_type = key_type
+        @value_type = value_type
         @stash     = Hash.new { |hash, key| hash[key] = [] }
       end
 
-      def push(key, work)
+      def push(key, value)
         Type! key, @key_type
-        Type! work, @work_type
-        @stash[key].push work
+        Type! value, @value_type
+        @stash[key].push value
       end
 
       def shift(key)
         return nil unless present? key
-        @stash[key].shift.tap { |work| @stash.delete(key) if @stash[key].empty? }
+        @stash[key].shift.tap { @stash.delete(key) if @stash[key].empty? }
       end
 
       def present?(key)

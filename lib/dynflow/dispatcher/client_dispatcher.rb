@@ -3,7 +3,7 @@ module Dynflow
     class ClientDispatcher < Abstract
 
       TrackedRequest = Algebrick.type do
-        fields! id: Integer, request: Request,
+        fields! id: String, request: Request,
                 accepted: Concurrent::Promises::ResolvableFuture, finished: Concurrent::Promises::ResolvableFuture
       end
 
@@ -105,7 +105,7 @@ module Dynflow
       attr_reader :ping_cache
       def initialize(world, ping_cache_age)
         @world            = Type! world, World
-        @last_id          = 0
+        @last_id_suffix   = 0
         @tracked_requests = {}
         @terminated       = nil
         @ping_cache       = PingCache.new world, ping_cache_age
@@ -197,7 +197,8 @@ module Dynflow
       end
 
       def track_request(finished, request, timeout)
-        id = @last_id += 1
+        id_suffix = @last_id_suffix += 1
+        id = "#{@world.id}-#{id_suffix}"
         tracked_request = TrackedRequest[id, request, Concurrent::Promises.resolvable_future, finished]
         @tracked_requests[id] = tracked_request
         @world.clock.ping(self, timeout, [:timeout, id]) if timeout

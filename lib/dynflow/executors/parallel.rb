@@ -28,8 +28,8 @@ module Dynflow
         raise e
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future)
-        @core.ask([:handle_event, Director::Event[execution_plan_id, step_id, event, future]])
+      def event(request_id, execution_plan_id, step_id, event, future = nil)
+        @core.ask([:handle_event, Director::Event[request_id, execution_plan_id, step_id, event, future]])
         future
       end
 
