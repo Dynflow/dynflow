@@ -71,7 +71,7 @@ module Dynflow
 
       def self.new_from_hash(hash, *_args)
         self.new(hash[:execution_plan_id],
-                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], world),
+                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
                  hash[:queue])
       end
     end
@@ -96,7 +96,7 @@ module Dynflow
       def self.new_from_hash(hash, *_args)
         self.new(hash[:request_id],
                  hash[:execution_plan_id],
-                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], world),
+                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
                  Dynflow.serializer.load(hash[:event]),
                  hash[:queue])
       end

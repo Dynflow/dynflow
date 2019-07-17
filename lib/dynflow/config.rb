@@ -103,6 +103,7 @@ module Dynflow
 
     def validate_executor!(value)
       accepted_executors = [Executors::Parallel::Core]
+      accepted_executors << Executors::Sidekiq::Core if defined? Executors::Sidekiq::Core
       if value && !accepted_executors.include?(value)
         raise ArgumentError, "Executor #{value} is expected to be one of #{accepted_executors.inspect}"
       end

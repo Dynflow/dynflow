@@ -47,6 +47,10 @@ module Dynflow
       end
       # rubocop:enable Metrics/ParameterLists
 
+      def ==(other)
+        other.class == self.class && other.execution_plan_id == self.execution_plan_id && other.id == self.id
+      end
+
       def action_logger
         @world.action_logger
       end
