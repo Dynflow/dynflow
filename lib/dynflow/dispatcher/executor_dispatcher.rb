@@ -50,7 +50,7 @@ module Dynflow
             respond(envelope, Failed[reason.to_s])
           end
         end
-        @world.executor.event(event_request.execution_plan_id, event_request.step_id, event_request.event, future)
+        @world.executor.event(envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, future)
       rescue Dynflow::Error => e
         future.reject(e) if future && !future.resolved?
       end

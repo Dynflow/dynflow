@@ -42,7 +42,7 @@ module Dynflow
         case work
         when StepWorkItem
           step = work.step
-          execution_plan.steps[step.id] = step
+          update_steps([step])
           suspended, work = @running_steps_manager.done(step)
           work = compute_next_from_step(step) unless suspended
           work
@@ -69,6 +69,10 @@ module Dynflow
       end
 
       private
+
+      def update_steps(steps)
+        steps.each { |step| execution_plan.steps[step.id] = step }
+      end
 
       def compute_next_from_step(step)
         raise "run manager not set" unless @run_manager

@@ -10,7 +10,8 @@ module Dynflow
     include Algebrick::TypeCheck
 
     Event = Algebrick.type do
-      fields! execution_plan_id: String,
+      fields! request_id:        String,
+              execution_plan_id: String,
               step_id:           Integer,
               event:             Object,
               result:            Concurrent::Promises::ResolvableFuture
@@ -45,15 +46,16 @@ module Dynflow
     end
 
     class EventWorkItem < StepWorkItem
-      attr_reader :event
+      attr_reader :event, :request_id
 
-      def initialize(execution_plan_id, step, event, queue)
+      def initialize(request_id, execution_plan_id, step, event, queue)
         super(execution_plan_id, step, queue)
         @event = event
+        @request_id = request_id
       end
 
       def execute
-        @step.execute(@event.event)
+        @step.execute(@event)
       end
     end
 
@@ -68,7 +70,7 @@ module Dynflow
       end
     end
 
-    require 'dynflow/director/work_queue'
+    require 'dynflow/director/queue_hash'
     require 'dynflow/director/sequence_cursor'
     require 'dynflow/director/flow_manager'
     require 'dynflow/director/execution_plan_manager'
@@ -109,6 +111,7 @@ module Dynflow
 
     def work_finished(work)
       manager = @execution_plan_managers[work.execution_plan_id]
+      return [] unless manager # skip case when getting event from execution plan that is not running anymore
       unless_done(manager, manager.what_is_next(work))
     end
 
