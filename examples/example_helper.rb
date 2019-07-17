@@ -22,6 +22,7 @@ class ExampleHelper
       config.logger_adapter      = logger_adapter
       config.auto_rescue         = false
       config.telemetry_adapter   = telemetry_adapter
+      config.queues.add(:slow, :pool_size => 3)
       yield config if block_given?
       Dynflow::World.new(config).tap do |world|
         puts "World #{world.id} started..."

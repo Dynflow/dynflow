@@ -148,9 +148,7 @@ module Orchestrate
 end
 
 if $0 == __FILE__
-  world = ExampleHelper.create_world do |config|
-    config.queues.add(:slow, :pool_size => 3)
-  end
+  world = ExampleHelper.create_world
   ExampleHelper.set_world(world)
   ExampleHelper.world.action_logger.level = Logger::INFO
   ExampleHelper.something_should_fail!
