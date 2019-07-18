@@ -65,7 +65,7 @@ class ExampleHelper
       end
 
       app = Rack::URLMap.new(apps)
-      Rack::Server.new(:app => app, :Port => URI.parse(CONSOLE_URL).port).start
+      Rack::Server.new(:app => app, :Host => '0.0.0.0', :Port => URI.parse(CONSOLE_URL).port).start
     end
 
     # for simulation of the execution failing for the first time
