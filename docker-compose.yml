@@ -1,0 +1,41 @@
+version: '3'
+services:
+  postgres:
+    image: postgres:11-alpine
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=dynflow
+  redis:
+    image: redis:5.0.5-alpine
+    expose:
+      - 6379
+  client: &common
+    build: .
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - REDIS_PROVIDER=REDIS_URL
+      - DB_CONN_STRING=postgresql://postgres:postgres@postgres:5432/dynflow
+    volumes:
+      - ./:/data
+    command: |
+      ruby ./examples/remote_executor.rb client
+  observer:
+    <<: *common
+    command: |
+      ruby ./examples/remote_executor.rb observer
+    ports:
+      - 4567:4567
+  orchestrator:
+    <<: *common
+    command: |
+      sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator
+  worker:
+    <<: *common
+    command: |
+      sidekiq -r ./examples/remote_executor.rb -q default
