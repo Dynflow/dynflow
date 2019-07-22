@@ -32,6 +32,8 @@ module Dynflow
       # the orchestration tied to the models.
       attr_accessor :disable_active_record_actions
 
+      attr_accessor :process_role
+
       def initialize
         self.pool_size                = 5
         self.remote                   = ::Rails.env.production?
@@ -132,6 +134,7 @@ module Dynflow
           config.transaction_adapter = transaction_adapter
           config.executor            = ->(world, _) { initialize_executor(world) }
           config.connector           = ->(world, _) { initialize_connector(world) }
+          config.process_role        = process_role
 
           # we can't do any operation until the Rails.application.dynflow.world is set
           config.auto_execute        = false
