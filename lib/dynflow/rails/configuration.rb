@@ -171,7 +171,8 @@ module Dynflow
         if remote?
           false
         else
-          ::Dynflow::Executors::Parallel::Core
+          # TODO: We probably can't do this
+          ::Dynflow::Executors::Sidekiq::Core
         end
       end
 
