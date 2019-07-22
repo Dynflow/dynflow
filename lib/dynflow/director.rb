@@ -122,7 +122,7 @@ module Dynflow
         super.merge(finalize_steps_data: @finalize_steps_data)
       end
 
-      def self.new_from_hash_(hash, *_args)
+      def self.new_from_hash(hash, *_args)
         self.new(hash[:execution_plan_id], hash[:queue], hash[:finalize_steps_data])
       end
     end
