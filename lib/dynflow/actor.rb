@@ -49,6 +49,7 @@ module Dynflow
 
     class BacktraceCollector
       CONCURRENT_RUBY_LINE = '[ concurrent-ruby ]'.freeze
+      SIDEKIQ_LINE = '[ sidekiq ]'.freeze
 
       class << self
         def with_backtrace(backtrace)
@@ -69,14 +70,20 @@ module Dynflow
 
         private
 
-        def filter_line?(line)
-          %w[concurrent-ruby gems/logging actor.rb].any? { |pattern| line.include?(pattern) }
+        def filter_line(line)
+          if %w[concurrent-ruby gems/logging actor.rb].any? { |pattern| line.include?(pattern) }
+            CONCURRENT_RUBY_LINE
+          elsif line.include?('lib/sidekiq')
+            SIDEKIQ_LINE
+          else
+            line
+          end
         end
 
         # takes an array of backtrace lines and replaces each chunk
         def filter_backtrace(backtrace)
-          backtrace.map { |line| filter_line?(line) ? CONCURRENT_RUBY_LINE : line }
-            .chunk_while { |l1, l2| l1.equal?(CONCURRENT_RUBY_LINE) && l2.equal?(CONCURRENT_RUBY_LINE) }
+          backtrace.map { |line| filter_line(line) }
+            .chunk_while { |l1, l2| l1 == l2}
             .map(&:first)
         end
       end
