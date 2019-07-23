@@ -110,7 +110,7 @@ module WorldFactory
   # This world survives though the whole run of the test suite: careful with it, it can
   # introduce unnecessary test dependencies
   def self.logger_adapter
-    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, 4
+    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, ::Logger::FATAL
   end
 
   def self.persistence_adapter
