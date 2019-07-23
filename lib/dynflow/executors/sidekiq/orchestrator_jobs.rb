@@ -20,7 +20,7 @@ module Dynflow
           # @param request_envelope [Dispatcher::Request] - request to handle on orchestrator side
           #   usually to start new execution or to pass some event
           def perform(error, work_item)
-            Dynflow.process_world.executor.core.tell([:handle_persistence_error, error, work])
+            Dynflow.process_world.executor.core.tell([:handle_persistence_error, error, work_item])
           end
         end
       end
