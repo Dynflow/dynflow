@@ -13,6 +13,7 @@ end
 
 group :sidekiq do
   gem 'sidekiq'
+  gem 'gitlab-sidekiq-fetcher', :require => 'sidekiq-reliable-fetch'
 end
 
 group :postgresql do
