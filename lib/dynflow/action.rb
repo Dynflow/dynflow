@@ -333,9 +333,11 @@ module Dynflow
       @step.state = state
     end
 
-    def save_state
+    def save_state(conditions = {})
       phase! Executable
-      @step.save
+      # This save is always an update
+      count = @step.save(conditions)
+      raise 'Could not save state' unless count.positive?
     end
 
     def delay(delay_options, *args)
@@ -527,7 +529,7 @@ module Dynflow
         end
 
         self.state = :running unless self.state == :skipping
-        save_state
+        save_state(:state => %w(pending suspended))
         with_error_handling do
           event = Skip if state == :skipping
 

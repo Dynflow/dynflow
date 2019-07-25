@@ -149,8 +149,9 @@ module Dynflow
         load_records :step, execution_plan_uuid: execution_plan_id
       end
 
-      def save_step(execution_plan_id, step_id, value)
-        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, with_data: false
+      def save_step(execution_plan_id, step_id, value, update_conditions = {})
+        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value,
+             with_data: false, update_conditions: update_conditions
       end
 
       def load_action(execution_plan_id, action_id)
@@ -286,14 +287,15 @@ module Dynflow
         end
       end
 
-      def save(what, condition, value, with_data: true)
+      def save(what, condition, value, with_data: true, update_conditions: {})
         table           = table(what)
         existing_record = with_retry { table.first condition } unless condition.empty?
 
         if value
           record = prepare_record(what, value, (existing_record || condition), with_data)
           if existing_record
-            with_retry { table.where(condition).update(record) }
+            condition = update_conditions.merge(condition)
+            return with_retry { table.where(condition).update(record) }
           else
             with_retry { table.insert record }
           end

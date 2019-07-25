@@ -117,8 +117,8 @@ module Dynflow
       end
     end
 
-    def save_step(step)
-      adapter.save_step(step.execution_plan_id, step.id, step.to_hash)
+    def save_step(step, conditions = {})
+      adapter.save_step(step.execution_plan_id, step.id, step.to_hash, conditions)
     end
 
     def push_envelope(envelope)
