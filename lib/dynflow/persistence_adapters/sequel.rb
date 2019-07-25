@@ -100,7 +100,7 @@ module Dynflow
       end
 
       def save_execution_plan(execution_plan_id, value)
-        save :execution_plan, { uuid: execution_plan_id }, value, false
+        save :execution_plan, { uuid: execution_plan_id }, value, with_data: false
       end
 
       def delete_delayed_plans(filters, batch_size = 1000)
@@ -138,7 +138,7 @@ module Dynflow
       end
 
       def save_delayed_plan(execution_plan_id, value)
-        save :delayed, { execution_plan_uuid: execution_plan_id }, value, false
+        save :delayed, { execution_plan_uuid: execution_plan_id }, value, with_data: false
       end
 
       def load_step(execution_plan_id, step_id)
@@ -150,7 +150,7 @@ module Dynflow
       end
 
       def save_step(execution_plan_id, step_id, value)
-        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, false
+        save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value, with_data: false
       end
 
       def load_action(execution_plan_id, action_id)
@@ -166,7 +166,7 @@ module Dynflow
       end
 
       def save_action(execution_plan_id, action_id, value)
-        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, false
+        save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, with_data: false
       end
 
       def connector_feature!
@@ -286,7 +286,7 @@ module Dynflow
         end
       end
 
-      def save(what, condition, value, with_data = true)
+      def save(what, condition, value, with_data: true)
         table           = table(what)
         existing_record = with_retry { table.first condition } unless condition.empty?
 
