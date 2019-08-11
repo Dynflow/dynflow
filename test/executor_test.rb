@@ -238,6 +238,29 @@ module Dynflow
               end
             end
 
+            describe 'events' do
+              include TestHelpers
+
+              let(:clock) { Dynflow::Testing::ManagedClock.new }
+              let :execution_plan do
+                world.plan(Support::DummyExample::PlanEventsAction, ping_time: 0.5)
+              end
+
+              it 'handles planning events' do
+                world.stub(:clock, clock) do
+                  world.execute(execution_plan.id)
+                  ping = wait_for do
+                    clock.pending_pings.first
+                  end
+                  assert ping.what.value.is_a?(Director::Event)
+                  clock.progress
+                  wait_for do
+                    world.persistence.load_execution_plan(execution_plan.id).result == :success
+                  end
+                end
+              end
+            end
+
             describe 'running' do
               let :execution_plan do
                 world.plan(Support::DummyExample::Polling, { :external_task_id => '123' })
@@ -656,7 +679,7 @@ module Dynflow
         it 'waits for currently running actions' do
           $slow_actions_done = 0
           running = world.trigger(Support::DummyExample::Slow, 1)
-          suspended = world.trigger(Support::DummyExample::EventedAction, :timeout => 3 )
+          suspended = world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3 )
           sleep 0.2
           world.terminate.wait
           _($slow_actions_done).must_equal 1

@@ -323,6 +323,18 @@ module Dynflow
     def queue
     end
 
+    # Plan an +event+ to be send to the action defined by +action+, what defaults to be self.
+    # if +time+ is not passed, event is sent as soon as possible.
+    def plan_event(event, time = nil, execution_plan_id: self.execution_plan_id, step_id: self.run_step_id)
+      Type! time, Time, Numeric, NilClass
+      time  = Time.now + time if time.is_a? Numeric
+      delayed_events << Dispatcher::Event[execution_plan_id, step_id, event, time]
+    end
+
+    def delayed_events
+      @delayed_events ||= []
+    end
+
     protected
 
     def state=(state)

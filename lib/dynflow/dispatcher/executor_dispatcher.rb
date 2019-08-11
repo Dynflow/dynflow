@@ -51,7 +51,18 @@ module Dynflow
             respond(envelope, Failed[reason.to_s])
           end
         end
-        @world.executor.event(envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, future)
+        if event_request.time.nil? || event_request.time < Time.now
+          @world.executor.event(envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, future)
+        else
+          @world.clock.ping(
+            @world.executor,
+            event_request.time,
+            Director::Event[envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, Concurrent::Promises.resolvable_future],
+            :delayed_event
+          )
+          # resolves the future right away - currently we do not wait for the clock ping
+          future.fulfill true
+        end
       rescue Dynflow::Error => e
         future.reject(e) if future && !future.resolved?
       end

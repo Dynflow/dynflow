@@ -2,7 +2,7 @@
 module Dynflow
   module Testing
     class DummyExecutor
-      attr_reader :world
+      attr_reader :world, :events_to_process
 
       def initialize(world)
         @world             = world
@@ -11,6 +11,10 @@ module Dynflow
 
       def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future)
         @events_to_process << [execution_plan_id, step_id, event, future]
+      end
+
+      def delayed_event(director_event)
+        @events_to_process << [director_event.execution_plan_id, director_event.step_id, director_event.event, director_event.result]
       end
 
       # returns true if some event was processed.

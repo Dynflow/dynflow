@@ -16,6 +16,7 @@ module Dynflow
         open_action do |action|
           with_meta_calculation(action) do
             action.execute(*args)
+            @delayed_events = action.delayed_events
           end
         end
       end

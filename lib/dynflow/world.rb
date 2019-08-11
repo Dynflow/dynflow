@@ -227,6 +227,10 @@ module Dynflow
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event], done, false)
     end
 
+    def plan_event(execution_plan_id, step_id, event, time, accepted = Concurrent::Promises.resolvable_future)
+      publish_request(Dispatcher::Event[execution_plan_id, step_id, event, time], accepted, false)
+    end
+
     def ping(world_id, timeout, done = Concurrent::Promises.resolvable_future)
       publish_request(Dispatcher::Ping[world_id, true], done, false, timeout)
     end

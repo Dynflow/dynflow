@@ -48,7 +48,6 @@ module Dynflow
             @pools.fetch(suggest_queue(new_work)).tell([:schedule_work, new_work])
           end
         end
-
       end
     end
   end

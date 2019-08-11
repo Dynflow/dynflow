@@ -35,6 +35,14 @@ module Dynflow
         executor.event execution_plan_id, step_id, event, future
       end
 
+      def plan_event(execution_plan_id, step_id, event, time, accepted = Concurrent::Promises.resolvable_future)
+        if time.nil? || time < Time.now
+          event(execution_plan_id, step_id, event, accepted)
+        else
+          clock.ping(executor, time, Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, accepted], :delayed_event)
+        end
+      end
+
       def persistence
         nil
       end

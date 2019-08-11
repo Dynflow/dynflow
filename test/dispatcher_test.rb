@@ -25,7 +25,7 @@ module Dynflow
 
           describe 'event passing' do
             it 'succeeds when expected' do
-              result = client_world.trigger(Support::DummyExample::EventedAction, :timeout => 3)
+              result = client_world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3)
               step = wait_for do
                 client_world.persistence.load_execution_plan(result.id).
                     steps_in_state(:suspended).first

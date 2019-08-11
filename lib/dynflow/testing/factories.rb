@@ -48,6 +48,10 @@ module Dynflow
         plan_action create_action(action_class), *args, &block
       end
 
+      def plan_events(world, delayed_events)
+        delayed_events.each { |event| world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time) }
+      end
+
       # @return [Action::RunPhase]
       def run_action(plan_action, event = nil, &stubbing)
         Match! plan_action.phase, Action::Plan, Action::Run
@@ -72,6 +76,7 @@ module Dynflow
         run_action.world.clock.clear
         stubbing.call run_action if stubbing
         run_action.execute event
+        plan_events(plan_action.world, run_action.delayed_events)
         raise run_action.error if run_action.error
         run_action
       end

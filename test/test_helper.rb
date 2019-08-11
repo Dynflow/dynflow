@@ -188,7 +188,7 @@ module TestHelpers
   end
 
   def trigger_waiting_action
-    triggered = client_world.trigger(Support::DummyExample::EventedAction)
+    triggered = client_world.trigger(Support::DummyExample::DeprecatedEventedAction)
     wait_for { executor_id_for_plan(triggered.id) } # waiting for the plan to be picked by an executor
     triggered
   end
