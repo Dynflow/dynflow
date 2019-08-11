@@ -6,7 +6,7 @@ module Dynflow
       include Stateful
 
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
-                  :ended_at, :execution_time, :real_time, :queue
+                  :ended_at, :execution_time, :real_time, :queue, :delayed_events
       attr_accessor :error
 
       # rubocop:disable Metrics/ParameterLists

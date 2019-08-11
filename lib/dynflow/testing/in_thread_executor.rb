@@ -34,6 +34,13 @@ module Dynflow
         future
       end
 
+      def delayed_event(director_event)
+        @director.handle_event(director_event).each do |work_item|
+          @work_items << work_item
+        end
+        director_event.result
+      end
+
       def clock_tick
         @world.clock.progress_all([:periodic_check_inbox])
       end

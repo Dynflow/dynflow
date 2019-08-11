@@ -5,7 +5,8 @@ module Dynflow
       Event = type do
         fields! execution_plan_id: String,
                 step_id:           Integer,
-                event:             Object
+                event:             Object,
+                time:              type { variants Time, NilClass }
       end
 
       Execution = type do

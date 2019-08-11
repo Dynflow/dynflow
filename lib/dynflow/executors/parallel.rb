@@ -38,6 +38,11 @@ module Dynflow
         future
       end
 
+      def delayed_event(director_event)
+        @core.ask([:handle_event, director_event])
+        director_event.result
+      end
+
       def terminate(future = Concurrent::Promises.resolvable_future)
         @core.tell([:start_termination, future])
         future

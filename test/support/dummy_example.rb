@@ -115,7 +115,7 @@ module Support
       end
     end
 
-    class EventedAction < Dynflow::Action
+    class DeprecatedEventedAction < Dynflow::Action
       def run(event = nil)
         case event
         when "timeout"
@@ -129,6 +129,18 @@ module Support
           end
         else
           self.output[:event] = event
+        end
+      end
+    end
+
+    class PlanEventsAction < Dynflow::Action
+      def run(event = nil)
+        case event
+        when 'ping'
+          output[:result] = 'pinged'
+        when nil
+          plan_event('ping', input[:ping_time] || 0.5)
+          suspend
         end
       end
     end

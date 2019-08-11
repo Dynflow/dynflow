@@ -54,7 +54,8 @@ module Dynflow
         end
 
         def worker_done(worker, work)
-          @executor_core.tell([:work_finished, work])
+          step = work.step if work.is_a?(Director::StepWorkItem)
+          @executor_core.tell([:work_finished, work, step && step.delayed_events])
           @free_workers << worker
           Dynflow::Telemetry.with_instance { |t| t.set_gauge(:dynflow_active_workers, -1, telemetry_options) }
           distribute_jobs

@@ -35,8 +35,13 @@ module Dynflow
           handle_work(@director.handle_event(event))
         end
 
-        def work_finished(work)
+        def plan_events(delayed_events)
+          delayed_events.each { |event| @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time) }
+        end
+
+        def work_finished(work, delayed_events = nil)
           handle_work(@director.work_finished(work))
+          plan_events(delayed_events) if delayed_events
         end
 
         def handle_persistence_error(error, work = nil)

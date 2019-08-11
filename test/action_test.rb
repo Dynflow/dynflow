@@ -118,6 +118,55 @@ module Dynflow
       end
     end
 
+    describe 'evented action' do
+      include Testing
+
+      class PlanEventedAction < Dynflow::Action
+        def run(event = nil)
+          case event
+          when "ping"
+            output[:status] = 'pinged'
+          when nil
+            plan_event('ping', input[:time])
+            suspend
+          else
+            self.output[:event] = event
+          end
+        end
+      end
+
+      it 'send planned event' do
+        plan = create_and_plan_action(PlanEventedAction, { time: 0.5 })
+        action = run_action plan
+
+        _(action.output[:status]).must_equal nil
+        _(action.world.clock.pending_pings.first).wont_be_nil
+        _(action.state).must_equal :suspended
+
+        progress_action_time action
+
+        _(action.output[:status]).must_equal 'pinged'
+        _(action.world.clock.pending_pings.first).must_be_nil
+        _(action.state).must_equal :success
+      end
+
+      it 'plans event immediately if no time is given' do
+        plan = create_and_plan_action(PlanEventedAction, { time: nil })
+        action = run_action plan
+
+        _(action.output[:status]).must_equal nil
+        _(action.world.clock.pending_pings.first).must_be_nil
+        _(action.world.executor.events_to_process.first).wont_be_nil
+        _(action.state).must_equal :suspended
+
+        action.world.executor.progress
+
+        _(action.output[:status]).must_equal 'pinged'
+        _(action.world.clock.pending_pings.first).must_be_nil
+        _(action.state).must_equal :success
+      end
+    end
+
     describe 'polling action' do
       CWE = Support::CodeWorkflowExample
       include Dynflow::Testing
@@ -223,7 +272,7 @@ module Dynflow
         end
       end
 
-      describe'without timeout' do
+      describe 'without timeout' do
         let(:plan) do
           create_and_plan_action TestPollingAction, { task_args: 'do something' }
         end
