@@ -60,7 +60,7 @@ module Dynflow
     end
 
     def to_s
-      "Step(#{step_id}).output".tap do |ret|
+      "Step(#{step_id}).output".dup.tap do |ret|
         ret << subkeys.map { |k| "[:#{k}]" }.join('') if subkeys.any?
       end
     end

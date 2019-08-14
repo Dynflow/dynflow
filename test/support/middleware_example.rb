@@ -100,7 +100,7 @@ module Support
       end
 
       def filter_sensitive_data
-        output[:spell] = '***'
+        output[:spell] = '***'.dup
       end
     end
 
