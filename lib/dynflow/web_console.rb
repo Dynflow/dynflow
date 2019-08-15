@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'dynflow/web'
 
 warn %{"require 'dynflow/web_console'" is deprecated, use "require 'dynflow/web'" instead}

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 Sequel.migration do
   up do
     alter_table(:dynflow_execution_plans) do

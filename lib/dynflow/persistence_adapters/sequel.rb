@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'sequel'
 require 'multi_json'
 require 'fileutils'

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Dynflow
 
   module MethodicActor
@@ -48,8 +49,8 @@ module Dynflow
     end
 
     class BacktraceCollector
-      CONCURRENT_RUBY_LINE = '[ concurrent-ruby ]'.freeze
-      SIDEKIQ_LINE = '[ sidekiq ]'.freeze
+      CONCURRENT_RUBY_LINE = '[ concurrent-ruby ]'
+      SIDEKIQ_LINE = '[ sidekiq ]'
 
       class << self
         def with_backtrace(backtrace)

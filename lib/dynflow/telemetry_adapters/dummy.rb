@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Dynflow
   module TelemetryAdapters
     # Telemetry adapter which does not evaluate blocks passed to {#with_instance}.

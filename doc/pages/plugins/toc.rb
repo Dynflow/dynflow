@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Jekyll
   module FancyToCFilter
     def fancytoc(input)
