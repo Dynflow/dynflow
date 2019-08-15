@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Dynflow
   module Utils
     # Heavily inspired by rubyworks/pqueue

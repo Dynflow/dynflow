@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'apipie-params'
 require 'algebrick'
 require 'thread'

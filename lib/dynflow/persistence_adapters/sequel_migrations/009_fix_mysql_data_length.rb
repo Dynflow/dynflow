@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 Sequel.migration do
   affected_tables = [:dynflow_actions, :dynflow_coordinator_records, :dynflow_delayed_plans,
                      :dynflow_envelopes, :dynflow_execution_plans]

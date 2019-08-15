@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Dynflow
   module Dispatcher
     class ClientDispatcher < Abstract
@@ -33,7 +34,7 @@ module Dynflow
       # or whether the Ping really needs to be sent.
       class PingCache
         # Format string used for formating and parsing times
-        TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'.freeze
+        TIME_FORMAT = '%Y-%m-%d %H:%M:%S.%L'
         DEFAULT_MAX_AGE = 60
 
         # Formats time into a string

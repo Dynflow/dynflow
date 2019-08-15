@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'bundler/setup'
 require 'minitest/reporters'
 require 'minitest/autorun'
@@ -332,14 +333,14 @@ end
 module PlanAssertions
 
   def inspect_flow(execution_plan, flow)
-    out = ""
-    inspect_subflow(out, execution_plan, flow, "")
+    out = "".dup
+    inspect_subflow(out, execution_plan, flow, "".dup)
     out
   end
 
   def inspect_plan_steps(execution_plan)
-    out = ""
-    inspect_plan_step(out, execution_plan, execution_plan.root_plan_step, "")
+    out = "".dup
+    inspect_plan_step(out, execution_plan, execution_plan.root_plan_step, "".dup)
     out
   end
 

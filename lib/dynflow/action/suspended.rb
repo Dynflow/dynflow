@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Dynflow
   class Action::Suspended
     attr_reader :execution_plan_id, :step_id

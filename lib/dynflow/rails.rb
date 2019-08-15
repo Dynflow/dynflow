@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# frozen_string_literal: true
 module Dynflow
   # Class for configuring and preparing the Dynflow runtime environment.
   class Rails

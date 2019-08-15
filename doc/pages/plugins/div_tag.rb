@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Jekyll
   class DivTag < Liquid::Block
     def render(context)

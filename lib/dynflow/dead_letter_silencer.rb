@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Dynflow
   class DeadLetterSilencer < Concurrent::Actor::DefaultDeadLetterHandler
     def initialize(matchers)

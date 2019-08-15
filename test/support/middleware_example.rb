@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module Support
   module MiddlewareExample
     class LogMiddleware < Dynflow::Middleware
@@ -99,7 +100,7 @@ module Support
       end
 
       def filter_sensitive_data
-        output[:spell] = '***'
+        output[:spell] = '***'.dup
       end
     end
 
