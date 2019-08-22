@@ -12,7 +12,8 @@ module Dynflow
         @id    = Testing.get_id
       end
 
-      def save
+      def save(_options = {})
+        1
       end
     end
   end
