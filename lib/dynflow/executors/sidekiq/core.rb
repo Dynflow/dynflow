@@ -3,23 +3,34 @@ require 'dynflow/executors/sidekiq/serialization'
 require 'dynflow/executors/sidekiq/internal_job_base'
 require 'dynflow/executors/sidekiq/orchestrator_jobs'
 require 'dynflow/executors/sidekiq/worker_jobs'
+require 'dynflow/executors/sidekiq/redis_locking'
 
 module Dynflow
   module Executors
     module Sidekiq
       class Core < Abstract::Core
+        include RedisLocking
+
         TELEMETRY_UPDATE_INTERVAL = 30 # update telemetry every 30s
 
         attr_reader :logger
 
-        def initialize(*_args)
+        def initialize(world, *_args)
+          @world = world
+          @logger = world.logger
+          wait_for_orchestrator_lock
           super
           schedule_update_telemetry
         end
 
+        def heartbeat
+          super
+          reacquire_orchestrator_lock
+        end
+
         def start_termination(*args)
           super
-          # nothing extra to terminate in Sidekiq executor
+          release_orchestrator_lock
           finish_termination
         end
 

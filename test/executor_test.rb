@@ -9,6 +9,14 @@ require 'sidekiq/testing'
 ::Sidekiq::Testing::inline!
 require 'dynflow/executors/sidekiq/core'
 
+module RedisMocks
+  def release_orchestrator_lock; end
+  def wait_for_orchestrator_lock; end
+  def reacquire_orchestrator_lock; end
+end
+
+::Dynflow::Executors::Sidekiq::Core.send(:prepend, RedisMocks)
+
 module Dynflow
   module ExecutorTest
     [::Dynflow::Executors::Parallel::Core, ::Dynflow::Executors::Sidekiq::Core].each do |executor|
