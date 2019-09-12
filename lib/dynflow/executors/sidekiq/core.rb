@@ -56,6 +56,15 @@ module Dynflow
           schedule_update_telemetry
         end
 
+        def work_finished(work)
+          if work.sender_orchestrator_id == @world.id
+            super
+          else
+            # TODO: Log more?
+            logger.warn("Got work item for execution plan #{work.execution_plan_id} from orchestrator #{work.sender_orchestrator_id}, discarding.")
+          end
+        end
+
         private
 
         def fallback_queue
