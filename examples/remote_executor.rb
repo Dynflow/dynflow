@@ -69,6 +69,7 @@ class RemoteExecutorExample
         config.connector           = connector
         config.executor            = ::Dynflow::Executors::Sidekiq::Core
         config.process_role        = :orchestrator
+        config.auto_validity_check = false
       end
     end
 

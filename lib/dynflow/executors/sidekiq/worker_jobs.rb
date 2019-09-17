@@ -29,6 +29,12 @@ module Dynflow
             end
           end
         end
+
+        class DrainMarker < InternalJobBase
+          def perform(world_id)
+            OrchestratorJobs::StartupComplete.perform_async(world_id)
+          end
+        end
       end
     end
   end
