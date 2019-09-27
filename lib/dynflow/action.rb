@@ -335,7 +335,11 @@ module Dynflow
 
     def save_state(conditions = {})
       phase! Executable
-      # This save is always an update
+      # If this save returns an integer, it means it was an update. The number
+      #   represents the number of updated records. If it is 0, then the step
+      #   was in an unexpected state and couldn't be updated, in which case we
+      #   raise an exception and crash hard to prevent the step from being
+      #   executed twice
       count = @step.save(conditions)
       raise 'Could not save state' if count.kind_of?(Integer) && !count.positive?
     end
