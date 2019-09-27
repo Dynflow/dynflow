@@ -73,6 +73,13 @@ class RemoteExecutorExample
     end
 
     def initialize_sidekiq_worker
+      Sidekiq.configure_server do |config|
+        require 'sidekiq-reliable-fetch'
+        # Use semi-reliable fetch
+        # for details see https://gitlab.com/gitlab-org/sidekiq-reliable-fetch/blob/master/README.md
+        config.options[:semi_reliable_fetch] = true
+        Sidekiq::ReliableFetch.setup_reliable_fetch!(config)
+      end
       ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
         config.connector           = connector

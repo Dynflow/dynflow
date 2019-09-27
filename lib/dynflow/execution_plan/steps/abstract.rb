@@ -68,8 +68,8 @@ module Dynflow
         world.persistence
       end
 
-      def save
-        persistence.save_step(self)
+      def save(conditions = {})
+        persistence.save_step(self, conditions)
       end
 
       def self.states
