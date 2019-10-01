@@ -21,8 +21,7 @@ module Dynflow
           wait_for_orchestrator_lock
           super
           schedule_update_telemetry
-          WorkerJobs::DrainMarker.perform_async(@world.id)
-          @recovery = true
+          begin_startup!
         end
 
         def heartbeat
@@ -79,6 +78,11 @@ module Dynflow
               end
             end
           end
+        end
+
+        def begin_startup!
+          WorkerJobs::DrainMarker.perform_async(@world.id)
+          @recovery = true
         end
 
         def startup_complete
