@@ -14,11 +14,11 @@ module Dynflow
         input  = { 'input' => 'input' }
         action = create_and_plan_action Support::DummyExample::WeightedPolling, input
 
-        action.must_be_kind_of Support::DummyExample::WeightedPolling
-        action.phase.must_equal Action::Plan
-        action.input.must_equal input
-        action.execution_plan.must_be_kind_of Testing::DummyExecutionPlan
-        action.state.must_equal :success
+        _(action).must_be_kind_of Support::DummyExample::WeightedPolling
+        _(action.phase).must_equal Action::Plan
+        _(action.input).must_equal input
+        _(action.execution_plan).must_be_kind_of Testing::DummyExecutionPlan
+        _(action.state).must_equal :success
         assert_run_phase action
         assert_finalize_phase action
         assert_action_planned action, Support::DummyExample::Polling
@@ -32,13 +32,13 @@ module Dynflow
         end
         plan_action(action, {})
         stubbed_action = action.execution_plan.planned_plan_steps.first
-        stubbed_action.test.must_equal "test"
+        _(stubbed_action.test).must_equal "test"
       end
 
       specify '#create_action_presentation' do
         action = create_action_presentation(Support::DummyExample::WeightedPolling)
         action.output['message'] = 'make the world a better place'
-        action.humanized_output.must_equal 'You should make the world a better place'
+        _(action.humanized_output).must_equal 'You should make the world a better place'
       end
 
       specify '#run_action without suspend' do
@@ -46,12 +46,12 @@ module Dynflow
         plan   = create_and_plan_action Support::DummyExample::WeightedPolling, input
         action = run_action plan
 
-        action.must_be_kind_of Support::DummyExample::WeightedPolling
-        action.phase.must_equal Action::Run
-        action.input.must_equal input
-        action.world.must_equal plan.world
-        action.run_step_id.wont_equal action.plan_step_id
-        action.state.must_equal :success
+        _(action).must_be_kind_of Support::DummyExample::WeightedPolling
+        _(action.phase).must_equal Action::Run
+        _(action.input).must_equal input
+        _(action.world).must_equal plan.world
+        _(action.run_step_id).wont_equal action.plan_step_id
+        _(action.state).must_equal :success
       end
 
       specify '#run_action with suspend' do
@@ -59,25 +59,25 @@ module Dynflow
         plan   = create_and_plan_action Support::DummyExample::Polling, input
         action = run_action plan
 
-        action.output.must_equal 'task' => { 'progress' => 0, 'done' => false }
-        action.run_progress.must_equal 0
+        _(action.output).must_equal 'task' => { 'progress' => 0, 'done' => false }
+        _(action.run_progress).must_equal 0
 
         3.times { progress_action_time action }
-        action.output.must_equal('task' => { 'progress' => 30, 'done' => false } ,
+        _(action.output).must_equal('task' => { 'progress' => 30, 'done' => false } ,
                                  'poll_attempts' => {'total' => 2, 'failed'=> 0 })
-        action.run_progress.must_equal 0.3
+        _(action.run_progress).must_equal 0.3
 
         run_action action, Dynflow::Action::Polling::Poll
         run_action action, Dynflow::Action::Polling::Poll
-        action.output.must_equal('task' => { 'progress' => 50, 'done' => false },
+        _(action.output).must_equal('task' => { 'progress' => 50, 'done' => false },
                                  'poll_attempts' => {'total' => 4, 'failed' => 0 })
-        action.run_progress.must_equal 0.5
+        _(action.run_progress).must_equal 0.5
 
         5.times { progress_action_time action }
 
-        action.output.must_equal('task' => { 'progress' => 100, 'done' => true },
+        _(action.output).must_equal('task' => { 'progress' => 100, 'done' => true },
                                  'poll_attempts' => {'total' => 9, 'failed' => 0 })
-        action.run_progress.must_equal 1
+        _(action.run_progress).must_equal 1
       end
 
       specify '#finalize_action' do
@@ -87,15 +87,15 @@ module Dynflow
         $dummy_heavy_progress = false
         action                = finalize_action run
 
-        action.must_be_kind_of Support::DummyExample::WeightedPolling
-        action.phase.must_equal Action::Finalize
-        action.input.must_equal input
-        action.output.must_equal run.output
-        action.world.must_equal plan.world
-        action.finalize_step_id.wont_equal action.run_step_id
-        action.state.must_equal :success
+        _(action).must_be_kind_of Support::DummyExample::WeightedPolling
+        _(action.phase).must_equal Action::Finalize
+        _(action.input).must_equal input
+        _(action.output).must_equal run.output
+        _(action.world).must_equal plan.world
+        _(action.finalize_step_id).wont_equal action.run_step_id
+        _(action.state).must_equal :success
 
-        $dummy_heavy_progress.must_equal 'dummy_heavy_progress'
+        _($dummy_heavy_progress).must_equal 'dummy_heavy_progress'
       end
     end
 
@@ -105,7 +105,7 @@ module Dynflow
         it 'plans' do
           action = create_and_plan_action CWE::Commit, sha = 'commit-sha'
 
-          action.input.must_equal({})
+          _(action.input).must_equal({})
           refute_run_phase action
           refute_finalize_phase action
 
@@ -124,15 +124,15 @@ module Dynflow
         let(:runned_action) { run_action planned_action }
 
         it 'plans' do
-          planned_action.input.must_equal Utils.stringify_keys(input)
+          _(planned_action.input).must_equal Utils.stringify_keys(input)
           assert_run_phase planned_action, { commit: "sha", reviewer: "name", result: true}
           refute_finalize_phase planned_action
 
-          planned_action.execution_plan.planned_plan_steps.must_be_empty
+          _(planned_action.execution_plan.planned_plan_steps).must_be_empty
         end
 
         it 'runs' do
-          runned_action.output.fetch(:passed).must_equal runned_action.input.fetch(:result)
+          _(runned_action.output.fetch(:passed)).must_equal runned_action.input.fetch(:result)
         end
       end
 
@@ -144,15 +144,15 @@ module Dynflow
 
         it 'plans' do
           assert_run_phase planned_action do |input|
-            input[:commit].must_equal "sha"
+            _(input[:commit]).must_equal "sha"
           end
           refute_finalize_phase planned_action
 
-          planned_action.execution_plan.planned_plan_steps.must_be_empty
+          _(planned_action.execution_plan.planned_plan_steps).must_be_empty
         end
 
         it 'runs' do
-          runned_action.output.fetch(:passed).must_equal true
+          _(runned_action.output.fetch(:passed)).must_equal true
         end
 
         describe 'when something fails' do
@@ -161,7 +161,7 @@ module Dynflow
           end
 
           it 'runs' do
-            runned_action.output.fetch(:passed).must_equal false
+            _(runned_action.output.fetch(:passed)).must_equal false
           end
         end
       end
@@ -197,7 +197,7 @@ module Dynflow
         f.wait
 
         f.value.tap do |plan|
-          plan.state.must_equal :stopped
+          _(plan.state).must_equal :stopped
         end
       end
     end
@@ -229,7 +229,7 @@ module Dynflow
       let :failed_execution_plan do
         plan = world.plan(Support::CodeWorkflowExample::IncomingIssues, failing_issues_data)
         plan = world.execute(plan.id).value
-        plan.state.must_equal :paused
+        _(plan.state).must_equal :paused
         plan
       end
 
@@ -239,19 +239,19 @@ module Dynflow
 
       it "is able to execute plans inside the thread" do
         world.execute(execution_plan.id).value.tap do |plan|
-          plan.state.must_equal :stopped
+          _(plan.state).must_equal :stopped
         end
       end
 
       it "is able to handle errors in the plan" do
         world.execute(failed_execution_plan.id).value.tap do |plan|
-          plan.state.must_equal :paused
+          _(plan.state).must_equal :paused
         end
       end
 
       it "is able to handle when events" do
         world.execute(polling_execution_plan.id).value.tap do |plan|
-          plan.state.must_equal :stopped
+          _(plan.state).must_equal :stopped
         end
       end
 
@@ -269,8 +269,8 @@ module Dynflow
           end
 
           it 'skips the action and continues automatically' do
-            execution_plan.state.must_equal :stopped
-            execution_plan.result.must_equal :warning
+            _(execution_plan.state).must_equal :stopped
+            _(execution_plan.result).must_equal :warning
           end
         end
       end

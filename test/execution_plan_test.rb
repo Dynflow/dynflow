@@ -31,8 +31,8 @@ module Dynflow
 
           it 'restores the plan properly' do
             assert deserialized_execution_plan.valid?
-            deserialized_execution_plan.id.must_equal execution_plan.id
-            deserialized_execution_plan.label.must_equal execution_plan.label
+            _(deserialized_execution_plan.id).must_equal execution_plan.id
+            _(deserialized_execution_plan.label).must_equal execution_plan.label
 
             assert_steps_equal execution_plan.root_plan_step, deserialized_execution_plan.root_plan_step
             assert_equal execution_plan.steps.keys, deserialized_execution_plan.steps.keys
@@ -78,8 +78,8 @@ module Dynflow
         end
 
         it 'is determined by the action#label method of entry action' do
-          execution_plan.label.must_equal 'Support::CodeWorkflowExample::FastCommit'
-          dummy_execution_plan.label.must_equal 'dummy_action'
+          _(execution_plan.label).must_equal 'Support::CodeWorkflowExample::FastCommit'
+          _(dummy_execution_plan.label).must_equal 'dummy_action'
         end
       end
       describe '#result' do
@@ -93,8 +93,8 @@ module Dynflow
           before { execution_plan.steps[2].set_state :error, true }
 
           it 'should be :error' do
-            execution_plan.result.must_equal :error
-            execution_plan.error?.must_equal true
+            _(execution_plan.result).must_equal :error
+            _(execution_plan.error?).must_equal true
           end
 
         end
@@ -107,7 +107,7 @@ module Dynflow
           end
 
           it 'should be :error' do
-            execution_plan.result.must_equal :error
+            _(execution_plan.result).must_equal :error
           end
 
         end
@@ -120,7 +120,7 @@ module Dynflow
           end
 
           it 'should be :pending' do
-            execution_plan.result.must_equal :pending
+            _(execution_plan.result).must_equal :pending
           end
 
         end
@@ -135,7 +135,7 @@ module Dynflow
           end
 
           it 'should be :warning' do
-            execution_plan.result.must_equal :warning
+            _(execution_plan.result).must_equal :warning
           end
 
         end
@@ -149,7 +149,7 @@ module Dynflow
 
         it 'does not have itself as a sub plan' do
           assert execution_plan.actions.count >= 2
-          execution_plan.sub_plans.must_be :empty?
+          _(execution_plan.sub_plans).must_be :empty?
         end
       end
 
@@ -186,9 +186,9 @@ module Dynflow
         end
 
         it 'stores the ids for plan, run and finalize steps' do
-          action.plan_step_id.must_equal 3
-          action.run_step_id.must_equal 4
-          action.finalize_step_id.must_equal 5
+          _(action.plan_step_id).must_equal 3
+          _(action.run_step_id).must_equal 4
+          _(action.finalize_step_id).must_equal 5
         end
       end
 
@@ -201,7 +201,7 @@ module Dynflow
         end
 
         it 'allows setting custom id for the execution plan' do
-          execution_plan.id.must_equal sample_uuid
+          _(execution_plan.id).must_equal sample_uuid
         end
       end
 
@@ -234,7 +234,7 @@ module Dynflow
           end
 
           it 'stops the planning right after the first error occurred' do
-            execution_plan.steps.size.must_equal 2
+            _(execution_plan.steps.size).must_equal 2
           end
         end
 
@@ -321,7 +321,7 @@ module Dynflow
             end
           end
           cancel_events = plan.cancel
-          cancel_events.size.must_equal 1
+          _(cancel_events.size).must_equal 1
           cancel_events.each(&:wait)
           finished.wait
         end
@@ -335,7 +335,7 @@ module Dynflow
             end
           end
           cancel_events = plan.cancel true
-          cancel_events.size.must_equal 1
+          _(cancel_events.size).must_equal 1
           cancel_events.each(&:wait)
           finished.wait
         end
@@ -347,9 +347,9 @@ module Dynflow
         end
 
         it 'provides the access to the actions data via steps #action' do
-          execution_plan.steps.size.must_equal 20
+          _(execution_plan.steps.size).must_equal 20
           execution_plan.steps.each do |_, step|
-            step.action(execution_plan).phase.must_equal Action::Present
+            _(step.action(execution_plan).phase).must_equal Action::Present
           end
         end
       end
@@ -360,9 +360,9 @@ module Dynflow
           error = ExecutionPlan::Steps::Error.new_from_hash(exception_class: "RenamedError",
                                                             message: "This errror is not longer here",
                                                             backtrace: [])
-          error.exception_class.name.must_equal "RenamedError"
-          error.exception_class.to_s.must_equal "Dynflow::Errors::UnknownError[RenamedError]"
-          error.exception.inspect.must_equal "Dynflow::Errors::UnknownError[RenamedError]: This errror is not longer here"
+          _(error.exception_class.name).must_equal "RenamedError"
+          _(error.exception_class.to_s).must_equal "Dynflow::Errors::UnknownError[RenamedError]"
+          _(error.exception.inspect).must_equal "Dynflow::Errors::UnknownError[RenamedError]: This errror is not longer here"
         end
 
       end
@@ -380,26 +380,26 @@ module Dynflow
 
         it 'unlocks the locks on transition to stopped' do
           plan = world.plan(SingletonAction)
-          plan.state.must_equal :planned
+          _(plan.state).must_equal :planned
           lock_filter = ::Dynflow::Coordinator::SingletonActionLock
                           .unique_filter plan.entry_action.class.name
-          world.coordinator.find_locks(lock_filter).count.must_equal 1
+          _(world.coordinator.find_locks(lock_filter).count).must_equal 1
           plan = world.execute(plan.id).wait!.value
-          plan.state.must_equal :stopped
-          plan.result.must_equal :success
-          world.coordinator.find_locks(lock_filter).count.must_equal 0
+          _(plan.state).must_equal :stopped
+          _(plan.result).must_equal :success
+          _(world.coordinator.find_locks(lock_filter).count).must_equal 0
         end
 
         it 'unlocks the locks on transition to paused' do
           plan = world.plan(SingletonAction, :fail => true)
-          plan.state.must_equal :planned
+          _(plan.state).must_equal :planned
           lock_filter = ::Dynflow::Coordinator::SingletonActionLock
                           .unique_filter plan.entry_action.class.name
-          world.coordinator.find_locks(lock_filter).count.must_equal 1
+          _(world.coordinator.find_locks(lock_filter).count).must_equal 1
           plan = world.execute(plan.id).wait!.value
-          plan.state.must_equal :paused
-          plan.result.must_equal :error
-          world.coordinator.find_locks(lock_filter).count.must_equal 0
+          _(plan.state).must_equal :paused
+          _(plan.result).must_equal :error
+          _(world.coordinator.find_locks(lock_filter).count).must_equal 0
         end
       end
     end

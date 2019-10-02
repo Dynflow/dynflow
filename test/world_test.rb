@@ -12,14 +12,14 @@ module Dynflow
         it 'by default informs about the hostname and the pid running the world' do
           registered_world = world.coordinator.find_worlds(false, id: world.id).first
           registered_world.meta.delete('last_seen')
-          registered_world.meta.must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid,
+          _(registered_world.meta).must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid,
                                            'queues' => { 'default' => { 'pool_size' => 5 },
                                                          'slow' => { 'pool_size' => 1 }})
         end
 
         it 'is configurable' do
           registered_world = world.coordinator.find_worlds(false, id: world_with_custom_meta.id).first
-          registered_world.meta['fast'].must_equal true
+          _(registered_world.meta['fast']).must_equal true
         end
       end
 
@@ -30,24 +30,24 @@ module Dynflow
         end
 
         it 'retrieves correct execution items count' do
-          world.get_execution_status(world.id, nil, 5).value!.must_equal(base)
+          _(world.get_execution_status(world.id, nil, 5).value!).must_equal(base)
           id = 'something like uuid'
           expected = base.dup
           expected[:default][:queue_size] = 0
           expected[:slow][:queue_size] =  0
-          world.get_execution_status(world.id, id, 5).value!.must_equal(expected)
+          _(world.get_execution_status(world.id, id, 5).value!).must_equal(expected)
         end
       end
 
       describe '#terminate' do
         it 'fires an event after termination' do
           terminated_event = world.terminated
-          terminated_event.resolved?.must_equal false
+          _(terminated_event.resolved?).must_equal false
           world.terminate
           # wait for termination process to finish, but don't block
           # the test from running.
           terminated_event.wait(10)
-          terminated_event.resolved?.must_equal true
+          _(terminated_event.resolved?).must_equal true
         end
       end
     end

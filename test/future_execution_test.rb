@@ -18,7 +18,7 @@ module Dynflow
         let(:world) { WorldFactory.create_world }
         let(:delayed_plan) do
           delayed_plan = world.delay(::Support::DummyExample::Dummy, { :start_at => @start_at })
-          delayed_plan.must_be :scheduled?
+          _(delayed_plan).must_be :scheduled?
           world.persistence.load_delayed_plan(delayed_plan.execution_plan_id)
         end
         let(:history_names) do
@@ -32,40 +32,40 @@ module Dynflow
           it 'handles wrong plan state' do
             delayed_plan.execution_plan.state = :planning
             abstract_delayed_executor.send(:process, [delayed_plan], @start_at)
-            delayed_plan.execution_plan.state.must_equal :planned
+            _(delayed_plan.execution_plan.state).must_equal :planned
 
             delayed_plan.execution_plan.set_state(:running, true)
             abstract_delayed_executor.send(:process, [delayed_plan], @start_at)
-            delayed_plan.execution_plan.state.must_equal :running
+            _(delayed_plan.execution_plan.state).must_equal :running
           end
         end
 
         it 'returns the progress as 0' do
-          execution_plan.progress.must_equal 0
+          _(execution_plan.progress).must_equal 0
         end
 
         it 'marks the plan as failed when issues in serialied phase' do
           world.persistence.delete_execution_plans({})
-          e = proc { world.delay(::Support::DummyExample::DummyCustomDelaySerializer, { :start_at => @start_at }, :fail) }.must_raise RuntimeError
-          e.message.must_equal 'Enforced serializer failure'
+          e = _(proc { world.delay(::Support::DummyExample::DummyCustomDelaySerializer, { :start_at => @start_at }, :fail) }).must_raise RuntimeError
+          _(e.message).must_equal 'Enforced serializer failure'
           plan = world.persistence.find_execution_plans(page: 0, per_page: 1, order_by: :ended_at, desc: true).first
-          plan.state.must_equal :stopped
-          plan.result.must_equal :error
+          _(plan.state).must_equal :stopped
+          _(plan.result).must_equal :error
         end
 
         it 'delays the action' do
-          execution_plan.steps.count.must_equal 1
-          delayed_plan.start_at.inspect.must_equal (@start_at).inspect
-          history_names.call(execution_plan).must_equal ['delay']
+          _(execution_plan.steps.count).must_equal 1
+          _(delayed_plan.start_at.inspect).must_equal (@start_at).inspect
+          _(history_names.call(execution_plan)).must_equal ['delay']
         end
 
         it 'allows cancelling the delayed plan' do
-          execution_plan.state.must_equal :scheduled
-          execution_plan.cancellable?.must_equal true
+          _(execution_plan.state).must_equal :scheduled
+          _(execution_plan.cancellable?).must_equal true
           execution_plan.cancel.each(&:wait)
           execution_plan = world.persistence.load_execution_plan(self.execution_plan.id)
-          execution_plan.state.must_equal :stopped
-          execution_plan.result.must_equal :cancelled
+          _(execution_plan.state).must_equal :stopped
+          _(execution_plan.result).must_equal :cancelled
           assert_nil execution_plan.delay_record
         end
 
@@ -73,30 +73,30 @@ module Dynflow
           @start_at = Time.now.utc - 100
           delayed_plan
           past_delayed_plans = world.persistence.find_past_delayed_plans(@start_at + 10)
-          past_delayed_plans.length.must_equal 1
-          past_delayed_plans.first.execution_plan_uuid.must_equal execution_plan.id
+          _(past_delayed_plans.length).must_equal 1
+          _(past_delayed_plans.first.execution_plan_uuid).must_equal execution_plan.id
         end
 
         it 'delayed plans can be planned and executed' do
-          execution_plan.state.must_equal :scheduled
+          _(execution_plan.state).must_equal :scheduled
           delayed_plan.plan
-          execution_plan.state.must_equal :planned
-          execution_plan.result.must_equal :pending
+          _(execution_plan.state).must_equal :planned
+          _(execution_plan.result).must_equal :pending
           assert_planning_success execution_plan
-          history_names.call(execution_plan).must_equal ['delay']
+          _(history_names.call(execution_plan)).must_equal ['delay']
           delayed_plan.execute.future.wait
           executed = world.persistence.load_execution_plan(delayed_plan.execution_plan_uuid)
-          executed.state.must_equal :stopped
-          executed.result.must_equal :success
-          executed.execution_history.count.must_equal 3
+          _(executed.state).must_equal :stopped
+          _(executed.result).must_equal :success
+          _(executed.execution_history.count).must_equal 3
         end
 
         it 'expired plans can be failed' do
           delayed_plan.timeout
-          execution_plan.state.must_equal :stopped
-          execution_plan.result.must_equal :error
-          execution_plan.errors.first.message.must_match /could not be started before set time/
-          history_names.call(execution_plan).must_equal %W(delay timeout)
+          _(execution_plan.state).must_equal :stopped
+          _(execution_plan.result).must_equal :error
+          _(execution_plan.errors.first.message).must_match /could not be started before set time/
+          _(history_names.call(execution_plan)).must_equal %W(delay timeout)
         end
 
       end
@@ -113,18 +113,18 @@ module Dynflow
           persistence.expect(:find_past_delayed_plans, [], [start_time])
           persistence.expect(:find_past_delayed_plans, [], [start_time + options[:poll_interval]])
           dummy_world.stub :persistence, persistence do
-            klok.pending_pings.length.must_equal 0
+            _(klok.pending_pings.length).must_equal 0
             delayed_executor.start.wait
-            klok.pending_pings.length.must_equal 1
-            klok.pending_pings.first.who.ref.must_be_same_as delayed_executor.core
-            klok.pending_pings.first.when.must_equal start_time + options[:poll_interval]
+            _(klok.pending_pings.length).must_equal 1
+            _(klok.pending_pings.first.who.ref).must_be_same_as delayed_executor.core
+            _(klok.pending_pings.first.when).must_equal start_time + options[:poll_interval]
             klok.progress
             delayed_executor.terminate.wait
-            klok.pending_pings.length.must_equal 1
-            klok.pending_pings.first.who.ref.must_be_same_as delayed_executor.core
-            klok.pending_pings.first.when.must_equal start_time + 2 * options[:poll_interval]
+            _(klok.pending_pings.length).must_equal 1
+            _(klok.pending_pings.first.who.ref).must_be_same_as delayed_executor.core
+            _(klok.pending_pings.first.when).must_equal start_time + 2 * options[:poll_interval]
             klok.progress
-            klok.pending_pings.length.must_equal 0
+            _(klok.pending_pings.length).must_equal 0
           end
         end
       end
@@ -150,27 +150,27 @@ module Dynflow
 
         it 'noop serializer [de]serializes correctly for simple types' do
           input = [1, 2.0, 'three', ['four-1', 'four-2'], { 'five' => 5 }]
-          simulated_use.call(Dynflow::Serializers::Noop, input).must_equal input
+          _(simulated_use.call(Dynflow::Serializers::Noop, input)).must_equal input
         end
 
         it 'args! raises if not deserialized' do
-          proc { serialized_serializer.args! }.must_raise RuntimeError
+          _(proc { serialized_serializer.args! }).must_raise RuntimeError
           deserialized_serializer.args! # Must not raise
         end
 
         it 'serialized_args! raises if not serialized' do
-          proc { deserialized_serializer.serialized_args! }.must_raise RuntimeError
+          _(proc { deserialized_serializer.serialized_args! }).must_raise RuntimeError
           serialized_serializer.serialized_args! # Must not raise
         end
 
         it 'performs_serialization!' do
           deserialized_serializer.perform_serialization!
-          deserialized_serializer.serialized_args!.must_equal args
+          _(deserialized_serializer.serialized_args!).must_equal args
         end
 
         it 'performs_deserialization!' do
           serialized_serializer.perform_deserialization!
-          serialized_serializer.args.must_equal args
+          _(serialized_serializer.args).must_equal args
         end
       end
 
@@ -182,9 +182,9 @@ module Dynflow
         end
 
         it "allows access to serializer's args" do
-          serializer.args.must_be :nil?
-          delayed_plan.args.must_equal args
-          serializer.args.must_equal args
+          _(serializer.args).must_be :nil?
+          _(delayed_plan.args).must_equal args
+          _(serializer.args).must_equal args
         end
       end
     end

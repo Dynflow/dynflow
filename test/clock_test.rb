@@ -9,7 +9,7 @@ describe clock_class do
   let(:clock) { clock_class.spawn 'clock' }
 
   it 'refuses who without #<< method' do
-    -> { clock.ping Object.new, 0.1, :pong }.must_raise TypeError
+    _(-> { clock.ping Object.new, 0.1, :pong }).must_raise TypeError
     clock.ping [], 0.1, :pong
   end
 

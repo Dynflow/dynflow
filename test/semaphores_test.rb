@@ -11,35 +11,35 @@ module Dynflow
       it 'can be used as counter' do
         expected_state = { :tickets => tickets_count, :free => 4, :meta => {} }
         semaphore = semaphore_class.new(tickets_count)
-        semaphore.tickets.must_equal tickets_count
-        semaphore.free.must_equal tickets_count
-        semaphore.waiting.must_be_empty
-        semaphore.get.must_equal 1
-        semaphore.free.must_equal tickets_count - 1
-        semaphore.get(3).must_equal 3
-        semaphore.free.must_equal tickets_count - (3 + 1)
-        semaphore.drain.must_equal 1
-        semaphore.free.must_equal tickets_count - (3 + 1 + 1)
+        _(semaphore.tickets).must_equal tickets_count
+        _(semaphore.free).must_equal tickets_count
+        _(semaphore.waiting).must_be_empty
+        _(semaphore.get).must_equal 1
+        _(semaphore.free).must_equal tickets_count - 1
+        _(semaphore.get(3)).must_equal 3
+        _(semaphore.free).must_equal tickets_count - (3 + 1)
+        _(semaphore.drain).must_equal 1
+        _(semaphore.free).must_equal tickets_count - (3 + 1 + 1)
         semaphore.release
-        semaphore.free.must_equal tickets_count - (3 + 1)
+        _(semaphore.free).must_equal tickets_count - (3 + 1)
         semaphore.release 3
-        semaphore.free.must_equal tickets_count - 1
-        semaphore.to_hash.must_equal expected_state
+        _(semaphore.free).must_equal tickets_count - 1
+        _(semaphore.to_hash).must_equal expected_state
       end
 
       it 'can have things waiting on it' do
         semaphore = semaphore_class.new 1
         allowed = semaphore.wait(1)
-        allowed.must_equal true
-        semaphore.free.must_equal 0
+        _(allowed).must_equal true
+        _(semaphore.free).must_equal 0
         allowed = semaphore.wait(2)
-        allowed.must_equal false
+        _(allowed).must_equal false
         allowed = semaphore.wait(3)
-        allowed.must_equal false
+        _(allowed).must_equal false
         waiting = semaphore.get_waiting
-        waiting.must_equal 2
+        _(waiting).must_equal 2
         waiting = semaphore.get_waiting
-        waiting.must_equal 3
+        _(waiting).must_equal 3
       end
 
     end
@@ -49,15 +49,15 @@ module Dynflow
 
       it 'always has free' do
         semaphore = semaphore_class.new
-        semaphore.free.must_equal 1
-        semaphore.get(5).must_equal 5
-        semaphore.free.must_equal 1
+        _(semaphore.free).must_equal 1
+        _(semaphore.get(5)).must_equal 5
+        _(semaphore.free).must_equal 1
       end
 
       it 'cannot have things waiting on it' do
         semaphore = semaphore_class.new
-        semaphore.wait(1).must_equal true
-        semaphore.has_waiting?.must_equal false
+        _(semaphore.wait(1)).must_equal true
+        _(semaphore.has_waiting?).must_equal false
       end
     end
 
@@ -72,25 +72,25 @@ module Dynflow
       end
 
       def assert_semaphore_state(semaphore, state_A, state_B)
-        semaphore.children[:child_A].free.must_equal state_A
-        semaphore.children[:child_B].free.must_equal state_B
-        semaphore.free.must_equal [state_A, state_B].min
+        _(semaphore.children[:child_A].free).must_equal state_A
+        _(semaphore.children[:child_B].free).must_equal state_B
+        _(semaphore.free).must_equal [state_A, state_B].min
       end
 
       it 'can be used as counter' do
         semaphore = semaphore_class.new(children)
         assert_semaphore_state semaphore, 3, 2
-        semaphore.get.must_equal 1
+        _(semaphore.get).must_equal 1
         assert_semaphore_state semaphore, 2, 1
-        semaphore.get.must_equal 1
+        _(semaphore.get).must_equal 1
         assert_semaphore_state semaphore, 1, 0
-        semaphore.get.must_equal 0
+        _(semaphore.get).must_equal 0
         assert_semaphore_state semaphore, 1, 0
         semaphore.release
         assert_semaphore_state semaphore, 2, 1
         semaphore.release(1, :child_B)
         assert_semaphore_state semaphore, 2, 2
-        semaphore.drain.must_equal 2
+        _(semaphore.drain).must_equal 2
         assert_semaphore_state semaphore, 0, 0
       end
     end

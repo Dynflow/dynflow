@@ -138,7 +138,7 @@ module Dynflow
         plan = world.plan(ActionOnStop)
         plan = world.execute(plan.id).wait!.value
         assert Flag.raised?
-        plan.result.must_equal :success
+        _(plan.result).must_equal :success
       end
 
       it 'inherits the hooks when subclassing' do
@@ -159,7 +159,7 @@ module Dynflow
         refute Flag.raised?
         plan = world.trigger(ComposedAction)
         plan.finished.wait!
-        Flag.raised_count.must_equal 1
+        _(Flag.raised_count).must_equal 1
       end
     end
   end

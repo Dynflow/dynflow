@@ -65,11 +65,11 @@ module Dynflow
           it 'when no executor is available, marks the plans as paused' do
             executor_world_2.terminate.wait
             with_invalidation_while_executing(false) do |plan|
-              plan.state.must_equal :paused
-              plan.result.must_equal :pending
+              _(plan.state).must_equal :paused
+              _(plan.result).must_equal :pending
               expected_history = [['start execution', executor_world.id],
                                   ['terminate execution', executor_world.id]]
-              plan.execution_history.map { |h| [h.name, h.world_id] }.must_equal(expected_history)
+              _(plan.execution_history.map { |h| [h.name, h.world_id] }).must_equal(expected_history)
             end
           end
 
@@ -104,14 +104,14 @@ module Dynflow
             client_world.invalidate(executor_world.registered_world)
             expected_locks = ["lock world-invalidation:#{executor_world.id}",
                               "unlock world-invalidation:#{executor_world.id}"]
-            client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+            _(client_world.coordinator.adapter.lock_log).must_equal(expected_locks)
           end
 
           it "prevents from running the consistency checks twice on the same world concurrently" do
             client_world.invalidate(executor_world.registered_world)
             expected_locks = ["lock world-invalidation:#{executor_world.id}",
                               "unlock world-invalidation:#{executor_world.id}"]
-            client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+            _(client_world.coordinator.adapter.lock_log).must_equal(expected_locks)
           end
 
           it "handles missing execution plans" do
@@ -121,7 +121,7 @@ module Dynflow
             expected_locks = ["lock world-invalidation:#{executor_world.id}",
                               "unlock execution-plan:missing",
                               "unlock world-invalidation:#{executor_world.id}"]
-            client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+            _(client_world.coordinator.adapter.lock_log).must_equal(expected_locks)
           end
 
           it 'releases singleton locks belonging to missing execution plan' do
@@ -135,7 +135,7 @@ module Dynflow
                               "unlock execution-plan:#{execution_plan_id}",
                               "unlock singleton-action:#{action_class}",
                               "unlock world-invalidation:#{executor_world.id}"]
-            client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+            _(client_world.coordinator.adapter.lock_log).must_equal(expected_locks)
           end
 
           describe 'planning locks' do
@@ -149,7 +149,7 @@ module Dynflow
                                 "unlock execution-plan:#{plan.id}", # planning lock
                                 "lock execution-plan:#{plan.id}", # execution lock
                                 "unlock world-invalidation:#{client_world.id}"]
-              executor_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+              _(executor_world.coordinator.adapter.lock_log).must_equal(expected_locks)
               wait_for do
                 plan = client_world_2.persistence.load_execution_plan(plan.id)
                 plan.state == :stopped
@@ -168,9 +168,9 @@ module Dynflow
               expected_locks = ["lock world-invalidation:#{client_world.id}",
                                 "unlock execution-plan:#{plan.id}",
                                 "unlock world-invalidation:#{client_world.id}"]
-              client_world_2.coordinator.adapter.lock_log.must_equal(expected_locks)
+              _(client_world_2.coordinator.adapter.lock_log).must_equal(expected_locks)
               plan = client_world_2.persistence.load_execution_plan(plan.id)
-              plan.state.must_equal :stopped
+              _(plan.state).must_equal :stopped
             end
 
             it 'releases orphaned planning locks without execution plans' do
@@ -180,7 +180,7 @@ module Dynflow
               expected_locks = ["lock world-invalidation:#{client_world.id}",
                                 "unlock execution-plan:#{uuid}",
                                 "unlock world-invalidation:#{client_world.id}"]
-              client_world_2.coordinator.adapter.lock_log.must_equal(expected_locks)
+              _(client_world_2.coordinator.adapter.lock_log).must_equal(expected_locks)
             end
           end
         end
@@ -195,10 +195,10 @@ module Dynflow
         it "prevents from running the auto-execution twice" do
           client_world.auto_execute
           expected_locks = ["lock auto-execute", "unlock auto-execute"]
-          client_world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          _(client_world.coordinator.adapter.lock_log).must_equal(expected_locks)
           lock = Coordinator::AutoExecuteLock.new(client_world)
           client_world.coordinator.acquire(lock)
-          client_world.auto_execute.must_equal []
+          _(client_world.auto_execute).must_equal []
         end
 
         it "re-runs the plans that were planned but not executed" do
@@ -213,7 +213,7 @@ module Dynflow
           end
           expected_history = [['start execution', executor_world.id],
                               ['finish execution', executor_world.id]]
-          plan.execution_history.map { |h| [h.name, h.world_id] }.must_equal(expected_history)
+          _(plan.execution_history.map { |h| [h.name, h.world_id] }).must_equal(expected_history)
         end
 
         it "re-runs the plans that were terminated but not re-executed (because no available executor)" do
@@ -237,10 +237,10 @@ module Dynflow
           retries = executor_world.auto_execute
           retries.each(&:wait)
           plan = client_world.persistence.load_execution_plan(triggered.id)
-          plan.state.must_equal :paused
+          _(plan.state).must_equal :paused
           expected_history = [['start execution', executor_world.id],
                               ['pause execution', executor_world.id]]
-          plan.execution_history.map { |h| [h.name, h.world_id] }.must_equal(expected_history)
+          _(plan.execution_history.map { |h| [h.name, h.world_id] }).must_equal(expected_history)
         end
       end
 
@@ -267,45 +267,45 @@ module Dynflow
 
           it 'performs the validity check on world creation if auto_validity_check enabled' do
             client_world.coordinator.register_world(invalid_world)
-            client_world.coordinator.find_worlds(false, id: invalid_world.id).wont_be_empty
+            _(client_world.coordinator.find_worlds(false, id: invalid_world.id)).wont_be_empty
             world_with_auto_validity_check
-            client_world.coordinator.find_worlds(false, id: invalid_world.id).must_be_empty
+            _(client_world.coordinator.find_worlds(false, id: invalid_world.id)).must_be_empty
           end
 
           it 'by default, the auto_validity_check is enabled only for executor words' do
             client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world )
-            client_world_config.auto_validity_check.must_equal false
+            _(client_world_config.auto_validity_check).must_equal false
 
             executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = Executors::Parallel::Core }, create_world )
-            executor_world_config.auto_validity_check.must_equal true
+            _(executor_world_config.auto_validity_check).must_equal true
           end
 
           it 'reports the validation status' do
             client_world.coordinator.register_world(invalid_world)
             results = client_world.worlds_validity_check
-            client_world.coordinator.find_worlds(false, id: invalid_world.id).must_be_empty
+            _(client_world.coordinator.find_worlds(false, id: invalid_world.id)).must_be_empty
 
-            results[invalid_world.id].must_equal :invalidated
+            _(results[invalid_world.id]).must_equal :invalidated
 
-            results[client_world.id].must_equal :valid
+            _(results[client_world.id]).must_equal :valid
           end
 
           it 'allows checking only, without actual invalidation' do
             client_world.coordinator.register_world(invalid_world)
             results = client_world.worlds_validity_check(false)
-            client_world.coordinator.find_worlds(false, id: invalid_world.id).wont_be_empty
+            _(client_world.coordinator.find_worlds(false, id: invalid_world.id)).wont_be_empty
 
-            results[invalid_world.id].must_equal :invalid
+            _(results[invalid_world.id]).must_equal :invalid
           end
 
           it 'allows to filter the worlds to run the check on' do
             client_world.coordinator.register_world(invalid_world)
             client_world.coordinator.register_world(invalid_world_2)
-            client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size.must_equal 2
+            _(client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size).must_equal 2
 
             results = client_world.worlds_validity_check(true, :id => invalid_world.id)
-            results.must_equal(invalid_world.id =>  :invalidated)
-            client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size.must_equal 1
+            _(results).must_equal(invalid_world.id =>  :invalidated)
+            _(client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size).must_equal 1
           end
         end
       end
@@ -328,22 +328,22 @@ module Dynflow
           before do
             client_world.coordinator.acquire(valid_lock)
             client_world.coordinator.acquire(invalid_lock)
-            current_locks.must_include(valid_lock)
-            current_locks.must_include(invalid_lock)
+            _(current_locks).must_include(valid_lock)
+            _(current_locks).must_include(invalid_lock)
           end
 
           it 'performs the validity check on world creation if auto_validity_check enabled' do
             world_with_auto_validity_check
-            current_locks.must_include(valid_lock)
-            current_locks.wont_include(invalid_lock)
+            _(current_locks).must_include(valid_lock)
+            _(current_locks).wont_include(invalid_lock)
           end
 
           it 'performs the validity check on world creation if auto_validity_check enabled' do
             invalid_locks = client_world.locks_validity_check
-            current_locks.must_include(valid_lock)
-            current_locks.wont_include(invalid_lock)
-            invalid_locks.must_include(invalid_lock)
-            invalid_locks.wont_include(valid_lock)
+            _(current_locks).must_include(valid_lock)
+            _(current_locks).wont_include(invalid_lock)
+            _(invalid_locks).must_include(invalid_lock)
+            _(invalid_locks).wont_include(valid_lock)
           end
         end
 
@@ -373,9 +373,9 @@ module Dynflow
             client_world.coordinator.acquire(invalid_lock2)
             invalid_locks = client_world.coordinator.clean_orphaned_locks
             # It must invalidate locks which are missing or in paused/stopped
-            invalid_locks.must_include(invalid_lock)
-            invalid_locks.must_include(invalid_lock2)
-            invalid_locks.wont_include(valid_lock)
+            _(invalid_locks).must_include(invalid_lock)
+            _(invalid_locks).must_include(invalid_lock2)
+            _(invalid_locks).wont_include(valid_lock)
           end
         end
       end

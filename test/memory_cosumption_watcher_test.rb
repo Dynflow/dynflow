@@ -13,7 +13,7 @@ module Dynflow
           world.expect(:clock, clock)
           init_interval = 1000
           clock.expect(:ping, true) do |clock_who, clock_when, _|
-            clock_when.must_equal init_interval
+            _(clock_when).must_equal init_interval
           end
 
           Dynflow::Watchers::MemoryConsumptionWatcher.new world, 1, initial_wait: init_interval
@@ -31,11 +31,11 @@ module Dynflow
           init_interval = 1000
           polling_interval = 2000
           clock.expect(:ping, true) do |clock_who, clock_when, _|
-            clock_when.must_equal init_interval
+            _(clock_when).must_equal init_interval
             true
           end
           clock.expect(:ping, true) do |clock_who, clock_when, _|
-            clock_when.must_equal polling_interval
+            _(clock_when).must_equal polling_interval
             true
           end
           memory_info_provider.expect(:bytes, 0)
@@ -64,7 +64,7 @@ module Dynflow
 
           init_interval = 1000
           clock.expect(:ping, true) do |clock_who, clock_when, _|
-            clock_when.must_equal init_interval
+            _(clock_when).must_equal init_interval
             true
           end
           memory_info_provider.expect(:bytes, 10)
