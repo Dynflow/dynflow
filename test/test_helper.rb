@@ -345,17 +345,17 @@ module PlanAssertions
   end
 
   def assert_planning_success(execution_plan)
-    execution_plan.plan_steps.all? { |plan_step| plan_step.state.must_equal :success, plan_step.error }
+    execution_plan.plan_steps.all? { |plan_step| _(plan_step.state).must_equal :success, plan_step.error }
   end
 
   def assert_run_flow(expected, execution_plan)
     assert_planning_success(execution_plan)
-    inspect_flow(execution_plan, execution_plan.run_flow).chomp.must_equal dedent(expected).chomp
+    _(inspect_flow(execution_plan, execution_plan.run_flow).chomp).must_equal dedent(expected).chomp
   end
 
   def assert_finalize_flow(expected, execution_plan)
     assert_planning_success(execution_plan)
-    inspect_flow(execution_plan, execution_plan.finalize_flow).chomp.must_equal dedent(expected).chomp
+    _(inspect_flow(execution_plan, execution_plan.finalize_flow).chomp).must_equal dedent(expected).chomp
   end
 
   def assert_run_flow_equal(expected_plan, execution_plan)
@@ -365,19 +365,19 @@ module PlanAssertions
   end
 
   def assert_steps_equal(expected, current)
-    current.id.must_equal expected.id
-    current.class.must_equal expected.class
-    current.state.must_equal expected.state
-    current.action_class.must_equal expected.action_class
-    current.action_id.must_equal expected.action_id
+    _(current.id).must_equal expected.id
+    _(current.class).must_equal expected.class
+    _(current.state).must_equal expected.state
+    _(current.action_class).must_equal expected.action_class
+    _(current.action_id).must_equal expected.action_id
 
     if expected.respond_to?(:children)
-      current.children.must_equal(expected.children)
+      _(current.children).must_equal(expected.children)
     end
   end
 
   def assert_plan_steps(expected, execution_plan)
-    inspect_plan_steps(execution_plan).chomp.must_equal dedent(expected).chomp
+    _(inspect_plan_steps(execution_plan).chomp).must_equal dedent(expected).chomp
   end
 
   def assert_finalized(action_class, input)

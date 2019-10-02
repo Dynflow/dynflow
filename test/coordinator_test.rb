@@ -12,13 +12,13 @@ module Dynflow
         it 'unlocks the lock, when the block is passed' do
           world.coordinator.acquire(Coordinator::AutoExecuteLock.new(world)) {}
           expected_locks = ["lock auto-execute", "unlock auto-execute"]
-          world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          _(world.coordinator.adapter.lock_log).must_equal(expected_locks)
         end
 
         it "doesn't unlock, when the block is not passed" do
           world.coordinator.acquire(Coordinator::AutoExecuteLock.new(world))
           expected_locks = ["lock auto-execute"]
-          world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          _(world.coordinator.adapter.lock_log).must_equal(expected_locks)
         end
 
         it 'supports unlocking by owner' do
@@ -36,23 +36,23 @@ module Dynflow
         it 'supports checking about locks' do
           world.coordinator.acquire(Coordinator::AutoExecuteLock.new(world))
           locks = world.coordinator.find_locks(Coordinator::AutoExecuteLock.unique_filter)
-          locks.map(&:world_id).must_equal([world.id])
+          _(locks.map(&:world_id)).must_equal([world.id])
         end
 
         it 'deserializes the data from the adapter when searching for locks' do
           lock = Coordinator::AutoExecuteLock.new(world)
           world.coordinator.acquire(lock)
           found_locks = world.coordinator.find_locks(owner_id: lock.owner_id)
-          found_locks.size.must_equal 1
-          found_locks.first.data.must_equal lock.data
+          _(found_locks.size).must_equal 1
+          _(found_locks.first.data).must_equal lock.data
 
           found_locks = world.coordinator.find_locks(class: lock.class.name, id: lock.id)
-          found_locks.size.must_equal 1
-          found_locks.first.data.must_equal lock.data
+          _(found_locks.size).must_equal 1
+          _(found_locks.first.data).must_equal lock.data
 
           another_lock = Coordinator::AutoExecuteLock.new(another_world)
           found_locks = world.coordinator.find_locks(owner_id: another_lock.owner_id)
-          found_locks.size.must_equal 0
+          _(found_locks.size).must_equal 0
         end
       end
 
@@ -77,15 +77,15 @@ module Dynflow
           dummy_record = DummyRecord.new('dummy', 'Foo')
           world.coordinator.create_record(dummy_record)
           saved_dummy_record = world.coordinator.find_records(class: dummy_record.class.name).first
-          saved_dummy_record.must_equal dummy_record
+          _(saved_dummy_record).must_equal dummy_record
 
           dummy_record.value = 'Bar'
           world.coordinator.update_record(dummy_record)
           saved_dummy_record = world.coordinator.find_records(class: dummy_record.class.name).first
-          saved_dummy_record.data.must_equal dummy_record.data
+          _(saved_dummy_record.data).must_equal dummy_record.data
 
           world.coordinator.delete_record(dummy_record)
-          world.coordinator.find_records(class: dummy_record.class.name).must_equal []
+          _(world.coordinator.find_records(class: dummy_record.class.name)).must_equal []
         end
       end
 
@@ -95,14 +95,12 @@ module Dynflow
           another_world.coordinator.acquire Coordinator::WorldInvalidationLock.new(another_world, another_world)
           world.terminate.wait
           expected_locks = ["lock auto-execute", "unlock auto-execute"]
-          world.coordinator.adapter.lock_log.must_equal(expected_locks)
+          _(world.coordinator.adapter.lock_log).must_equal(expected_locks)
         end
 
         it 'prevents new locks to be acquired by the world being terminated' do
           world.terminate
-          -> do
-            world.coordinator.acquire(Coordinator::AutoExecuteLock.new(world))
-          end.must_raise(Errors::InactiveWorldError)
+          _(-> { world.coordinator.acquire(Coordinator::AutoExecuteLock.new(world)) }).must_raise(Errors::InactiveWorldError)
         end
       end
 
@@ -115,7 +113,7 @@ module Dynflow
               adapter.create_record(record)
               tester.pause
             end
-            -> { another_adapter.create_record(record) }.must_raise(Coordinator::DuplicateRecordError)
+            _(-> { another_adapter.create_record(record) }).must_raise(Coordinator::DuplicateRecordError)
             tester.finish
           end
 
@@ -135,16 +133,16 @@ module Dynflow
             lock = Coordinator::AutoExecuteLock.new(world)
             adapter.create_record(lock)
             found_records = adapter.find_records(owner_id: lock.owner_id)
-            found_records.size.must_equal 1
-            found_records.first.must_equal lock.data
+            _(found_records.size).must_equal 1
+            _(found_records.first).must_equal lock.data
 
             found_records = adapter.find_records(class: lock.class.name, id: lock.id)
-            found_records.size.must_equal 1
-            found_records.first.must_equal lock.data
+            _(found_records.size).must_equal 1
+            _(found_records.first).must_equal lock.data
 
             another_lock = Coordinator::AutoExecuteLock.new(another_world)
             found_records = adapter.find_records(owner_id: another_lock.owner_id)
-            found_records.size.must_equal 0
+            _(found_records.size).must_equal 0
           end
         end
       end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 require 'test_helper'
 require 'active_support'
-require 'mocha/mini_test'
+require 'mocha/minitest'
 require 'logging'
 require 'dynflow/testing'
 require_relative '../lib/dynflow/rails'

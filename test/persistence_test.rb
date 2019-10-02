@@ -85,11 +85,13 @@ module Dynflow
         original.each do |key, value|
           loaded_value = loaded[key.to_s]
           if value.is_a?(Time)
-            loaded_value.inspect.must_equal value.inspect
+            _(loaded_value.inspect).must_equal value.inspect
           elsif value.is_a?(Hash)
             assert_equal_attributes!(value, loaded_value)
+          elsif value.nil?
+            assert_nil loaded[key.to_s]
           else
-            loaded[key.to_s].must_equal value
+            _(loaded[key.to_s]).must_equal value
           end
         end
       end
@@ -105,10 +107,10 @@ module Dynflow
             prepare_and_save_plans
             if adapter.pagination?
               loaded_plans = adapter.find_execution_plans(page: 0, per_page: 1)
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
+              _(loaded_plans.map { |h| h[:id] }).must_equal ['plan1']
 
               loaded_plans = adapter.find_execution_plans(page: 1, per_page: 1)
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
+              _(loaded_plans.map { |h| h[:id] }).must_equal ['plan2']
             end
           end
 
@@ -116,10 +118,10 @@ module Dynflow
             prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(order_by: 'state')
-              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan3 plan4 plan2)
+              _(loaded_plans.map { |h| h[:id] }).must_equal %w(plan1 plan3 plan4 plan2)
 
               loaded_plans = adapter.find_execution_plans(order_by: 'state', desc: true)
-              loaded_plans.map { |h| h[:id] }.must_equal %w(plan2 plan1 plan3 plan4)
+              _(loaded_plans.map { |h| h[:id] }).must_equal %w(plan2 plan1 plan3 plan4)
             end
           end
 
@@ -127,31 +129,31 @@ module Dynflow
             prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'] })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
+              _(loaded_plans.map { |h| h[:id] }).must_equal ['plan1']
               loaded_plans = adapter.find_execution_plans(filters: { state: ['paused'] })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1', 'plan3', 'plan4']
+              _(loaded_plans.map { |h| h[:id] }).must_equal ['plan1', 'plan3', 'plan4']
 
               loaded_plans = adapter.find_execution_plans(filters: { state: ['stopped'] })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan2']
+              _(loaded_plans.map { |h| h[:id] }).must_equal ['plan2']
 
               loaded_plans = adapter.find_execution_plans(filters: { state: [] })
-              loaded_plans.map { |h| h[:id] }.must_equal []
+              _(loaded_plans.map { |h| h[:id] }).must_equal []
 
               loaded_plans = adapter.find_execution_plans(filters: { state: ['stopped', 'paused'] })
-              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan2 plan3 plan4)
+              _(loaded_plans.map { |h| h[:id] }).must_equal %w(plan1 plan2 plan3 plan4)
 
               loaded_plans = adapter.find_execution_plans(filters: { 'state' => ['stopped', 'paused'] })
-              loaded_plans.map { |h| h[:id] }.must_equal %w(plan1 plan2 plan3 plan4)
+              _(loaded_plans.map { |h| h[:id] }).must_equal %w(plan1 plan2 plan3 plan4)
 
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
-              loaded_plans.must_be_empty
+              _(loaded_plans).must_be_empty
 
               adapter.save_delayed_plan('plan1',
                                         :execution_plan_uuid => 'plan1',
                                         :start_at => format_time(Time.now + 60),
                                         :start_before => format_time(Time.now - 60))
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
-              loaded_plans.map { |h| h[:id] }.must_equal ['plan1']
+              _(loaded_plans.map { |h| h[:id] }).must_equal ['plan1']
             end
           end
         end
@@ -166,57 +168,57 @@ module Dynflow
             prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'] })
-              loaded_plans.must_equal 1
+              _(loaded_plans).must_equal 1
               loaded_plans = adapter.find_execution_plan_counts(filters: { state: ['paused'] })
-              loaded_plans.must_equal 3
+              _(loaded_plans).must_equal 3
 
               loaded_plans = adapter.find_execution_plan_counts(filters: { state: ['stopped'] })
-              loaded_plans.must_equal 1
+              _(loaded_plans).must_equal 1
 
               loaded_plans = adapter.find_execution_plan_counts(filters: { state: [] })
-              loaded_plans.must_equal 0
+              _(loaded_plans).must_equal 0
 
               loaded_plans = adapter.find_execution_plan_counts(filters: { state: ['stopped', 'paused'] })
-              loaded_plans.must_equal 4
+              _(loaded_plans).must_equal 4
 
               loaded_plans = adapter.find_execution_plan_counts(filters: { 'state' => ['stopped', 'paused'] })
-              loaded_plans.must_equal 4
+              _(loaded_plans).must_equal 4
 
               loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'], :delayed => true })
-              loaded_plans.must_equal 0
+              _(loaded_plans).must_equal 0
 
               adapter.save_delayed_plan('plan1',
                                         :execution_plan_uuid => 'plan1',
                                         :start_at => format_time(Time.now + 60),
                                         :start_before => format_time(Time.now - 60))
               loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'], :delayed => true })
-              loaded_plans.must_equal 1
+              _(loaded_plans).must_equal 1
             end
           end
         end
 
         describe '#load_execution_plan and #save_execution_plan' do
           it 'serializes/deserializes the plan data' do
-            -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
+            _(-> { adapter.load_execution_plan('plan1') }).must_raise KeyError
             plan = prepare_and_save_plans.first
             loaded_plan = adapter.load_execution_plan('plan1')
-            loaded_plan[:id].must_equal 'plan1'
-            loaded_plan['id'].must_equal 'plan1'
+            _(loaded_plan[:id]).must_equal 'plan1'
+            _(loaded_plan['id']).must_equal 'plan1'
 
             assert_equal_attributes!(plan, loaded_plan)
 
             adapter.save_execution_plan('plan1', nil)
-            -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
+            _(-> { adapter.load_execution_plan('plan1') }).must_raise KeyError
           end
         end
 
         describe '#delete_execution_plans' do
           it 'deletes selected execution plans, including steps and actions' do
             prepare_plans_with_steps
-            adapter.delete_execution_plans('uuid' => 'plan1').must_equal 1
-            -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
-            -> { adapter.load_action('plan1', action_data[:id]) }.must_raise KeyError
-            -> { adapter.load_step('plan1', step_data[:id]) }.must_raise KeyError
+            _(adapter.delete_execution_plans('uuid' => 'plan1')).must_equal 1
+            _(-> { adapter.load_execution_plan('plan1') }).must_raise KeyError
+            _(-> { adapter.load_action('plan1', action_data[:id]) }).must_raise KeyError
+            _(-> { adapter.load_step('plan1', step_data[:id]) }).must_raise KeyError
 
             # testing that no other plans where affected
             adapter.load_execution_plan('plan2')
@@ -224,16 +226,16 @@ module Dynflow
             adapter.load_step('plan2', step_data[:id])
 
             prepare_plans_with_steps
-            adapter.delete_execution_plans('state' => 'paused').must_equal 3
-            -> { adapter.load_execution_plan('plan1') }.must_raise KeyError
+            _(adapter.delete_execution_plans('state' => 'paused')).must_equal 3
+            _(-> { adapter.load_execution_plan('plan1') }).must_raise KeyError
             adapter.load_execution_plan('plan2') # nothing raised
-            -> { adapter.load_execution_plan('plan3') }.must_raise KeyError
+            _(-> { adapter.load_execution_plan('plan3') }).must_raise KeyError
           end
 
           it 'creates backup dir and produce backup including steps and actions' do
             prepare_plans_with_steps
             Dir.mktmpdir do |backup_dir|
-              adapter.delete_execution_plans({'uuid' => 'plan1'}, 100, backup_dir).must_equal 1
+              _(adapter.delete_execution_plans({'uuid' => 'plan1'}, 100, backup_dir)).must_equal 1
               plans = CSV.read(backup_dir + "/execution_plans.csv", :headers => true)
               assert_equal 1, plans.count
               assert_equal 'plan1', plans.first.to_hash['uuid']
@@ -252,16 +254,16 @@ module Dynflow
             prepare_and_save_plans
             action = action_data.dup
             action_id = action_data[:id]
-            -> { adapter.load_action('plan1', action_id) }.must_raise KeyError
+            _(-> { adapter.load_action('plan1', action_id) }).must_raise KeyError
 
             prepare_action('plan1')
             loaded_action = adapter.load_action('plan1', action_id)
-            loaded_action[:id].must_equal action_id
+            _(loaded_action[:id]).must_equal action_id
 
             assert_equal_attributes!(action, loaded_action)
 
             adapter.save_action('plan1', action_id, nil)
-            -> { adapter.load_action('plan1', action_id) }.must_raise KeyError
+            _(-> { adapter.load_action('plan1', action_id) }).must_raise KeyError
 
             adapter.save_execution_plan('plan1', nil)
           end
@@ -270,9 +272,9 @@ module Dynflow
             prepare_and_save_plans
             prepare_action('plan1')
             loaded_data = adapter.load_actions_attributes('plan1', [:id, :run_step_id]).first
-            loaded_data.keys.count.must_equal 2
-            loaded_data[:id].must_equal action_data[:id]
-            loaded_data[:run_step_id].must_equal action_data[:run_step_id]
+            _(loaded_data.keys.count).must_equal 2
+            _(loaded_data[:id]).must_equal action_data[:id]
+            _(loaded_data[:run_step_id]).must_equal action_data[:run_step_id]
           end
 
           it 'allows to load actions in bulk using #load_actions' do
@@ -280,7 +282,7 @@ module Dynflow
             prepare_action('plan1')
             action = action_data.dup
             loaded_actions = adapter.load_actions('plan1', [1])
-            loaded_actions.count.must_equal 1
+            _(loaded_actions.count).must_equal 1
             loaded_action = loaded_actions.first
 
             assert_equal_attributes!(action, loaded_action)
@@ -293,7 +295,7 @@ module Dynflow
             step_id = step_data[:id]
             prepare_and_save_step('plan1')
             loaded_step = adapter.load_step('plan1', step_id)
-            loaded_step[:id].must_equal step_id
+            _(loaded_step[:id]).must_equal step_id
 
             assert_equal_attributes!(step_data, loaded_step)
           end
@@ -310,8 +312,8 @@ module Dynflow
             adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :frozen => false, :start_at => format_time(start_time - 60),
                                       :start_before => format_time(start_time - 60))
             plans = adapter.find_past_delayed_plans(start_time)
-            plans.length.must_equal 3
-            plans.map { |plan| plan[:execution_plan_uuid] }.must_equal %w(plan2 plan4 plan1)
+            _(plans.length).must_equal 3
+            _(plans.map { |plan| plan[:execution_plan_uuid] }).must_equal %w(plan2 plan4 plan1)
           end
 
           it 'does not find plans that are frozen' do
@@ -324,8 +326,8 @@ module Dynflow
                                       :start_before => format_time(start_time - 60))
 
             plans = adapter.find_past_delayed_plans(start_time)
-            plans.length.must_equal 1
-            plans.first[:execution_plan_uuid].must_equal 'plan1'
+            _(plans.length).must_equal 1
+            _(plans.first[:execution_plan_uuid]).must_equal 'plan1'
           end
         end
       end
@@ -343,11 +345,11 @@ module Dynflow
             adapter.class::META_DATA.fetch(:execution_plan).each do |name|
               value = original.fetch(name.to_sym)
               if value.nil?
-                stored.fetch(name.to_sym).must_be_nil
+                assert_nil stored.fetch(name.to_sym)
               elsif value.is_a?(Time)
-                stored.fetch(name.to_sym).inspect.must_equal value.inspect
+                _(stored.fetch(name.to_sym).inspect).must_equal value.inspect
               else
-                stored.fetch(name.to_sym).must_equal value
+                _(stored.fetch(name.to_sym)).must_equal value
               end
             end
           end
@@ -419,8 +421,8 @@ module Dynflow
 
           # Check the plan has the changed columns populated
           raw_plan = db[:dynflow_execution_plans].where(:uuid => 'plan1').first
-          raw_plan[:state].must_equal 'stopped'
-          raw_plan[:result].must_equal 'success'
+          _(raw_plan[:state]).must_equal 'stopped'
+          _(raw_plan[:result]).must_equal 'success'
 
           # Load the plan and assert it doesn't read attributes from data
           loaded_plan = adapter.load_execution_plan(plan[:id])

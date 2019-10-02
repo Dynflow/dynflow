@@ -73,7 +73,7 @@ module Dynflow
         plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
 
-        action.output[:batch_count].must_equal action.total_count / action.batch_size
+        _(action.output[:batch_count]).must_equal action.total_count / action.batch_size
       end
 
       it 'can resume tasks' do
@@ -83,17 +83,17 @@ module Dynflow
         wait_for { future.resolved? }
         plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
-        action.output[:batch_count].must_equal 1
-        future.value.state.must_equal :paused
+        _(action.output[:batch_count]).must_equal 1
+        _(future.value.state).must_equal :paused
 
         FailureSimulator.wont_fail!
         future = world.execute plan.id
         wait_for { future.resolved? }
         action = future.value.entry_action
-        future.value.state.must_equal :stopped
-        action.output[:batch_count].must_equal (action.total_count / action.batch_size) + 1
-        action.output[:total_count].must_equal action.total_count
-        action.output[:success_count].must_equal action.total_count
+        _(future.value.state).must_equal :stopped
+        _(action.output[:batch_count]).must_equal (action.total_count / action.batch_size) + 1
+        _(action.output[:total_count]).must_equal action.total_count
+        _(action.output[:success_count]).must_equal action.total_count
       end
 
       it 'is controlled only by total_count and output[:planned_count]' do
@@ -102,12 +102,12 @@ module Dynflow
         wait_for { future.resolved? }
         plan = world.persistence.load_execution_plan(plan.id)
         action = plan.entry_action
-        action.send(:can_spawn_next_batch?).must_equal false
-        action.current_batch.must_be :empty?
+        _(action.send(:can_spawn_next_batch?)).must_equal false
+        _(action.current_batch).must_be :empty?
         action.output[:pending_count] = 0
         action.output[:success_count] = 5
-        action.send(:can_spawn_next_batch?).must_equal false
-        action.current_batch.must_be :empty?
+        _(action.send(:can_spawn_next_batch?)).must_equal false
+        _(action.current_batch).must_be :empty?
       end
 
     end

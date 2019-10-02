@@ -81,9 +81,9 @@ module Dynflow
       end
 
       def check_step(plan, total, finished)
-        world.throttle_limiter.observe(plan.id).length.must_equal (total - finished)
-        plan.sub_plans.select { |sub| planned? sub }.count.must_equal (total - finished)
-        plan.sub_plans.select { |sub| successful? sub }.count.must_equal finished
+        _(world.throttle_limiter.observe(plan.id).length).must_equal (total - finished)
+        _(plan.sub_plans.select { |sub| planned? sub }.count).must_equal (total - finished)
+        _(plan.sub_plans.select { |sub| successful? sub }.count).must_equal finished
       end
 
       def planned?(plan)
@@ -127,7 +127,7 @@ module Dynflow
         future = world.execute plan.id
         wait_for { future.resolved? }
         plan.sub_plans.all? { |sub| successful? sub }
-        world.throttle_limiter.core.ask!(:running).must_equal [0]
+        _(world.throttle_limiter.core.ask!(:running)).must_equal [0]
       end
 
       it 'limits by concurrency level' do
@@ -136,7 +136,7 @@ module Dynflow
         plan = world.plan(ParentAction, total, level)
         future = world.execute plan.id
         wait_for { future.resolved? }
-        world.throttle_limiter.core.ask!(:running).max.must_be :<=, level
+        _(world.throttle_limiter.core.ask!(:running).max).must_be :<=, level
       end
 
       it 'allows to cancel' do
@@ -148,8 +148,8 @@ module Dynflow
           world.event(plan.id, plan.steps.values.last.id, ::Dynflow::Action::Cancellable::Cancel)
           wait_for { triggered.resolved? }
           plan = world.persistence.load_execution_plan(plan.id)
-          plan.entry_action.output[:failed_count].must_equal total
-          world.throttle_limiter.core.ask!(:running).max.must_be :<=, 0
+          _(plan.entry_action.output[:failed_count]).must_equal total
+          _(world.throttle_limiter.core.ask!(:running).max).must_be :<=, 0
         end
       end
 
@@ -166,21 +166,21 @@ module Dynflow
           wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 10 tasks over 10 seconds, one task at a time, 1 task every second
-          get_interval.call(plan).must_equal 1.0
+          _(get_interval.call(plan)).must_equal 1.0
 
           plan = world.plan(ParentAction, total, 4, 10)
           world.execute(plan.id)
           wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 10 tasks over 10 seconds, four tasks at a time, 1 task every 0.25 second
-          get_interval.call(plan).must_equal 0.25
+          _(get_interval.call(plan)).must_equal 0.25
 
           plan = world.plan(ParentAction, total, nil, 10)
           world.execute(plan.id)
           wait_for { plan.sub_plans_count == total }
           wait_for { klok.progress; plan.sub_plans.all? { |sub| successful? sub } }
           # 1o tasks over 10 seconds, one task at a time (default), 1 task every second
-          get_interval.call(plan).must_equal 1.0
+          _(get_interval.call(plan)).must_equal 1.0
         end
       end
 
@@ -205,9 +205,9 @@ module Dynflow
             check_step(plan, total, finished)
           end
           end_time = klok.current_time
-          (end_time - start_time).must_equal 4
-          world.throttle_limiter.observe(plan.id).must_equal []
-          world.throttle_limiter.core.ask!(:running).max.must_be :<=, level
+          _((end_time - start_time)).must_equal 4
+          _(world.throttle_limiter.observe(plan.id)).must_equal []
+          _(world.throttle_limiter.core.ask!(:running).max).must_be :<=, level
         end
       end
 
@@ -219,7 +219,7 @@ module Dynflow
         plan = world.plan(ParentAction, total, level, time_span)
         future = world.execute(plan.id)
         wait_for { future.resolved? }
-        plan.sub_plans.all? { |sub| sub.result == :error }.must_equal true
+        _(plan.sub_plans.all? { |sub| sub.result == :error }).must_equal true
       end
 
       it 'cancels tasks which could not be started within the time window' do
@@ -231,14 +231,14 @@ module Dynflow
           future = world.execute(plan.id)
           wait_for { plan.sub_plans_count == total && plan.sub_plans.all? { |sub| sub.result == :pending } }
           planned, running = plan.sub_plans.partition { |sub| planned? sub }
-          planned.count.must_equal total - level
-          running.count.must_equal level
-          world.throttle_limiter.observe(plan.id).length.must_equal (total - 1)
+          _(planned.count).must_equal total - level
+          _(running.count).must_equal level
+          _(world.throttle_limiter.observe(plan.id).length).must_equal (total - 1)
           4.times { klok.progress }
           wait_for { future.resolved? }
           finished, stopped = plan.sub_plans.partition { |sub| successful? sub }
-          finished.count.must_equal level
-          stopped.count.must_equal (total - level)
+          _(finished.count).must_equal level
+          _(stopped.count).must_equal (total - level)
         end
       end
     end

@@ -52,14 +52,14 @@ module Dynflow
         let :failed_execution_plan do
           plan = world.plan(Support::CodeWorkflowExample::IncomingIssues, failing_issues_data)
           plan = world.execute(plan.id).value
-          plan.state.must_equal :paused
+          _(plan.state).must_equal :paused
           plan
         end
 
         let :finalize_failed_execution_plan do
           plan = world.plan(Support::CodeWorkflowExample::IncomingIssues, finalize_failing_issues_data)
           plan = world.execute(plan.id).value
-          plan.state.must_equal :paused
+          _(plan.state).must_equal :paused
           plan
         end
 
@@ -76,13 +76,13 @@ module Dynflow
             end
 
             it "is pending" do
-              execution_plan.state.must_equal :planned
+              _(execution_plan.state).must_equal :planned
             end
 
             describe "when finished successfully" do
               it "is stopped" do
                 world.execute(execution_plan.id).value.tap do |plan|
-                  plan.state.must_equal :stopped
+                  _(plan.state).must_equal :stopped
                 end
               end
             end
@@ -90,7 +90,7 @@ module Dynflow
             describe "when finished with error" do
               it "is paused" do
                 world.execute(failed_execution_plan.id).value.tap do |plan|
-                  plan.state.must_equal :paused
+                  _(plan.state).must_equal :paused
                 end
               end
             end
@@ -109,7 +109,7 @@ module Dynflow
             end
 
             it "is stopped" do
-              execution_plan.state.must_equal :stopped
+              _(execution_plan.state).must_equal :stopped
             end
 
           end
@@ -134,14 +134,12 @@ module Dynflow
             it "is running" do
               TestPause.when_paused do
                 plan = world.persistence.load_execution_plan(execution_plan.id)
-                plan.state.must_equal :running
+                _(plan.state).must_equal :running
                 triage = plan.run_steps.find do |s|
                   s.action_class == Support::CodeWorkflowExample::Triage
                 end
-                triage.state.must_equal :running
-                world.persistence.
-                  load_step(triage.execution_plan_id, triage.id, world).
-                  state.must_equal :running
+                _(triage.state).must_equal :running
+                _(world.persistence.load_step(triage.execution_plan_id, triage.id, world).state).must_equal :running
               end
             end
 
@@ -159,7 +157,7 @@ module Dynflow
               wait_for('execution plan removed from executor') do
                 !director.current_execution_plan_ids.include?(execution_plan.id)
               end
-              world.persistence.find_execution_plans(filters: { uuid: [execution_plan.id] }).must_be :empty?
+              _(world.persistence.find_execution_plans(filters: { uuid: [execution_plan.id] })).must_be :empty?
             end
           end
         end
@@ -190,8 +188,8 @@ module Dynflow
               end
 
               it "doesn't cause problems" do
-                result.result.must_equal :success
-                result.state.must_equal :stopped
+                _(result.result).must_equal :success
+                _(result.state).must_equal :stopped
               end
             end
 
@@ -201,11 +199,11 @@ module Dynflow
               end
 
               it 'cancels' do
-                result.result.must_equal :success
-                result.state.must_equal :stopped
+                _(result.result).must_equal :success
+                _(result.state).must_equal :stopped
                 action = world.persistence.load_action result.steps[2]
-                action.output[:task][:progress].must_equal 30
-                action.output[:task][:cancelled].must_equal true
+                _(action.output[:task][:progress]).must_equal 30
+                _(action.output[:task][:cancelled]).must_equal true
               end
             end
 
@@ -215,12 +213,12 @@ module Dynflow
               end
 
               it 'fails' do
-                result.result.must_equal :error
-                result.state.must_equal :paused
+                _(result.result).must_equal :error
+                _(result.state).must_equal :paused
                 step = result.steps[2]
-                step.error.message.must_equal 'action cancelled'
+                _(step.error.message).must_equal 'action cancelled'
                 action = world.persistence.load_action step
-                action.output[:task][:progress].must_equal 30
+                _(action.output[:task][:progress]).must_equal 30
               end
             end
           end
@@ -246,29 +244,29 @@ module Dynflow
               end
 
               it "doesn't cause problems" do
-                result.result.must_equal :success
-                result.state.must_equal :stopped
+                _(result.result).must_equal :success
+                _(result.state).must_equal :stopped
               end
 
               it 'does set times' do
-                result.started_at.wont_be_nil
-                result.ended_at.wont_be_nil
-                result.execution_time.must_be :<, result.real_time
+                refute_nil result.started_at
+                refute_nil result.ended_at
+                _(result.execution_time).must_be :<, result.real_time
 
                 step_sum = result.steps.values.map(&:execution_time).reduce(:+)
 
                 # Storing floats can lead to slight deviations, 1ns precision should be enough
-                result.execution_time.must_be_close_to step_sum, 0.000_001
+                _(result.execution_time).must_be_close_to step_sum, 0.000_001
 
                 plan_step = result.steps[1]
-                plan_step.started_at.wont_be_nil
-                plan_step.ended_at.wont_be_nil
-                plan_step.execution_time.must_equal plan_step.real_time
+                refute_nil plan_step.started_at
+                refute_nil plan_step.ended_at
+                _(plan_step.execution_time).must_equal plan_step.real_time
 
                 run_step = result.steps[2]
-                run_step.started_at.wont_be_nil
-                run_step.ended_at.wont_be_nil
-                run_step.execution_time.must_be :<, run_step.real_time
+                refute_nil run_step.started_at
+                refute_nil run_step.ended_at
+                _(run_step.execution_time).must_be :<, run_step.real_time
               end
             end
 
@@ -293,7 +291,7 @@ module Dynflow
                 it 'determines the progress of the execution plan in percents' do
                   TestPause.when_paused do
                     plan = world.persistence.load_execution_plan(execution_plan.id)
-                    plan.progress.round(2).must_equal 0.2
+                    _(plan.progress.round(2)).must_equal 0.2
                   end
                 end
               end
@@ -308,7 +306,7 @@ module Dynflow
                 it 'takes the steps weight in account' do
                   TestPause.when_paused do
                     plan = world.persistence.load_execution_plan(execution_plan.id)
-                    plan.progress.round(2).must_equal 0.42
+                    _(plan.progress.round(2)).must_equal 0.42
                   end
                 end
               end
@@ -347,8 +345,8 @@ module Dynflow
             end
 
             it "doesn't cause problems" do
-              result.result.must_equal :success
-              result.state.must_equal :stopped
+              _(result.result).must_equal :success
+              _(result.state).must_equal :stopped
             end
 
             it 'will not run again' do
@@ -368,8 +366,8 @@ module Dynflow
             end
 
             it "doesn't cause problems" do
-              result.result.must_equal :success
-              result.state.must_equal :stopped
+              _(result.result).must_equal :success
+              _(result.state).must_equal :stopped
             end
 
           end
@@ -427,7 +425,7 @@ module Dynflow
             end
 
             it "doesn't run the steps in the finalize flow" do
-              TestExecutionLog.finalize.size.must_equal 0
+              _(TestExecutionLog.finalize.size).must_equal 0
             end
           end
 
@@ -451,13 +449,13 @@ module Dynflow
           end
 
           it "runs all the steps in the run flow" do
-            resumed_execution_plan.state.must_equal :stopped
-            resumed_execution_plan.result.must_equal :success
+            _(resumed_execution_plan.state).must_equal :stopped
+            _(resumed_execution_plan.result).must_equal :success
 
             run_triages = TestExecutionLog.run.find_all do |action_class, input|
               action_class == Support::CodeWorkflowExample::Triage
             end
-            run_triages.size.must_equal 1
+            _(run_triages.size).must_equal 1
 
             assert_run_flow <<-EXECUTED_RUN_FLOW, resumed_execution_plan
         Dynflow::Flows::Concurrence
@@ -493,13 +491,13 @@ module Dynflow
           end
 
           it "runs all the steps in the finalize flow" do
-            resumed_execution_plan.state.must_equal :stopped
-            resumed_execution_plan.result.must_equal :success
+            _(resumed_execution_plan.state).must_equal :stopped
+            _(resumed_execution_plan.result).must_equal :success
 
             run_triages = TestExecutionLog.finalize.find_all do |action_class, input|
               action_class == Support::CodeWorkflowExample::Triage
             end
-            run_triages.size.must_equal 2
+            _(run_triages.size).must_equal 2
 
             assert_finalize_flow <<-EXECUTED_RUN_FLOW, resumed_execution_plan
             Dynflow::Flows::Sequence
@@ -529,13 +527,13 @@ module Dynflow
           end
 
           it "runs all pending steps except skipped" do
-            resumed_execution_plan.state.must_equal :stopped
-            resumed_execution_plan.result.must_equal :warning
+            _(resumed_execution_plan.state).must_equal :stopped
+            _(resumed_execution_plan.result).must_equal :warning
 
             run_triages = TestExecutionLog.run.find_all do |action_class, input|
               action_class == Support::CodeWorkflowExample::Triage
             end
-            run_triages.size.must_equal 0
+            _(run_triages.size).must_equal 0
 
             assert_run_flow <<-EXECUTED_RUN_FLOW, resumed_execution_plan
         Dynflow::Flows::Concurrence
@@ -615,16 +613,16 @@ module Dynflow
 
           let(:storage) { Dynflow::Executors::Parallel::Pool::JobStorage.new }
           it do
-            storage.must_be_empty
-            storage.queue_size.must_equal(0)
-            storage.pop.must_be_nil
-            storage.pop.must_be_nil
+            _(storage).must_be_empty
+            _(storage.queue_size).must_equal(0)
+            assert_nil storage.pop
+            assert_nil storage.pop
 
             storage.add s = FakeStep.new(1)
-            storage.queue_size.must_equal(1)
-            storage.pop.must_equal s
-            storage.must_be_empty
-            storage.pop.must_be_nil
+            _(storage.queue_size).must_equal(1)
+            _(storage.pop).must_equal s
+            _(storage).must_be_empty
+            assert_nil storage.pop
 
             storage.add s11 = FakeStep.new(1)
             storage.add s12 = FakeStep.new(1)
@@ -633,20 +631,20 @@ module Dynflow
             storage.add s22 = FakeStep.new(2)
             storage.add s31 = FakeStep.new(3)
 
-            storage.queue_size(1).must_equal(3)
-            storage.queue_size(4).must_equal(0)
-            storage.queue_size.must_equal(6)
+            _(storage.queue_size(1)).must_equal(3)
+            _(storage.queue_size(4)).must_equal(0)
+            _(storage.queue_size).must_equal(6)
 
-            storage.pop.must_equal s11
-            storage.pop.must_equal s12
-            storage.pop.must_equal s13
-            storage.pop.must_equal s21
-            storage.pop.must_equal s22
-            storage.pop.must_equal s31
+            _(storage.pop).must_equal s11
+            _(storage.pop).must_equal s12
+            _(storage.pop).must_equal s13
+            _(storage.pop).must_equal s21
+            _(storage.pop).must_equal s22
+            _(storage.pop).must_equal s31
 
-            storage.must_be_empty
-            storage.queue_size.must_equal(0)
-            storage.pop.must_be_nil
+            _(storage).must_be_empty
+            _(storage.queue_size).must_equal(0)
+            assert_nil storage.pop
           end
         end
 
@@ -661,11 +659,11 @@ module Dynflow
           suspended = world.trigger(Support::DummyExample::EventedAction, :timeout => 3 )
           sleep 0.2
           world.terminate.wait
-          $slow_actions_done.must_equal 1
+          _($slow_actions_done).must_equal 1
           [running, suspended].each do |triggered|
             plan = world.persistence.load_execution_plan(triggered.id)
-            plan.state.must_equal :paused
-            plan.result.must_equal :pending
+            _(plan.state).must_equal :paused
+            _(plan.result).must_equal :pending
           end
         end
 
@@ -683,8 +681,8 @@ module Dynflow
             world.before_termination { run_hooks << 2; failed_hooks << 2; raise 'error' }
             world.before_termination { run_hooks << 3 }
             world.terminate.wait
-            run_hooks.must_equal [1, 2, 3]
-            failed_hooks.must_equal [2]
+            _(run_hooks).must_equal [1, 2, 3]
+            _(failed_hooks).must_equal [2]
           end
         end
 
@@ -692,10 +690,10 @@ module Dynflow
           assert world.terminate.wait
           ::Dynflow::Coordinator::PlanningLock.any_instance.stubs(:validate!)
           result = world.trigger(Support::DummyExample::Slow, 0.02)
-          result.must_be :planned?
+          _(result).must_be :planned?
           result.finished.wait
           assert result.finished.rejected?
-          result.finished.reason.must_be_kind_of Concurrent::Actor::ActorTerminated
+          _(result.finished.reason).must_be_kind_of Concurrent::Actor::ActorTerminated
         end
 
         it 'it terminates when no work right after initialization' do

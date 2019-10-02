@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 require_relative 'test_helper'
-require 'mocha/mini_test'
+require 'mocha/minitest'
 
 module Dynflow
   module ExecutionPlanCleanerTest
@@ -29,16 +29,16 @@ module Dynflow
       let(:clock) { Testing::ManagedClock.new }
 
       it 'is disabled by default' do
-        default_world.execution_plan_cleaner.must_be_nil
-        world.execution_plan_cleaner
-             .must_be_instance_of ::Dynflow::Actors::ExecutionPlanCleaner
+        assert_nil default_world.execution_plan_cleaner
+        _(world.execution_plan_cleaner)
+          .must_be_instance_of ::Dynflow::Actors::ExecutionPlanCleaner
       end
 
       it 'periodically looks for old execution plans' do
         world.stub(:clock, clock) do
-          clock.pending_pings.count.must_equal 0
+          _(clock.pending_pings.count).must_equal 0
           world.execution_plan_cleaner.core.ask!(:start)
-          clock.pending_pings.count.must_equal 1
+          _(clock.pending_pings.count).must_equal 1
           world.persistence.expects(:find_old_execution_plans).returns([])
           world.persistence.expects(:delete_execution_plans).with(:uuid => [])
           clock.progress
@@ -49,7 +49,7 @@ module Dynflow
       it 'cleans up old plans' do
         world.stub(:clock, clock) do
           world.execution_plan_cleaner.core.ask!(:start)
-          clock.pending_pings.count.must_equal 1
+          _(clock.pending_pings.count).must_equal 1
           plans = (1..10).map { world.trigger SimpleAction }
                          .each { |plan| plan.finished.wait }
           world.persistence.find_execution_plans(:uuid => plans.map(&:id))
@@ -58,8 +58,8 @@ module Dynflow
             plan.save
           end
           world.execution_plan_cleaner.core.ask!(:clean!)
-          world.persistence.find_execution_plans(:uuid => plans.map(&:id))
-               .count.must_equal 0
+          plans = world.persistence.find_execution_plans(:uuid => plans.map(&:id))
+          _(plans.count).must_equal 0
         end
       end
 
@@ -67,12 +67,12 @@ module Dynflow
         world.stub(:clock, clock) do
           count = 10
           world.execution_plan_cleaner.core.ask!(:start)
-          clock.pending_pings.count.must_equal 1
+          _(clock.pending_pings.count).must_equal 1
           plans = (1..10).map { world.trigger SimpleAction }
                          .each { |plan| plan.finished.wait }
           world.execution_plan_cleaner.core.ask!(:clean!)
-          world.persistence.find_execution_plans(:uuid => plans.map(&:id))
-               .count.must_equal count
+          plans = world.persistence.find_execution_plans(:uuid => plans.map(&:id))
+          _(plans.count).must_equal count
         end
       end
     end

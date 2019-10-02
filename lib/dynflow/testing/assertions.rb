@@ -49,8 +49,8 @@ module Dynflow
       def assert_run_phase(action, input = nil, &block)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        action.execution_plan.planned_run_steps.must_include action
-        action.input.must_equal Utils.stringify_keys(input) if input
+        _(action.execution_plan.planned_run_steps).must_include action
+        _(action.input).must_equal Utils.stringify_keys(input) if input
         block.call action.input if block
       end
 
@@ -58,21 +58,21 @@ module Dynflow
       def refute_run_phase(action)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        action.execution_plan.planned_run_steps.wont_include action
+        _(action.execution_plan.planned_run_steps).wont_include action
       end
 
       # assert that +action+ has finalize-phase planned
       def assert_finalize_phase(action)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        action.execution_plan.planned_finalize_steps.must_include action
+        _(action.execution_plan.planned_finalize_steps).must_include action
       end
 
       # refute that +action+ has finalize-phase planned
       def refute_finalize_phase(action)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        action.execution_plan.planned_finalize_steps.wont_include action
+        _(action.execution_plan.planned_finalize_steps).wont_include action
       end
 
     end
