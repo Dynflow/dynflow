@@ -32,10 +32,9 @@ module Dynflow
         end
 
         let(:world) do
-          WorldFactory.create_world do |c|
-            c.executor     = executor
-            c.process_role = :orchestrator
-          end
+          world = WorldFactory.create_world { |c| c.executor = executor }
+          ::Dynflow.instance_variable_set('@process_world', world)
+          world
         end
 
         let :issues_data do

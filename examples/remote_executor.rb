@@ -68,7 +68,6 @@ class RemoteExecutorExample
         config.persistence_adapter = persistence_adapter
         config.connector           = connector
         config.executor            = ::Dynflow::Executors::Sidekiq::Core
-        config.process_role        = :orchestrator
         config.auto_validity_check = false
       end
     end
@@ -85,7 +84,6 @@ class RemoteExecutorExample
         config.persistence_adapter = persistence_adapter
         config.connector           = connector
         config.executor            = false
-        config.process_role        = :worker
       end
     end
 
@@ -166,9 +164,10 @@ elsif defined?(Sidekiq)
   Sidekiq.default_worker_options = { :retry => 0, 'backtrace' => true }
   # assuming the remote executor was required as part of initialization
   # of the ActiveJob worker
-  if Sidekiq.options[:queues].include?("dynflow_orchestrator")
+  world = if Sidekiq.options[:queues].include?("dynflow_orchestrator")
     RemoteExecutorExample.initialize_sidekiq_orchestrator
   elsif (Sidekiq.options[:queues] - ['dynflow_orchestrator']).any?
     RemoteExecutorExample.initialize_sidekiq_worker
   end
+  Sidekiq.options[:dynflow_world] = world
 end
