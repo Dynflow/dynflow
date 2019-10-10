@@ -24,13 +24,10 @@ module Dynflow
     #
     # @return [Dynflow::World, nil]
     def process_world
+      return @process_world if defined? @process_world
+      @process_world = Sidekiq.options[:dynflow_world]
       raise "process world is not set" unless @process_world
       @process_world
-    end
-
-    def process_world=(world)
-      raise "process world is already set" if @process_world
-      @process_world = world
     end
   end
 
