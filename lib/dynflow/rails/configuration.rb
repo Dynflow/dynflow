@@ -168,8 +168,11 @@ module Dynflow
         if remote?
           false
         else
-          # TODO: We probably can't do this
-          ::Dynflow::Executors::Sidekiq::Core
+          if defined?(::Sidekiq) && !Sidekiq.options[:dynflow_world].nil?
+            ::Dynflow::Executors::Sidekiq::Core
+          else
+            ::Dynflow::Executors::Parallel::Core
+          end
         end
       end
 
