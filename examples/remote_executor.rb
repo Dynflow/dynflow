@@ -165,9 +165,9 @@ elsif defined?(Sidekiq)
   # assuming the remote executor was required as part of initialization
   # of the ActiveJob worker
   world = if Sidekiq.options[:queues].include?("dynflow_orchestrator")
-    RemoteExecutorExample.initialize_sidekiq_orchestrator
-  elsif (Sidekiq.options[:queues] - ['dynflow_orchestrator']).any?
-    RemoteExecutorExample.initialize_sidekiq_worker
-  end
+            RemoteExecutorExample.initialize_sidekiq_orchestrator
+          elsif (Sidekiq.options[:queues] - ['dynflow_orchestrator']).any?
+            RemoteExecutorExample.initialize_sidekiq_worker
+          end
   Sidekiq.options[:dynflow_world] = world
 end
