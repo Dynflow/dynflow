@@ -27,6 +27,10 @@ module Dynflow
           ::Dynflow.instance_variable_set('@process_world', nil)
         end
 
+        before do
+          executor.any_instance.stubs(:begin_startup!)
+        end
+
         let(:world) do
           WorldFactory.create_world do |c|
             c.executor     = executor

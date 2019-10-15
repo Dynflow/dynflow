@@ -21,11 +21,12 @@ module Dynflow
     UnprocessableEvent = Class.new(Dynflow::Error)
 
     class WorkItem < Serializable
-      attr_reader :execution_plan_id, :queue
+      attr_reader :execution_plan_id, :queue, :sender_orchestrator_id
 
-      def initialize(execution_plan_id, queue)
+      def initialize(execution_plan_id, queue, sender_orchestrator_id)
         @execution_plan_id = execution_plan_id
         @queue = queue
+        @sender_orchestrator_id = sender_orchestrator_id
       end
 
       def world
@@ -46,7 +47,8 @@ module Dynflow
       def to_hash
         { class: self.class.name,
           execution_plan_id: execution_plan_id,
-          queue: queue }
+          queue: queue,
+          sender_orchestrator_id: sender_orchestrator_id }
       end
 
       def self.new_from_hash(hash, *_args)
@@ -57,8 +59,8 @@ module Dynflow
     class StepWorkItem < WorkItem
       attr_reader :step
 
-      def initialize(execution_plan_id, step, queue)
-        super(execution_plan_id, queue)
+      def initialize(execution_plan_id, step, queue, sender_orchestrator_id)
+        super(execution_plan_id, queue, sender_orchestrator_id)
         @step = step
       end
 
@@ -73,15 +75,16 @@ module Dynflow
       def self.new_from_hash(hash, *_args)
         self.new(hash[:execution_plan_id],
                  Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
-                 hash[:queue])
+                 hash[:queue],
+                 hash[:sender_orchestrator_id])
       end
     end
 
     class EventWorkItem < StepWorkItem
       attr_reader :event, :request_id
 
-      def initialize(request_id, execution_plan_id, step, event, queue)
-        super(execution_plan_id, step, queue)
+      def initialize(request_id, execution_plan_id, step, event, queue, sender_orchestrator_id)
+        super(execution_plan_id, step, queue, sender_orchestrator_id)
         @event = event
         @request_id = request_id
       end
@@ -99,7 +102,8 @@ module Dynflow
                  hash[:execution_plan_id],
                  Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
                  Dynflow.serializer.load(hash[:event]),
-                 hash[:queue])
+                 hash[:queue],
+                 hash[:sender_orchestrator_id])
       end
     end
 
@@ -107,8 +111,8 @@ module Dynflow
       attr_reader :finalize_steps_data
 
       # @param finalize_steps_data - used to pass the result steps from the worker back to orchestrator
-      def initialize(execution_plan_id, queue, finalize_steps_data = nil)
-        super(execution_plan_id, queue)
+      def initialize(execution_plan_id, queue, sender_orchestrator_id, finalize_steps_data = nil)
+        super(execution_plan_id, queue, sender_orchestrator_id)
         @finalize_steps_data = finalize_steps_data
       end
 
@@ -124,7 +128,7 @@ module Dynflow
       end
 
       def self.new_from_hash(hash, *_args)
-        self.new(hash[:execution_plan_id], hash[:queue], hash[:finalize_steps_data])
+        self.new(*hash.values_at(:execution_plan_id, :queue, :sender_orchestrator_id, :finalize_steps_data))
       end
     end
 

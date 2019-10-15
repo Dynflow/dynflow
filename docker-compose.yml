@@ -34,7 +34,7 @@ services:
   orchestrator:
     <<: *common
     command: |
-      sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator
+      sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
   worker:
     <<: *common
     command: |

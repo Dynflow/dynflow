@@ -31,7 +31,7 @@ module Dynflow
       end
 
       def prepare_next_step(step)
-        StepWorkItem.new(execution_plan.id, step, step.queue).tap do |work|
+        StepWorkItem.new(execution_plan.id, step, step.queue, @world.id).tap do |work|
           @running_steps_manager.add(step, work)
         end
       end
@@ -112,7 +112,7 @@ module Dynflow
         return if execution_plan.finalize_flow.empty?
         raise 'finalize phase already started' if @finalize_manager
         @finalize_manager = SequentialManager.new(@world, execution_plan)
-        [FinalizeWorkItem.new(execution_plan.id, execution_plan.finalize_steps.first.queue)]
+        [FinalizeWorkItem.new(execution_plan.id, execution_plan.finalize_steps.first.queue, @world.id)]
       end
 
       def finish

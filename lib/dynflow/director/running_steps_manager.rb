@@ -98,7 +98,7 @@ module Dynflow
       def create_next_event_work_item(step)
         event = @events.shift(step.id)
         return unless event
-        work = EventWorkItem.new(event.request_id, event.execution_plan_id, step, event.event, step.queue)
+        work = EventWorkItem.new(event.request_id, event.execution_plan_id, step, event.event, step.queue, @world.id)
         @work_items.push(step.id, work)
         work
       end
