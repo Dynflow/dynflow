@@ -57,7 +57,7 @@ module Dynflow
           schedule_update_telemetry
         end
 
-        def work_finished(work)
+        def work_finished(work, delayed_events = nil)
           # If the work item is sent in reply to a request from the current orchestrator, proceed
           if work.sender_orchestrator_id == @world.id
             super
