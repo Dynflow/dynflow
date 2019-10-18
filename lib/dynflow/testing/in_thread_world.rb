@@ -66,7 +66,7 @@ module Dynflow
         if time.nil? || time < Time.now
           event(execution_plan_id, step_id, event, done)
         else
-          @clock.ping(executor, time, Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, done], :delayed_event)
+          clock.ping(executor, time, Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, done], :delayed_event)
         end
       end
     end

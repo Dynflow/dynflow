@@ -21,8 +21,16 @@ module Dynflow
         end
       end
 
+      def plan_events(delayed_events)
+        delayed_events.each do |event|
+          @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time)
+        end
+      end
+
       def handle_work(work_item)
         work_item.execute
+        step = work_item.step if work_item.is_a?(Director::StepWorkItem)
+        plan_events(step && step.delayed_events) if step && step.delayed_events
         @director.work_finished(work_item)
       end
 

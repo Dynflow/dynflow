@@ -570,9 +570,9 @@ module Dynflow
               total = 2
               FailureSimulator.fail_in_child_plan = true
               triggered_plan = world.trigger(PollingParentAction, count: total)
-              polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
 
-              wait_for do # Waiting for the sub plans to be spawned
+              polling_plan = nil
+              wait_for('the subplans to be spawned') do
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.sub_plans_count == total
               end
@@ -581,7 +581,7 @@ module Dynflow
               _(clock.pending_pings.count).must_equal 1
               clock.progress
 
-              wait_for do # Waiting for the parent to realise the sub plans failed
+              wait_for('the parent to realise the sub plans failed') do
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :paused
               end
@@ -590,7 +590,7 @@ module Dynflow
 
               world.execute(polling_plan.id) # The actual resume
 
-              wait_for do # Waiting for new generation of sub plans to be spawned
+              wait_for('new generation of sub plans to be spawned') do
                 polling_plan.sub_plans_count == 2 * total
               end
 
@@ -598,7 +598,7 @@ module Dynflow
               _(clock.pending_pings.count).must_equal 1
               clock.progress
 
-              wait_for do # Waiting for everything to finish successfully
+              wait_for('everything to finish successfully') do
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :stopped && polling_plan.result == :success
               end

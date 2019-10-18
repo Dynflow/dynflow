@@ -8,7 +8,7 @@ module Dynflow
     end
 
     def schedule_timeout(seconds)
-      world.clock.ping suspended_action, seconds, Timeout
+      plan_event(Timeout, seconds)
     end
  end
 end

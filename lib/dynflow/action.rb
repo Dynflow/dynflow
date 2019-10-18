@@ -89,6 +89,13 @@ module Dynflow
       end
     end
 
+    DelayedEvent = Algebrick.type do
+      fields! execution_plan_id: String,
+              step_id:           Integer,
+              event:             Object,
+              time:              type { variants Time, NilClass }
+    end
+
     def self.constantize(action_name)
       super action_name
     rescue NameError
@@ -326,9 +333,8 @@ module Dynflow
     # Plan an +event+ to be send to the action defined by +action+, what defaults to be self.
     # if +time+ is not passed, event is sent as soon as possible.
     def plan_event(event, time = nil, execution_plan_id: self.execution_plan_id, step_id: self.run_step_id)
-      Type! time, Time, Numeric, NilClass
-      time  = Time.now + time if time.is_a? Numeric
-      delayed_events << Dispatcher::Event[execution_plan_id, step_id, event, time]
+      time = @world.clock.current_time + time if time.is_a?(Numeric)
+      delayed_events << DelayedEvent[execution_plan_id, step_id, event, time]
     end
 
     def delayed_events

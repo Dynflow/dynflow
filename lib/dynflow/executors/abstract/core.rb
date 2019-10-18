@@ -36,7 +36,9 @@ module Dynflow
         end
 
         def plan_events(delayed_events)
-          delayed_events.each { |event| @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time) }
+          delayed_events.each do |event|
+            @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time)
+          end
         end
 
         def work_finished(work, delayed_events = nil)

@@ -75,8 +75,7 @@ module Dynflow
         run_action.world.action ||= run_action
         run_action.world.clock.clear
         stubbing.call run_action if stubbing
-        run_action.execute event
-        plan_events(plan_action.world, run_action.delayed_events)
+        run_action.world.executor.execute(run_action, event)
         raise run_action.error if run_action.error
         run_action
       end
