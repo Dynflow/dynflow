@@ -70,7 +70,7 @@ module Dynflow
     def spawn_plans
       super
     ensure
-      suspended_action << PlanNextBatch
+      plan_event(PlanNextBatch)
     end
 
     def cancel!(force = false)

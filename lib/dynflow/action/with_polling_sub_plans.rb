@@ -20,7 +20,7 @@ module Dynflow
     end
 
     def initiate
-      ping suspended_action
+      ping
       super
     end
 
@@ -39,7 +39,7 @@ module Dynflow
       else
         if self.is_a?(::Dynflow::Action::WithBulkSubPlans) && can_spawn_next_batch?
           # Not everything was spawned
-          ping suspended_action
+          ping
           spawn_plans
           suspend
         else
@@ -53,11 +53,12 @@ module Dynflow
     end
 
     def suspend_and_ping
-      suspend { |suspended_action| ping suspended_action }
+      ping
+      suspend
     end
 
-    def ping(suspended_action)
-      world.clock.ping suspended_action, REFRESH_INTERVAL, Poll
+    def ping(_suspended_action = nil)
+      plan_event(Poll, REFRESH_INTERVAL)
     end
 
     def recalculate_counts

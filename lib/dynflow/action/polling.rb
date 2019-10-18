@@ -91,7 +91,8 @@ module Dynflow
     end
 
     def suspend_and_ping
-      suspend { |suspended_action| world.clock.ping suspended_action, poll_interval, Poll }
+      plan_event(Poll, poll_interval)
+      suspend
     end
 
     def poll_external_task_with_rescue

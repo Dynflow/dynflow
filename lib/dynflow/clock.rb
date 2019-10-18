@@ -110,9 +110,13 @@ module Dynflow
   class ClockReference < Concurrent::Actor::Reference
     include Algebrick::Types
 
+    def current_time
+      Time.now
+    end
+
     def ping(who, time, with_what = nil, where = :<<)
       Type! time, Time, Numeric
-      time  = Time.now + time if time.is_a? Numeric
+      time  = current_time + time if time.is_a? Numeric
       if who.is_a?(Action::Suspended)
         who.plan_event(with_what, time)
       else

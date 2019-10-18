@@ -177,7 +177,7 @@ module TestHelpers
       return ret if ret
       sleep 0.3
     end
-    raise "waiting for #{waiting_message} was not successful"
+    assert false, "waiting for #{waiting_message} was not successful"
   end
 
   def executor_id_for_plan(execution_plan_id)
