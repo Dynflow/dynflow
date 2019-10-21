@@ -11,6 +11,11 @@ module Dynflow
           # @param request_envelope [Dispatcher::Request] - request to handle on orchestrator side
           #   usually to start new execution or to pass some event
           def perform(work_item, delayed_events = nil)
+            # Usually the step is saved on the worker's side. However if sidekiq is shut down,
+            #   then the step may not have been saved so we save it just to be sure
+            if work_item.is_a?(Director::StepWorkItem) && work_item.step&.error&.exception.is_a?(::Sidekiq::Shutdown)
+              work_item.step.save
+            end
             Dynflow.process_world.executor.core.tell([:work_finished, work_item, delayed_events])
           end
         end
