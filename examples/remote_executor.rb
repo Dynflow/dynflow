@@ -78,6 +78,10 @@ class RemoteExecutorExample
         # Use semi-reliable fetch
         # for details see https://gitlab.com/gitlab-org/sidekiq-reliable-fetch/blob/master/README.md
         config.options[:semi_reliable_fetch] = true
+        # Do not requeue jobs after sidekiq shutdown
+        config.options[:max_retries_after_interruption] = 0
+        # Do not store interrupted jobs, just discard them
+        config.options[:interrupted_max_jobs] = 0
         Sidekiq::ReliableFetch.setup_reliable_fetch!(config)
       end
       ExampleHelper.create_world do |config|
