@@ -39,20 +39,28 @@ module Dynflow
         end
       end
 
-      let(:world) { OpenStruct.new(:id => '12345') }
-      let(:orchestrator) { Orchestrator.new(world, Logger.new) }
+      def redis_orchestrator_id
+        ::Sidekiq.redis do |conn|
+          conn.get Executors::Sidekiq::RedisLocking::REDIS_LOCK_KEY
+        end
+      end
+
+      let(:world)  { OpenStruct.new(:id => '12345') }
       let(:world2) { OpenStruct.new(:id => '67890') }
+      let(:orchestrator)  { Orchestrator.new(world, Logger.new) }
       let(:orchestrator2) { Orchestrator.new(world2, Logger.new) }
 
       it 'acquires the lock when it is not taken' do
         orchestrator.wait_for_orchestrator_lock
         logs = orchestrator.logger.logs
+        _(redis_orchestrator_id).must_equal world.id
         _(logs).must_equal [[:info, 'Acquired orchestrator lock, entering active mode.']]
       end
 
       it 'reacquires the lock if it was lost' do
         orchestrator.reacquire_orchestrator_lock
         logs = orchestrator.logger.logs
+        _(redis_orchestrator_id).must_equal world.id
         _(logs).must_equal [[:error, 'The orchestrator lock was lost, reacquired']]
       end
 
@@ -61,6 +69,7 @@ module Dynflow
         Process.expects(:kill)
         orchestrator2.reacquire_orchestrator_lock
         logs = orchestrator2.logger.logs
+        _(redis_orchestrator_id).must_equal world.id
         _(logs).must_equal [[:fatal, 'The orchestrator lock was stolen by 12345, aborting.']]
       end
 
@@ -68,10 +77,12 @@ module Dynflow
         Executors::Sidekiq::RedisLocking.stub_const(:REDIS_LOCK_TTL, 1) do
           Executors::Sidekiq::RedisLocking.stub_const(:REDIS_LOCK_POLL_INTERVAL, 0.5) do
             orchestrator.wait_for_orchestrator_lock
+            _(redis_orchestrator_id).must_equal world.id
             orchestrator2.wait_for_orchestrator_lock
           end
         end
 
+        _(redis_orchestrator_id).must_equal world2.id
         passive, active = orchestrator2.logger.logs
         _(passive).must_equal [:info, 'Orchestrator lock already taken, entering passive mode.']
         _(active).must_equal [:info, 'Acquired orchestrator lock, entering active mode.']
