@@ -4,40 +4,57 @@ module Dynflow
     class FlowManager
       include Algebrick::TypeCheck
 
-      attr_reader :execution_plan, :cursor_index
+      attr_reader :execution_plan
 
       def initialize(execution_plan, flow)
         @execution_plan = Type! execution_plan, ExecutionPlan
-        @flow           = flow
-        @cursor_index   = {}
-        @cursor         = build_root_cursor
+        @dependency_tree = Utils::LeafTree.new
+        flow_to_dependency_hash(flow)
       end
 
       def done?
-        @cursor.done?
+        @dependency_tree.empty?
       end
 
-      # @return [Set] of steps to continue with
       def what_is_next(flow_step)
         return [] if flow_step.state == :suspended
+        # TODO: What was this for again?
+        # success = flow_step.state != :error
+        @dependency_tree.pluck(flow_step.id)
+        leaves = @dependency_tree.leaves
+        puts "STEP: #{flow_step.id}: #{flow_step.state} - #{leaves} - #{@dependency_tree}"
+        leaves.each { |leaf| @dependency_tree.add(leaf, leaf) }
 
-        success = flow_step.state != :error
-        return cursor_index[flow_step.id].what_is_next(flow_step, success)
+        steps leaves
       end
 
-      # @return [Set] of steps to continue with
       def start
-        return @cursor.what_is_next.tap do |steps|
-          raise 'invalid state' if steps.empty? && !done?
-        end
+        ids = @dependency_tree.leaves
+        ids.each { |leaf| @dependency_tree.add(leaf, leaf) }
+        raise 'invalid state' if ids.empty? && !done?
+        steps ids
+      end
+
+      def steps(ids)
+        ids.map { |id| execution_plan.steps[id] }
       end
 
       private
 
-      def build_root_cursor
-        # the root cursor has to always run against sequence
-        sequence = @flow.is_a?(Flows::Sequence) ? @flow : Flows::Sequence.new([@flow])
-        return SequenceCursor.new(self, sequence, nil)
+      def flow_to_dependency_hash(flow, parent_ids = [])
+        case flow
+        when Flows::Atom
+          @dependency_tree.add(flow.step_id, parent_ids)
+          [flow.step_id]
+        when Flows::Sequence
+          flow.flows.reduce(parent_ids) do |parent_ids, subflow|
+            flow_to_dependency_hash(subflow, parent_ids)
+          end
+        when Flows::Concurrence
+          flow.flows.map do |subflow|
+            flow_to_dependency_hash(subflow, parent_ids)
+          end
+        end
       end
     end
   end
