@@ -55,7 +55,7 @@ module Dynflow
             update_steps(steps)
           end
           raise "Finalize work item without @finalize_manager ready" unless @finalize_manager
-          @finalize_manager.done!
+          @finalize_manager = :done
           finish
         else
           raise "Unexpected work #{work}"
@@ -71,7 +71,7 @@ module Dynflow
       end
 
       def done?
-        (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
+        (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager == :done)
       end
 
       def terminate
@@ -110,8 +110,8 @@ module Dynflow
 
       def start_finalize
         return if execution_plan.finalize_flow.empty?
-        raise 'finalize phase already started' if @finalize_manager
-        @finalize_manager = SequentialManager.new(@world, execution_plan)
+        raise 'finalize phase already started' unless @finalize_manager.nil?
+        @finalize_manager = :started
         [FinalizeWorkItem.new(execution_plan.id, execution_plan.finalize_steps.first.queue, @world.id)]
       end
 

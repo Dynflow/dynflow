@@ -26,6 +26,18 @@ module Dynflow
         dependers = [dependers] unless dependers.kind_of? Array
         @dependencies[dependee] = (@dependencies[dependee] || []) | dependers.flatten
       end
+
+      def block(item)
+        add item, item
+      end
+
+      def blocked_leaves
+        @dependencies.select { |k, v| v == [k] }.keys
+      end
+
+      def unblock(item)
+        @dependencies[item] = @dependencies[item] - [item]
+      end
     end
   end
 end

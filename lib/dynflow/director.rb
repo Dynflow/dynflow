@@ -117,10 +117,37 @@ module Dynflow
       end
 
       def execute
-        execution_plan = world.persistence.load_execution_plan(execution_plan_id)
-        manager = Director::SequentialManager.new(world, execution_plan)
-        manager.finalize
-        @finalize_steps_data = manager.finalize_steps.map(&:to_hash)
+        @execution_plan = world.persistence.load_execution_plan(execution_plan_id)
+
+        reset_finalize_steps
+        steps = @flow_manager.start
+        unless @execution_plan.error?
+          step_id = @execution_plan.finalize_flow.all_step_ids.first
+          action_class = @execution_plan.steps[step_id].action_class
+          world.middleware.execute(:finalize_phase, action_class, @execution_plan) do
+            until @flow_manager.done?
+              # In finalize there can be only one step to do at any given time
+              step = steps.first
+              step.execute
+              steps = @flow_manager.what_is_next(step)
+            end
+          end
+        end
+
+        @finalize_steps_data = finalize_steps.map(&:to_hash)
+      end
+
+      def finalize_steps
+        @execution_plan.finalize_flow.all_step_ids.map do |step_id|
+          @execution_plan.steps[step_id]
+        end
+      end
+
+      def reset_finalize_steps
+        @flow_manager = FlowManager.new(@execution_plan, @execution_plan.finalize_flow)
+        finalize_steps.each do |step|
+          step.state = :pending if [:success, :error].include? step.state
+        end
       end
 
       def to_hash
@@ -133,10 +160,8 @@ module Dynflow
     end
 
     require 'dynflow/director/queue_hash'
-    require 'dynflow/director/sequence_cursor'
     require 'dynflow/director/flow_manager'
     require 'dynflow/director/execution_plan_manager'
-    require 'dynflow/director/sequential_manager'
     require 'dynflow/director/running_steps_manager'
 
     attr_reader :logger
