@@ -72,7 +72,7 @@ module Dynflow
       def find_satisfying_sub_flows(dependency_graph, new_flow)
         satisfying_flows = Set.new
         new_flow.all_step_ids.each do |step_id|
-          dependency_graph.required_step_ids(step_id).each do |required_step_id|
+          dependency_graph.node_requirements(step_id).each do |required_step_id|
             satisfying_flow = sub_flows.find do |flow|
               flow.includes_step?(required_step_id)
             end

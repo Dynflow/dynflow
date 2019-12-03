@@ -42,7 +42,6 @@ module Dynflow
 
     require 'dynflow/execution_plan/steps'
     require 'dynflow/execution_plan/output_reference'
-    require 'dynflow/execution_plan/dependency_graph'
 
     attr_reader :id, :world, :label,
                 :root_plan_step, :steps, :run_flow, :finalize_flow,
@@ -370,7 +369,7 @@ module Dynflow
     # @api private
     def with_planning_scope(&block)
       @run_flow_stack   = []
-      @dependency_graph = DependencyGraph.new
+      @dependency_graph = Utils::DependencyGraph.new
       switch_flow(run_flow, &block)
     ensure
       @run_flow_stack   = nil
@@ -406,7 +405,7 @@ module Dynflow
     def add_run_step(action)
       add_step(Steps::RunStep, action.class, action.id).tap do |step|
         step.update_from_action(action)
-        @dependency_graph.add_dependencies(step, action)
+        @dependency_graph.add(step.id, action.required_step_ids)
         current_run_flow.add_and_resolve(@dependency_graph, Flows::Atom.new(step.id))
       end
     end

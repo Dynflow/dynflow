@@ -110,7 +110,7 @@ module Dynflow
 
       def start_finalize
         return if execution_plan.finalize_flow.empty?
-        raise 'finalize phase already started' unless @finalize_manager.nil?
+        raise 'finalize phase already started' if @finalize_manager
         @finalize_manager = :started
         [FinalizeWorkItem.new(execution_plan.id, execution_plan.finalize_steps.first.queue, @world.id)]
       end

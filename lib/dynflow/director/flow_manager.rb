@@ -11,42 +11,48 @@ module Dynflow
 
       def initialize(execution_plan, flow)
         @execution_plan = Type! execution_plan, ExecutionPlan
-        @dependency_tree = Utils::DependencyGraph.new
+        @dependency_graph = Utils::DependencyGraph.new
         @error_steps = []
         flow_to_dependency_hash(flow)
       end
 
       def done?
-        halted? || @dependency_tree.empty?
+        halted? || @dependency_graph.empty?
       end
 
       # The execution is halted if there are error steps
-      #   and there are no leaves currently being executed
-      #   and all the leaves are error steps
+      #   and there are no unblocked_nodes currently being executed
+      #   and all the unblocked_nodes are error steps
       def halted?
-        !@error_steps.empty? && @dependency_tree.blocked_leaves.none? &&
-          Set.new(@dependency_tree.leaves) == Set.new(@error_steps)
+        !@error_steps.empty? && @dependency_graph.blocked_nodes.none? &&
+          Set.new(@dependency_graph.unblocked_nodes) == Set.new(@error_steps)
       end
 
       def what_is_next(flow_step)
         return [] if flow_step.state == :suspended
         if flow_step.state == :error
-          @dependency_tree.unblock flow_step.id
+          @dependency_graph.unblock flow_step.id
           @error_steps << flow_step.id
           return []
         end
-        @dependency_tree.pluck(flow_step.id)
-        leaves = @dependency_tree.leaves - @error_steps
-        # Make a leaf depend on itself, this way it won't be considered a leaf.
+        @dependency_graph.satisfy(flow_step.id)
+        unblocked_nodes = @dependency_graph.unblocked_nodes - @error_steps
+        # Make a node depend on itself, this way it won't be considered unblocked
         #   We need this to not execute a step multiple times
-        leaves.each { |leaf| @dependency_tree.block(leaf) }
+        unblocked_nodes.each { |node| @dependency_graph.block(node) }
 
-        steps leaves
+        steps unblocked_nodes
+      end
+
+      def levels
+        @dependency_graph.levels.each do |ids|
+          yield steps(ids)
+        end
       end
 
       def start
-        ids = @dependency_tree.leaves
-        ids.each { |leaf| @dependency_tree.block(leaf) }
+        ids = @dependency_graph.unblocked_nodes
+        ids.each { |node| @dependency_graph.block(node) }
         raise 'invalid state' if ids.empty? && !done?
         steps ids
       end
@@ -60,7 +66,7 @@ module Dynflow
       def flow_to_dependency_hash(flow, parent_ids = [])
         case flow
         when Flows::Atom
-          @dependency_tree.add(flow.step_id, parent_ids)
+          @dependency_graph.add(flow.step_id, parent_ids)
           [flow.step_id]
         when Flows::Sequence
           flow.flows.reduce(parent_ids) do |parent_ids, subflow|

@@ -120,16 +120,12 @@ module Dynflow
         @execution_plan = world.persistence.load_execution_plan(execution_plan_id)
 
         reset_finalize_steps
-        steps = @flow_manager.start
         unless @execution_plan.error?
           step_id = @execution_plan.finalize_flow.all_step_ids.first
           action_class = @execution_plan.steps[step_id].action_class
           world.middleware.execute(:finalize_phase, action_class, @execution_plan) do
-            until @flow_manager.done?
-              # In finalize there can be only one step to do at any given time
-              step = steps.first
-              step.execute
-              steps = @flow_manager.what_is_next(step)
+            @flow_manager.levels do |steps|
+              steps.all? { |step| step.execute }
             end
           end
         end
