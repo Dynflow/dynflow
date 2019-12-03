@@ -1,4 +1,7 @@
 # frozen_string_literal: true
+
+require 'set'
+
 module Dynflow
   class Director
     class FlowManager
@@ -22,7 +25,7 @@ module Dynflow
       #   and all the leaves are error steps
       def halted?
         !@error_steps.empty? && @dependency_tree.blocked_leaves.none? &&
-          @dependency_tree.leaves == @error_steps
+          Set.new(@dependency_tree.leaves) == Set.new(@error_steps)
       end
 
       def what_is_next(flow_step)
