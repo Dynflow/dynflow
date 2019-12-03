@@ -11,7 +11,7 @@ module Dynflow
 
       def initialize(execution_plan, flow)
         @execution_plan = Type! execution_plan, ExecutionPlan
-        @dependency_tree = Utils::LeafTree.new
+        @dependency_tree = Utils::DependencyGraph.new
         @error_steps = []
         flow_to_dependency_hash(flow)
       end

@@ -3,7 +3,7 @@ module Dynflow
   module Utils
 
     require 'dynflow/utils/indifferent_hash'
-    require 'dynflow/utils/leaf_tree'
+    require 'dynflow/utils/dependency_graph'
     require 'dynflow/utils/priority_queue'
 
     def self.validate_keys!(hash, *valid_keys)
