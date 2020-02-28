@@ -23,7 +23,7 @@ Gem::Specification.new do |s|
   s.add_dependency "apipie-params"
   s.add_dependency "algebrick", '~> 0.7.0'
   s.add_dependency "concurrent-ruby", '~> 1.1.3'
-  s.add_dependency "concurrent-ruby-edge", '~> 0.4.1'
+  s.add_dependency "concurrent-ruby-edge", '~> 0.6.0'
   s.add_dependency "sequel", '>= 4.0.0'
 
   s.add_development_dependency "rake"
