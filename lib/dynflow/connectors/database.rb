@@ -172,6 +172,10 @@ module Dynflow
         Telemetry.with_instance { |t| t.increment_counter(:dynflow_connector_envelopes, 1, :world => envelope.sender_id, :direction => 'outgoing') }
         @core.ask([:handle_envelope, envelope])
       end
+
+      def prune_undeliverable_envelopes(world)
+        world.persistence.prune_undeliverable_envelopes
+      end
     end
   end
 end

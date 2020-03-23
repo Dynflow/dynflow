@@ -25,6 +25,10 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def prune_undeliverable_envelopes(world)
+        raise NotImplementedError
+      end
+
       # we need to pass the world, as the connector can be shared
       # between words: we need to know the one to send the message to
       def receive(world, envelope)
