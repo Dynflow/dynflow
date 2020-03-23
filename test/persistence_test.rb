@@ -371,6 +371,22 @@ module Dynflow
           assert_equal [], adapter.pull_envelopes(executor_world_id)
         end
 
+        it 'supports pruning of envelopes of invalidated worlds' do
+          client_world_id   = '5678'
+          executor_world_id = '1234'
+          envelope_hash = ->(envelope) { Dynflow::Utils.indifferent_hash(Dynflow.serializer.dump(envelope)) }
+          executor_envelope = envelope_hash.call(Dispatcher::Envelope['123', client_world_id, executor_world_id, Dispatcher::Execution['111']])
+          client_envelope   = envelope_hash.call(Dispatcher::Envelope['123', executor_world_id, client_world_id, Dispatcher::Accepted])
+          envelopes         = [client_envelope, executor_envelope]
+
+          envelopes.each { |e| adapter.push_envelope(e) }
+
+          assert_equal 1, adapter.prune_envelopes([executor_world_id])
+          assert_equal 0, adapter.prune_envelopes([executor_world_id])
+          assert_equal [], adapter.pull_envelopes(executor_world_id)
+          assert_equal [client_envelope], adapter.pull_envelopes(client_world_id)
+        end
+
         it 'supports reading data saved prior to normalization' do
           db = adapter.send(:db)
           # Prepare records for saving

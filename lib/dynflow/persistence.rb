@@ -134,5 +134,9 @@ module Dynflow
         envelope
       end
     end
+
+    def prune_envelopes(receiver_ids)
+      adapter.prune_envelopes(receiver_ids)
+    end
   end
 end
