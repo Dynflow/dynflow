@@ -68,6 +68,11 @@ module Dynflow
         Telemetry.with_instance { |t| t.increment_counter(:dynflow_connector_envelopes, 1, :world => envelope.sender_id) }
         @core.ask([:handle_envelope, envelope])
       end
+
+      def prune_undeliverable_envelopes(_world)
+        # This is a noop
+        0
+      end
     end
   end
 end

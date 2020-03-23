@@ -120,6 +120,10 @@ module Dynflow
       def prune_envelopes(receiver_ids)
         raise NotImplementedError
       end
+
+      def prune_undeliverable_envelopes
+        raise NotImplementedError
+      end
     end
   end
 end

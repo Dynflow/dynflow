@@ -117,6 +117,8 @@ module Dynflow
       def perform_validity_checks
         world_invalidation_result = worlds_validity_check
         locks_validity_check
+        pruned = connector.prune_undeliverable_envelopes(self)
+        logger.error("Pruned #{pruned} undeliverable envelopes") unless pruned.zero?
         world_invalidation_result.values.select { |result| result == :invalidated }.size
       end
 
