@@ -116,6 +116,10 @@ module Dynflow
       def push_envelope(envelope)
         raise NotImplementedError
       end
+
+      def prune_envelopes(receiver_ids)
+        raise NotImplementedError
+      end
     end
   end
 end

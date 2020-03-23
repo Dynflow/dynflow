@@ -198,6 +198,11 @@ module Dynflow
         table(:envelope).insert(prepare_record(:envelope, envelope))
       end
 
+      def prune_envelopes(receiver_ids)
+        connector_feature!
+        table(:envelope).where(receiver_id: receiver_ids).delete
+      end
+
       def coordinator_feature!
         unless @additional_responsibilities[:coordinator]
           raise "The sequel persistence adapter coordinator feature used but not enabled in additional_features"

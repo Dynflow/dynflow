@@ -28,6 +28,8 @@ module Dynflow
             end
           end
 
+          pruned = persistence.prune_envelopes(world.id)
+          logger.error("Pruned #{pruned} envelopes for invalidated world #{world.id}") unless pruned.zero?
           coordinator.delete_world(world)
         end
       end
