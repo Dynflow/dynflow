@@ -100,11 +100,13 @@ module Dynflow
       end
 
       def calculate_db_pool_size(world)
+        return self.db_pool_size if self.db_pool_size
+
         base_value = 5
         if defined?(::Sidekiq)
           Sidekiq.options[:concurrency] + base_value
         else
-          self.db_pool_size || world.config.queues.values.inject(base_value) do |pool_size, pool_options|
+          world.config.queues.values.inject(base_value) do |pool_size, pool_options|
             pool_size += pool_options[:pool_size]
           end
         end
