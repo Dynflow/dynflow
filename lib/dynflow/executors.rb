@@ -28,7 +28,7 @@ module Dynflow
       end
 
       def active_record_active_connection
-        return unless defined?(::ActiveRecord)
+        return unless defined?(::ActiveRecord) && ::ActiveRecord::Base.connected?
         # #active_connection? returns the connection if already established or nil
         ::ActiveRecord::Base.connection_pool.active_connection?
       end
