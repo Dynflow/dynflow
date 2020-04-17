@@ -124,6 +124,14 @@ module Dynflow
       def prune_undeliverable_envelopes
         raise NotImplementedError
       end
+
+      def migrate_db
+        raise NotImplementedError
+      end
+
+      def abort_if_pending_migrations!
+        raise NotImplementedError
+      end
     end
   end
 end
