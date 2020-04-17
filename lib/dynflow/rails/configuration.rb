@@ -185,8 +185,8 @@ module Dynflow
       end
 
       # Sequel adapter based on Rails app database.yml configuration
-      def initialize_persistence(world)
-        persistence_class.new(default_sequel_adapter_options(world))
+      def initialize_persistence(world, options = {})
+        persistence_class.new(default_sequel_adapter_options(world).merge(options))
       end
     end
   end

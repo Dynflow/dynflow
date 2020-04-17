@@ -45,13 +45,15 @@ module Dynflow
                                step:    %w(error children) }
 
       def initialize(config)
+        migrate = true
         config = config.dup
         @additional_responsibilities = { coordinator: true, connector: true }
-        if config.is_a?(Hash) && config.key?(:additional_responsibilities)
-          @additional_responsibilities.merge!(config.delete(:additional_responsibilities))
+        if config.is_a?(Hash)
+          @additional_responsibilities.merge!(config.delete(:additional_responsibilities)) if config.key?(:additional_responsibilities)
+          migrate = config.fetch(:migrate, true)
         end
         @db = initialize_db config
-        migrate_db
+        migrate_db if migrate
       end
 
       def transaction(&block)
@@ -248,6 +250,14 @@ module Dynflow
           envelopes:            table(:envelope).all.to_a }
       end
 
+      def migrate_db
+        ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
+      end
+
+      def abort_if_pending_migrations!
+        ::Sequel::Migrator.check_current(db, self.class.migrations_path, table: 'dynflow_schema_info')
+      end
+
       private
 
       TABLES = { execution_plan:      :dynflow_execution_plans,
@@ -267,10 +277,6 @@ module Dynflow
 
       def self.migrations_path
         File.expand_path('../sequel_migrations', __FILE__)
-      end
-
-      def migrate_db
-        ::Sequel::Migrator.run(db, self.class.migrations_path, table: 'dynflow_schema_info')
       end
 
       def prepare_record(table_name, value, base = {}, with_data = true)
