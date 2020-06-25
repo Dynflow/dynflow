@@ -32,6 +32,11 @@ module Dynflow
         @flows.size
       end
 
+      def ==(other)
+        self.class == other.class &&
+          self.flows == other.flows
+      end
+
       alias_method :sub_flows, :flows
 
       # @return [Array<Integer>] all step_ids recursively in the flow

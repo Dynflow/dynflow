@@ -25,6 +25,10 @@ module Dynflow
         # nothing to do
       end
 
+      def ==(other)
+        self.class == other.class && self.step_id == other.step_id
+      end
+
       protected
 
       def self.new_from_hash(hash)
