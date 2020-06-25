@@ -11,9 +11,8 @@ module Dynflow
 
       def initialize(execution_plan, flow)
         @execution_plan = Type! execution_plan, ExecutionPlan
-        @dependency_graph = Utils::DependencyGraph.new
+        @dependency_graph = Utils::DependencyGraph.new_from_flow(flow)
         @error_steps = []
-        flow_to_dependency_hash(flow)
       end
 
       def done?
@@ -59,24 +58,6 @@ module Dynflow
 
       def steps(ids)
         ids.map { |id| execution_plan.steps[id] }
-      end
-
-      private
-
-      def flow_to_dependency_hash(flow, parent_ids = [])
-        case flow
-        when Flows::Atom
-          @dependency_graph.add(flow.step_id, parent_ids)
-          [flow.step_id]
-        when Flows::Sequence
-          flow.flows.reduce(parent_ids) do |parent_ids, subflow|
-            flow_to_dependency_hash(subflow, parent_ids)
-          end
-        when Flows::Concurrence
-          flow.flows.map do |subflow|
-            flow_to_dependency_hash(subflow, parent_ids)
-          end
-        end
       end
     end
   end
