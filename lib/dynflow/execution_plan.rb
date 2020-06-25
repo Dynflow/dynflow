@@ -418,6 +418,14 @@ module Dynflow
       end
     end
 
+    def self.load_flow(flow_hash)
+      if flow_hash.is_a? Hash
+        Flows::Abstract.from_hash(flow_hash)
+      else
+        Flows::Abstract.new_from_hash(flow_hash)
+      end
+    end
+
     def to_hash
       recursive_to_hash id:                id,
                         class:             self.class.to_s,
@@ -448,8 +456,8 @@ module Dynflow
                hash[:label],
                hash[:state],
                steps[hash[:root_plan_step_id]],
-               Flows::Abstract.from_hash(hash[:run_flow]),
-               Flows::Abstract.from_hash(hash[:finalize_flow]),
+               load_flow(hash[:run_flow]),
+               load_flow(hash[:finalize_flow]),
                steps,
                string_to_time(hash[:started_at]),
                string_to_time(hash[:ended_at]),

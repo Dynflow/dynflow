@@ -32,6 +32,26 @@ module Dynflow
       def flatten!
         raise NotImplementedError
       end
+
+      def self.new_from_hash(hash)
+        if hash.is_a? Hash
+          check_class_matching hash
+          new(hash[:flows].map { |flow_hash| from_hash(flow_hash) })
+        elsif hash.is_a? Integer
+          Flows::Atom.new(hash)
+        else
+          kind, *subflows = hash
+          klass = case kind
+                  when "S"
+                    Sequence
+                  when "C"
+                    Concurrence
+                  else
+                    raise("Unknown composed flow type")
+                  end
+          klass.new(subflows.map { |subflow| self.new_from_hash(subflow) })
+        end
+      end
     end
   end
 end

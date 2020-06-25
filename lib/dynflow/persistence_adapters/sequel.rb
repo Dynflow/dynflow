@@ -394,7 +394,7 @@ module Dynflow
 
       def dump_data(value)
         return if value.nil?
-        MultiJson.dump Type!(value, Hash, Array)
+        MultiJson.dump Type!(value, Hash, Array, Integer)
       end
 
       def paginate(data_set, options)
