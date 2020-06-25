@@ -54,6 +54,7 @@ module Dynflow
       end
     end
 
+    # rubocop:disable Style/IndentArray
     describe ::Dynflow::Utils::DependencyGraph do
       let(:empty_graph) { Utils::DependencyGraph.new }
       let(:graph) do
@@ -129,7 +130,7 @@ module Dynflow
         _(flow).must_equal Flows::Concurrence.new([
           Flows::Atom.new(1),
           Flows::Atom.new(2),
-          Flows::Atom.new(3),
+          Flows::Atom.new(3)
         ])
       end
 
@@ -157,7 +158,7 @@ module Dynflow
             Flows::Atom.new(4),
             Flows::Sequence.new([
               Flows::Atom.new(5),
-              Flows::Atom.new(6),
+              Flows::Atom.new(6)
             ])
           ]),
           Flows::Atom.new(7)
@@ -213,9 +214,9 @@ module Dynflow
                   Flows::Atom.new(7),
                   Flows::Concurrence.new([
                     Flows::Atom.new(9),
-                    Flows::Atom.new(10),
+                    Flows::Atom.new(10)
                   ]),
-                  Flows::Atom.new(13),
+                  Flows::Atom.new(13)
                 ]),
                 Flows::Atom.new(4)
               ]),
@@ -229,14 +230,14 @@ module Dynflow
                   Flows::Atom.new(8),
                   Flows::Concurrence.new([
                     Flows::Atom.new(11),
-                    Flows::Atom.new(12),
+                    Flows::Atom.new(12)
                   ]),
-                  Flows::Atom.new(14),
+                  Flows::Atom.new(14)
                 ]),
-                Flows::Atom.new(6),
+                Flows::Atom.new(6)
               ]),
               Flows::Atom.new(15)
-            ]),
+            ])
           ]),
           Flows::Concurrence.new([
             Flows::Atom.new(17),

@@ -5,7 +5,7 @@ module Dynflow
     attr_reader :graph
 
     def self.new_from_hash(hash, *args)
-       self.new(Hash[hash.map { |k, v| [k.to_i, Set.new(v)] }])
+      self.new(Hash[hash.map { |k, v| [k.to_i, Set.new(v)] }])
     end
 
     def to_hash
