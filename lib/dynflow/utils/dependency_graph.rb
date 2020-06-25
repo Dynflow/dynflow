@@ -1,7 +1,16 @@
 # frozen_string_literal: true
-
+require 'dynflow/serializable'
 module Dynflow
-  class Utils::DependencyGraph
+  class Utils::DependencyGraph < Dynflow::Serializable
+    attr_reader :graph
+
+    def self.new_from_hash(hash, *args)
+       self.new(Hash[hash.map { |k, v| [k.to_i, Set.new(v)] }])
+    end
+
+    def to_hash
+      @graph.reduce({}) { |acc, (key, val)| acc.merge(key => val.to_a) }
+    end
 
     def initialize(graph = nil)
       @graph = graph || Hash.new { |h, k| h[k] = Set.new }
