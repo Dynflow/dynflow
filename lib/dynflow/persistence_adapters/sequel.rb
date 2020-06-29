@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 require 'sequel'
-require 'multi_json'
+require 'msgpack'
 require 'fileutils'
 require 'csv'
 
@@ -382,11 +382,11 @@ module Dynflow
         hash = if record[:data].nil?
                  SERIALIZABLE_COLUMNS.fetch(what, []).each do |key|
                    key = key.to_sym
-                   record[key] = MultiJson.load(record[key]) unless record[key].nil?
+                   record[key] = MessagePack.unpack((record[key])) unless record[key].nil?
                  end
                  record
                else
-                 MultiJson.load(record[:data])
+                 MessagePack.unpack(record[:data])
                end
         Utils.indifferent_hash(hash)
       end
@@ -421,7 +421,8 @@ module Dynflow
 
       def dump_data(value)
         return if value.nil?
-        MultiJson.dump Type!(value, Hash, Array, Integer, String)
+        packed = MessagePack.pack(Type!(value, Hash, Array, Integer, String))
+        ::Sequel.blob(packed)
       end
 
       def paginate(data_set, options)
