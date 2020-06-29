@@ -3,6 +3,8 @@ module Dynflow
   module Flows
     class AbstractComposed < Abstract
 
+      FLOW_SERIALIZATION_MAP = {}
+
       attr_reader :flows
 
       def initialize(flows)
@@ -12,14 +14,7 @@ module Dynflow
       end
 
       def to_hash
-        identifier = case self
-                     when Sequence
-                       "S"
-                     when Concurrence
-                       "C"
-                     else
-                       raise("Unknown composed flow type")
-                     end
+        identifier = FLOW_SERIALIZATION_MAP.invert[self.class] || raise("Unknown composed flow type")
         [identifier] + flows.map(&:to_hash)
       end
 

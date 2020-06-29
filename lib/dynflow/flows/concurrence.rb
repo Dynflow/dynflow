@@ -25,5 +25,7 @@ module Dynflow
         return Concurrence.new(extracted_sub_flows)
       end
     end
+
+    AbstractComposed::FLOW_SERIALIZATION_MAP.update('C' => Concurrence)
   end
 end

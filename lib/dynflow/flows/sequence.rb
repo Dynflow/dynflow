@@ -10,5 +10,7 @@ module Dynflow
         self << dependent_flow
       end
     end
+
+    AbstractComposed::FLOW_SERIALIZATION_MAP.update('S' => Sequence)
   end
 end

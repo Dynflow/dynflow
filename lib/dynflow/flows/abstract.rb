@@ -41,14 +41,7 @@ module Dynflow
           Flows::Atom.new(hash)
         else
           kind, *subflows = hash
-          klass = case kind
-                  when "S"
-                    Sequence
-                  when "C"
-                    Concurrence
-                  else
-                    raise("Unknown composed flow type")
-                  end
+          klass = AbstractComposed::FLOW_SERIALIZATION_MAP[kind] || raise("Unknown composed flow type")
           klass.new(subflows.map { |subflow| self.new_from_hash(subflow) })
         end
       end
