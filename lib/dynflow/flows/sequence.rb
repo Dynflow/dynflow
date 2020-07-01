@@ -11,6 +11,6 @@ module Dynflow
       end
     end
 
-    AbstractComposed::FLOW_SERIALIZATION_MAP.update('S' => Sequence)
+    Registry.register!(Sequence, 'S')
   end
 end

@@ -41,8 +41,7 @@ module Dynflow
           Flows::Atom.new(hash)
         else
           kind, *subflows = hash
-          klass = AbstractComposed::FLOW_SERIALIZATION_MAP[kind] || raise("Unknown composed flow type")
-          klass.new(subflows.map { |subflow| self.new_from_hash(subflow) })
+          Registry.decode(kind).new(subflows.map { |subflow| self.new_from_hash(subflow) })
         end
       end
     end

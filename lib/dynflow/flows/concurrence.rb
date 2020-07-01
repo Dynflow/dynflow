@@ -26,6 +26,6 @@ module Dynflow
       end
     end
 
-    AbstractComposed::FLOW_SERIALIZATION_MAP.update('C' => Concurrence)
+    Registry.register!(Concurrence, 'C')
   end
 end
