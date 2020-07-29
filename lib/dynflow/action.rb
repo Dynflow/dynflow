@@ -352,15 +352,12 @@ module Dynflow
       @step.state = state
     end
 
+    # If this save returns an integer, it means it was an update. The number
+    # represents the number of updated records. If it is 0, then the step was in
+    # an unexpected state and couldn't be updated
     def save_state(conditions = {})
       phase! Executable
-      # If this save returns an integer, it means it was an update. The number
-      #   represents the number of updated records. If it is 0, then the step
-      #   was in an unexpected state and couldn't be updated, in which case we
-      #   raise an exception and crash hard to prevent the step from being
-      #   executed twice
-      count = @step.save(conditions)
-      raise 'Could not save state' if count.kind_of?(Integer) && !count.positive?
+      @step.save(conditions)
     end
 
     def delay(delay_options, *args)
@@ -536,11 +533,11 @@ module Dynflow
     end
 
     # TODO: This is getting out of hand, refactoring needed
+    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def execute_run(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
                                  'Step', execution_plan_id, @step.id, event) if event
-      @input = OutputReference.dereference @input, world.persistence
 
       case
       when state == :running
@@ -551,8 +548,19 @@ module Dynflow
           raise 'event can be processed only when in suspended state'
         end
 
+        old_state = self.state
         self.state = :running unless self.state == :skipping
-        save_state(:state => %w(pending error skipping suspended))
+        saved = save_state(:state => %w(pending error skipping suspended))
+        if saved.kind_of?(Integer) && !saved.positive?
+          # The step was already in a state we're trying to transition to, most
+          # likely we were about to execute it for the second time after first
+          # execution was forcefully interrupted.
+          # Set error and return to prevent the step from being executed twice
+          set_error "Could not transition step from #{old_state} to #{self.state}, step already in #{self.state}."
+          return
+        end
+
+        @input = OutputReference.dereference @input, world.persistence
         with_error_handling do
           event = Skip if state == :skipping
 
@@ -573,6 +581,7 @@ module Dynflow
         raise "wrong state #{state} when event:#{event}"
       end
     end
+    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def execute_finalize
       phase! Finalize
