@@ -5,7 +5,7 @@ module Dynflow
 
       attr_reader :step_id
 
-      def to_hash
+      def encode
         step_id
       end
 

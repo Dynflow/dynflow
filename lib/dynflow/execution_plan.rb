@@ -422,7 +422,7 @@ module Dynflow
       if flow_hash.is_a? Hash
         Flows::Abstract.from_hash(flow_hash)
       else
-        Flows::Abstract.new_from_hash(flow_hash)
+        Flows::Abstract.decode(flow_hash)
       end
     end
 
@@ -433,8 +433,8 @@ module Dynflow
                         state:             state,
                         result:            result,
                         root_plan_step_id: root_plan_step && root_plan_step.id,
-                        run_flow:          run_flow,
-                        finalize_flow:     finalize_flow,
+                        run_flow:          run_flow.encode,
+                        finalize_flow:     finalize_flow.encode,
                         step_ids:          steps.map { |id, _| id },
                         started_at:        time_to_str(started_at),
                         ended_at:          time_to_str(ended_at),

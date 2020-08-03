@@ -11,8 +11,8 @@ module Dynflow
         @flows = flows
       end
 
-      def to_hash
-        [Registry.encode(self)] + flows.map(&:to_hash)
+      def encode
+        [Registry.encode(self)] + flows.map(&:encode)
       end
 
       def <<(v)

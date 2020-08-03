@@ -34,14 +34,16 @@ module Dynflow
       end
 
       def self.new_from_hash(hash)
-        if hash.is_a? Hash
-          check_class_matching hash
-          new(hash[:flows].map { |flow_hash| from_hash(flow_hash) })
-        elsif hash.is_a? Integer
-          Flows::Atom.new(hash)
+        check_class_matching hash
+        new(hash[:flows].map { |flow_hash| from_hash(flow_hash) })
+      end
+
+      def self.decode(data)
+        if data.is_a? Integer
+          Flows::Atom.new(data)
         else
-          kind, *subflows = hash
-          Registry.decode(kind).new(subflows.map { |subflow| self.new_from_hash(subflow) })
+          kind, *subflows = data
+          Registry.decode(kind).new(subflows.map { |subflow| self.decode(subflow) })
         end
       end
     end
