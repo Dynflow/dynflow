@@ -96,7 +96,11 @@ module Dynflow
       end
 
       def increase_db_pool_size?
-        !::Rails.env.test? && !remote?
+        !::Rails.env.test? && (!remote? || sidekiq_worker?)
+      end
+
+      def sidekiq_worker?
+        defined?(::Sidekiq) && ::Sidekiq.options[:queues].any?
       end
 
       def calculate_db_pool_size(world)
