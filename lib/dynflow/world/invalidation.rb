@@ -43,7 +43,7 @@ module Dynflow
                   else
                     :stopped
                   end
-          plan.update_state(state)
+          plan.update_state(state) if plan.state != state
 
           coordinator.release(planning_lock)
           execute(plan.id) if plan.state == :planned
