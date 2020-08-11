@@ -252,7 +252,7 @@ module Dynflow
           future.fulfill(true)
         else
           if @ping_cache.executor?(request.receiver_id)
-            future.reject
+            future.reject false
           else
             yield
           end
