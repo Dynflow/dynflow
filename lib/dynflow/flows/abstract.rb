@@ -32,6 +32,20 @@ module Dynflow
       def flatten!
         raise NotImplementedError
       end
+
+      def self.new_from_hash(hash)
+        check_class_matching hash
+        new(hash[:flows].map { |flow_hash| from_hash(flow_hash) })
+      end
+
+      def self.decode(data)
+        if data.is_a? Integer
+          Flows::Atom.new(data)
+        else
+          kind, *subflows = data
+          Registry.decode(kind).new(subflows.map { |subflow| self.decode(subflow) })
+        end
+      end
     end
   end
 end

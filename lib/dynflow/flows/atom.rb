@@ -5,8 +5,8 @@ module Dynflow
 
       attr_reader :step_id
 
-      def to_hash
-        super.merge(:step_id => step_id)
+      def encode
+        step_id
       end
 
       def initialize(step_id)

@@ -10,5 +10,7 @@ module Dynflow
         self << dependent_flow
       end
     end
+
+    Registry.register!(Sequence, 'S')
   end
 end

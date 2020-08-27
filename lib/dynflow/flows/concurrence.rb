@@ -25,5 +25,7 @@ module Dynflow
         return Concurrence.new(extracted_sub_flows)
       end
     end
+
+    Registry.register!(Concurrence, 'C')
   end
 end

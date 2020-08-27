@@ -11,8 +11,8 @@ module Dynflow
         @flows = flows
       end
 
-      def to_hash
-        super.merge recursive_to_hash(:flows => flows)
+      def encode
+        [Registry.encode(self)] + flows.map(&:encode)
       end
 
       def <<(v)
@@ -60,11 +60,6 @@ module Dynflow
       end
 
       protected
-
-      def self.new_from_hash(hash)
-        check_class_matching hash
-        new(hash[:flows].map { |flow_hash| from_hash(flow_hash) })
-      end
 
       # adds the +new_flow+ in a way that it's in sequence with
       # the +satisfying_flows+
