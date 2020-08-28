@@ -38,8 +38,8 @@ module Dynflow
       init_world.tap do |world|
         @world = world
         config.run_on_init_hooks(false, world)
+        config.increase_db_pool_size(world)
         unless config.remote?
-          config.increase_db_pool_size(world)
           config.run_on_init_hooks(true, world)
           # leave this just for long-running executors
           unless config.rake_task_with_executor?
