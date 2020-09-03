@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Dynflow
   class Export
     attr_reader :world
@@ -40,7 +42,7 @@ module Dynflow
         execution_time: step.execution_time,
         label:          action.label,
         input:          action.input.to_hash,
-        output:         action.output.to_hash,
+        output:         action.output.to_hash
       }
       if phase == :plan
         base[:children] = step.children.map do |step_id|
