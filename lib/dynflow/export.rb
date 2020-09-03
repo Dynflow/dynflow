@@ -15,8 +15,8 @@ module Dynflow
         label:             plan.label,
         state:             plan.state,
         result:            plan.result,
-        started_at:        plan.started_at,
-        ended_at:          plan.ended_at,
+        started_at:        format_time(plan.started_at),
+        ended_at:          format_time(plan.ended_at),
         execution_time:    plan.execution_time,
         real_time:         plan.real_time,
         execution_history: prepare_execution_history(plan.execution_history),
@@ -34,13 +34,13 @@ module Dynflow
         id:             step.id,
         state:          step.state,
         queue:          step.queue,
-        started_at:     step.started_at,
-        ended_at:       step.ended_at,
+        started_at:     format_time(step.started_at),
+        ended_at:       format_time(step.ended_at),
         real_time:      step.real_time,
         execution_time: step.execution_time,
         label:          action.label,
-        input:          action.input,
-        output:         action.output,
+        input:          action.input.to_hash,
+        output:         action.output.to_hash,
       }
       if phase == :plan
         base[:children] = step.children.map do |step_id|
@@ -55,10 +55,10 @@ module Dynflow
       history.map do |entry|
         {
           event: entry.name,
-          time: Time.at(entry.time).utc,
+          time: format_time(Time.at(entry.time)),
           world: {
             uuid: entry.world_id,
-            meta: @worlds[entry.world_id].meta
+            meta: @worlds[entry.world_id]&.meta
           }
         }
       end
@@ -66,8 +66,8 @@ module Dynflow
 
     def prepare_delay_record(record)
       {
-        start_at: record.start_at,
-        start_before: record.start_before,
+        start_at: format_time(record.start_at),
+        start_before: format_time(record.start_before),
         frozen: record.frozen
       }
     end
@@ -75,7 +75,7 @@ module Dynflow
     def world_meta(world_id)
       {
         uuid: world_id,
-        meta: @worlds[world_id].meta
+        meta: @world.fetch(world_id, {})
       }
     end
 
@@ -95,6 +95,12 @@ module Dynflow
         step = execution_plan.steps[flow.step_id]
         prepare_step(execution_plan, step, phase)
       end
+    end
+
+    def format_time(time)
+      # ISO8601
+      return unless time
+      time.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
     end
   end
 end
