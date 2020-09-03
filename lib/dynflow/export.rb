@@ -60,7 +60,7 @@ module Dynflow
           time: format_time(Time.at(entry.time)),
           world: {
             uuid: entry.world_id,
-            meta: @worlds[entry.world_id]&.meta
+            meta: @worlds.fetch(entry.world_id).fetch(:meta, {}).to_hash
           }
         }
       end
@@ -77,13 +77,13 @@ module Dynflow
     def world_meta(world_id)
       {
         uuid: world_id,
-        meta: @world.fetch(world_id, {})
+        meta: @world.fetch(world_id, {}).fetch(:meta, {})
       }
     end
 
     def load_worlds
       world.coordinator.find_worlds(false).reduce({}) do |acc, cur|
-        acc.merge(cur.id => cur)
+        acc.merge(cur.id => cur.to_hash)
       end
     end
 
