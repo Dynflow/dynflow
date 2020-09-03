@@ -9,8 +9,6 @@ module Dynflow
       @worlds = load_worlds
     end
 
-    private
-
     def prepare_execution_plan(plan)
       {
         uuid:              plan.id,
@@ -28,6 +26,8 @@ module Dynflow
         delay_record:      plan.delay_record && plan.delay_record.to_hash
       }
     end
+
+    private
 
     def prepare_step(execution_plan, step, phase)
       raise "Unexpected phase '#{phase}'" unless [:plan, :run, :finalize].include?(phase)
