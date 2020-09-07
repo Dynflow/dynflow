@@ -60,7 +60,7 @@ module Dynflow
           time: format_time(Time.at(entry.time)),
           world: {
             uuid: entry.world_id,
-            meta: @worlds.fetch(entry.world_id).fetch(:meta, {}).to_hash
+            meta: @worlds.fetch(entry.world_id, {}).fetch(:meta, {}).to_hash
           }
         }
       end
@@ -71,13 +71,6 @@ module Dynflow
         start_at: format_time(record.start_at),
         start_before: format_time(record.start_before),
         frozen: record.frozen
-      }
-    end
-
-    def world_meta(world_id)
-      {
-        uuid: world_id,
-        meta: @world.fetch(world_id, {}).fetch(:meta, {})
       }
     end
 
