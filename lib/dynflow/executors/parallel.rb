@@ -38,6 +38,10 @@ module Dynflow
         future
       end
 
+      def plan(execution_plan_id)
+        @core.ask([:handle_planning, execution_plan_id])
+      end
+
       def delayed_event(director_event)
         @core.ask([:handle_event, director_event])
         director_event.result

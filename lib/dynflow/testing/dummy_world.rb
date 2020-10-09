@@ -5,7 +5,7 @@ module Dynflow
       extend Mimic
       mimic! World
 
-      attr_reader :clock, :executor, :middleware
+      attr_reader :clock, :executor, :middleware, :coordinator
       attr_accessor :action
 
       def initialize(_config = nil)
@@ -13,6 +13,7 @@ module Dynflow
         @clock          = ManagedClock.new
         @executor       = DummyExecutor.new(self)
         @middleware     = Middleware::World.new
+        @coordinator    = DummyCoordinator.new
       end
 
       def action_logger
