@@ -35,6 +35,15 @@ module Dynflow
           handle_work(@director.handle_event(event))
         end
 
+        def handle_planning(execution_plan_id)
+          if terminating?
+            raise Dynflow::Error,
+                  "cannot accept event: #{event} core is terminating"
+          end
+
+          handle_work(@director.handle_planning(execution_plan_id))
+        end
+
         def plan_events(delayed_events)
           delayed_events.each do |event|
             @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time, optional: event.optional)

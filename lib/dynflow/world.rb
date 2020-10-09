@@ -200,6 +200,14 @@ module Dynflow
       Scheduled[execution_plan.id]
     end
 
+    def plan_elsewhere(action_class, *args)
+      execution_plan = ExecutionPlan.new(self, nil)
+      execution_plan.delay(nil, action_class, {}, *args)
+      plan_request(execution_plan.id)
+
+      Scheduled[execution_plan.id]
+    end
+
     def plan(action_class, *args)
       plan_with_options(action_class: action_class, args: args)
     end
@@ -225,6 +233,10 @@ module Dynflow
 
     def plan_event(execution_plan_id, step_id, event, time, accepted = Concurrent::Promises.resolvable_future, optional: false)
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event, time, optional], accepted, false)
+    end
+
+    def plan_request(execution_plan_id, done = Concurrent::Promises.resolvable_future)
+      publish_request(Dispatcher::Planning[execution_plan_id], done, false)
     end
 
     def ping(world_id, timeout, done = Concurrent::Promises.resolvable_future)
