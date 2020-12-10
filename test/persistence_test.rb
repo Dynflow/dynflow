@@ -86,7 +86,7 @@ module Dynflow
         original.each do |key, value|
           loaded_value = loaded[key.to_s]
           if value.is_a?(Time)
-            _(loaded_value.inspect).must_equal value.inspect
+            _(loaded_value).must_be_within_delta(value, 0.5)
           elsif value.is_a?(Hash)
             assert_equal_attributes!(value, loaded_value)
           elsif value.nil?
@@ -348,7 +348,7 @@ module Dynflow
               if value.nil?
                 assert_nil stored.fetch(name.to_sym)
               elsif value.is_a?(Time)
-                _(stored.fetch(name.to_sym).inspect).must_equal value.inspect
+                _(stored.fetch(name.to_sym)).must_be_within_delta(value, 0.5)
               else
                 _(stored.fetch(name.to_sym)).must_equal value
               end
