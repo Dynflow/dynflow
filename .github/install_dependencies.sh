@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -x
+
 echo "Setting the environment to use ${DB} database"
 
 BUNDLE_CONFIG=.bundle/config

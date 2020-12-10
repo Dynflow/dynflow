@@ -104,6 +104,6 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby_version }}
     - name: Install dependencies
-      run: test/prepare_travis_env.sh
+      run: .github/install_dependencies.sh
     - name: Run tests
       run: bundle exec rake test
