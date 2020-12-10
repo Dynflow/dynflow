@@ -1,0 +1,109 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will download a prebuilt Ruby version, install dependencies and run tests with Rake
+# For more information see: https://github.com/marketplace/actions/setup-ruby-jruby-and-truffleruby
+
+name: Ruby
+
+on: [push]
+
+env:
+  TESTOPTS: --verbose
+
+jobs:
+  rubocop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.7
+      - name: Setup
+        run: |
+          gem install bundler
+          bundle install --jobs=3 --retry=3
+      - name: Run rubocop
+        run: bundle exec rubocop
+
+  test:
+    runs-on: ubuntu-latest
+    needs: rubocop
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby_version:
+          - 2.3.0
+          - 2.4.0
+          - 2.5.0
+        concurrent_ruby_ext:
+          - 'true'
+          - 'false'
+        db:
+          - postgresql
+          - mysql
+          - sqlite3
+        include:
+          - db: postgresql
+            conn_string: postgres://postgres@localhost/travis_ci_test
+          - db: mysql
+            conn_string: mysql2://root@127.0.0.1/travis_ci_test
+          - db: sqlite3
+            conn_string: sqlite:/
+        exclude:
+          - db: mysql
+            ruby_version: 2.3.0
+          - db: mysql
+            ruby_version: 2.4.0
+          - db: mysql
+            concurrent_ruby_ext: 'true'
+          - db: sqlite3
+            ruby_version: 2.3.0
+          - db: sqlite3
+            ruby_version: 2.4.0
+          - db: sqlite3
+            concurrent_ruby_ext: 'true'
+          - db: postgresql
+            ruby_version: 2.3.0
+            concurrent_ruby_ext: 'true'
+          - db: postgresql
+            ruby_version: 2.4.0
+            concurrent_ruby_ext: 'true'
+
+    services:
+      postgres:
+        image: postgres:12.1
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        env:
+          POSTGRES_DB: travis_ci_test
+      mariadb:
+        image: mariadb:10
+        ports: ['3306:3306']
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: travis_ci_test
+      redis:
+        image: redis:latest
+        ports: ['6379:6379']
+
+    env:
+      DB: ${{ matrix.db }}
+      DB_CONN_STRING: ${{ matrix.conn_string }}
+      CONCURRENT_RUBY_EXT: "${{ matrix.concurrent_ruby_ext }}"
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Ruby
+    # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
+    # change this to (see https://github.com/ruby/setup-ruby#versioning):
+    # uses: ruby/setup-ruby@v1
+      uses: ruby/setup-ruby@21351ecc0a7c196081abca5dc55b08f085efe09a
+      with:
+        ruby-version: ${{ matrix.ruby_version }}
+    - name: Install dependencies
+      run: test/prepare_travis_env.sh
+    - name: Run tests
+      run: bundle exec rake test
