@@ -18,7 +18,6 @@ def table_pkeys(table)
   end
 end
 
-
 def conditions_for_row(table, row)
   row.slice(*table_pkeys(table))
 end
