@@ -86,17 +86,17 @@ module Dynflow
             table(:delayed).where(execution_plan_uuid: uuids).delete
 
             steps = table(:step).where(execution_plan_uuid: uuids)
-            backup_to_csv(steps, backup_dir, 'steps.csv') if backup_dir
+            backup_to_csv(:step, steps, backup_dir, 'steps.csv') if backup_dir
             steps.delete
 
             output_chunks = table(:output_chunk).where(execution_plan_uuid: uuids).delete
 
             actions = table(:action).where(execution_plan_uuid: uuids)
-            backup_to_csv(actions, backup_dir, 'actions.csv') if backup_dir
+            backup_to_csv(:action, actions, backup_dir, 'actions.csv') if backup_dir
             actions.delete
 
             execution_plans = table(:execution_plan).where(uuid: uuids)
-            backup_to_csv(execution_plans, backup_dir, 'execution_plans.csv') if backup_dir
+            backup_to_csv(:execution_plan, execution_plans, backup_dir, 'execution_plans.csv') if backup_dir
             count += execution_plans.delete
           end
         end
@@ -395,7 +395,7 @@ module Dynflow
         FileUtils.mkdir_p(backup_dir) unless File.directory?(backup_dir)
       end
 
-      def backup_to_csv(dataset, backup_dir, file_name)
+      def backup_to_csv(table_name, dataset, backup_dir, file_name)
         ensure_backup_dir(backup_dir)
         csv_file = File.join(backup_dir, file_name)
         appending = File.exist?(csv_file)
@@ -403,7 +403,12 @@ module Dynflow
         File.open(csv_file, 'a') do |csv|
           csv << columns.to_csv unless appending
           dataset.each do |row|
-            csv << columns.collect { |col| row[col] }.to_csv
+            values = columns.map do |col|
+              value = row[col]
+              value = value.unpack('H*').first if value && SERIALIZABLE_COLUMNS.fetch(table_name, []).include?(col.to_s)
+              value
+            end
+            csv << values.to_csv
           end
         end
         dataset
