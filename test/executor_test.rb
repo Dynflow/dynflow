@@ -595,7 +595,8 @@ module Dynflow
           def assert_next_steps(expected_next_step_ids, finished_step_id = nil, success = true)
             if finished_step_id
               step       = manager.execution_plan.steps[finished_step_id]
-              next_steps = manager.cursor_index[step.id].what_is_next(step, success)
+              step.state = :error unless success
+              next_steps = manager.what_is_next(step)
             else
               next_steps = manager.start
             end
