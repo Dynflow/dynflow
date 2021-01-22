@@ -42,3 +42,7 @@ end
 group :telemetry do
   gem 'statsd-instrument'
 end
+
+group :mqtt do
+  gem 'mqtt'
+end
