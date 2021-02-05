@@ -76,7 +76,7 @@ module Dynflow
   if defined? ::ActiveJob
     require 'dynflow/active_job/queue_adapter'
 
-    class Railtie < Rails::Railtie
+    class Railtie < ::Rails::Railtie
       config.before_initialize do
         ::ActiveJob::QueueAdapters.send(
           :include,
