@@ -42,3 +42,5 @@ end
 group :telemetry do
   gem 'statsd-instrument'
 end
+
+gem 'zeitwerk'

@@ -1,7 +1,4 @@
 # frozen_string_literal: true
-require 'dynflow/executors/parallel/pool'
-require 'dynflow/executors/parallel/worker'
-
 module Dynflow
   module Executors
     class Parallel

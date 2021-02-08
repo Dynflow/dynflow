@@ -8,24 +8,9 @@ module Dynflow
     include Algebrick::TypeCheck
     include Algebrick::Matching
 
-    require 'dynflow/action/format'
     extend Action::Format
-
-    require 'dynflow/action/progress'
     include Action::Progress
-
-    require 'dynflow/action/rescue'
     include Action::Rescue
-
-    require 'dynflow/action/suspended'
-    require 'dynflow/action/missing'
-
-    require 'dynflow/action/polling'
-    require 'dynflow/action/cancellable'
-    require 'dynflow/action/singleton'
-    require 'dynflow/action/with_sub_plans'
-    require 'dynflow/action/with_bulk_sub_plans'
-    require 'dynflow/action/with_polling_sub_plans'
 
     def self.all_children
       children.values.inject(children.values) do |children, child|

@@ -2,7 +2,6 @@
 require_relative 'test_helper'
 
 ENV['RACK_ENV'] = 'test'
-require 'dynflow/web'
 
 require 'rack/test'
 

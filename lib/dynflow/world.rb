@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 # frozen_string_literal: true
-require 'dynflow/world/invalidation'
-
 module Dynflow
   class World
     include Algebrick::TypeCheck

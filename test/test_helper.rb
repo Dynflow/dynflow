@@ -10,8 +10,10 @@ MiniTest::Reporters.use! if ENV['RM_INFO']
 load_path = File.expand_path(File.dirname(__FILE__))
 $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
 
+require 'sidekiq'
+require 'rails'
+require 'active_job'
 require 'dynflow'
-require 'dynflow/testing'
 begin require 'pry'; rescue LoadError; nil end
 
 require 'support/code_workflow_example'

@@ -3,9 +3,6 @@
 module Dynflow
   # Class for configuring and preparing the Dynflow runtime environment.
   class Rails
-    require File.expand_path('../rails/configuration', __FILE__)
-    require File.expand_path('../rails/daemon', __FILE__)
-
     attr_reader :config
 
     def initialize(world_class = nil, config = Rails::Configuration.new)

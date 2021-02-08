@@ -1,13 +1,6 @@
 # frozen_string_literal: true
 module Dynflow
   class Middleware
-    require 'dynflow/middleware/register'
-    require 'dynflow/middleware/world'
-    require 'dynflow/middleware/resolver'
-    require 'dynflow/middleware/stack'
-    require 'dynflow/middleware/common/transaction'
-    require 'dynflow/middleware/common/singleton'
-
     include Algebrick::TypeCheck
 
     def initialize(stack)

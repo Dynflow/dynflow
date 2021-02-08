@@ -1,10 +1,4 @@
 # frozen_string_literal: true
-require 'dynflow/executors/sidekiq/serialization'
-require 'dynflow/executors/sidekiq/internal_job_base'
-require 'dynflow/executors/sidekiq/orchestrator_jobs'
-require 'dynflow/executors/sidekiq/worker_jobs'
-require 'dynflow/executors/sidekiq/redis_locking'
-
 require 'sidekiq-reliable-fetch'
 Sidekiq.configure_server do |config|
   # Use semi-reliable fetch
