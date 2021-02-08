@@ -19,6 +19,8 @@ loader.inflector.inflect('statsd' => 'StatsD')
 loader.ignore("#{__dir__}/dynflow/persistence_adapters/sequel_migrations")
 loader.ignore("#{__dir__}/dynflow/executors/sidekiq")
 loader.ignore("#{__dir__}/dynflow/executors/sidekiq.rb")
+loader.ignore("#{__dir__}/dynflow/active_job.rb")
+loader.ignore("#{__dir__}/dynflow/active_job")
 loader.setup
 loader.log!
 loader.eager_load
@@ -42,8 +44,7 @@ module Dynflow
   end
 
   if defined? ::ActiveJob
-    require 'dynflow/active_job/queue_adapter'
-
+    require 'dynflow/active_job'
     class Railtie < ::Rails::Railtie
       config.before_initialize do
         ::ActiveJob::QueueAdapters.send(
