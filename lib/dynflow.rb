@@ -21,6 +21,7 @@ loader.ignore("#{__dir__}/dynflow/executors/sidekiq")
 loader.ignore("#{__dir__}/dynflow/executors/sidekiq.rb")
 loader.ignore("#{__dir__}/dynflow/active_job.rb")
 loader.ignore("#{__dir__}/dynflow/active_job")
+loader.ignore("#{__dir__}/dynflow/rails")
 loader.setup
 loader.log!
 loader.eager_load
@@ -55,7 +56,11 @@ module Dynflow
     end
   end
 
-  if defined? Rails
-    require 'dynflow/rails'
+  if defined? ::Rails
+    loader = Zeitwerk::Loader.new
+    loader.push_dir("#{__dir__}/dynflow/rails", namespace: ::Dynflow::Rails)
+    loader.log!
+    loader.setup
+    loader.eager_load
   end
 end
