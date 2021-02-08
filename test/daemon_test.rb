@@ -3,10 +3,7 @@ require 'test_helper'
 require 'active_support'
 require 'mocha/minitest'
 require 'logging'
-require 'dynflow/testing'
 require_relative '../lib/dynflow/rails'
-require 'dynflow/rails/daemon'
-require 'dynflow/rails/configuration'
 
 class DaemonTest < ActiveSupport::TestCase
   setup do

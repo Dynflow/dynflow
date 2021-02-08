@@ -153,13 +153,6 @@ module Dynflow
       end
     end
 
-    require 'dynflow/director/queue_hash'
-    require 'dynflow/director/sequence_cursor'
-    require 'dynflow/director/flow_manager'
-    require 'dynflow/director/execution_plan_manager'
-    require 'dynflow/director/sequential_manager'
-    require 'dynflow/director/running_steps_manager'
-
     attr_reader :logger
 
     def initialize(world)

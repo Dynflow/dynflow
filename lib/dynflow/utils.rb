@@ -1,10 +1,6 @@
 # frozen_string_literal: true
 module Dynflow
   module Utils
-
-    require 'dynflow/utils/indifferent_hash'
-    require 'dynflow/utils/priority_queue'
-
     def self.validate_keys!(hash, *valid_keys)
       valid_keys.flatten!
       unexpected_options = hash.keys - valid_keys - valid_keys.map(&:to_s)

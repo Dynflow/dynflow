@@ -66,7 +66,3 @@ module Dynflow
     end
   end
 end
-
-require 'dynflow/dispatcher/abstract'
-require 'dynflow/dispatcher/client_dispatcher'
-require 'dynflow/dispatcher/executor_dispatcher'

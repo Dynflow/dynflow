@@ -2,8 +2,6 @@
 module Dynflow
   module Executors
     class Parallel
-      require 'dynflow/executors/abstract/core'
-      require 'dynflow/executors/parallel/core'
       # only load Sidekiq pieces when run in Sidekiq runtime (and the Sidekiq module is already loaded)
       require 'dynflow/executors/sidekiq' if defined? ::Sidekiq
 

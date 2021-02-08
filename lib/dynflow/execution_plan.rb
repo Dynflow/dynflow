@@ -40,10 +40,6 @@ module Dynflow
     include Algebrick::TypeCheck
     include Stateful
 
-    require 'dynflow/execution_plan/steps'
-    require 'dynflow/execution_plan/output_reference'
-    require 'dynflow/execution_plan/dependency_graph'
-
     attr_reader :id, :world, :label,
                 :root_plan_step, :steps, :run_flow, :finalize_flow,
                 :started_at, :ended_at, :execution_time, :real_time, :execution_history
@@ -51,8 +47,6 @@ module Dynflow
     def self.states
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
     end
-
-    require 'dynflow/execution_plan/hooks'
 
     def self.results
       @results ||= [:pending, :success, :warning, :error, :cancelled]

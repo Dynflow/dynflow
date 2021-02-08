@@ -7,7 +7,6 @@ require 'sidekiq'
 require 'sidekiq/api'
 require 'sidekiq/testing'
 ::Sidekiq::Testing::inline!
-require 'dynflow/executors/sidekiq/core'
 
 module RedisMocks
   def release_orchestrator_lock; end

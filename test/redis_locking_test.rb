@@ -4,7 +4,6 @@ require 'mocha/minitest'
 require 'minitest/stub_const'
 require 'ostruct'
 require 'sidekiq'
-require 'dynflow/executors/sidekiq/core'
 
 module Dynflow
   module RedisLockingTest

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 require 'fileutils'
 require 'get_process_mem'
-require 'dynflow/watchers/memory_consumption_watcher'
 require 'active_support/core_ext/numeric/bytes'
 
 module Dynflow

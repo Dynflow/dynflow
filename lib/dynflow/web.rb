@@ -18,10 +18,5 @@ module Dynflow
       web_dir = File.join(File.expand_path('../../../web', __FILE__))
       File.join(web_dir, sub_dir)
     end
-
-    require 'dynflow/web/filtering_helpers'
-    require 'dynflow/web/world_helpers'
-    require 'dynflow/web/console_helpers'
-    require 'dynflow/web/console'
   end
 end

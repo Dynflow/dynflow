@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 require_relative 'test_helper'
 require 'active_job'
-require 'dynflow/active_job/queue_adapters'
 
 module Dynflow
   class SampleJob < ::ActiveJob::Base
