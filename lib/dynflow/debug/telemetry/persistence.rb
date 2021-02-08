@@ -40,4 +40,4 @@ module Dynflow
   end
 end
 
-::Dynflow::Persistence.send(:prepend, ::Dynflow::Debug::Persistence)
+::Dynflow::Persistence.send(:prepend, ::Dynflow::Debug::Telemetry::Persistence)
