@@ -137,7 +137,14 @@ module Dynflow
                                AnyExecutor
                              end),
                             (on ~Event do |event|
-                               find_executor(event.execution_plan_id)
+                               id = find_executor(event.execution_plan_id)
+                               if id == Dispatcher::UnknownWorld && event.optional
+                                 message = "Could not find an executor for optional #{envelope}, discarding."
+                                 log(Logger::DEBUG, message)
+                                 respond(Envelope[request_id, client_world_id, id, request], Failed[message])
+                                 return
+                               end
+                               id
                              end),
                             (on Ping.(~any, ~any) | Status.(~any, ~any) do |receiver_id, _|
                                receiver_id

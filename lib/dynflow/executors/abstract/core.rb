@@ -37,7 +37,7 @@ module Dynflow
 
         def plan_events(delayed_events)
           delayed_events.each do |event|
-            @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time)
+            @world.plan_event(event.execution_plan_id, event.step_id, event.event, event.time, optional: event.optional)
           end
         end
 

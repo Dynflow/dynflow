@@ -6,7 +6,8 @@ module Dynflow
         fields! execution_plan_id: String,
                 step_id:           Integer,
                 event:             Object,
-                time:              type { variants Time, NilClass }
+                time:              type { variants Time, NilClass },
+                optional:          Algebrick::Types::Boolean
       end
 
       Execution = type do
