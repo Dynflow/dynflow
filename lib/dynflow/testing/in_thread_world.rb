@@ -58,15 +58,15 @@ module Dynflow
         future.reject e
       end
 
-      def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future)
-        @executor.event(execution_plan_id, step_id, event, done)
+      def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future, optional: false)
+        @executor.event(execution_plan_id, step_id, event, done, optional: optional)
       end
 
-      def plan_event(execution_plan_id, step_id, event, time, done = Concurrent::Promises.resolvable_future)
+      def plan_event(execution_plan_id, step_id, event, time, done = Concurrent::Promises.resolvable_future, optional: false)
         if time.nil? || time < Time.now
-          event(execution_plan_id, step_id, event, done)
+          event(execution_plan_id, step_id, event, done, optional: optional)
         else
-          clock.ping(executor, time, Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, done], :delayed_event)
+          clock.ping(executor, time, Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, done, optional], :delayed_event)
         end
       end
     end
