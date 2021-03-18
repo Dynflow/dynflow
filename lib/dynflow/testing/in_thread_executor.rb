@@ -34,8 +34,8 @@ module Dynflow
         @director.work_finished(work_item)
       end
 
-      def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future)
-        event = (Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, future])
+      def event(execution_plan_id, step_id, event, future = Concurrent::Promises.resolvable_future, optional: false)
+        event = (Director::Event[SecureRandom.uuid, execution_plan_id, step_id, event, future, optional])
         @director.handle_event(event).each do |work_item|
           @work_items << work_item
         end
