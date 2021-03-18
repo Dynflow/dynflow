@@ -49,6 +49,12 @@ module Dynflow
               plan = result.finished.value
               assert_equal('finish', plan.actions.first.output[:event])
             end
+
+            it 'does not error on dispatching an optional event' do
+              request = client_world.event('123', 1, nil, optional: true)
+              request.wait(20)
+              assert_match /Could not find an executor for optional .*, discarding/, request.reason.message
+            end
           end
         end
       end

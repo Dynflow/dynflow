@@ -33,8 +33,8 @@ module Dynflow
         raise e
       end
 
-      def event(request_id, execution_plan_id, step_id, event, future = nil)
-        @core.ask([:handle_event, Director::Event[request_id, execution_plan_id, step_id, event, future]])
+      def event(request_id, execution_plan_id, step_id, event, future = nil, optional: false)
+        @core.ask([:handle_event, Director::Event[request_id, execution_plan_id, step_id, event, future, optional]])
         future
       end
 

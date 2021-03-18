@@ -15,7 +15,8 @@ module Dynflow
               execution_plan_id: String,
               step_id:           Integer,
               event:             Object,
-              result:            Concurrent::Promises::ResolvableFuture
+              result:            Concurrent::Promises::ResolvableFuture,
+              optional:          Algebrick::Types::Boolean
     end
 
     UnprocessableEvent = Class.new(Dynflow::Error)
@@ -163,6 +164,9 @@ module Dynflow
       execution_plan_manager = @execution_plan_managers[event.execution_plan_id]
       if execution_plan_manager
         execution_plan_manager.event(event)
+      elsif event.optional
+        event.result.reject "no manager for #{event.inspect}"
+        []
       else
         raise Dynflow::Error, "no manager for #{event.inspect}"
       end

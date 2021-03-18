@@ -52,12 +52,13 @@ module Dynflow
           end
         end
         if event_request.time.nil? || event_request.time < Time.now
-          @world.executor.event(envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, future)
+          @world.executor.event(envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, future,
+                                optional: event_request.optional)
         else
           @world.clock.ping(
             @world.executor,
             event_request.time,
-            Director::Event[envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, Concurrent::Promises.resolvable_future],
+            Director::Event[envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, Concurrent::Promises.resolvable_future, event_request.optional],
             :delayed_event
           )
           # resolves the future right away - currently we do not wait for the clock ping

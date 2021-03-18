@@ -7,8 +7,8 @@ module Dynflow
       fail("Timeout exceeded.")
     end
 
-    def schedule_timeout(seconds)
-      plan_event(Timeout, seconds)
+    def schedule_timeout(seconds, optional: false)
+      plan_event(Timeout, seconds, optional: optional)
     end
  end
 end
