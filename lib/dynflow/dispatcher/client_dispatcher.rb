@@ -150,8 +150,7 @@ module Dynflow
 
           message = "Could not find an executor for optional #{envelope}, discarding."
           log(Logger::DEBUG, message)
-          respond(envelope, Failed[message])
-          return
+          return respond(envelope, Failed[message])
         end
         connector.send(envelope).value!
       rescue => e
