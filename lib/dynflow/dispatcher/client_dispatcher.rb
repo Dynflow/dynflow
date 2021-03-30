@@ -132,26 +132,26 @@ module Dynflow
       end
 
       def dispatch_request(request, client_world_id, request_id)
+        ignore_unknown = false
         executor_id = match request,
                             (on ~Execution do |execution|
                                AnyExecutor
                              end),
                             (on ~Event do |event|
-                               id = find_executor(event.execution_plan_id)
-                               if id == Dispatcher::UnknownWorld && event.optional
-                                 message = "Could not find an executor for optional #{envelope}, discarding."
-                                 log(Logger::DEBUG, message)
-                                 respond(Envelope[request_id, client_world_id, id, request], Failed[message])
-                                 return
-                               end
-                               id
+                               ignore_unknown = event.optional
+                               find_executor(event.execution_plan_id)
                              end),
                             (on Ping.(~any, ~any) | Status.(~any, ~any) do |receiver_id, _|
                                receiver_id
                              end)
         envelope = Envelope[request_id, client_world_id, executor_id, request]
         if Dispatcher::UnknownWorld === envelope.receiver_id
-          raise Dynflow::Error, "Could not find an executor for #{envelope}"
+          raise Dynflow::Error, "Could not find an executor for #{envelope}" unless ignore_unknown
+
+          message = "Could not find an executor for optional #{envelope}, discarding."
+          log(Logger::DEBUG, message)
+          respond(envelope, Failed[message])
+          return
         end
         connector.send(envelope).value!
       rescue => e
