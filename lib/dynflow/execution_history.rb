@@ -12,7 +12,7 @@ module Dynflow
 
     module Event
       def inspect
-        "#{Time.at(time).utc}: #{name}".tap { |s| s << " @ #{world_id}" if world_id }
+        [ "#{Time.at(time).utc}: #{name}", world_id ].compact.join(' @ ')
       end
     end
 
