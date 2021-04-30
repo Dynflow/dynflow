@@ -105,7 +105,8 @@ module Dynflow
 
     attr_reader :world, :phase, :execution_plan_id, :id, :input,
                 :plan_step_id, :run_step_id, :finalize_step_id,
-                :caller_execution_plan_id, :caller_action_id
+                :caller_execution_plan_id, :caller_action_id,
+                :pending_output_chunks
 
     middleware.use Action::Progress::Calculate
 
@@ -133,6 +134,7 @@ module Dynflow
 
       @input  = OutputReference.deserialize getter.(:input, phase?(Run, Finalize, Present))
       @output = OutputReference.deserialize getter.(:output, false) if phase? Run, Finalize, Present
+      @pending_output_chunks = [] if phase? Run, Finalize
     end
 
     def phase?(*phases)
@@ -167,6 +169,14 @@ module Dynflow
       else
         @output
       end
+    end
+
+    def output_chunk(chunk, kind: nil, timestamp: Time.now)
+      @pending_output_chunks << { chunk: chunk, kind: kind, timestamp: timestamp }
+    end
+
+    def stored_output_chunks
+      @output_chunks ||= world.persistence.load_output_chunks(@execution_plan_id, @id)
     end
 
     def caller_action
