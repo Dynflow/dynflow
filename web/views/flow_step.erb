@@ -31,6 +31,7 @@
   <% end %>
   <%= show_action_data("Input:", action.input) %>
   <%= show_action_data("Output:", action.output) %>
+  <%= show_action_data("Chunked output:", action.stored_output_chunks) %>
   <% if step.error %>
     <p>
       <b>Error:</b>

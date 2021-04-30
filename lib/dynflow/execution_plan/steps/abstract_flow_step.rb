@@ -31,6 +31,7 @@ module Dynflow
         action = persistence.load_action(self)
         yield action
         persistence.save_action(execution_plan_id, action)
+        persistence.save_output_chunks(execution_plan_id, action.id, action.pending_output_chunks)
         save
 
         return self

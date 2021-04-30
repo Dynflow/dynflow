@@ -4,6 +4,7 @@ require 'multi_json'
 require 'fileutils'
 require 'csv'
 
+# rubocop:disable Metrics/ClassLength
 module Dynflow
   module PersistenceAdapters
 
@@ -37,12 +38,14 @@ module Dynflow
                                             class action_class execution_plan_uuid queue),
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
-                    delayed:             %w(execution_plan_uuid start_at start_before args_serializer frozen)}
+                    delayed:             %w(execution_plan_uuid start_at start_before args_serializer frozen),
+                    output_chunk:        %w(execution_plan_uuid action_id kind timestamp) }
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
                                delayed: %w(serialized_args),
                                execution_plan: %w(run_flow finalize_flow execution_history step_ids),
-                               step:    %w(error children) }
+                               step:    %w(error children),
+                               output_chunk: %w(chunk) }
 
       def initialize(config)
         migrate = true
@@ -85,6 +88,8 @@ module Dynflow
             steps = table(:step).where(execution_plan_uuid: uuids)
             backup_to_csv(steps, backup_dir, 'steps.csv') if backup_dir
             steps.delete
+
+            output_chunks = table(:output_chunk).where(execution_plan_uuid: uuids).delete
 
             actions = table(:action).where(execution_plan_uuid: uuids)
             backup_to_csv(actions, backup_dir, 'actions.csv') if backup_dir
@@ -171,6 +176,18 @@ module Dynflow
 
       def save_action(execution_plan_id, action_id, value)
         save :action, { execution_plan_uuid: execution_plan_id, id: action_id }, value, with_data: false
+      end
+
+      def save_output_chunks(execution_plan_id, action_id, chunks)
+        chunks.each do |chunk|
+          chunk[:execution_plan_uuid] = execution_plan_id
+          chunk[:action_id] = action_id
+          save :output_chunk, {}, chunk, with_data: false
+        end
+      end
+
+      def load_output_chunks(execution_plan_id, action_id)
+        load_records :output_chunk, { execution_plan_uuid: execution_plan_id, action_id: action_id }, [:timestamp, :kind, :chunk]
       end
 
       def connector_feature!
@@ -265,7 +282,8 @@ module Dynflow
                  step:                :dynflow_steps,
                  envelope:            :dynflow_envelopes,
                  coordinator_record:  :dynflow_coordinator_records,
-                 delayed:             :dynflow_delayed_plans }
+                 delayed:             :dynflow_delayed_plans,
+                 output_chunk:        :dynflow_output_chunks }
 
       def table(which)
         db[TABLES.fetch(which)]
@@ -284,7 +302,7 @@ module Dynflow
         if with_data && table(table_name).columns.include?(:data)
           record[:data] = dump_data(value)
         else
-          record[:data] = nil
+          record.delete(:data)
           record.merge! serialize_columns(table_name, value)
         end
 
@@ -339,7 +357,11 @@ module Dynflow
         records = with_retry do
           filtered = table.filter(Utils.symbolize_keys(condition))
           # Filter out requested columns which the table doesn't have, load data just in case
-          filtered = filtered.select(:data, *(table.columns & keys)) unless keys.nil?
+          unless keys.nil?
+            columns = table.columns & keys
+            columns |= [:data] if table.columns.include?(:data)
+            filtered = filtered.select(*columns)
+          end
           filtered.all
         end
         records = records.map { |record| load_data(record, what) }
@@ -394,7 +416,7 @@ module Dynflow
 
       def dump_data(value)
         return if value.nil?
-        MultiJson.dump Type!(value, Hash, Array, Integer)
+        MultiJson.dump Type!(value, Hash, Array, Integer, String)
       end
 
       def paginate(data_set, options)
@@ -477,3 +499,4 @@ module Dynflow
     end
   end
 end
+# rubocop:enable Metrics/ClassLength
