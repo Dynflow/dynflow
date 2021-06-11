@@ -299,10 +299,15 @@ module Dynflow
 
       def prepare_record(table_name, value, base = {}, with_data = true)
         record = base.dup
-        if with_data && table(table_name).columns.include?(:data)
+        has_data_column = table(table_name).columns.include?(:data)
+        if with_data && has_data_column
           record[:data] = dump_data(value)
         else
-          record.delete(:data)
+          if has_data_column
+            record[:data] = nil
+          else
+            record.delete(:data)
+          end
           record.merge! serialize_columns(table_name, value)
         end
 
