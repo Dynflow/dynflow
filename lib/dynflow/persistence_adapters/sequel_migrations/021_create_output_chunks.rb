@@ -1,10 +1,16 @@
 # frozen_string_literal: true
 Sequel.migration do
   up do
+    type = database_type
     create_table(:dynflow_output_chunks) do
       primary_key :id
 
-      foreign_key :execution_plan_uuid, :dynflow_execution_plans, type: String, size: 36, fixed: true, null: false
+      column_properties = if type.to_s.include?('postgres')
+                            {type: :uuid}
+                          else
+                            {type: String, size: 36, fixed: true, null: false}
+                          end
+      foreign_key :execution_plan_uuid, :dynflow_execution_plans, **column_properties
       index :execution_plan_uuid
 
       column :action_id, Integer, null: false
