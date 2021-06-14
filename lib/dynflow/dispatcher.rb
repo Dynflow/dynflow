@@ -14,6 +14,10 @@ module Dynflow
         fields! execution_plan_id: String
       end
 
+      Planning = type do
+        fields! execution_plan_id: String
+      end
+
       Ping = type do
         fields! receiver_id: String,
                 use_cache: type { variants TrueClass, FalseClass }
@@ -24,7 +28,7 @@ module Dynflow
                 execution_plan_id: type { variants String, NilClass }
       end
 
-      variants Event, Execution, Ping, Status
+      variants Event, Execution, Ping, Status, Planning
     end
 
     Response = Algebrick.type do

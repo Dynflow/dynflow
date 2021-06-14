@@ -19,6 +19,7 @@ module Dynflow
 
     require 'dynflow/testing/mimic'
     require 'dynflow/testing/managed_clock'
+    require 'dynflow/testing/dummy_coordinator'
     require 'dynflow/testing/dummy_world'
     require 'dynflow/testing/dummy_executor'
     require 'dynflow/testing/dummy_execution_plan'

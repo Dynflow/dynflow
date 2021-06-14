@@ -29,14 +29,17 @@ module Dynflow
         describe 'abstract executor' do
           let(:abstract_delayed_executor) { DelayedExecutors::AbstractCore.new(world) }
 
-          it 'handles wrong plan state' do
+          it 'handles plan in planning state' do
             delayed_plan.execution_plan.state = :planning
             abstract_delayed_executor.send(:process, [delayed_plan], @start_at)
-            _(delayed_plan.execution_plan.state).must_equal :planned
+            _(delayed_plan.execution_plan.state).must_equal :scheduled
+          end
 
+          it 'handles plan in running state' do
             delayed_plan.execution_plan.set_state(:running, true)
             abstract_delayed_executor.send(:process, [delayed_plan], @start_at)
             _(delayed_plan.execution_plan.state).must_equal :running
+            _(world.persistence.load_delayed_plan(delayed_plan.execution_plan_uuid)).must_be :nil?
           end
         end
 

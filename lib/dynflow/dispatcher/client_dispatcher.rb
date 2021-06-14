@@ -134,7 +134,7 @@ module Dynflow
       def dispatch_request(request, client_world_id, request_id)
         ignore_unknown = false
         executor_id = match request,
-                            (on ~Execution do |execution|
+                            (on ~Execution | ~Planning do |execution|
                                AnyExecutor
                              end),
                             (on ~Event do |event|

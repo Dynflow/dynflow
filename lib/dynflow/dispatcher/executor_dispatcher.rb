@@ -9,12 +9,20 @@ module Dynflow
 
       def handle_request(envelope)
         match(envelope.message,
+              on(Planning) { perform_planning(envelope, envelope.message)},
               on(Execution) { perform_execution(envelope, envelope.message) },
               on(Event)     { perform_event(envelope, envelope.message) },
               on(Status)    { get_execution_status(envelope, envelope.message) })
       end
 
       protected
+
+      def perform_planning(envelope, planning)
+        @world.executor.plan(planning.execution_plan_id)
+        respond(envelope, Accepted)
+      rescue Dynflow::Error => e
+        respond(envelope, Failed[e.message])
+      end
 
       def perform_execution(envelope, execution)
         allocate_executor(execution.execution_plan_id, envelope.sender_id, envelope.request_id)

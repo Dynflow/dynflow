@@ -53,7 +53,7 @@ module Dynflow
       end
 
       def self.new_from_hash(hash, *_args)
-        self.new(hash[:execution_plan_id], hash[:queue])
+        self.new(hash[:execution_plan_id], hash[:queue], hash[:sender_orchestrator_id])
       end
     end
 
@@ -108,6 +108,26 @@ module Dynflow
       end
     end
 
+    class PlanningWorkItem < WorkItem
+      def execute
+        plan = world.persistence.load_delayed_plan(execution_plan_id)
+        return if plan.nil? || plan.execution_plan.state != :scheduled
+
+        if !plan.start_before.nil? && plan.start_before < Time.now.utc()
+          plan.timeout
+          return
+        end
+
+        world.coordinator.acquire(Coordinator::PlanningLock.new(world, plan.execution_plan_uuid)) do
+          plan.plan
+        end
+        plan.execute
+      rescue => e
+        world.logger.warn e.message
+        world.logger.debug e.backtrace.join("\n")
+      end
+    end
+
     class FinalizeWorkItem < WorkItem
       attr_reader :finalize_steps_data
 
@@ -147,10 +167,16 @@ module Dynflow
       @logger = world.logger
       @execution_plan_managers = {}
       @rescued_steps = {}
+      @planning_plans = []
     end
 
     def current_execution_plan_ids
       @execution_plan_managers.keys
+    end
+
+    def handle_planning(execution_plan_uuid)
+      @planning_plans << execution_plan_uuid
+      [PlanningWorkItem.new(execution_plan_uuid, :default, @world.id)]
     end
 
     def start_execution(execution_plan_id, finished)
@@ -176,9 +202,16 @@ module Dynflow
     end
 
     def work_finished(work)
-      manager = @execution_plan_managers[work.execution_plan_id]
-      return [] unless manager # skip case when getting event from execution plan that is not running anymore
-      unless_done(manager, manager.what_is_next(work))
+      case work
+      when PlanningWorkItem
+        @planning_plans.delete(work.execution_plan_id)
+        @world.persistence.delete_delayed_plans(:execution_plan_uuid => work.execution_plan_id)
+        []
+      else
+        manager = @execution_plan_managers[work.execution_plan_id]
+        return [] unless manager # skip case when getting event from execution plan that is not running anymore
+        unless_done(manager, manager.what_is_next(work))
+      end
     end
 
     # called when there was an unhandled exception during the execution
