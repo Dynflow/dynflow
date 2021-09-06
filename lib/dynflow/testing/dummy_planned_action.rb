@@ -15,6 +15,10 @@ module Dynflow
         @plan_input = args
         self
       end
+
+      def run_step_id
+        @run_step_id ||= Testing.get_id
+      end
     end
   end
 end
