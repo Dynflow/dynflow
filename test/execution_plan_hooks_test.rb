@@ -60,6 +60,12 @@ module Dynflow
         execution_plan_hooks.use :raise_flag_root_only, :on => :stopped
       end
 
+      class PendingAction < ::Dynflow::Action
+        include FlagHook
+
+        execution_plan_hooks.use :raise_flag, :on => :pending
+      end
+
       class ComposedAction < RootOnlyAction
         def plan
           plan_action(RootOnlyAction)
@@ -159,6 +165,21 @@ module Dynflow
         refute Flag.raised?
         plan = world.trigger(ComposedAction)
         plan.finished.wait!
+        _(Flag.raised_count).must_equal 1
+      end
+
+      it 'runs the pending hooks when execution plan is created' do
+        refute Flag.raised?
+        plan = world.trigger(PendingAction)
+        plan.finished.wait!
+        _(Flag.raised_count).must_equal 1
+      end
+
+      it 'runs the pending hooks when execution plan is created' do
+        refute Flag.raised?
+        delay = world.delay(PendingAction, { :start_at => Time.now.utc + 180 })
+        delayed_plan = world.persistence.load_delayed_plan(delay.execution_plan_id)
+        delayed_plan.execution_plan.cancel.each(&:wait)
         _(Flag.raised_count).must_equal 1
       end
     end
