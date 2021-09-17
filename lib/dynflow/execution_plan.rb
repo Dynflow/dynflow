@@ -254,6 +254,7 @@ module Dynflow
     def delay(caller_action, action_class, delay_options, *args)
       save
       @root_plan_step = add_scheduling_step(action_class, caller_action)
+      run_hooks(:pending)
       serializer = root_plan_step.delay(delay_options, args)
       delayed_plan = DelayedPlan.new(@world,
                                      id,
@@ -276,7 +277,9 @@ module Dynflow
       raise "Unexpected options #{options.keys.inspect}" unless options.empty?
       save
       @root_plan_step = add_plan_step(action_class, caller_action)
-      @root_plan_step.save
+      step = @root_plan_step.save
+      run_hooks(:pending)
+      step
     end
 
     def plan(*args)
