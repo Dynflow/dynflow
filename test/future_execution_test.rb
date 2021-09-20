@@ -58,7 +58,7 @@ module Dynflow
 
         it 'delays the action' do
           _(execution_plan.steps.count).must_equal 1
-          _(delayed_plan.start_at).must_be_within_delta(@start_at, 0.5)
+          _(delayed_plan.start_at.to_i).must_equal(@start_at.to_i)
           _(history_names.call(execution_plan)).must_equal ['delay']
         end
 
