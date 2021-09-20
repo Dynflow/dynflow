@@ -66,6 +66,12 @@ module Dynflow
         execution_plan_hooks.use :raise_flag, :on => :pending
       end
 
+      class AllTransitionsAction < ::Dynflow::Action
+        include FlagHook
+
+        execution_plan_hooks.use :raise_flag
+      end
+
       class ComposedAction < RootOnlyAction
         def plan
           plan_action(RootOnlyAction)
@@ -181,6 +187,15 @@ module Dynflow
         delayed_plan = world.persistence.load_delayed_plan(delay.execution_plan_id)
         delayed_plan.execution_plan.cancel.each(&:wait)
         _(Flag.raised_count).must_equal 1
+      end
+
+      it 'runs the hook on every state transition' do
+        refute Flag.raised?
+        plan = world.trigger(AllTransitionsAction)
+        plan.finished.wait!
+        # There should be 5 transitions
+        # nothing -> pending -> planning -> planned -> running -> stopped
+        _(Flag.raised_count).must_equal 5
       end
     end
   end

@@ -21,7 +21,7 @@ module Dynflow
         # @param class_name [Class] class of the hook to be run
         # @param on [Symbol, Array<Symbol>] when should the hook be run, one of {HOOK_KINDS}
         # @return [void]
-        def use(class_name, on: HOOK_KINDS)
+        def use(class_name, on: ExecutionPlan.states)
           on = Array[on] unless on.kind_of?(Array)
           validate_kinds!(on)
           if hooks[class_name]
