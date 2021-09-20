@@ -25,7 +25,7 @@ end
 def migrate_table(table, from_names, to_names, new_type)
   alter_table(table) do
     to_names.each do |new|
-      add_column new, *new_type
+      add_column new, new_type
     end
   end
 
@@ -39,10 +39,16 @@ def migrate_table(table, from_names, to_names, new_type)
     from(table).where(conditions_for_row(table, row)).update(update)
   end
 
-  alter_table(table) do
-    from_names.zip(to_names).each do |old, new|
+  from_names.zip(to_names).each do |old, new|
+    alter_table(table) do
       drop_column old
-      rename_column new, old
+    end
+
+    if database_type == :mysql
+      type = new_type == File ? 'blob' : 'mediumtext'
+      run "ALTER TABLE #{table} CHANGE COLUMN `#{new}` `#{old}` #{type};"
+    else
+      rename_column table, new, old
     end
   end
 end
@@ -62,7 +68,7 @@ Sequel.migration do
     TABLES.each do |table, columns|
       new_columns = columns.map { |c| "#{c}_blob" }
 
-      migrate_table table, columns, new_columns, [File] do |data|
+      migrate_table table, columns, new_columns, File do |data|
         ::Sequel.blob(MessagePack.pack(MultiJson.load(data)))
       end
     end
@@ -71,8 +77,8 @@ Sequel.migration do
   down do
     TABLES.each do |table, columns|
       new_columns = columns.map { |c| c + '_text' }
-      migrate_table table, columns, new_columns, [File, text: true] do |data|
-        MutliJson.dump(MessagePack.unpack(data))
+      migrate_table table, columns, new_columns, String do |data|
+        MultiJson.dump(MessagePack.unpack(data))
       end
     end
   end
