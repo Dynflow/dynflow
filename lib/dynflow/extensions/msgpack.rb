@@ -22,6 +22,11 @@ module Dynflow
         end
         ::ActiveSupport::TimeWithZone.include ::Dynflow::Extensions::MsgPack::Time
         ::MessagePack::DefaultFactory.register_type(0x01, ActiveSupport::TimeWithZone, packer: MessagePack::Time::Packer, unpacker: unpacker)
+
+        ::DateTime.include ::Dynflow::Extensions::MsgPack::Time
+        ::MessagePack::DefaultFactory.register_type(0x02, DateTime,
+                                                    packer: ->(datetime) { MessagePack::Time::Packer.(datetime.to_time) },
+                                                    unpacker: ->(payload) { unpacker.(payload).to_datetime })
       rescue LoadError
         # This is fine
         nil
