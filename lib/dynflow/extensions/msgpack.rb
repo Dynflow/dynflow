@@ -5,7 +5,7 @@ module Dynflow
   module Extensions
     module MsgPack
       module Time
-        def to_msgpack(out = String.new)
+        def to_msgpack(out = ''.dup)
           ::MessagePack.pack(self, out)
           out
         end
@@ -24,6 +24,7 @@ module Dynflow
         ::MessagePack::DefaultFactory.register_type(0x01, ActiveSupport::TimeWithZone, packer: MessagePack::Time::Packer, unpacker: unpacker)
       rescue LoadError
         # This is fine
+        nil
       end
     end
   end
