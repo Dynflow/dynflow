@@ -72,6 +72,7 @@ module Dynflow
   require 'dynflow/throttle_limiter'
   require 'dynflow/telemetry'
   require 'dynflow/config'
+  require 'dynflow/extensions'
 
   if defined? ::ActiveJob
     require 'dynflow/active_job/queue_adapter'
