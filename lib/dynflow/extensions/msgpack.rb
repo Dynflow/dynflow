@@ -27,6 +27,11 @@ module Dynflow
         ::MessagePack::DefaultFactory.register_type(0x02, DateTime,
                                                     packer: ->(datetime) { MessagePack::Time::Packer.(datetime.to_time) },
                                                     unpacker: ->(payload) { unpacker.(payload).to_datetime })
+
+        ::Date.include ::Dynflow::Extensions::MsgPack::Time
+        ::MessagePack::DefaultFactory.register_type(0x03, Date,
+                                                    packer: ->(date) { MessagePack::Time::Packer.(date.to_time) },
+                                                    unpacker: ->(payload) { unpacker.(payload).to_date })
       rescue LoadError
         # This is fine
         nil
