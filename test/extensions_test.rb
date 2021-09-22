@@ -30,6 +30,13 @@ module Dynflow
         assert_equal transformed, time
         assert_equal transformed.class, time.class
       end
+
+      it 'allows {de,}serializing Date' do
+        date = DateTime.current
+        transformed = MessagePack.unpack(date.to_msgpack)
+        assert_equal transformed, date
+        assert_equal transformed.class, date.class
+      end
     end
   end
 end
