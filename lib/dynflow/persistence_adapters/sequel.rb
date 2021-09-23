@@ -290,7 +290,8 @@ module Dynflow
       end
 
       def initialize_db(db_path)
-        ::Sequel.connect db_path
+        logger = Logger.new($stderr) if ENV['DYNFLOW_SQL_LOG']
+        ::Sequel.connect db_path, logger: logger
       end
 
       def self.migrations_path
