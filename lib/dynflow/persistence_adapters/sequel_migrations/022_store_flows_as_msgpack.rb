@@ -5,6 +5,8 @@ require 'msgpack'
 
 def table_pkeys(table)
   case table
+  when :dynflow_execution_plans
+    [:uuid]
   when :dynflow_actions, :dynflow_steps
     [:execution_plan_uuid, :id]
   when :dynflow_coordinator_records
