@@ -15,8 +15,8 @@ def table_pkeys(table)
     [:execution_plan_uuid]
   when :dynflow_envelopes
     [:id]
-  when
-    [:uuid]
+  else
+    raise "Unknown table '#{table}'"
   end
 end
 
