@@ -15,6 +15,8 @@ def table_pkeys(table)
     [:execution_plan_uuid]
   when :dynflow_envelopes
     [:id]
+  when :dynflow_output_chunks
+    [:chunk]
   else
     raise "Unknown table '#{table}'"
   end
@@ -63,7 +65,8 @@ Sequel.migration do
     :dynflow_delayed_plans => [:serialized_args, :data],
     :dynflow_envelopes => [:data],
     :dynflow_execution_plans => [:run_flow, :finalize_flow, :execution_history, :step_ids],
-    :dynflow_steps => [:error, :children]
+    :dynflow_steps => [:error, :children],
+    :dynflow_output_chunks => [:chunk]
   }
 
   up do
