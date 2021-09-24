@@ -336,7 +336,7 @@ module Dynflow
           record = prepare_record(what, value, (existing_record || condition), with_data)
           if existing_record
             condition = update_conditions.merge(condition)
-            return with_retry { table.where(condition).update(record) }
+            return with_retry { table.where(condition).update(record.delete_if { |k, _v| condition.keys.include?(k) }) }
           else
             with_retry { table.insert record }
           end
