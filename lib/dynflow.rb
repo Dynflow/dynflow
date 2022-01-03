@@ -16,6 +16,7 @@ end
 require 'zeitwerk'
 loader = Zeitwerk::Loader.for_gem
 loader.inflector.inflect('statsd' => 'StatsD')
+loader.inflector.inflect('msgpack' => 'MsgPack')
 loader.ignore("#{__dir__}/dynflow/persistence_adapters/sequel_migrations")
 loader.ignore("#{__dir__}/dynflow/executors/sidekiq")
 loader.ignore("#{__dir__}/dynflow/executors/sidekiq.rb")
