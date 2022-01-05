@@ -13,19 +13,6 @@ Concurrent.global_logger = lambda do |level, progname, message = nil, &block|
   logger.add level, message, progname, &block
 end
 
-require 'zeitwerk'
-loader = Zeitwerk::Loader.for_gem
-loader.inflector.inflect('statsd' => 'StatsD')
-loader.inflector.inflect('msgpack' => 'MsgPack')
-loader.ignore("#{__dir__}/dynflow/persistence_adapters/sequel_migrations")
-loader.ignore("#{__dir__}/dynflow/executors/sidekiq")
-loader.ignore("#{__dir__}/dynflow/executors/sidekiq.rb")
-loader.ignore("#{__dir__}/dynflow/active_job.rb")
-loader.ignore("#{__dir__}/dynflow/active_job")
-loader.ignore("#{__dir__}/dynflow/rails")
-loader.setup
-loader.eager_load
-
 # TODO validate in/output, also validate unknown keys
 # TODO performance testing, how many actions will it handle?
 # TODO profiling, find bottlenecks
@@ -63,3 +50,16 @@ module Dynflow
     loader.eager_load
   end
 end
+
+require 'zeitwerk'
+loader = Zeitwerk::Loader.for_gem
+loader.inflector.inflect('statsd' => 'StatsD')
+loader.inflector.inflect('msgpack' => 'MsgPack')
+loader.ignore("#{__dir__}/dynflow/persistence_adapters/sequel_migrations")
+loader.ignore("#{__dir__}/dynflow/executors/sidekiq")
+loader.ignore("#{__dir__}/dynflow/executors/sidekiq.rb")
+loader.ignore("#{__dir__}/dynflow/active_job.rb")
+loader.ignore("#{__dir__}/dynflow/active_job")
+loader.ignore("#{__dir__}/dynflow/rails")
+loader.setup
+loader.eager_load
