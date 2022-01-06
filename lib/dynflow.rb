@@ -13,9 +13,6 @@ Concurrent.global_logger = lambda do |level, progname, message = nil, &block|
   logger.add level, message, progname, &block
 end
 
-module Dynflow
-end
-
 require 'zeitwerk'
 loader = Zeitwerk::Loader.for_gem
 loader.inflector.inflect('statsd' => 'StatsD')
@@ -27,7 +24,6 @@ loader.ignore("#{__dir__}/dynflow/active_job.rb")
 loader.ignore("#{__dir__}/dynflow/active_job")
 loader.ignore("#{__dir__}/dynflow/rails")
 loader.setup
-loader.eager_load
 
 # TODO validate in/output, also validate unknown keys
 # TODO performance testing, how many actions will it handle?
@@ -66,3 +62,5 @@ module Dynflow
     loader.eager_load
   end
 end
+
+loader.eager_load
