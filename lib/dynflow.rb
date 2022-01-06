@@ -23,6 +23,7 @@ loader.ignore("#{__dir__}/dynflow/executors/sidekiq.rb")
 loader.ignore("#{__dir__}/dynflow/active_job.rb")
 loader.ignore("#{__dir__}/dynflow/active_job")
 loader.ignore("#{__dir__}/dynflow/rails")
+loader.ignore("#{__dir__}/dynflow/watchers")
 loader.setup
 
 # TODO validate in/output, also validate unknown keys

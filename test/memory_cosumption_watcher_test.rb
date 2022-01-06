@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 require_relative 'test_helper'
 require 'fileutils'
+require 'dynflow/watchers/memory_consumption_watcher'
 
 module Dynflow
   module MemoryConsumptionWatcherTest
