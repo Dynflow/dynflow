@@ -1,0 +1,48 @@
+# workflow name
+name: Generate release-artifacts
+
+# on events
+on:
+  push:
+    tags:
+        - '*'
+
+# workflow tasks
+jobs:
+  generate:
+    name: Generate build artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: olegtarasov/get-tag@v2.1
+        id: tagName
+        with:
+          tagRegex: "v(.*)"  # Optional. Returns specified group text as tag name. Full tag string is returned if regex is not defined.
+          tagRegexGroup: 1 # Optional. Default is 1.
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+      - name: Generate build files
+        run: |
+          mkdir -p dist
+          cd extras/expand
+          go build -o ../../dist/dynflow-expand-${VERSION}-x86_64
+        env:
+          VERSION: '${{ steps.tagName.outputs.tag }}'
+      - name: Generate distribution tarball
+        run: |
+          cd extras/expand
+          go mod vendor
+          tar --create \
+            --gzip \
+            --file ../../dist/dynflow-expand-${VERSION}.tar.gz \
+            --transform s/^\./dynflow-expand-${VERSION}/ \
+            .
+        env:
+          VERSION: '${{ steps.tagName.outputs.tag }}'
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
