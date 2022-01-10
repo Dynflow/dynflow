@@ -35,7 +35,7 @@ end
 
 group :rails do
   gem 'daemons'
-  gem 'rails', '>= 4.2.9'
+  gem 'rails', '>= 4.2.9', '< 7'
   gem 'logging'
 end
 
