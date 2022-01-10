@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'multi_json'
+require 'json'
 require 'msgpack'
 
 def table_pkeys(table)
@@ -74,7 +74,7 @@ Sequel.migration do
       new_columns = columns.map { |c| "#{c}_blob" }
 
       migrate_table table, columns, new_columns, File do |data|
-        ::Sequel.blob(MessagePack.pack(MultiJson.load(data)))
+        ::Sequel.blob(MessagePack.pack(JSON.parse(data)))
       end
     end
   end
@@ -83,7 +83,7 @@ Sequel.migration do
     TABLES.each do |table, columns|
       new_columns = columns.map { |c| c + '_text' }
       migrate_table table, columns, new_columns, String do |data|
-        MultiJson.dump(MessagePack.unpack(data))
+        JSON.dump(MessagePack.unpack(data))
       end
     end
   end
