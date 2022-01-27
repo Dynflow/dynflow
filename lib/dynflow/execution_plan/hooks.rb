@@ -69,7 +69,7 @@ module Dynflow
                 action.send(hook, execution_plan)
               rescue => e
                 execution_plan.logger.error "Failed to run hook '#{hook}' for action '#{action.class}'"
-                execution_plan.logger.debug e
+                execution_plan.logger.error e
               end
             end
           end
