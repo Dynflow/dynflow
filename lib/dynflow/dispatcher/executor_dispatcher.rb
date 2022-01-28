@@ -13,7 +13,8 @@ module Dynflow
           on(Planning) { perform_planning(envelope, envelope.message) },
           on(Execution) { perform_execution(envelope, envelope.message) },
           on(Event)     { perform_event(envelope, envelope.message) },
-          on(Status)    { get_execution_status(envelope, envelope.message) })
+          on(Status)    { get_execution_status(envelope, envelope.message) },
+          on(Halt)      { halt_execution_plan(envelope, envelope.message) })
       end
 
       protected
@@ -50,6 +51,11 @@ module Dynflow
           @world.coordinator.release(execution_lock)
           respond(envelope, Done)
         end
+      end
+
+      def halt_execution_plan(envelope, execution_plan_id)
+        @world.executor.halt execution_plan_id
+        respond(envelope, Done)
       end
 
       def perform_event(envelope, event_request)

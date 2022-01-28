@@ -66,6 +66,10 @@ module Dynflow
           end
         end
 
+        def halt(execution_plan_id)
+          @director.halt execution_plan_id
+        end
+
         def start_termination(*args)
           logger.info 'shutting down Core ...'
           super

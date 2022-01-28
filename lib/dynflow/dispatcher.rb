@@ -29,7 +29,11 @@ module Dynflow
                 execution_plan_id: type { variants String, NilClass }
       end
 
-      variants Event, Execution, Ping, Status, Planning
+      Halt = type do
+        fields! execution_plan_id: String, optional: Algebrick::Types::Boolean
+      end
+
+      variants Event, Execution, Ping, Status, Planning, Halt
     end
 
     Response = Algebrick.type do
