@@ -246,6 +246,15 @@ module Dynflow
       end
     end
 
+    def halt(event)
+      manager = @execution_plan_managers[event.execution_plan_id]
+      return unless manager
+
+      @logger.warn "Halting execution plan #{event.execution_plan_id}"
+      manager.halt
+      finish_manager manager
+    end
+
     private
 
     def unless_done(manager, work_items)

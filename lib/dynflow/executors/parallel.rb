@@ -57,6 +57,10 @@ module Dynflow
         @core.ask!([:execution_status, execution_plan_id])
       end
 
+      def halt(execution_plan_id)
+        @core.tell([:halt, execution_plan_id])
+      end
+
       def initialized
         @core_initialized
       end

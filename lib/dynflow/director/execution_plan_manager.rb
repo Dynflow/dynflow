@@ -13,6 +13,7 @@ module Dynflow
         @execution_plan        = Type! execution_plan, ExecutionPlan
         @future                = Type! future, Concurrent::Promises::ResolvableFuture
         @running_steps_manager = RunningStepsManager.new(world)
+        @halted                = false
 
         unless [:planned, :paused].include? execution_plan.state
           raise "execution_plan is not in pending or paused state, it's #{execution_plan.state}"
@@ -23,6 +24,11 @@ module Dynflow
       def start
         raise "The future was already set" if @future.resolved?
         start_run or start_finalize or finish
+      end
+
+      def halt
+        @halted = true
+        @running_steps_manager.terminate
       end
 
       def restart
@@ -72,7 +78,7 @@ module Dynflow
       end
 
       def done?
-        (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
+        @halted || (!@run_manager || @run_manager.done?) && (!@finalize_manager || @finalize_manager.done?)
       end
 
       def terminate
@@ -88,6 +94,7 @@ module Dynflow
       def compute_next_from_step(step)
         raise "run manager not set" unless @run_manager
         raise "run manager already done" if @run_manager.done?
+        return [] if @halted
 
         next_steps = @run_manager.what_is_next(step)
         if @run_manager.done?

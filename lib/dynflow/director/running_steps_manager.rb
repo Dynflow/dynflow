@@ -16,6 +16,7 @@ module Dynflow
         # to handle potential updates of the step object (that is part of the event)
         @events        = QueueHash.new(Integer, Director::Event)
         @events_by_request_id = {}
+        @halted = false
       end
 
       def terminate
@@ -25,6 +26,10 @@ module Dynflow
             result.reject UnprocessableEvent.new("dropping due to termination")
           end
         end
+      end
+
+      def halt
+        @halted = true
       end
 
       def add(step, work)
@@ -82,6 +87,10 @@ module Dynflow
         step = @running_steps[event.step_id]
         unless step
           event.result.reject UnprocessableEvent.new('step is not suspended, it cannot process events')
+          return []
+        end
+        if @halted
+          event.result.reject UnprocessableEvent.new('execution plan is halted, it cannot receive events')
           return []
         end
 
