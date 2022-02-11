@@ -51,13 +51,13 @@ end
 
 Sequel.migration do
 
-  TABLES = {
+  TABLES_024 = {
     :dynflow_execution_plans => [:data],
     :dynflow_steps => [:data]
   }
 
   up do
-    TABLES.each do |table, columns|
+    TABLES_024.each do |table, columns|
       new_columns = columns.map { |c| "#{c}_blob" }
 
       migrate_table table, columns, new_columns, File do |data|
@@ -67,7 +67,7 @@ Sequel.migration do
   end
 
   down do
-    TABLES.each do |table, columns|
+    TABLES_024.each do |table, columns|
       new_columns = columns.map { |c| c + '_text' }
       migrate_table table, columns, new_columns, String do |data|
         JSON.dump(MessagePack.unpack(data)) if data
