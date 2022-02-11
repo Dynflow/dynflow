@@ -1,4 +1,4 @@
-![Dynflow](doc/pages/source/images/logo-long.png)
+ ![Dynflow](doc/pages/source/images/logo-long.png)
 =======
 
 ![Build](https://img.shields.io/travis/Dynflow/dynflow/master.svg?style=flat)
