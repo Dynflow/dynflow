@@ -127,7 +127,7 @@ module Dynflow
           db_pool_size = calculate_db_pool_size(world)
           ::ActiveRecord::Base.connection_pool.disconnect!
 
-          config = ::ActiveRecord::Base.configurations[::Rails.env]
+          config = ::ActiveRecord::Base.configurations.configs_for(env_name: ::Rails.env)[0].config.dup
           config['pool'] = db_pool_size if config['pool'].to_i < db_pool_size
           ::ActiveRecord::Base.establish_connection(config)
         end
@@ -158,7 +158,7 @@ module Dynflow
       protected
 
       def default_sequel_adapter_options(world)
-        db_config            = ::Rails.application.config.database_configuration[::Rails.env].dup
+        db_config            = ::ActiveRecord::Base.configurations.configs_for(env_name: ::Rails.env)[0].config.dup
         db_config['adapter'] = db_config['adapter'].gsub(/_?makara_?/, '')
         db_config['adapter'] = 'postgres' if db_config['adapter'] == 'postgresql'
         db_config['max_connections'] = calculate_db_pool_size(world) if increase_db_pool_size?
