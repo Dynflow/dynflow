@@ -68,7 +68,7 @@ module Dynflow
         planned_ids.map do |child_id|
           ::Dynflow::World::Triggered[child_id, Concurrent::Promises.resolvable_future].tap do |triggered|
             triggered.future.on_resolution! { self << [:release, parent_id] }
-            execute_triggered(triggered) if @semaphores[parent_id].wait(triggered)
+            execute_triggered(triggered) if @semaphores.key?(parent_id) && @semaphores[parent_id].wait(triggered)
           end
         end + failed
       end
