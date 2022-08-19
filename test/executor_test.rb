@@ -718,6 +718,99 @@ module Dynflow
           assert [world.terminate, world.terminate].map(&:value).all?
         end
       end
+
+      describe 'halting' do
+        include TestHelpers
+        let(:world) { WorldFactory.create_world }
+
+        it 'halts an execution plan with a suspended step' do
+          triggered = world.trigger(Support::DummyExample::PlanEventsAction, ping_time: 1)
+          plan = world.persistence.load_execution_plan(triggered.id)
+          wait_for do
+            plan = world.persistence.load_execution_plan(triggered.id)
+            plan.state == :running
+          end
+          world.halt(triggered.id)
+          wait_for('the execution plan to halt') do
+            plan = world.persistence.load_execution_plan(triggered.id)
+            plan.state == :stopped
+          end
+          _(plan.steps[2].state).must_equal :suspended
+        end
+
+        it 'halts a paused execution plan' do
+          triggered = world.trigger(Support::DummyExample::FailingDummy)
+          plan = world.persistence.load_execution_plan(triggered.id)
+          wait_for do
+            plan = world.persistence.load_execution_plan(triggered.id)
+            plan.state == :paused
+          end
+          world.halt(plan.id)
+          wait_for('the execution plan to halt') do
+            plan = world.persistence.load_execution_plan(triggered.id)
+            plan.state == :stopped
+          end
+          _(plan.steps[2].state).must_equal :error
+        end
+
+        it 'halts a planned execution plan' do
+          plan = world.plan(Support::DummyExample::Dummy)
+          wait_for do
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.state == :planned
+          end
+          world.halt(plan.id)
+          wait_for('the execution plan to halt') do
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.state == :stopped
+          end
+          _(plan.steps[2].state).must_equal :pending
+        end
+
+        it 'halts a scheduled execution plan' do
+          plan = world.delay(Support::DummyExample::Dummy, {start_at: Time.now + 120})
+          wait_for do
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.state == :scheduled
+          end
+          world.halt(plan.id)
+          wait_for('the execution plan to halt') do
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.state == :stopped
+          end
+          _(plan.delay_record).must_be :nil?
+          _(plan.steps[1].state).must_equal :pending
+        end
+
+        it 'halts a pending execution plan' do
+          plan = ExecutionPlan.new(world, nil)
+          plan.save
+          world.halt(plan.id)
+          wait_for('the execution plan to halt') do
+            plan = world.persistence.load_execution_plan(plan.id)
+            plan.state == :stopped
+          end
+        end
+      end
+
+      describe 'execution inhibition locks' do
+        include TestHelpers
+        let(:world) { WorldFactory.create_world }
+
+        it 'inhibits execution' do
+          plan = world.plan(Support::DummyExample::Dummy)
+          world.coordinator.acquire(Coordinator::ExecutionInhibitionLock.new(plan.id))
+          triggered = world.execute(plan.id)
+          triggered.wait
+          _(triggered).must_be :rejected?
+
+          plan = world.persistence.load_execution_plan(plan.id)
+          _(plan.state).must_equal :stopped
+
+          locks = world.coordinator.find_locks({ class: Coordinator::ExecutionInhibitionLock.to_s, owner_id: "execution-plan:#{plan.id}" })
+          _(locks).must_be :empty?
+        end
+      end
     end
   end
 end

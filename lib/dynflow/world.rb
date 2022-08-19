@@ -253,6 +253,7 @@ module Dynflow
     end
 
     def halt(execution_plan_id, accepted = Concurrent::Promises.resolvable_future)
+      coordinator.acquire(Coordinator::ExecutionInhibitionLock.new(execution_plan_id))
       publish_request(Dispatcher::Halt[execution_plan_id], accepted, false)
     end
 

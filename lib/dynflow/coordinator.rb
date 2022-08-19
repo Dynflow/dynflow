@@ -266,6 +266,19 @@ module Dynflow
       end
     end
 
+    class ExecutionInhibitionLock < Lock
+      def initialize(execution_plan_id)
+        super
+        @data[:owner_id] = "execution-plan:#{execution_plan_id}"
+        @data[:execution_plan_id] = execution_plan_id
+        @data[:id] = self.class.lock_id(execution_plan_id)
+      end
+
+      def self.lock_id(execution_plan_id)
+        "execution-plan:#{execution_plan_id}"
+      end
+    end
+
     class ExecutionLock < LockByWorld
       def initialize(world, execution_plan_id, client_world_id, request_id)
         super(world)

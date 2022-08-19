@@ -133,7 +133,9 @@ module Dynflow
             telemetry_common_options.merge(:result => key.to_s))
         end
         hooks_to_run << key
+        world.persistence.delete_delayed_plans(:execution_plan_uuid => id) if delay_record && original == :scheduled
         unlock_all_singleton_locks!
+        unlock_execution_inhibition_lock!
       when :paused
         unlock_all_singleton_locks!
       else
@@ -561,6 +563,14 @@ module Dynflow
     def unlock_all_singleton_locks!
       filter = { :owner_id => 'execution-plan:' + self.id,
                  :class => Dynflow::Coordinator::SingletonActionLock.to_s }
+      world.coordinator.find_locks(filter).each do |lock|
+        world.coordinator.release(lock)
+      end
+    end
+
+    def unlock_execution_inhibition_lock!
+      filter = { :owner_id => 'execution-plan:' + self.id,
+                 :class => Dynflow::Coordinator::ExecutionInhibitionLock.to_s }
       world.coordinator.find_locks(filter).each do |lock|
         world.coordinator.release(lock)
       end

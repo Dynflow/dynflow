@@ -29,9 +29,24 @@ module Dynflow
             end
           end
 
+          prune_execution_inhibition_locks!
+
           pruned = persistence.prune_envelopes(world.id)
           logger.error("Pruned #{pruned} envelopes for invalidated world #{world.id}") unless pruned.zero?
           coordinator.delete_world(world)
+        end
+      end
+
+      # Prunes execution inhibition locks which got somehow left behind.
+      # Any execution inhibition locks, which have their corresponding execution
+      # plan in stopped state, will be removed.
+      def prune_execution_inhibition_locks!
+        locks = coordinator.find_locks(class: Coordinator::ExecutionInhibitionLock.name)
+        uuids = locks.map { |lock| lock.data[:execution_plan_id] }
+        plan_uuids = persistence.find_execution_plans(filters: { uuid: uuids, state: 'stopped' }).map(&:id)
+
+        locks.select { |lock| plan_uuids.include? lock.data[:execution_plan_id] }.each do |lock|
+          coordinator.release(lock)
         end
       end
 
