@@ -137,9 +137,13 @@ module Dynflow
           (on ~Execution | ~Planning do |execution|
              AnyExecutor
            end),
-          (on ~Event | ~Halt do |event|
+          (on ~Event do |event|
              ignore_unknown = event.optional
              find_executor(event.execution_plan_id)
+           end),
+          (on ~Halt do |event|
+             executor = find_executor(event.execution_plan_id)
+             executor == Dispatcher::UnknownWorld ? AnyExecutor : executor
            end),
           (on Ping.(~any, ~any) | Status.(~any, ~any) do |receiver_id, _|
              receiver_id
