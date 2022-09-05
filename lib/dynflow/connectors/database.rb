@@ -127,7 +127,7 @@ module Dynflow
         end
 
         def update_receiver_id(envelope, new_receiver_id)
-          Dispatcher::Envelope[envelope.request_id, envelope.sender_id, new_receiver_id, envelope.message]
+          Dispatcher::Envelope[envelope.request_id, envelope.sender_id, new_receiver_id, envelope.message, envelope.untracked]
         end
 
         def find_receiver(envelope)

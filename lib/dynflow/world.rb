@@ -189,6 +189,23 @@ module Dynflow
       end
     end
 
+    def trigger_untracked(action_class = nil, *args, &block)
+      if action_class.nil?
+        raise 'Neither action_class nor a block given' if block.nil?
+        execution_plan = block.call(self)
+      else
+        execution_plan = plan(action_class, *args)
+      end
+      planned = execution_plan.state == :planned
+
+      if planned
+        done = execute(execution_plan.id, Concurrent::Promises.resolvable_future, untracked: true)
+        Scheduled[execution_plan.id]
+      else
+        PlaningFailed[execution_plan.id, execution_plan.errors.first.exception]
+      end
+    end
+
     def delay(action_class, delay_options, *args)
       delay_with_options(action_class: action_class, args: args, delay_options: delay_options)
     end
@@ -223,16 +240,16 @@ module Dynflow
 
     # @return [Concurrent::Promises::ResolvableFuture] containing execution_plan when finished
     # raises when ExecutionPlan is not accepted for execution
-    def execute(execution_plan_id, done = Concurrent::Promises.resolvable_future)
-      publish_request(Dispatcher::Execution[execution_plan_id], done, true)
+    def execute(execution_plan_id, done = Concurrent::Promises.resolvable_future, untracked: false)
+      publish_request(Dispatcher::Execution[execution_plan_id], done, true, untracked: untracked)
     end
 
     def event(execution_plan_id, step_id, event, done = Concurrent::Promises.resolvable_future, optional: false)
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event, nil, optional], done, false)
     end
 
-    def plan_event(execution_plan_id, step_id, event, time, accepted = Concurrent::Promises.resolvable_future, optional: false)
-      publish_request(Dispatcher::Event[execution_plan_id, step_id, event, time, optional], accepted, false)
+    def plan_event(execution_plan_id, step_id, event, time, accepted = Concurrent::Promises.resolvable_future, optional: false, untracked: false)
+      publish_request(Dispatcher::Event[execution_plan_id, step_id, event, time, optional], accepted, false, untracked: untracked)
     end
 
     def plan_request(execution_plan_id, done = Concurrent::Promises.resolvable_future)
@@ -251,12 +268,12 @@ module Dynflow
       publish_request(Dispatcher::Status[world_id, execution_plan_id], done, false, timeout)
     end
 
-    def publish_request(request, done, wait_for_accepted, timeout = nil)
+    def publish_request(request, done, wait_for_accepted, timeout = nil, untracked: false)
       accepted = Concurrent::Promises.resolvable_future
       accepted.rescue do |reason|
         done.reject reason if reason
       end
-      client_dispatcher.ask([:publish_request, done, request, timeout], accepted)
+      client_dispatcher.ask([:publish_request, done, request, timeout, untracked], accepted)
       accepted.wait if wait_for_accepted
       done
     rescue => e

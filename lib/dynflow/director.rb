@@ -11,7 +11,7 @@ module Dynflow
     include Algebrick::TypeCheck
 
     Event = Algebrick.type do
-      fields! request_id:        String,
+      fields! request_id:        type { variants NilClass, String },
               execution_plan_id: String,
               step_id:           Integer,
               event:             Object,
