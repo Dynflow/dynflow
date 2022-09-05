@@ -3,6 +3,12 @@ module Dynflow
   module Action::WithSubPlans
     include Dynflow::Action::Cancellable
 
+    class SubtaskFailedException < RuntimeError
+      def backtrace
+        []
+      end
+    end
+
     SubPlanFinished = Algebrick.type do
       fields! :execution_plan_id => String,
               :success           => type { variants TrueClass, FalseClass }
@@ -228,7 +234,7 @@ module Dynflow
     end
 
     def check_for_errors!
-      fail "A sub task failed" if output[:failed_count] > 0
+      raise SubtaskFailedException.new("A sub task failed") if output[:failed_count] > 0
     end
 
     def uses_concurrency_control
