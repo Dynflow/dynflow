@@ -70,5 +70,9 @@ module Dynflow
                     :failed_count  => failed - output.fetch(:resumed_count, 0),
                     :success_count => success)
     end
+
+    def can_fire_and_forget_sub_plans?
+      true
+    end
   end
 end

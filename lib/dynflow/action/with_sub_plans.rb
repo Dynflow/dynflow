@@ -81,7 +81,8 @@ module Dynflow
       if uses_concurrency_control
         trigger_with_concurrency_control(action_class, *args)
       else
-        world.trigger { world.plan_with_options(action_class: action_class, args: args, caller_action: self) }
+        method = can_fire_and_forget_sub_plans? ? :trigger_untracked : :trigger
+        world.public_send(:trigger) { world.plan_with_options(action_class: action_class, args: args, caller_action: self) }
       end
     end
 
@@ -233,6 +234,10 @@ module Dynflow
 
     def uses_concurrency_control
       @uses_concurrency_control = input.key? :concurrency_control
+    end
+
+    def can_fire_and_forget_sub_plans?
+      false
     end
   end
 end

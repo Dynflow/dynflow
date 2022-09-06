@@ -70,7 +70,7 @@ module Dynflow
     def spawn_plans
       super
     ensure
-      plan_event(PlanNextBatch)
+      plan_event(PlanNextBatch, untracked: true)
     end
 
     def cancel!(force = false)

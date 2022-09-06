@@ -75,7 +75,7 @@ module OrchestrateEvented
                # do nothing
              end),
             (on nil do
-               suspend { |suspended_action| world.clock.ping suspended_action, rand(1), Finished }
+               suspend { |suspended_action| world.clock.ping suspended_action, rand(1), Finished, untracked: true }
              end))
     end
 

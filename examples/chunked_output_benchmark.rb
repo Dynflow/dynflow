@@ -12,7 +12,7 @@ module Common
     if output[:current] < input[:limit]
       consumed = yield
       output[:current] += consumed
-      plan_event(nil)
+      plan_event(nil, untracked: true)
       suspend
     end
   end

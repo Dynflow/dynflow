@@ -8,7 +8,7 @@ module Dynflow
     end
 
     def schedule_timeout(seconds, optional: false)
-      plan_event(Timeout, seconds, optional: optional)
+      plan_event(Timeout, seconds, optional: optional, untracked: true)
     end
  end
 end
