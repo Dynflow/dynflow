@@ -335,6 +335,8 @@ module Dynflow
         if value
           record = prepare_record(what, value, (existing_record || condition), with_data)
           if existing_record
+            record = prune_unchanged(what, existing_record, record)
+            return value if record.empty?
             condition = update_conditions.merge(condition)
             return with_retry { table.where(condition).update(record) }
           else
@@ -354,6 +356,14 @@ module Dynflow
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
         end
+      end
+
+      def prune_unchanged(what, object, record)
+        record = record.dup
+        table(what).columns.each do |column|
+          record.delete(column) if object[column] == record[column]
+        end
+        record
       end
 
       alias_method :load, :load_record
