@@ -85,6 +85,9 @@ module Dynflow
           logger.info('Performing validity checks')
           @world.perform_validity_checks
           logger.info('Finished performing validity checks')
+          if @world.delayed_executor && !@world.delayed_executor.started?
+            @world.delayed_executor.start
+          end
           @recovery = false
         end
 
