@@ -167,7 +167,7 @@ module Dynflow
       @logger = world.logger
       @execution_plan_managers = {}
       @rescued_steps = {}
-      @planning_plans = []
+      @planning_plans = Set.new
     end
 
     def current_execution_plan_ids
@@ -175,6 +175,8 @@ module Dynflow
     end
 
     def handle_planning(execution_plan_uuid)
+      return [] if @planning_plans.include? execution_plan_uuid
+
       @planning_plans << execution_plan_uuid
       [PlanningWorkItem.new(execution_plan_uuid, :default, @world.id)]
     end
