@@ -39,6 +39,7 @@ module Dynflow
         self.eager_load_paths         = []
         self.lazy_initialization      = !::Rails.env.production?
         self.rake_tasks_with_executor = %w(db:migrate db:seed)
+        self.delayed_executor         = nil if sidekiq_worker?
 
         @on_init            = []
         @on_executor_init   = []

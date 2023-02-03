@@ -77,7 +77,7 @@ module Dynflow
       @delayed_executor ||= try_spawn(:delayed_executor, Coordinator::DelayedExecutorLock)
       @execution_plan_cleaner ||= try_spawn(:execution_plan_cleaner, Coordinator::ExecutionPlanCleanerLock)
       update_register
-      @delayed_executor.start if @delayed_executor && !@delayed_executor.started?
+      @delayed_executor.start if auto_validity_check && @delayed_executor && !@delayed_executor.started?
       self.auto_execute if @config.auto_execute
     end
 
