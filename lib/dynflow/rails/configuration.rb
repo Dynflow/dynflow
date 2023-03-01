@@ -39,7 +39,6 @@ module Dynflow
         self.eager_load_paths         = []
         self.lazy_initialization      = !::Rails.env.production?
         self.rake_tasks_with_executor = %w(db:migrate db:seed)
-        self.delayed_executor         = nil if sidekiq_worker?
 
         @on_init            = []
         @on_executor_init   = []
@@ -153,6 +152,9 @@ module Dynflow
           # we can't do any operation until the Rails.application.dynflow.world is set
           config.auto_execute        = false
           config.auto_validity_check = false
+          if sidekiq_worker? && !Sidekiq.options[:queues].include?("dynflow_orchestrator")
+            config.delayed_executor = nil
+          end
         end
       end
 
