@@ -5,7 +5,7 @@ module Dynflow
       extend Mimic
       mimic! World
 
-      attr_reader :clock, :executor, :middleware, :coordinator
+      attr_reader :clock, :executor, :middleware, :coordinator, :delayed_executor
       attr_accessor :action
 
       def initialize(_config = nil)
