@@ -159,6 +159,46 @@ module Dynflow
           end
         end
 
+        describe '#def find_execution_plan_statuses' do
+          before do
+            # the tests expect clean field
+            adapter.delete_execution_plans({})
+          end
+
+          it 'supports filtering' do
+            prepare_and_save_plans
+            if adapter.ordering_by.include?('state')
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { label: ['test1'] })
+              _(loaded_plans).must_equal({ 'plan1' => { state: 'paused', result: nil} })
+
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['paused'] })
+              _(loaded_plans).must_equal({"plan1"=>{:state=>"paused", :result=>nil},
+                                          "plan3"=>{:state=>"paused", :result=>nil},
+                                          "plan4"=>{:state=>"paused", :result=>nil}})
+
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped'] })
+              _(loaded_plans).must_equal({"plan2"=>{:state=>"stopped", :result=>nil}})
+
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { state: [] })
+              _(loaded_plans).must_equal({})
+
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped', 'paused'] })
+              _(loaded_plans).must_equal({"plan1"=>{:state=>"paused", :result=>nil},
+                                          "plan2"=>{:state=>"stopped", :result=>nil},
+                                          "plan3"=>{:state=>"paused", :result=>nil}, "plan4"=>{:state=>"paused", :result=>nil}})
+
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { 'state' => ['stopped', 'paused'] })
+              _(loaded_plans).must_equal({"plan1"=>{:state=>"paused", :result=>nil},
+                                          "plan2"=>{:state=>"stopped", :result=>nil},
+                                          "plan3"=>{:state=>"paused", :result=>nil},
+                                          "plan4"=>{:state=>"paused", :result=>nil}})
+
+              loaded_plans = adapter.find_execution_plan_statuses(filters: { label: ['test1'], :delayed => true })
+              _(loaded_plans).must_equal({})
+            end
+          end
+        end
+
         describe '#def find_execution_plan_counts' do
           before do
             # the tests expect clean field

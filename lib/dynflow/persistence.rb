@@ -62,6 +62,10 @@ module Dynflow
       end
     end
 
+    def find_execution_plan_statuses(options)
+      adapter.find_execution_plan_statuses(options)
+    end
+
     def find_execution_plan_counts(options)
       adapter.find_execution_plan_counts(options)
     end
