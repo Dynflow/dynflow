@@ -46,6 +46,10 @@ module Dynflow
         filter(:execution_plan, options[:filters]).count
       end
 
+      def find_execution_plan_statuses(options)
+        raise NotImplementedError
+      end
+
       # @param filters [Hash{ String => Object }] filters to determine
       #   what to delete
       # @param batch_size the size of the chunks to iterate over when
