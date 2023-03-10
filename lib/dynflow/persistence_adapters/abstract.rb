@@ -116,6 +116,10 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def delete_output_chunks(execution_plan_id, action_id)
+        raise NotImplementedError
+      end
+
       # for debug purposes
       def to_hash
         raise NotImplementedError

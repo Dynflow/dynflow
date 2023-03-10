@@ -371,6 +371,20 @@ module Dynflow
             _(plans.first[:execution_plan_uuid]).must_equal 'plan1'
           end
         end
+
+        describe '#delete_output_chunks' do
+          it 'deletes output chunks' do
+            prepare_plans_with_actions
+
+            adapter.save_output_chunks('plan1', 1, [{chunk: "Hello", timestamp: Time.now}, {chunk: "Bye", timestamp: Time.now}])
+            chunks = adapter.load_output_chunks('plan1', 1)
+            _(chunks.length).must_equal 2
+            deleted = adapter.delete_output_chunks('plan1', 1)
+            _(deleted).must_equal 2
+            chunks = adapter.load_output_chunks('plan1', 1)
+            _(chunks.length).must_equal 0
+          end
+        end
       end
 
       describe Dynflow::PersistenceAdapters::Sequel do

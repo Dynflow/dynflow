@@ -200,6 +200,10 @@ module Dynflow
         load_records :output_chunk, { execution_plan_uuid: execution_plan_id, action_id: action_id }, [:timestamp, :kind, :chunk]
       end
 
+      def delete_output_chunks(execution_plan_id, action_id)
+        filter(:output_chunk, table(:output_chunk), { execution_plan_uuid: execution_plan_id, action_id: action_id }).delete
+      end
+
       def connector_feature!
         unless @additional_responsibilities[:connector]
           raise "The sequel persistence adapter connector feature used but not enabled in additional_features"

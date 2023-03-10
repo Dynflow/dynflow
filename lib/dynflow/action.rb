@@ -179,6 +179,12 @@ module Dynflow
       @output_chunks ||= world.persistence.load_output_chunks(@execution_plan_id, @id)
     end
 
+    def drop_output_chunks!
+      @pending_output_chunks = []
+      @output_chunks = []
+      world.persistence.delete_output_chunks(@execution_plan_id, @id)
+    end
+
     def caller_action
       phase! Present
       return nil if @caller_action_id

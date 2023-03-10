@@ -889,5 +889,48 @@ module Dynflow
         end
       end
     end
+
+    describe 'output chunks' do
+      include ::Dynflow::Testing::Factories
+
+      class OutputChunkAction < ::Dynflow::Action
+        def run(event = nil)
+          output[:counter] ||= 0
+          case event
+          when nil
+            output_chunk("Chunk #{output[:counter]}")
+            output[:counter] += 1
+            suspend
+          when :exit
+            return
+          end
+        end
+
+        def finalize
+          drop_output_chunks!
+        end
+      end
+
+      it 'collects and drops output chunks' do
+        action = create_and_plan_action(OutputChunkAction)
+        _(action.pending_output_chunks).must_equal nil
+
+        action = run_action(action)
+        _(action.pending_output_chunks.count).must_equal 1
+
+        action = run_action(action)
+        _(action.pending_output_chunks.count).must_equal 2
+
+        action = run_action(action, :exit)
+        _(action.pending_output_chunks.count).must_equal 2
+
+        persistence = mock()
+        persistence.expects(:delete_output_chunks).with(action.execution_plan_id, action.id)
+        action.world.stubs(:persistence).returns(persistence)
+
+        action = finalize_action(action)
+        _(action.pending_output_chunks.count).must_equal 0
+      end
+    end
   end
 end
