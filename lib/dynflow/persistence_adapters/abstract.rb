@@ -108,6 +108,14 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def save_output_chunks(execution_plan_id, action_id, chunks)
+        raise NotImplementedError
+      end
+
+      def load_output_chunks(execution_plan_id, action_id)
+        raise NotImplementedError
+      end
+
       # for debug purposes
       def to_hash
         raise NotImplementedError
