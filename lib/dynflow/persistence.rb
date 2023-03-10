@@ -56,6 +56,10 @@ module Dynflow
       adapter.load_output_chunks(execution_plan_id, action_id)
     end
 
+    def delete_output_chunks(execution_plan_id, action_id)
+      adapter.delete_output_chunks(execution_plan_id, action_id)
+    end
+
     def find_execution_plans(options)
       adapter.find_execution_plans(options).map do |execution_plan_hash|
         ExecutionPlan.new_from_hash(execution_plan_hash, @world)
