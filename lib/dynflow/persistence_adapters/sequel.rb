@@ -393,11 +393,11 @@ module Dynflow
         hash = if record[:data].nil?
                  SERIALIZABLE_COLUMNS.fetch(what, []).each do |key|
                    key = key.to_sym
-                   record[key] = MessagePack.unpack((record[key])) unless record[key].nil?
+                   record[key] = MessagePack.unpack(record[key].to_s) unless record[key].nil?
                  end
                  record
                else
-                 MessagePack.unpack(record[:data])
+                 MessagePack.unpack(record[:data].to_s)
                end
         Utils.indifferent_hash(hash)
       end

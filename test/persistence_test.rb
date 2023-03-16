@@ -464,6 +464,27 @@ module Dynflow
           loaded_plan = adapter.load_execution_plan(plan[:id])
           assert_equal_attributes!(plan_data, loaded_plan)
         end
+
+        it 'does not leak Sequel blobs' do
+          db = adapter.send(:db)
+          # Prepare records for saving
+          plan = prepare_plans.first
+
+          value = 'a' * 1000
+
+          adata = action_data.merge({:output => { :key => value }})
+          plan_record = adapter.send(:prepare_record, :execution_plan, plan.merge(:uuid => plan[:id]))
+          action_record = adapter.send(:prepare_record, :action, adata.dup)
+
+          # Insert the records
+          db[:dynflow_execution_plans].insert plan_record.merge(:uuid => plan[:id])
+          db[:dynflow_actions].insert action_record.merge(:execution_plan_uuid => plan[:id], :id => adata[:id])
+
+          # Load the saved records
+          loaded_action = adapter.load_action(plan[:id], adata[:id])
+          _(loaded_action[:output][:key].class).must_equal String
+          _(loaded_action[:output][:key]).must_equal value
+        end
       end
     end
   end
