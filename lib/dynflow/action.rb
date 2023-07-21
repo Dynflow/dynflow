@@ -26,6 +26,7 @@ module Dynflow
     require 'dynflow/action/with_sub_plans'
     require 'dynflow/action/with_bulk_sub_plans'
     require 'dynflow/action/with_polling_sub_plans'
+    require 'dynflow/action/v2'
 
     def self.all_children
       children.values.inject(children.values) do |children, child|
