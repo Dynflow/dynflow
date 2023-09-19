@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency "rake"
   s.add_development_dependency "rack-test"
-  s.add_development_dependency "minitest"
+  s.add_development_dependency "minitest", "< 5.19"
   s.add_development_dependency "minitest-reporters"
   s.add_development_dependency "minitest-stub-const"
   s.add_development_dependency "activerecord"
