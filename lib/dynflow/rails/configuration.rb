@@ -100,7 +100,7 @@ module Dynflow
       end
 
       def sidekiq_worker?
-        defined?(::Sidekiq) && ::Sidekiq.options[:queues].any?
+        defined?(::Sidekiq) && ::Sidekiq.configure_server { |c| c[:queues].any? }
       end
 
       def calculate_db_pool_size(world)
@@ -108,7 +108,7 @@ module Dynflow
 
         base_value = 5
         if defined?(::Sidekiq)
-          Sidekiq.options[:concurrency] + base_value
+          Sidekiq.configure_server { |c| c[:concurrency] } + base_value
         else
           world.config.queues.values.inject(base_value) do |pool_size, pool_options|
             pool_size += pool_options[:pool_size]
@@ -152,7 +152,7 @@ module Dynflow
           # we can't do any operation until the Rails.application.dynflow.world is set
           config.auto_execute        = false
           config.auto_validity_check = false
-          if sidekiq_worker? && !Sidekiq.options[:queues].include?("dynflow_orchestrator")
+          if sidekiq_worker? && !Sidekiq.configure_server { |c| c[:queues].include?("dynflow_orchestrator") }
             config.delayed_executor = nil
           end
         end
@@ -192,7 +192,7 @@ module Dynflow
         if remote?
           false
         else
-          if defined?(::Sidekiq) && Sidekiq.options[:dynflow_executor]
+          if defined?(::Sidekiq) && Sidekiq.configure_server { |c| c[:dynflow_executor] }
             ::Dynflow::Executors::Sidekiq::Core
           else
             ::Dynflow::Executors::Parallel::Core

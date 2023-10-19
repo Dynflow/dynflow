@@ -9,7 +9,7 @@ require 'sidekiq-reliable-fetch'
 Sidekiq.configure_server do |config|
   # Use semi-reliable fetch
   # for details see https://gitlab.com/gitlab-org/sidekiq-reliable-fetch/blob/master/README.md
-  config.options[:semi_reliable_fetch] = true
+  config[:semi_reliable_fetch] = true
   Sidekiq::ReliableFetch.setup_reliable_fetch!(config)
 end
 

@@ -168,10 +168,11 @@ elsif defined?(Sidekiq)
   Sidekiq.default_worker_options = { :retry => 0, 'backtrace' => true }
   # assuming the remote executor was required as part of initialization
   # of the ActiveJob worker
-  world = if Sidekiq.options[:queues].include?("dynflow_orchestrator")
+  queues = Sidekiq.configure_server { |c| c.options[:queues] }
+  world = if queues.include?("dynflow_orchestrator")
             RemoteExecutorExample.initialize_sidekiq_orchestrator
-          elsif (Sidekiq.options[:queues] - ['dynflow_orchestrator']).any?
+          elsif (queues - ['dynflow_orchestrator']).any?
             RemoteExecutorExample.initialize_sidekiq_worker
           end
-  Sidekiq.options[:dynflow_world] = world
+  Sidekiq.configure_server { |c| c.options[:dynflow_world] = world }
 end
