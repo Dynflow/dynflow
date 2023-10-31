@@ -130,7 +130,7 @@ module Dynflow::Action::V2
 
     def recalculate_counts
       total   = total_count
-      failed  = sub_plans_count('state' => %w(paused stopped), 'result' => 'error')
+      failed  = sub_plans_count('state' => %w(paused stopped), 'result' => %w(error warning))
       success = sub_plans_count('state' => 'stopped', 'result' => 'success')
       output.update(:pending_count => total - failed - success,
                     :failed_count  => failed - output.fetch(:resumed_count, 0),
