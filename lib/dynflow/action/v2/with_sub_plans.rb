@@ -173,6 +173,7 @@ module Dynflow::Action::V2
     def cancel!(force = false)
       # Count the not-yet-planned tasks as cancelled
       output[:cancelled_count] = total_count - output[:planned_count]
+      on_planning_finished if output[:cancelled_count].positive?
       # Pass the cancel event to running sub plans if they can be cancelled
       sub_plans(:state => 'running').each { |sub_plan| sub_plan.cancel(force) if sub_plan.cancellable? }
       suspend
