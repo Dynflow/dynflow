@@ -14,23 +14,33 @@ end
 
 class CustomPassedObjectSerializer < ::Dynflow::Serializers::Abstract
   def serialize(arg)
-    # Serialized output can be anything that is representable as JSON: Array, Hash...
-    { :id => arg.id, :name => arg.name }
+    case arg
+    when CustomPassedObject
+      # Serialized output can be anything that is representable as JSON: Array, Hash...
+      { :id => arg.id, :name => arg.name }
+    else
+      arg
+    end
   end
 
   def deserialize(arg)
-    # Deserialized output must be an Array
-    CustomPassedObject.new(arg[:id], arg[:name])
+    case arg
+    when Dynflow::Utils::IndifferentHash
+      # Deserialized output must be an Array
+      CustomPassedObject.new(arg[:id], arg[:name])
+    else
+      arg
+    end
   end
 end
 
 class DelayedAction < Dynflow::Action
-  def delay(delay_options, *args)
-    CustomPassedObjectSerializer.new(args)
+  def delay(delay_options, *args, **kwargs)
+    CustomPassedObjectSerializer.new(args, nil, kwargs)
   end
 
-  def plan(passed_object)
-    plan_self :object_id => passed_object.id, :object_name => passed_object.name
+  def plan(passed_object, foo: nil)
+    plan_self :object_id => passed_object.id, :object_name => passed_object.name, :foo => foo
   end
 
   def run
@@ -49,7 +59,7 @@ if $0 == __FILE__
 
   past_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => past, :start_before => past }, object)
   near_future_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => near_future, :start_before => future }, object)
-  future_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => future }, object)
+  future_plan = ExampleHelper.world.delay(DelayedAction, { :start_at => future }, object, foo: 7)
 
   puts <<-MSG.gsub(/^.*\|/, '')
     |

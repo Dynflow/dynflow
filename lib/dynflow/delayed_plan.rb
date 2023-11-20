@@ -24,7 +24,8 @@ module Dynflow
       execution_plan.root_plan_step.load_action
       execution_plan.generate_action_id
       execution_plan.generate_step_id
-      execution_plan.plan(*@args_serializer.perform_deserialization!)
+      @args_serializer.perform_deserialization!
+      execution_plan.plan(*@args_serializer.args!, **@args_serializer.kwargs!)
     end
 
     def timeout
@@ -56,6 +57,7 @@ module Dynflow
                         :start_at            => @start_at,
                         :start_before        => @start_before,
                         :serialized_args     => @args_serializer.serialized_args,
+                        :serialized_kwargs   => @args_serializer.serialized_kwargs,
                         :args_serializer     => @args_serializer.class.name,
                         :frozen              => @frozen
     end
@@ -70,7 +72,7 @@ module Dynflow
 
     # @api private
     def self.new_from_hash(world, hash, *args)
-      serializer = Utils.constantize(hash[:args_serializer]).new(nil, hash[:serialized_args])
+      serializer = Utils.constantize(hash[:args_serializer]).new(nil, hash[:serialized_args], nil, hash[:serialized_kwargs])
       self.new(world,
         hash[:execution_plan_uuid],
         string_to_time(hash[:start_at]),

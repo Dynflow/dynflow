@@ -37,8 +37,8 @@ module Dynflow
         super.merge recursive_to_hash(:children => children)
       end
 
-      def delay(delay_options, args)
-        @action.execute_delay(delay_options, *args)
+      def delay(delay_options, args, kwargs)
+        @action.execute_delay(delay_options, *args, **kwargs)
         persistence.save_action(execution_plan_id, @action)
         @action.serializer
       ensure
@@ -46,14 +46,14 @@ module Dynflow
       end
 
       # @return [Action]
-      def execute(execution_plan, trigger, from_subscription, *args)
+      def execute(execution_plan, trigger, from_subscription, *args, **kwargs)
         unless @action
           raise "The action was not initialized, you might forgot to call initialize_action method"
         end
         @action.set_plan_context(execution_plan, trigger, from_subscription)
         Type! execution_plan, ExecutionPlan
         with_meta_calculation(@action) do
-          @action.execute(*args)
+          @action.execute(*args, **kwargs)
         end
 
         persistence.save_action(execution_plan_id, @action)

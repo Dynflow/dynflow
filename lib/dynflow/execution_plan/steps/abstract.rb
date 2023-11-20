@@ -77,7 +77,7 @@ module Dynflow
         @states ||= [:scheduling, :pending, :running, :success, :suspended, :skipping, :skipped, :error, :cancelled]
       end
 
-      def execute(*args)
+      def execute(*args, **kwargs)
         raise NotImplementedError
       end
 

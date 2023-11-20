@@ -3,19 +3,19 @@
 module Dynflow
   module Middleware::Common
     class Transaction < Middleware
-      def plan_phase(execution_plan)
-        rollback_on_error(execution_plan)
+      def plan_phase(execution_plan, **kwargs)
+        rollback_on_error(execution_plan, **kwargs)
       end
 
-      def finalize_phase(execution_plan)
-        rollback_on_error(execution_plan)
+      def finalize_phase(execution_plan, **kwargs)
+        rollback_on_error(execution_plan, **kwargs)
       end
 
       private
 
-      def rollback_on_error(execution_plan)
+      def rollback_on_error(execution_plan, **kwargs)
         execution_plan.world.transaction_adapter.transaction do
-          pass(execution_plan)
+          pass(execution_plan, **kwargs)
           if execution_plan.error?
             execution_plan.world.transaction_adapter.rollback
           end

@@ -173,12 +173,12 @@ module Dynflow
     # @return [TriggerResult]
     # blocks until action_class is planned
     # if no arguments given, the plan is expected to be returned by a block
-    def trigger(action_class = nil, *args, &block)
+    def trigger(action_class = nil, *args, **kwargs, &block)
       if action_class.nil?
         raise 'Neither action_class nor a block given' if block.nil?
         execution_plan = block.call(self)
       else
-        execution_plan = plan(action_class, *args)
+        execution_plan = plan(action_class, *args, **kwargs)
       end
       planned = execution_plan.state == :planned
 
@@ -190,14 +190,14 @@ module Dynflow
       end
     end
 
-    def delay(action_class, delay_options, *args)
-      delay_with_options(action_class: action_class, args: args, delay_options: delay_options)
+    def delay(action_class, delay_options, *args, **kwargs)
+      delay_with_options(action_class: action_class, args: args, kwargs: kwargs, delay_options: delay_options)
     end
 
-    def delay_with_options(action_class:, args:, delay_options:, id: nil, caller_action: nil)
+    def delay_with_options(action_class:, args:, kwargs:, delay_options:, id: nil, caller_action: nil)
       raise 'No action_class given' if action_class.nil?
       execution_plan = ExecutionPlan.new(self, id)
-      execution_plan.delay(caller_action, action_class, delay_options, *args)
+      execution_plan.delay(caller_action, action_class, delay_options, *args, **kwargs)
       Scheduled[execution_plan.id]
     end
 
@@ -209,15 +209,15 @@ module Dynflow
       Scheduled[execution_plan.id]
     end
 
-    def plan(action_class, *args)
-      plan_with_options(action_class: action_class, args: args)
+    def plan(action_class, *args, **kwargs)
+      plan_with_options(action_class: action_class, args: args, kwargs: kwargs)
     end
 
-    def plan_with_options(action_class:, args:, id: nil, caller_action: nil)
+    def plan_with_options(action_class:, args:, kwargs: {}, id: nil, caller_action: nil)
       ExecutionPlan.new(self, id).tap do |execution_plan|
         coordinator.acquire(Coordinator::PlanningLock.new(self, execution_plan.id)) do
           execution_plan.prepare(action_class, caller_action: caller_action)
-          execution_plan.plan(*args)
+          execution_plan.plan(*args, **kwargs)
         end
       end
     end

@@ -299,9 +299,9 @@ module Dynflow
       @step.error
     end
 
-    def execute(*args)
+    def execute(*args, **kwargs)
       phase! Executable
-      self.send phase.execute_method_name, *args
+      self.send phase.execute_method_name, *args, **kwargs
     end
 
     # @api private
@@ -324,10 +324,10 @@ module Dynflow
       recursion.(input)
     end
 
-    def execute_delay(delay_options, *args)
+    def execute_delay(delay_options, *args, **kwargs)
       with_error_handling(true) do
-        world.middleware.execute(:delay, self, delay_options, *args) do |*new_args|
-          @serializer = delay(*new_args).tap do |serializer|
+        world.middleware.execute(:delay, self, delay_options, *args, **kwargs) do |*new_args, **new_kwargs|
+          @serializer = delay(*new_args, **new_kwargs).tap do |serializer|
             serializer.perform_serialization!
           end
         end
@@ -459,9 +459,9 @@ module Dynflow
       return self # to stay consistent with plan_action
     end
 
-    def plan_action(action_class, *args)
+    def plan_action(action_class, *args, **kwargs)
       phase! Plan
-      @execution_plan.add_plan_step(action_class, self).execute(@execution_plan, self, false, *args)
+      @execution_plan.add_plan_step(action_class, self).execute(@execution_plan, self, false, *args, **kwargs)
     end
 
     # DSL for run phase
@@ -521,7 +521,7 @@ module Dynflow
       @step.error = ExecutionPlan::Steps::Error.new(error)
     end
 
-    def execute_plan(*args)
+    def execute_plan(*args, **kwargs)
       phase! Plan
       self.state = :running
       save_state
@@ -530,8 +530,8 @@ module Dynflow
       # before getting out of the planning phase
       with_error_handling(!root_action?) do
         concurrence do
-          world.middleware.execute(:plan, self, *args) do |*new_args|
-            plan(*new_args)
+          world.middleware.execute(:plan, self, *args, **kwargs) do |*new_args, **new_kwargs|
+            plan(*new_args, **new_kwargs)
           end
         end
 
@@ -543,7 +543,7 @@ module Dynflow
           @execution_plan.switch_flow(Flows::Concurrence.new([trigger_flow].compact)) do
             subscribed_actions.each do |action_class|
               new_plan_step = @execution_plan.add_plan_step(action_class, self)
-              new_plan_step.execute(@execution_plan, self, true, *args)
+              new_plan_step.execute(@execution_plan, self, true, *args, **kwargs)
             end
           end
         end
