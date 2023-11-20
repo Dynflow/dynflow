@@ -194,7 +194,7 @@ module Dynflow
       delay_with_options(action_class: action_class, args: args, kwargs: kwargs, delay_options: delay_options)
     end
 
-    def delay_with_options(action_class:, args:, kwargs:, delay_options:, id: nil, caller_action: nil)
+    def delay_with_options(action_class:, args:, kwargs: {}, delay_options:, id: nil, caller_action: nil)
       raise 'No action_class given' if action_class.nil?
       execution_plan = ExecutionPlan.new(self, id)
       execution_plan.delay(caller_action, action_class, delay_options, *args, **kwargs)
