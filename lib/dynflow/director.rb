@@ -245,7 +245,27 @@ module Dynflow
       end
     end
 
+    def halt(event)
+      halt_execution(event.execution_plan_id)
+    end
+
     private
+
+    def halt_execution(execution_plan_id)
+      manager = @execution_plan_managers[execution_plan_id]
+      @logger.warn "Halting execution plan #{execution_plan_id}"
+      return halt_inactive(execution_plan_id) unless manager
+
+      manager.halt
+      finish_manager manager
+    end
+
+    def halt_inactive(execution_plan_id)
+      plan = @world.persistence.load_execution_plan(execution_plan_id)
+      plan.update_state(:stopped)
+    rescue => e
+      @logger.error e
+    end
 
     def unless_done(manager, work_items)
       return [] unless manager
@@ -307,6 +327,14 @@ module Dynflow
       if execution_plan.state == :stopped
         raise Dynflow::Error,
               "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
+      end
+
+      lock_class = Coordinator::ExecutionInhibitionLock
+      filters = { class: lock_class.to_s, owner_id: lock_class.lock_id(execution_plan_id) }
+      if @world.coordinator.find_records(filters).any?
+        halt_execution(execution_plan_id)
+        raise Dynflow::Error,
+              "cannot execute execution_plan_id:#{execution_plan_id} it's execution is inhibited"
       end
 
       @execution_plan_managers[execution_plan_id] =

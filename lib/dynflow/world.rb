@@ -251,6 +251,11 @@ module Dynflow
       publish_request(Dispatcher::Status[world_id, execution_plan_id], done, false, timeout)
     end
 
+    def halt(execution_plan_id, accepted = Concurrent::Promises.resolvable_future)
+      coordinator.acquire(Coordinator::ExecutionInhibitionLock.new(execution_plan_id))
+      publish_request(Dispatcher::Halt[execution_plan_id], accepted, false)
+    end
+
     def publish_request(request, done, wait_for_accepted, timeout = nil)
       accepted = Concurrent::Promises.resolvable_future
       accepted.rescue do |reason|

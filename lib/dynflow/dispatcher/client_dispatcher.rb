@@ -141,6 +141,10 @@ module Dynflow
                                ignore_unknown = event.optional
                                find_executor(event.execution_plan_id)
                              end),
+                            (on ~Halt do |event|
+                               executor = find_executor(event.execution_plan_id)
+                               executor == Dispatcher::UnknownWorld ? AnyExecutor : executor
+                             end),
                             (on Ping.(~any, ~any) | Status.(~any, ~any) do |receiver_id, _|
                                receiver_id
                              end)
@@ -236,7 +240,7 @@ module Dynflow
                              (on Execution.(execution_plan_id: ~any) do |uuid|
                                 @world.persistence.load_execution_plan(uuid)
                               end),
-                             (on Event | Ping do
+                             (on Event | Ping | Halt do
                                 true
                               end)
           @tracked_requests.delete(id).success! resolve_to
