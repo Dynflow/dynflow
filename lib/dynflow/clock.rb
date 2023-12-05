@@ -114,11 +114,11 @@ module Dynflow
       Time.now
     end
 
-    def ping(who, time, with_what = nil, where = :<<, optional: false)
+    def ping(who, time, with_what = nil, where = :<<, optional: false, untracked: false)
       Type! time, Time, Numeric
       time  = current_time + time if time.is_a? Numeric
       if who.is_a?(Action::Suspended)
-        who.plan_event(with_what, time, optional: optional)
+        who.plan_event(with_what, time, optional: optional, untracked: untracked)
       else
         timer = Clock::Timer[who, time, with_what.nil? ? Algebrick::Types::None : Some[Object][with_what], where]
         self.tell([:add_timer, timer])

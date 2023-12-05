@@ -91,7 +91,7 @@ module Dynflow
     end
 
     def suspend_and_ping
-      plan_event(Poll, poll_interval)
+      plan_event(Poll, poll_interval, untracked: true)
       suspend
     end
 

@@ -71,7 +71,8 @@ module Dynflow
               client_dispatcher.tell([:dispatch_request,
                                       Dispatcher::Execution[execution_lock.execution_plan_id],
                                       execution_lock.client_world_id,
-                                      execution_lock.request_id])
+                                      execution_lock.request_id,
+                                      true])
             end
           end
         end

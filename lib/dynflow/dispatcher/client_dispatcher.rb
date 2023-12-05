@@ -4,8 +4,10 @@ module Dynflow
     class ClientDispatcher < Abstract
 
       TrackedRequest = Algebrick.type do
-        fields! id: String, request: Request,
-                accepted: Concurrent::Promises::ResolvableFuture, finished: Concurrent::Promises::ResolvableFuture
+        fields! id: type { variants String, NilClass },
+                request: Request,
+                accepted: type { variants NilClass, Concurrent::Promises::ResolvableFuture },
+                finished: type { variants NilClass, Concurrent::Promises::ResolvableFuture }
       end
 
       module TrackedRequest
@@ -112,10 +114,10 @@ module Dynflow
         @ping_cache       = PingCache.new world, ping_cache_age
       end
 
-      def publish_request(future, request, timeout)
+      def publish_request(future, request, timeout, untracked)
         with_ping_request_caching(request, future) do
-          track_request(future, request, timeout) do |tracked_request|
-            dispatch_request(request, @world.id, tracked_request.id)
+          track_request(future, request, timeout, untracked) do |tracked_request|
+            dispatch_request(request, @world.id, tracked_request.id, untracked)
           end
         end
       end
@@ -131,7 +133,7 @@ module Dynflow
         finish_termination
       end
 
-      def dispatch_request(request, client_world_id, request_id)
+      def dispatch_request(request, client_world_id, request_id, untracked)
         ignore_unknown = false
         executor_id = match request,
                             (on ~Execution | ~Planning do |execution|
@@ -144,7 +146,7 @@ module Dynflow
                             (on Ping.(~any, ~any) | Status.(~any, ~any) do |receiver_id, _|
                                receiver_id
                              end)
-        envelope = Envelope[request_id, client_world_id, executor_id, request]
+        envelope = Envelope[request_id, client_world_id, executor_id, request, untracked]
         if Dispatcher::UnknownWorld === envelope.receiver_id
           raise Dynflow::Error, "Could not find an executor for #{envelope}" unless ignore_unknown
 
@@ -203,9 +205,15 @@ module Dynflow
         Dispatcher::UnknownWorld
       end
 
-      def track_request(finished, request, timeout)
+      def track_request(finished, request, timeout, untracked)
         id_suffix = @last_id_suffix += 1
         id = "#{@world.id}-#{id_suffix}"
+
+        if untracked
+          yield TrackedRequest[id, request, nil, finished]
+          return
+        end
+
         tracked_request = TrackedRequest[id, request, Concurrent::Promises.resolvable_future, finished]
         @tracked_requests[id] = tracked_request
         @world.clock.ping(self, timeout, [:timeout, id]) if timeout

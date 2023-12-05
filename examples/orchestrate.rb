@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require_relative 'example_helper'
+
 example_description = <<DESC
   Orchestrate Example
   ===================
@@ -20,8 +22,6 @@ example_description = <<DESC
   to see what's happening in the Dynflow world.
 
 DESC
-
-require_relative 'example_helper'
 
 module Orchestrate
 

@@ -95,7 +95,8 @@ module Dynflow
               step_id:           Integer,
               event:             Object,
               time:              type { variants Time, NilClass },
-              optional:          Algebrick::Types::Boolean
+              optional:          Algebrick::Types::Boolean,
+              untracked:         Algebrick::Types::Boolean
     end
 
     def self.constantize(action_name)
@@ -350,9 +351,9 @@ module Dynflow
 
     # Plan an +event+ to be send to the action defined by +action+, what defaults to be self.
     # if +time+ is not passed, event is sent as soon as possible.
-    def plan_event(event, time = nil, execution_plan_id: self.execution_plan_id, step_id: self.run_step_id, optional: false)
+    def plan_event(event, time = nil, execution_plan_id: self.execution_plan_id, step_id: self.run_step_id, optional: false, untracked: false)
       time = @world.clock.current_time + time if time.is_a?(Numeric)
-      delayed_events << DelayedEvent[execution_plan_id, step_id, event, time, optional]
+      delayed_events << DelayedEvent[execution_plan_id, step_id, event, time, optional, untracked]
     end
 
     def delayed_events
