@@ -30,9 +30,9 @@ module Dynflow
         end
 
         if self.kind_of? ::Class
-          self.class_eval &define
+          self.class_eval(&define)
         else
-          self.singleton_class.class_eval &define
+          self.singleton_class.class_eval(&define)
         end
 
         self

@@ -10,5 +10,5 @@ module Dynflow
     def schedule_timeout(seconds, optional: false)
       plan_event(Timeout, seconds, optional: optional)
     end
- end
+  end
 end

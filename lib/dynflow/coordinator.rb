@@ -145,10 +145,6 @@ module Dynflow
         raise "Can't acquire the lock after deserialization" if @from_hash
         Type! owner_id, String
       end
-
-      def to_s
-        "#{self.class.name}: #{id} by #{owner_id}"
-      end
     end
 
     class LockByWorld < Lock

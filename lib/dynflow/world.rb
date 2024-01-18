@@ -297,7 +297,7 @@ module Dynflow
       coordinator.acquire(lock_class.new(self)) if lock_class
       object.spawn.wait
       object
-    rescue Coordinator::LockError => e
+    rescue Coordinator::LockError
       nil
     end
 

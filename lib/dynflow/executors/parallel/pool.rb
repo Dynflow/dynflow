@@ -16,10 +16,6 @@ module Dynflow
             @jobs.shift
           end
 
-          def queue_size
-            execution_status.values.reduce(0, :+)
-          end
-
           def empty?
             @jobs.empty?
           end

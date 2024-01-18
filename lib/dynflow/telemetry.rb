@@ -18,7 +18,7 @@ module Dynflow
       # Passes the block into the current telemetry adapter's
       # {TelemetryAdapters::Abstract#with_instance} method
       def with_instance(&block)
-        @instance.with_instance &block
+        @instance.with_instance(&block)
       end
 
       def measure(name, tags = {}, &block)

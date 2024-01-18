@@ -1,13 +1,14 @@
 # frozen_string_literal: true
-def to_uuid(table_name, column_name)
+helper = Object.new
+def helper.to_uuid(table_name, column_name)
   set_column_type(table_name, column_name, :uuid, :using => "#{column_name}::uuid")
 end
 
-def from_uuid(table_name, column_name)
+def helper.from_uuid(table_name, column_name)
   set_column_type table_name, column_name, String, primary_key: true, size: 36, fixed: true
 end
 
-def with_foreign_key_recreation(&block)
+def helper.with_foreign_key_recreation(&block)
   # Drop the foreign key constraints so we can change the column type
   alter_table :dynflow_actions do
     drop_foreign_key [:execution_plan_uuid]
@@ -40,22 +41,22 @@ end
 Sequel.migration do
   up do
     if database_type.to_s.include?('postgres')
-      with_foreign_key_recreation do
-        to_uuid :dynflow_execution_plans, :uuid
-        to_uuid :dynflow_actions,         :execution_plan_uuid
-        to_uuid :dynflow_steps,           :execution_plan_uuid
-        to_uuid :dynflow_delayed_plans,   :execution_plan_uuid
+      helper.with_foreign_key_recreation do
+        helper.to_uuid :dynflow_execution_plans, :uuid
+        helper.to_uuid :dynflow_actions,         :execution_plan_uuid
+        helper.to_uuid :dynflow_steps,           :execution_plan_uuid
+        helper.to_uuid :dynflow_delayed_plans,   :execution_plan_uuid
       end
     end
   end
 
   down do
     if database_type.to_s.include?('postgres')
-      with_foreign_key_recreation do
-        from_uuid :dynflow_execution_plans, :uuid
-        from_uuid :dynflow_actions,         :execution_plan_uuid
-        from_uuid :dynflow_steps,           :execution_plan_uuid
-        from_uuid :dynflow_delayed_plans,   :execution_plan_uuid
+      helper.with_foreign_key_recreation do
+        helper.from_uuid :dynflow_execution_plans, :uuid
+        helper.from_uuid :dynflow_actions,         :execution_plan_uuid
+        helper.from_uuid :dynflow_steps,           :execution_plan_uuid
+        helper.from_uuid :dynflow_delayed_plans,   :execution_plan_uuid
       end
     end
   end
