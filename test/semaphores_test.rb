@@ -71,10 +71,10 @@ module Dynflow
         }
       end
 
-      def assert_semaphore_state(semaphore, state_A, state_B)
-        _(semaphore.children[:child_A].free).must_equal state_A
-        _(semaphore.children[:child_B].free).must_equal state_B
-        _(semaphore.free).must_equal [state_A, state_B].min
+      def assert_semaphore_state(semaphore, state_a, state_b)
+        _(semaphore.children[:child_A].free).must_equal state_a
+        _(semaphore.children[:child_B].free).must_equal state_b
+        _(semaphore.free).must_equal [state_a, state_b].min
       end
 
       it 'can be used as counter' do
