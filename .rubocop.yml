@@ -30,3 +30,6 @@ Layout/EmptyLines:
 Metrics/ModuleLength:
   Exclude:
   - test/**/*
+
+Style/LambdaCall:
+  Enabled: false
