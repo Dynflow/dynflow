@@ -201,9 +201,9 @@ module Dynflow
       Scheduled[execution_plan.id]
     end
 
-    def plan_elsewhere(action_class, *args)
+    def plan_elsewhere(action_class, *args, **kwargs)
       execution_plan = ExecutionPlan.new(self, nil)
-      execution_plan.delay(nil, action_class, {}, *args)
+      execution_plan.delay(nil, action_class, {}, *args, **kwargs)
       plan_request(execution_plan.id)
 
       Scheduled[execution_plan.id]

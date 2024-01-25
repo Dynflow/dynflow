@@ -11,11 +11,11 @@ module Dynflow
         @queue ||= :default
       end
 
-      def execute(*args)
+      def execute(*args, **kwargs)
         return self if [:skipped, :success].include? self.state
         open_action do |action|
           with_meta_calculation(action) do
-            action.execute(*args)
+            action.execute(*args, **kwargs)
             @delayed_events = action.delayed_events
           end
         end

@@ -379,15 +379,15 @@ module Dynflow
       @step.save(conditions)
     end
 
-    def delay(delay_options, *args)
-      Serializers::Noop.new(args)
+    def delay(delay_options, *args, **kwargs)
+      Serializers::Noop.new(args, nil, kwargs)
     end
 
     # @override to implement the action's *Plan phase* behaviour.
     # By default it plans itself and expects input-hash.
     # Use #plan_self and #plan_action methods to plan actions.
     # It can use DB in this phase.
-    def plan(*args)
+    def plan(*args) # TODO
       if from_subscription?
         # if the action is triggered by subscription, by default use the
         # input of parent action.

@@ -146,8 +146,8 @@ module Dynflow::Action::V2
     end
 
     # Helper for creating sub plans
-    def trigger(action_class, *args)
-      world.trigger { world.plan_with_options(action_class: action_class, args: args, caller_action: self) }
+    def trigger(action_class, *args, **kwargs)
+      world.trigger { world.plan_with_options(action_class: action_class, args: args, kwargs: kwargs, caller_action: self) }
     end
 
     # Concurrency limitting
