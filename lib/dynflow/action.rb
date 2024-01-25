@@ -551,7 +551,6 @@ module Dynflow
     end
 
     # TODO: This is getting out of hand, refactoring needed
-    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def execute_run(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
@@ -599,7 +598,6 @@ module Dynflow
         raise "wrong state #{state} when event:#{event}"
       end
     end
-    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def execute_finalize
       phase! Finalize
