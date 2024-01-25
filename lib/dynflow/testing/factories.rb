@@ -100,7 +100,7 @@ module Dynflow
         finalize_action
       end
 
-      def progress_action_time action
+      def progress_action_time(action)
         Match! action.phase, Action::Run
         if action.world.clock.progress
           return action.world.executor.progress
