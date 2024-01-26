@@ -92,6 +92,7 @@ module WorldFactory
     config.auto_terminate       = false
     config.backup_deleted_plans = false
     config.backup_dir           = nil
+    config.silent_dead_letter_matchers = [::Dynflow::DeadLetterSilencer::Matcher.new(::Dynflow::DeadLetterSilencer::Matcher::Any)]
     config.queues.add(:slow, :pool_size => 1)
     yield config if block_given?
     return config
