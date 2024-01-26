@@ -13,7 +13,7 @@ module Dynflow
       end
 
       it "wraps the action method calls" do
-        delay = world.delay(Support::MiddlewareExample::LoggingAction, { :start_at => Time.now.utc - 60 }, {})
+        delay = world.delay(Support::MiddlewareExample::LoggingAction, { :start_at => Time.now.utc - 60 }, {}, **{})
         plan = world.persistence.load_delayed_plan delay.execution_plan_id
         plan.plan
         plan.execute.future.wait
@@ -36,7 +36,7 @@ module Dynflow
       end
 
       it "inherits the middleware" do
-        world.trigger(Support::MiddlewareExample::SubAction, {}).finished.wait
+        world.trigger(Support::MiddlewareExample::SubAction).finished.wait
         _(log).must_equal %w[LogRunMiddleware::before_run
                              AnotherLogRunMiddleware::before_run
                              run
@@ -52,7 +52,7 @@ module Dynflow
         end
 
         it "puts the middleware to the beginning of the stack" do
-          world_with_middleware.trigger(Support::MiddlewareExample::Action, {}).finished.wait
+          world_with_middleware.trigger(Support::MiddlewareExample::Action).finished.wait
           _(log).must_equal %w[AnotherLogRunMiddleware::before_run
                                LogRunMiddleware::before_run
                                run
@@ -64,7 +64,7 @@ module Dynflow
       describe "rules" do
         describe "before" do
           specify do
-            world.trigger(Support::MiddlewareExample::SubActionBeforeRule, {}).finished.wait
+            world.trigger(Support::MiddlewareExample::SubActionBeforeRule).finished.wait
             _(log).must_equal %w[AnotherLogRunMiddleware::before_run
                                  LogRunMiddleware::before_run
                                  run
@@ -82,7 +82,7 @@ module Dynflow
           end
 
           specify do
-            world_with_middleware.trigger(Support::MiddlewareExample::Action, {}).finished.wait
+            world_with_middleware.trigger(Support::MiddlewareExample::Action).finished.wait
             _(log).must_equal %w[LogRunMiddleware::before_run
                                  AnotherLogRunMiddleware::before_run
                                  run
@@ -93,7 +93,7 @@ module Dynflow
 
         describe "replace" do
           specify do
-            world.trigger(Support::MiddlewareExample::SubActionReplaceRule, {}).finished.wait
+            world.trigger(Support::MiddlewareExample::SubActionReplaceRule).finished.wait
             _(log).must_equal %w[AnotherLogRunMiddleware::before_run
                                  run
                                  AnotherLogRunMiddleware::after_run]
@@ -102,7 +102,7 @@ module Dynflow
 
         describe "remove" do
           specify do
-            world.trigger(Support::MiddlewareExample::SubActionDoNotUseRule, {}).finished.wait
+            world.trigger(Support::MiddlewareExample::SubActionDoNotUseRule).finished.wait
             _(log).must_equal %w[run]
           end
         end

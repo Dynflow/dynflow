@@ -157,7 +157,7 @@ module Dynflow
       action_ids = records.compact.map { |record| record[:id] }
       return if action_ids.empty?
       persistence.load_actions(self, action_ids).each do |action|
-        world.middleware.execute(:hook, action, self) do
+        world.middleware.execute(:hook, action, self, **{}) do
           action.class.execution_plan_hooks.run(self, action, state)
         end
       end
@@ -285,12 +285,9 @@ module Dynflow
     def plan(*args, **kwargs)
       update_state(:planning)
 
-      # TODO Remove when we drop support for ruby < 3
+      # TODO: Remove the trailing **{} when we drop support for ruby < 3
       # https://bugs.ruby-lang.org/issues/14909
-      middlware_args = [:plan_phase, root_plan_step.action_class, self]
-      middlware_args.push({}) if RUBY_VERSION.split('.').first.to_i < 3
-
-      world.middleware.execute(*middlware_args) do
+      world.middleware.execute(:plan_phase, root_plan_step.action_class, self, **{}) do
         with_planning_scope do
           root_action = root_plan_step.execute(self, nil, false, *args, **kwargs)
           @label = root_action.label

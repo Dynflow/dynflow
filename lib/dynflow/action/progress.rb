@@ -12,21 +12,21 @@ module Dynflow
   module Action::Progress
     class Calculate < Middleware
       def run(*args)
-        with_progress_calculation(*args) do
+        with_progress_calculation(*args, **{}) do
           [action.run_progress, action.run_progress_weight]
         end
       end
 
       def finalize(*args)
-        with_progress_calculation(*args) do
+        with_progress_calculation(*args, **{}) do
           [action.finalize_progress, action.finalize_progress_weight]
         end
       end
 
       protected
 
-      def with_progress_calculation(*args)
-        pass(*args)
+      def with_progress_calculation(*args, **kwargs)
+        pass(*args, **kwargs)
       ensure
         begin
           action.calculated_progress = yield

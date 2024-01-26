@@ -92,7 +92,7 @@ module Dynflow
       end
 
       def execute
-        @step.execute(@event)
+        @step.execute(@event, **{})
       end
 
       def to_hash

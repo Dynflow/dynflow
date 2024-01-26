@@ -43,7 +43,7 @@ module Dynflow
         def clean!
           plans = @world.persistence.find_old_execution_plans(Time.now.utc - @max_age)
           report(plans)
-          @world.persistence.delete_execution_plans(uuid: plans.map(&:id))
+          @world.persistence.delete_execution_plans(uuid: plans.map(&:id), **{})
         end
 
         def report(plans)

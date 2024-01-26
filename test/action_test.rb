@@ -84,7 +84,7 @@ module Dynflow
             output.update key: Object.new
           end
         end
-        action = create_and_plan_action klass, {}
+        action = create_and_plan_action klass
         _(-> { run_action action }).must_raise NoMethodError
       end
     end
@@ -108,7 +108,7 @@ module Dynflow
       end
 
       it 'is customizable from an action' do
-        plan   = create_and_plan_action ActionWithHumanizedState, {}
+        plan   = create_and_plan_action ActionWithHumanizedState
         action = run_action(plan)
         _(action.humanized_state).must_equal "waiting"
       end
@@ -132,7 +132,7 @@ module Dynflow
       end
 
       it 'send planned event' do
-        plan = create_and_plan_action(PlanEventedAction, { time: 0.5 })
+        plan = create_and_plan_action(PlanEventedAction, { time: 0.5 }, **{})
         action = run_action plan
 
         _(action.output[:status]).must_equal nil
@@ -147,7 +147,7 @@ module Dynflow
       end
 
       it 'plans event immediately if no time is given' do
-        plan = create_and_plan_action(PlanEventedAction, { time: nil })
+        plan = create_and_plan_action(PlanEventedAction, { time: nil }, **{})
         action = run_action plan
 
         _(action.output[:status]).must_equal nil
@@ -269,7 +269,7 @@ module Dynflow
 
       describe 'without timeout' do
         let(:plan) do
-          create_and_plan_action TestPollingAction, { task_args: 'do something' }
+          create_and_plan_action TestPollingAction, { task_args: 'do something' }, **{}
         end
 
         before do
@@ -354,7 +354,7 @@ module Dynflow
 
       describe 'with timeout' do
         let(:plan) do
-          create_and_plan_action TestTimeoutAction, { task_args: 'do something' }
+          create_and_plan_action TestTimeoutAction, { task_args: 'do something' }, **{}
         end
 
         before do
@@ -397,7 +397,7 @@ module Dynflow
 
         def plan(*_)
           super
-          plan_action(DummyAction, {})
+          plan_action(DummyAction)
         end
 
         def create_sub_plans
@@ -417,7 +417,7 @@ module Dynflow
           if FailureSimulator.fail_in_child_plan
             raise "Fail in child plan"
           end
-          plan_action(DummyAction, {})
+          plan_action(DummyAction)
           super
         end
 

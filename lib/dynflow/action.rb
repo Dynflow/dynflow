@@ -586,7 +586,7 @@ module Dynflow
           # we run the Skip event only when the run accepts events
           if event != Skip || run_accepts_events?
             result = catch(SUSPEND) do
-              world.middleware.execute(:run, self, *[event].compact) do |*args|
+              world.middleware.execute(:run, self, *[event].compact, **{}) do |*args|
                 run(*args)
               end
             end
