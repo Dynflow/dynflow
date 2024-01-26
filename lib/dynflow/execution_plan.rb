@@ -284,7 +284,13 @@ module Dynflow
 
     def plan(*args, **kwargs)
       update_state(:planning)
-      world.middleware.execute(:plan_phase, root_plan_step.action_class, self) do
+
+      # TODO Remove when we drop support for ruby < 3
+      # https://bugs.ruby-lang.org/issues/14909
+      middlware_args = [:plan_phase, root_plan_step.action_class, self]
+      middlware_args.push({}) if RUBY_VERSION.split('.').first.to_i < 3
+
+      world.middleware.execute(*middlware_args) do
         with_planning_scope do
           root_action = root_plan_step.execute(self, nil, false, *args, **kwargs)
           @label = root_action.label
