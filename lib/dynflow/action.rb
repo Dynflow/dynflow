@@ -387,7 +387,7 @@ module Dynflow
     # By default it plans itself and expects input-hash.
     # Use #plan_self and #plan_action methods to plan actions.
     # It can use DB in this phase.
-    def plan(*args) # TODO
+    def plan(*args, **kwargs)
       if from_subscription?
         # if the action is triggered by subscription, by default use the
         # input of parent action.
@@ -396,7 +396,7 @@ module Dynflow
       else
         # in this case, the action was triggered by plan_action. Use
         # the argument specified there.
-        plan_self(*args)
+        plan_self(*args, **kwargs)
       end
       self
     end
