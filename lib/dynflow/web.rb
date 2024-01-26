@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'dynflow'
 require 'pp'
 require 'sinatra/base'

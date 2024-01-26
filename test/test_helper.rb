@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'bundler/setup'
 require 'minitest/reporters'
 require 'minitest/autorun'

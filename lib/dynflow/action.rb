@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   # rubocop:disable Metrics/ClassLength
   class Action < Serializable

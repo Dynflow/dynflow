@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'mocha/minitest'
 require 'minitest/stub_const'

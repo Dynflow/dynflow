@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   class Director
     # Handles the events generated while running actions, makes sure

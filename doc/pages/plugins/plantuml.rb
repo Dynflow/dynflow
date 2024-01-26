@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # Title: PlantUML Code Blocks for Jekyll
 # Author: YJ Park (yjpark@gmail.com)
 # https://github.com/yjpark/jekyll-plantuml

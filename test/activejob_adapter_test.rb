@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'active_job'
 require 'dynflow/active_job/queue_adapter'

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
 
   # Methods for specifying the progress of the action

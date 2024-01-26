@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   # A simple round-robin scheduling implementation used at various
   # places in Dynflow

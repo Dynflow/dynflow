@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   # Director is responsible for telling what to do next when:
   #   * new execution starts

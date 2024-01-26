@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 $:.unshift(File.expand_path('../../lib', __FILE__))
 
 require 'dynflow'

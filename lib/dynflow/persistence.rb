@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'dynflow/persistence_adapters'
 
 module Dynflow

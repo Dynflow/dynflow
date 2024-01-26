@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 helper = Module.new do
   def to_uuid(table_name, column_name)
     set_column_type(table_name, column_name, :uuid, :using => "#{column_name}::uuid")

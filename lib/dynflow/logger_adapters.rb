@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module LoggerAdapters
     require 'dynflow/logger_adapters/formatters'

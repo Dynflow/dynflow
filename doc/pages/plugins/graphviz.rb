@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 # taken from https://raw.githubusercontent.com/kui/octopress-graphviz/master/graphviz_block.rb
 
 require 'open3'

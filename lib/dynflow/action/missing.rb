@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   # for cases the serialized action was renamed and it's not available
   # in the code base anymore.

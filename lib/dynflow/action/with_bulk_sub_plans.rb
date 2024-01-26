@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Action::WithBulkSubPlans
     include Dynflow::Action::Cancellable

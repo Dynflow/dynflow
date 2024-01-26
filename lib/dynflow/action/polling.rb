@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'dynflow/action/timeouts'
 
 module Dynflow

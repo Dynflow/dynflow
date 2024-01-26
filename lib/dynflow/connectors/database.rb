@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Connectors
     class Database < Abstract

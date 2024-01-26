@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
 
   # Input/output format validation logic calling

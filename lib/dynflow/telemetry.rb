@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'dynflow/telemetry_adapters/abstract'
 require 'dynflow/telemetry_adapters/dummy'
 require 'dynflow/telemetry_adapters/statsd'
