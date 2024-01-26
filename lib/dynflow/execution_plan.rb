@@ -574,7 +574,7 @@ module Dynflow
 
     def toggle_telemetry_state(original, new)
       return if original == new
-      @label = root_plan_step.action_class if @label.nil?
+      @label = root_plan_step.action_class.name if @label.nil?
       Dynflow::Telemetry.with_instance do |t|
         t.set_gauge(:dynflow_active_execution_plans, '-1',
           telemetry_common_options.merge(:state => original)) unless original.nil?
