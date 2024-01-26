@@ -5,7 +5,6 @@ require 'get_process_mem'
 module Dynflow
   module Watchers
     class MemoryConsumptionWatcher
-
       attr_reader :memory_limit, :world
 
       def initialize(world, memory_limit, options)

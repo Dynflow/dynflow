@@ -2,7 +2,6 @@
 
 module Dynflow
   class Clock < Actor
-
     include Algebrick::Types
 
     Timer = Algebrick.type do

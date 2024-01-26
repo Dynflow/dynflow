@@ -6,7 +6,6 @@ require 'open3'
 
 module Jekyll
   class GraphvizBlock < Liquid::Block
-
     DIV_CLASS_ATTR     = 'graphviz-wrapper'
     DEFAULT_GRAPH_NAME = 'Graphviz'
     DOT_OPTS           = '-Tsvg'

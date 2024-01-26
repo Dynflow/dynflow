@@ -10,6 +10,5 @@ module Jekyll
       # pp site
       # binding.pry
     end
-
   end
 end

@@ -96,9 +96,7 @@ module Dynflow
       end
 
       class LoggingThrottleLimiter < Dynflow::ThrottleLimiter
-
         class LoggingCore < Dynflow::ThrottleLimiter::Core
-
           attr_reader :running
 
           def initialize(*args)

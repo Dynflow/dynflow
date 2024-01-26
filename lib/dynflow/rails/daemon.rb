@@ -176,7 +176,6 @@ module Dynflow
         else raise "Unknown unit: #{unit.inspect}!"
         end
       end
-
     end
   end
 end

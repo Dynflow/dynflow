@@ -3,7 +3,6 @@
 module Dynflow
   module Flows
     class Concurrence < AbstractComposed
-
       protected
 
       def add_to_sequence(satisfying_flows, dependent_flow)

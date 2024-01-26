@@ -3,9 +3,7 @@
 module Dynflow
   module Connectors
     class Direct < Abstract
-
       class Core < Actor
-
         def initialize(connector)
           @connector = connector
           @worlds = {}

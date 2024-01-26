@@ -80,7 +80,6 @@ module Jekyll
         Jekyll.logger.info("Create PlantUML image folder: " + folderpath)
       end
     end
-
   end # PlantUMLBlock
 end
 

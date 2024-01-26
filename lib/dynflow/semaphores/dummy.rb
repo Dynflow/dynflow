@@ -3,7 +3,6 @@
 module Dynflow
   module Semaphores
     class Dummy < Abstract
-
       def wait(thing)
         true
       end

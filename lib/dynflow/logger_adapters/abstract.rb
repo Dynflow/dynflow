@@ -3,7 +3,6 @@
 module Dynflow
   module LoggerAdapters
     class Abstract
-
       # @returns [#fatal, #error, #warn, #info, #debug] logger object for logging errors from action execution
       def action_logger
         raise NotImplementedError

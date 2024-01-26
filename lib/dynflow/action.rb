@@ -3,7 +3,6 @@
 module Dynflow
   # rubocop:disable Metrics/ClassLength
   class Action < Serializable
-
     OutputReference = ExecutionPlan::OutputReference
 
     include Algebrick::TypeCheck

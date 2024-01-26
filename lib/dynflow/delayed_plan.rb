@@ -2,7 +2,6 @@
 
 module Dynflow
   class DelayedPlan < Serializable
-
     include Algebrick::TypeCheck
 
     attr_reader :execution_plan_uuid, :start_before

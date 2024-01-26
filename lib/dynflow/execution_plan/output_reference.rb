@@ -82,6 +82,5 @@ module Dynflow
         hash.fetch(:action_id),
         hash.fetch(:subkeys))
     end
-
   end
 end

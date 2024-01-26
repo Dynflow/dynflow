@@ -88,7 +88,6 @@ module Support
     end
 
     class WeightedPolling < Dynflow::Action
-
       def plan(input)
         sequence do
           plan_self(input)

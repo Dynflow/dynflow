@@ -3,7 +3,6 @@
 module Dynflow
   module Serializers
     class Noop < Abstract
-
       def serialize(arg)
         arg
       end
@@ -11,7 +10,6 @@ module Dynflow
       def deserialize(arg)
         arg
       end
-
     end
   end
 end

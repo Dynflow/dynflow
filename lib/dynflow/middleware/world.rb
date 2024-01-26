@@ -2,7 +2,6 @@
 
 module Dynflow
   class Middleware::World
-
     include Algebrick::TypeCheck
 
     def initialize
@@ -55,6 +54,5 @@ module Dynflow
       end
       return @middleware_classes_cache[action_class]
     end
-
   end
 end

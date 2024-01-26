@@ -4,7 +4,6 @@ require 'tsort'
 
 module Dynflow
   class Middleware::Resolver
-
     include TSort
     include Algebrick::TypeCheck
 
@@ -60,6 +59,5 @@ module Dynflow
     def tsort_each_child(node, &block)
       @deps.fetch(node).each(&block)
     end
-
   end
 end

@@ -2,7 +2,6 @@
 
 module Dynflow
   class ExecutionPlan::DependencyGraph
-
     def initialize
       @graph = Hash.new { |h, k| h[k] = Set.new }
     end
@@ -26,6 +25,5 @@ module Dynflow
     def unresolved?
       @graph.any? { |step_id, required_step_ids| required_step_ids.any? }
     end
-
   end
 end

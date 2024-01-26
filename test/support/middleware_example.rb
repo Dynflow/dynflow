@@ -3,7 +3,6 @@
 module Support
   module MiddlewareExample
     class LogMiddleware < Dynflow::Middleware
-
       def self.log
         @log
       end
@@ -52,11 +51,9 @@ module Support
         pass
         log 'after_finalize_phase'
       end
-
     end
 
     class LogRunMiddleware < Dynflow::Middleware
-
       def log(message)
         LogMiddleware.log << "#{self.class.name[/\w+$/]}::#{message}"
       end
@@ -106,7 +103,6 @@ module Support
     end
 
     class LoggingAction < Dynflow::Action
-
       middleware.use LogMiddleware
 
       def log(message)
@@ -133,7 +129,6 @@ module Support
     end
 
     class ObservingMiddleware < Dynflow::Middleware
-
       def log(message)
         LogMiddleware.log << message
       end
@@ -147,7 +142,6 @@ module Support
     end
 
     class AnotherObservingMiddleware < ObservingMiddleware
-
       def delay(*args)
         pass(*args).tap do
           log("delay#set-input:#{action.world.id}")
@@ -159,7 +153,6 @@ module Support
         log("plan#input:#{action.input[:message]}")
         pass(*args)
       end
-
     end
 
     class Action < Dynflow::Action

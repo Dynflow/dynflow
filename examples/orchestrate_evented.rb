@@ -26,7 +26,6 @@ DESC
 module OrchestrateEvented
 
   class CreateInfrastructure < Dynflow::Action
-
     def plan(get_stuck = false)
       sequence do
         concurrence do
@@ -43,7 +42,6 @@ module OrchestrateEvented
   end
 
   class CreateMachine < Dynflow::Action
-
     def plan(name, profile, config_options = {})
       prepare_disk = plan_action(PrepareDisk, 'name' => name)
       create_vm    = plan_action(CreateVM,
@@ -59,11 +57,9 @@ module OrchestrateEvented
 
     def finalize
     end
-
   end
 
   class Base < Dynflow::Action
-
     Finished = Algebrick.atom
 
     def run(event = nil)
@@ -82,11 +78,9 @@ module OrchestrateEvented
     def on_finish
       raise NotImplementedError
     end
-
   end
 
   class PrepareDisk < Base
-
     input_format do
       param :name
     end
@@ -98,11 +92,9 @@ module OrchestrateEvented
     def on_finish
       output[:path] = "/var/images/#{input[:name]}.img"
     end
-
   end
 
   class CreateVM < Base
-
     input_format do
       param :name
       param :disk
@@ -115,22 +107,18 @@ module OrchestrateEvented
     def on_finish
       output[:ip] = "192.168.100.#{rand(256)}"
     end
-
   end
 
   class AddIPtoHosts < Base
-
     input_format do
       param :ip
     end
 
     def on_finish
     end
-
   end
 
   class ConfigureMachine < Base
-
     # thanks to this Dynflow knows this action can be politely
     # asked to get canceled
     include ::Dynflow::Action::Cancellable
@@ -163,7 +151,6 @@ module OrchestrateEvented
         suspend
       end
     end
-
   end
 
 end

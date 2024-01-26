@@ -6,7 +6,6 @@ module Dynflow
   # rubocop:disable Metrics/ClassLength
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
-
     # a fallback object representing a plan with some corrupted data,
     # preventing to load the whole plan properly, this can be used for presenting
     # at least some data and not running into internal server errors

@@ -6,7 +6,6 @@ module Support
   module CodeWorkflowExample
 
     class IncomingIssues < Dynflow::Action
-
       def plan(issues)
         issues.each do |issue|
           plan_action(IncomingIssue, issue)
@@ -37,7 +36,6 @@ module Support
     end
 
     class IncomingIssue < Dynflow::Action
-
       def plan(issue)
         raise "You want me to fail" if issue == :fail
         plan_self(issue)
@@ -48,11 +46,9 @@ module Support
         param :author, String
         param :text, String
       end
-
     end
 
     class Triage < Dynflow::Action
-
       def plan(issue)
         triage = plan_self(issue)
         plan_action(UpdateIssue,
@@ -85,11 +81,9 @@ module Support
         error! 'Trolling detected' if input[:text] == "trolling in finalize"
         TestExecutionLog.finalize << self
       end
-
     end
 
     class UpdateIssue < Dynflow::Action
-
       input_format do
         param :author, String
         param :text, String
@@ -102,7 +96,6 @@ module Support
     end
 
     class NotifyAssignee < Dynflow::Action
-
       def self.subscribe
         Triage
       end
@@ -146,7 +139,6 @@ module Support
     end
 
     class FastCommit < Dynflow::Action
-
       def plan(commit)
         sequence do
           ci, review = concurrence do
@@ -164,11 +156,9 @@ module Support
       input_format do
         param :sha, String
       end
-
     end
 
     class Ci < Dynflow::Action
-
       input_format do
         param :commit, Commit.input_format
       end
@@ -183,7 +173,6 @@ module Support
     end
 
     class Review < Dynflow::Action
-
       input_format do
         param :reviewer, String
         param :commit, Commit.input_format
@@ -203,7 +192,6 @@ module Support
     end
 
     class Merge < Dynflow::Action
-
       input_format do
         param :commit, Commit.input_format
         param :ci_result, Ci.output_format
@@ -234,25 +222,21 @@ module Support
     end
 
     class DummySubscribe < Dynflow::Action
-
       def self.subscribe
         DummyTrigger
       end
 
       def run
       end
-
     end
 
     class DummyMultiSubscribe < Dynflow::Action
-
       def self.subscribe
         [DummyTrigger, DummyAnotherTrigger]
       end
 
       def run
       end
-
     end
 
     class CancelableSuspended < Dynflow::Action

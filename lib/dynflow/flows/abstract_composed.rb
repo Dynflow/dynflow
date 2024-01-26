@@ -3,7 +3,6 @@
 module Dynflow
   module Flows
     class AbstractComposed < Abstract
-
       attr_reader :flows
 
       def initialize(flows)
@@ -95,7 +94,6 @@ module Dynflow
           index += 1
         end
       end
-
     end
   end
 end

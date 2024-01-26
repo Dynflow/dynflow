@@ -3,7 +3,6 @@
 module Dynflow
   module Semaphores
     class Abstract
-
       # Tries to get ticket from the semaphore
       # Returns true if thing got a ticket
       # Rturns false otherwise and puts the thing into the semaphore's queue

@@ -4,7 +4,6 @@ module Dynflow
   # for cases the serialized action was renamed and it's not available
   # in the code base anymore.
   class Action::Missing < Dynflow::Action
-
     def self.generate(action_name)
       Class.new(self).tap do |klass|
         klass.singleton_class.send(:define_method, :name) do

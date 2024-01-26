@@ -8,7 +8,6 @@ module Dynflow
   end
 
   class Serializer < Algebrick::Serializer
-
     ARBITRARY_TYPE_KEY = :class
     MARSHAL_KEY        = :marshaled
 

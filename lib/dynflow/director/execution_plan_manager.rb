@@ -119,7 +119,6 @@ module Dynflow
       def finish
         return no_work
       end
-
     end
   end
 end

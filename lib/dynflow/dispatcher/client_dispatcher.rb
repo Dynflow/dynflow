@@ -3,7 +3,6 @@
 module Dynflow
   module Dispatcher
     class ClientDispatcher < Abstract
-
       TrackedRequest = Algebrick.type do
         fields! id: String, request: Request,
                 accepted: Concurrent::Promises::ResolvableFuture, finished: Concurrent::Promises::ResolvableFuture

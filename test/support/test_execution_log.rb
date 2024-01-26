@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class TestExecutionLog
-
   include Enumerable
 
   def initialize
@@ -39,5 +38,4 @@ class TestExecutionLog
   def self.finalize
     @finalize || []
   end
-
 end

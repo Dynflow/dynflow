@@ -197,7 +197,6 @@ module Dynflow
       end
 
       class TestPollingAction < Dynflow::Action
-
         class Config
           attr_accessor :external_service, :poll_max_retries,
             :poll_intervals, :attempts_before_next_interval
@@ -400,7 +399,6 @@ module Dynflow
       end
 
       class ParentAction < Dynflow::Action
-
         include Dynflow::Action::WithSubPlans
 
         def plan(*_)
@@ -482,7 +480,6 @@ module Dynflow
         def batch(from, size)
           total_count.times.drop(from).take(size)
         end
-
       end
 
       let(:execution_plan) { world.trigger(ParentAction, count: 2).finished.value }

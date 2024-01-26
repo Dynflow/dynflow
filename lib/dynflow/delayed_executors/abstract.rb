@@ -3,7 +3,6 @@
 module Dynflow
   module DelayedExecutors
     class Abstract
-
       attr_reader :core
 
       def initialize(world, options = {})
@@ -40,7 +39,6 @@ module Dynflow
       def core_class
         raise NotImplementedError
       end
-
     end
   end
 end

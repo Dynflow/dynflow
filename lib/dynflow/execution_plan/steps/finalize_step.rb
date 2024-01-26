@@ -3,7 +3,6 @@
 module Dynflow
   module ExecutionPlan::Steps
     class FinalizeStep < AbstractFlowStep
-
       def self.state_transitions
         @state_transitions ||= {
             pending:   [:running, :skipped], # :skipped when its run_step is skipped
@@ -28,7 +27,6 @@ module Dynflow
         self.state = :skipped
         self.save
       end
-
     end
   end
 end

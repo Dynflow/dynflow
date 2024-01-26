@@ -2,7 +2,6 @@
 
 module Dynflow
   class ThrottleLimiter
-
     attr_reader :core
 
     def initialize(world)

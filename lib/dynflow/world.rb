@@ -389,6 +389,5 @@ module Dynflow
       initialized.wait
       return actor
     end
-
   end
 end

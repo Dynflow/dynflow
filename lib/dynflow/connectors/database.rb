@@ -3,7 +3,6 @@
 module Dynflow
   module Connectors
     class Database < Abstract
-
       class PostgresListerner
         def initialize(core, world_id, db)
           @core     = core

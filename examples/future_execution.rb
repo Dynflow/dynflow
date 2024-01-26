@@ -25,7 +25,6 @@ class CustomPassedObjectSerializer < ::Dynflow::Serializers::Abstract
 end
 
 class DelayedAction < Dynflow::Action
-
   def delay(delay_options, *args)
     CustomPassedObjectSerializer.new(args)
   end
@@ -36,7 +35,6 @@ class DelayedAction < Dynflow::Action
 
   def run
   end
-
 end
 
 if $0 == __FILE__

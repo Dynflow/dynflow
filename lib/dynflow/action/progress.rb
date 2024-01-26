@@ -13,7 +13,6 @@ module Dynflow
   module Action::Progress
 
     class Calculate < Middleware
-
       def run(*args)
         with_progress_calculation(*args) do
           [action.run_progress, action.run_progress_weight]

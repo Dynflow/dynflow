@@ -3,7 +3,6 @@
 module Dynflow
   module LoggerAdapters
     class Delegator < Abstract
-
       attr_reader :action_logger, :dynflow_logger
 
       def initialize(action_logger, dynflow_logger, formatters = [Formatters::Exception])

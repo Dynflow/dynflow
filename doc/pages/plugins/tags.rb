@@ -6,7 +6,6 @@ require 'erb'
 module Jekyll
 
   class Tagger < Generator
-
     safe true
 
     attr_accessor :site
@@ -80,11 +79,9 @@ module Jekyll
     def pretty?
       @pretty ||= (site.permalink_style == :pretty || site.config['tag_permalink_style'] == 'pretty')
     end
-
   end
 
   class TagPage < Page
-
     def initialize(site, base, dir, name, data = {})
       self.content = data.delete('content') || ''
       self.data    = data
@@ -95,7 +92,6 @@ module Jekyll
     def read_yaml(*)
       # Do nothing
     end
-
   end
 
   module Filters

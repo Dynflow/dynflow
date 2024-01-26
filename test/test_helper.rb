@@ -25,7 +25,6 @@ Concurrent.disable_at_exit_handlers!
 
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
-
   def self.setup
     @pause = Concurrent::Promises.resolvable_future
     @ready = Concurrent::Promises.resolvable_future

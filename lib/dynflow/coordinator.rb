@@ -4,7 +4,6 @@ require 'dynflow/coordinator_adapters'
 
 module Dynflow
   class Coordinator
-
     include Algebrick::TypeCheck
 
     class DuplicateRecordError < Dynflow::Error

@@ -45,7 +45,6 @@ end
 
 class RemoteExecutorExample
   class << self
-
     def run_observer
       world = ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
@@ -136,7 +135,6 @@ class RemoteExecutorExample
         sleep 0.5
       end
     end
-
   end
 end
 

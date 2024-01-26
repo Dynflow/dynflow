@@ -3,7 +3,6 @@
 module Dynflow
   class Director
     class SequenceCursor
-
       def initialize(flow_manager, sequence, parent_cursor = nil)
         @flow_manager    = flow_manager
         @sequence        = sequence
@@ -87,7 +86,6 @@ module Dynflow
           @todo << @flow_manager.execution_plan.steps[flow.step_id]
         end
       end
-
     end
   end
 end

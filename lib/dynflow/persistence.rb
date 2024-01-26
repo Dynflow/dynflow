@@ -5,7 +5,6 @@ require 'dynflow/persistence_adapters'
 module Dynflow
 
   class Persistence
-
     include Algebrick::TypeCheck
 
     attr_reader :adapter

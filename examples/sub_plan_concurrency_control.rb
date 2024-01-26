@@ -16,7 +16,6 @@ DESC
 require_relative 'example_helper'
 
 class CostyAction < Dynflow::Action
-
   SleepTime = 10
 
   def plan(number)
