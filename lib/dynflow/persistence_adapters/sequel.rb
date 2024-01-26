@@ -67,10 +67,10 @@ module Dynflow
         table_name = :execution_plan
         options[:order_by] ||= :started_at
         data_set = filter(table_name,
-                          order(table_name,
-                                paginate(table(table_name), options),
-                                options),
-                          options[:filters])
+          order(table_name,
+            paginate(table(table_name), options),
+            options),
+          options[:filters])
         data_set.all.map { |record| execution_plan_column_map(load_data(record, table_name)) }
       end
 
@@ -169,7 +169,7 @@ module Dynflow
 
       def save_step(execution_plan_id, step_id, value, update_conditions = {})
         save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value,
-             with_data: false, update_conditions: update_conditions
+          with_data: false, update_conditions: update_conditions
       end
 
       def load_action(execution_plan_id, action_id)

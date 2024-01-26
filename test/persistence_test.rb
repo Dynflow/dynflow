@@ -150,9 +150,9 @@ module Dynflow
               _(loaded_plans).must_be_empty
 
               adapter.save_delayed_plan('plan1',
-                                        :execution_plan_uuid => 'plan1',
-                                        :start_at => format_time(Time.now + 60),
-                                        :start_before => format_time(Time.now - 60))
+                :execution_plan_uuid => 'plan1',
+                :start_at => format_time(Time.now + 60),
+                :start_before => format_time(Time.now - 60))
               loaded_plans = adapter.find_execution_plans(filters: { label: ['test1'], :delayed => true })
               _(loaded_plans.map { |h| h[:id] }).must_equal ['plan1']
             end
@@ -229,9 +229,9 @@ module Dynflow
               _(loaded_plans).must_equal 0
 
               adapter.save_delayed_plan('plan1',
-                                        :execution_plan_uuid => 'plan1',
-                                        :start_at => format_time(Time.now + 60),
-                                        :start_before => format_time(Time.now - 60))
+                :execution_plan_uuid => 'plan1',
+                :start_at => format_time(Time.now + 60),
+                :start_before => format_time(Time.now - 60))
               loaded_plans = adapter.find_execution_plan_counts(filters: { label: ['test1'], :delayed => true })
               _(loaded_plans).must_equal 1
             end

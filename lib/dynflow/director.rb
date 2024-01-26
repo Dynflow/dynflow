@@ -75,9 +75,9 @@ module Dynflow
 
       def self.new_from_hash(hash, *_args)
         self.new(hash[:execution_plan_id],
-                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
-                 hash[:queue],
-                 hash[:sender_orchestrator_id])
+          Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
+          hash[:queue],
+          hash[:sender_orchestrator_id])
       end
     end
 
@@ -100,11 +100,11 @@ module Dynflow
 
       def self.new_from_hash(hash, *_args)
         self.new(hash[:request_id],
-                 hash[:execution_plan_id],
-                 Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
-                 Dynflow.serializer.load(hash[:event]),
-                 hash[:queue],
-                 hash[:sender_orchestrator_id])
+          hash[:execution_plan_id],
+          Serializable.from_hash(hash[:step], hash[:execution_plan_id], Dynflow.process_world),
+          Dynflow.serializer.load(hash[:event]),
+          hash[:queue],
+          hash[:sender_orchestrator_id])
       end
     end
 
@@ -301,12 +301,12 @@ module Dynflow
 
       if @execution_plan_managers[execution_plan_id]
         raise Dynflow::Error,
-              "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
+          "cannot execute execution_plan_id:#{execution_plan_id} it's already running"
       end
 
       if execution_plan.state == :stopped
         raise Dynflow::Error,
-              "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
+          "cannot execute execution_plan_id:#{execution_plan_id} it's stopped"
       end
 
       @execution_plan_managers[execution_plan_id] =

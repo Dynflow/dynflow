@@ -8,7 +8,7 @@ module Dynflow
       def initialize(klass)
         mimic! klass
         @output = ExecutionPlan::OutputReference.new(
-            Testing.get_id.to_s, Testing.get_id, Testing.get_id)
+          Testing.get_id.to_s, Testing.get_id, Testing.get_id)
       end
 
       def execute(execution_plan, event, from_subscription, *args)

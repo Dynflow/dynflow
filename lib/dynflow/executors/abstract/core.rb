@@ -20,7 +20,7 @@ module Dynflow
         def handle_execution(execution_plan_id, finished)
           if terminating?
             raise Dynflow::Error,
-                  "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
+              "cannot accept execution_plan_id:#{execution_plan_id} core is terminating"
           end
 
           handle_work(@director.start_execution(execution_plan_id, finished))
@@ -30,7 +30,7 @@ module Dynflow
           Type! event, Director::Event
           if terminating?
             raise Dynflow::Error,
-                  "cannot accept event: #{event} core is terminating"
+              "cannot accept event: #{event} core is terminating"
           end
           handle_work(@director.handle_event(event))
         end
@@ -38,7 +38,7 @@ module Dynflow
         def handle_planning(execution_plan_id)
           if terminating?
             raise Dynflow::Error,
-                  "cannot accept event: #{event} core is terminating"
+              "cannot accept event: #{event} core is terminating"
           end
 
           handle_work(@director.handle_planning(execution_plan_id))

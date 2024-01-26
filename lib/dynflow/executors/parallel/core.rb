@@ -19,8 +19,8 @@ module Dynflow
           @queues_options.each do |(queue_name, queue_options)|
             queue_pool_size = queue_options.fetch(:pool_size, default_pool_size)
             @pools[queue_name] = Pool.spawn("pool #{queue_name}", @world,
-                                            reference, queue_name, queue_pool_size,
-                                            @world.transaction_adapter)
+              reference, queue_name, queue_pool_size,
+              @world.transaction_adapter)
           end
         end
 

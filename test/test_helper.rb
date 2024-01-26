@@ -230,7 +230,7 @@ module TestHelpers
                   'terminate execution',
                   'start execution',
                   'finish execution'],
-                 plan.execution_history.map(&:name)
+      plan.execution_history.map(&:name)
     refute_equal plan.execution_history.first.world_id, plan.execution_history.to_a.last.world_id
   end
 end

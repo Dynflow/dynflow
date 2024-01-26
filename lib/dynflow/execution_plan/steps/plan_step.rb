@@ -73,17 +73,17 @@ module Dynflow
       def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash
         new execution_plan_id,
-            hash[:id],
-            hash[:state],
-            Action.constantize(hash[:action_class]),
-            hash[:action_id],
-            hash_to_error(hash[:error]),
-            world,
-            string_to_time(hash[:started_at]),
-            string_to_time(hash[:ended_at]),
-            hash[:execution_time],
-            hash[:real_time],
-            hash[:children]
+          hash[:id],
+          hash[:state],
+          Action.constantize(hash[:action_class]),
+          hash[:action_id],
+          hash_to_error(hash[:error]),
+          world,
+          string_to_time(hash[:started_at]),
+          string_to_time(hash[:ended_at]),
+          hash[:execution_time],
+          hash[:real_time],
+          hash[:children]
       end
 
       def load_action

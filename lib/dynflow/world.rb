@@ -9,10 +9,10 @@ module Dynflow
     include Invalidation
 
     attr_reader :id, :config, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-                :transaction_adapter, :logger_adapter, :coordinator,
-                :persistence, :action_classes, :subscription_index,
-                :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
-                :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
+      :transaction_adapter, :logger_adapter, :coordinator,
+      :persistence, :action_classes, :subscription_index,
+      :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
+      :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
 
     def initialize(config)
       @config = Config::ForWorld.new(config, self)
@@ -27,14 +27,14 @@ module Dynflow
       @config.validate
       @transaction_adapter    = @config.transaction_adapter
       @persistence            = Persistence.new(self, @config.persistence_adapter,
-                                                :backup_deleted_plans => @config.backup_deleted_plans,
-                                                :backup_dir => @config.backup_dir)
+        :backup_deleted_plans => @config.backup_deleted_plans,
+        :backup_dir => @config.backup_dir)
       @coordinator            = Coordinator.new(@config.coordinator_adapter)
       if @config.executor
         @executor = Executors::Parallel.new(self,
-                                            executor_class: @config.executor,
-                                            heartbeat_interval: @config.executor_heartbeat_interval,
-                                            queues_options: @config.queues)
+          executor_class: @config.executor,
+          heartbeat_interval: @config.executor_heartbeat_interval,
+          queues_options: @config.queues)
       end
       @action_classes         = @config.action_classes
       @auto_rescue            = @config.auto_rescue

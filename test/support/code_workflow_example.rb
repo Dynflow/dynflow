@@ -55,10 +55,10 @@ module Support
       def plan(issue)
         triage = plan_self(issue)
         plan_action(UpdateIssue,
-                    author:   triage.input[:author],
-                    text:     triage.input[:text],
-                    assignee: triage.output[:classification][:assignee],
-                    severity: triage.output[:classification][:severity])
+          author:   triage.input[:author],
+          text:     triage.input[:text],
+          assignee: triage.output[:classification][:assignee],
+          severity: triage.output[:classification][:severity])
       end
 
       input_format do
@@ -137,9 +137,9 @@ module Support
           end
 
           plan_action(Merge,
-                      commit:         commit,
-                      ci_result:      ci.output[:passed],
-                      review_results: review_actions.map { |ra| ra.output[:passed] })
+            commit:         commit,
+            ci_result:      ci.output[:passed],
+            review_results: review_actions.map { |ra| ra.output[:passed] })
         end
       end
     end
@@ -154,9 +154,9 @@ module Support
           end
 
           plan_action(Merge,
-                      commit:         commit,
-                      ci_result:      ci.output[:passed],
-                      review_results: [review.output[:passed]])
+            commit:         commit,
+            ci_result:      ci.output[:passed],
+            review_results: [review.output[:passed]])
         end
       end
 

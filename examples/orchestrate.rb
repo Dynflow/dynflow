@@ -34,10 +34,10 @@ module Orchestrate
           plan_action(CreateMachine, 'host2', 'storage')
         end
         plan_action(CreateMachine,
-                    'host3',
-                    'web_server',
-                    :db_machine => 'host1',
-                    :storage_machine => 'host2')
+          'host3',
+          'web_server',
+          :db_machine => 'host1',
+          :storage_machine => 'host2')
       end
     end
   end
@@ -47,13 +47,13 @@ module Orchestrate
     def plan(name, profile, config_options = {})
       prepare_disk = plan_action(PrepareDisk, 'name' => name)
       create_vm    = plan_action(CreateVM,
-                                 :name => name,
-                                 :disk => prepare_disk.output['path'])
+        :name => name,
+        :disk => prepare_disk.output['path'])
       plan_action(AddIPtoHosts, :name => name, :ip => create_vm.output[:ip])
       plan_action(ConfigureMachine,
-                  :ip => create_vm.output[:ip],
-                  :profile => profile,
-                  :config_options => config_options)
+        :ip => create_vm.output[:ip],
+        :profile => profile,
+        :config_options => config_options)
       plan_self(:name => name)
     end
 

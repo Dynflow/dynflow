@@ -9,10 +9,10 @@ module Dynflow
 
       def handle_request(envelope)
         match(envelope.message,
-              on(Planning) { perform_planning(envelope, envelope.message)},
-              on(Execution) { perform_execution(envelope, envelope.message) },
-              on(Event)     { perform_event(envelope, envelope.message) },
-              on(Status)    { get_execution_status(envelope, envelope.message) })
+          on(Planning) { perform_planning(envelope, envelope.message)},
+          on(Execution) { perform_execution(envelope, envelope.message) },
+          on(Event)     { perform_event(envelope, envelope.message) },
+          on(Status)    { get_execution_status(envelope, envelope.message) })
       end
 
       protected
@@ -61,13 +61,13 @@ module Dynflow
         end
         if event_request.time.nil? || event_request.time < Time.now
           @world.executor.event(envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, future,
-                                optional: event_request.optional)
+            optional: event_request.optional)
         else
           @world.clock.ping(
             @world.executor,
             event_request.time,
             Director::Event[envelope.request_id, event_request.execution_plan_id, event_request.step_id, event_request.event, Concurrent::Promises.resolvable_future,
-                            event_request.optional],
+              event_request.optional],
             :delayed_event
           )
           # resolves the future right away - currently we do not wait for the clock ping

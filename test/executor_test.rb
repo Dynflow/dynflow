@@ -230,8 +230,8 @@ module Dynflow
             describe 'handling errors in setup' do
               let :execution_plan do
                 world.plan(Support::DummyExample::Polling,
-                           external_task_id: '123',
-                           text:             'troll setup')
+                  external_task_id: '123',
+                  text:             'troll setup')
               end
 
               it 'fails' do
@@ -310,8 +310,8 @@ module Dynflow
               describe 'plan with one action' do
                 let :execution_plan do
                   world.plan(Support::DummyExample::Polling,
-                             { external_task_id: '123',
-                               text:             'pause in progress 20%' })
+                    { external_task_id: '123',
+                      text:             'pause in progress 20%' })
                 end
 
                 it 'determines the progress of the execution plan in percents' do
@@ -325,8 +325,8 @@ module Dynflow
               describe 'plan with more action' do
                 let :execution_plan do
                   world.plan(Support::DummyExample::WeightedPolling,
-                             { external_task_id: '123',
-                               text:             'pause in progress 20%' })
+                    { external_task_id: '123',
+                      text:             'pause in progress 20%' })
                 end
 
                 it 'takes the steps weight in account' do
@@ -341,8 +341,8 @@ module Dynflow
             describe 'works when resumed after error' do
               let :execution_plan do
                 world.plan(Support::DummyExample::Polling,
-                           { external_task_id: '123',
-                             text:             'troll progress' })
+                  { external_task_id: '123',
+                    text:             'troll progress' })
               end
 
               specify do
@@ -438,10 +438,10 @@ module Dynflow
 
             it "runs all the steps in the finalize flow" do
               assert_finalized(Support::CodeWorkflowExample::IncomingIssues,
-                               { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" },
-                                              { "author" => "John Doe", "text" => "Internal server error" }] })
+                { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" },
+                               { "author" => "John Doe", "text" => "Internal server error" }] })
               assert_finalized(Support::CodeWorkflowExample::Triage,
-                               { "author" => "Peter Smith", "text" => "Failing test" })
+                { "author" => "Peter Smith", "text" => "Failing test" })
             end
           end
 

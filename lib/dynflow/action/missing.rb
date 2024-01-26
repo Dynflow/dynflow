@@ -14,17 +14,17 @@ module Dynflow
 
     def plan(*args)
       raise StandardError,
-            "The action class was not found and therefore plan phase failed, this can happen if the action was added/renamed but the executor was not restarted."
+        "The action class was not found and therefore plan phase failed, this can happen if the action was added/renamed but the executor was not restarted."
     end
 
     def run
       raise StandardError,
-            "The action class was not found and therefore run phase failed, this can happen if the action was added/renamed but the executor was not restarted."
+        "The action class was not found and therefore run phase failed, this can happen if the action was added/renamed but the executor was not restarted."
     end
 
     def finalize
       raise StandardError,
-            "The action class was not found and therefore finalize phase failed, this can happen if the action was added/renamed but the executor was not restarted."
+        "The action class was not found and therefore finalize phase failed, this can happen if the action was added/renamed but the executor was not restarted."
     end
   end
 end

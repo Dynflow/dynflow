@@ -9,14 +9,14 @@ module Dynflow
         execution_plan = DummyExecutionPlan.new
         step           = DummyStep.new
         action_class.new(
-            { step:              DummyStep.new,
-              execution_plan_id: execution_plan.id,
-              id:                Testing.get_id,
-              phase:             Action::Plan,
-              plan_step_id:      step.id,
-              run_step_id:       nil,
-              finalize_step_id:  nil },
-            execution_plan.world).tap do |action|
+          { step:              DummyStep.new,
+            execution_plan_id: execution_plan.id,
+            id:                Testing.get_id,
+            phase:             Action::Plan,
+            plan_step_id:      step.id,
+            run_step_id:       nil,
+            finalize_step_id:  nil },
+          execution_plan.world).tap do |action|
           action.set_plan_context(execution_plan, trigger, false)
         end
       end
@@ -24,15 +24,15 @@ module Dynflow
       def create_action_presentation(action_class)
         execution_plan = DummyExecutionPlan.new
         action_class.new(
-            { execution_plan:    execution_plan,
-              execution_plan_id: execution_plan.id,
-              id:                Testing.get_id,
-              phase:             Action::Present,
-              plan_step_id:      1,
-              run_step_id:       nil,
-              finalize_step_id:  nil,
-              input:             nil },
-            execution_plan.world)
+          { execution_plan:    execution_plan,
+            execution_plan_id: execution_plan.id,
+            id:                Testing.get_id,
+            phase:             Action::Present,
+            plan_step_id:      1,
+            run_step_id:       nil,
+            finalize_step_id:  nil,
+            input:             nil },
+          execution_plan.world)
       end
 
       # @return [Action::PlanPhase]
@@ -58,15 +58,15 @@ module Dynflow
         step       = DummyStep.new
         run_action = if plan_action.phase == Action::Plan
                        plan_action.class.new(
-                           { step:              step,
-                             execution_plan_id: plan_action.execution_plan_id,
-                             id:                plan_action.id,
-                             plan_step_id:      plan_action.plan_step_id,
-                             run_step_id:       step.id,
-                             finalize_step_id:  nil,
-                             phase:             Action::Run,
-                             input:             plan_action.input },
-                           plan_action.world)
+                         { step:              step,
+                           execution_plan_id: plan_action.execution_plan_id,
+                           id:                plan_action.id,
+                           plan_step_id:      plan_action.plan_step_id,
+                           run_step_id:       step.id,
+                           finalize_step_id:  nil,
+                           phase:             Action::Run,
+                           input:             plan_action.input },
+                         plan_action.world)
 
                      else
                        plan_action
@@ -85,15 +85,15 @@ module Dynflow
         Match! run_action.phase, Action::Plan, Action::Run
         step            = DummyStep.new
         finalize_action = run_action.class.new(
-            { step:              step,
-              execution_plan_id: run_action.execution_plan_id,
-              id:                run_action.id,
-              plan_step_id:      run_action.plan_step_id,
-              run_step_id:       run_action.run_step_id,
-              finalize_step_id:  step.id,
-              phase:             Action::Finalize,
-              input:             run_action.input },
-            run_action.world)
+          { step:              step,
+            execution_plan_id: run_action.execution_plan_id,
+            id:                run_action.id,
+            plan_step_id:      run_action.plan_step_id,
+            run_step_id:       run_action.run_step_id,
+            finalize_step_id:  step.id,
+            phase:             Action::Finalize,
+            input:             run_action.input },
+          run_action.world)
 
         stubbing.call finalize_action if stubbing
         finalize_action.execute

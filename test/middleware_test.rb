@@ -77,7 +77,7 @@ module Dynflow
           let(:world_with_middleware) do
             WorldFactory.create_world.tap do |world|
               world.middleware.use(Support::MiddlewareExample::AnotherLogRunMiddleware,
-                                   after: Support::MiddlewareExample::LogRunMiddleware)
+                after: Support::MiddlewareExample::LogRunMiddleware)
 
             end
           end
@@ -112,7 +112,7 @@ module Dynflow
       it "allows access the running action" do
         world = WorldFactory.create_world
         world.middleware.use(Support::MiddlewareExample::ObservingMiddleware,
-                             replace: Support::MiddlewareExample::LogRunMiddleware)
+          replace: Support::MiddlewareExample::LogRunMiddleware)
         world.trigger(Support::MiddlewareExample::Action, message: 'hello').finished.wait
         _(log).must_equal %w[input#message:hello
                              run
@@ -122,7 +122,7 @@ module Dynflow
       it "allows modification of the running action when delaying execution" do
         world = WorldFactory.create_world
         world.middleware.use(Support::MiddlewareExample::AnotherObservingMiddleware,
-                             replace: Support::MiddlewareExample::LogRunMiddleware)
+          replace: Support::MiddlewareExample::LogRunMiddleware)
         delay = world.delay(Support::MiddlewareExample::Action, { :start_at => Time.now - 60 })
         plan = world.persistence.load_delayed_plan delay.execution_plan_id
         plan.plan

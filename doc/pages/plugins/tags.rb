@@ -44,7 +44,7 @@ module Jekyll
           page_name = "#{pretty? ? 'index' : name}#{site.layouts[data['layout']].ext}"
 
           site.pages << TagPage.new(
-              site, site.source, tag_dir, page_name, data
+            site, site.source, tag_dir, page_name, data
           )
         end
       }

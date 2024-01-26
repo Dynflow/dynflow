@@ -51,17 +51,17 @@ module Dynflow
             assert_equal Dynflow::Errors::DataConsistencyError, deserialized_execution_plan.exception.class
             [:label, :state, :started_at, :ended_at].each do |attr|
               assert_equal execution_plan.send(attr).to_s,
-                           deserialized_execution_plan.send(attr).to_s,
-                           "invalid plan is supposed to still store #{attr}"
+                deserialized_execution_plan.send(attr).to_s,
+                "invalid plan is supposed to still store #{attr}"
             end
             [:execution_time, :real_time].each do |attr|
               assert_equal execution_plan.send(attr).to_f,
-                           deserialized_execution_plan.send(attr).to_f,
-                           "invalid plan is supposed to still store #{attr}"
+                deserialized_execution_plan.send(attr).to_f,
+                "invalid plan is supposed to still store #{attr}"
             end
             assert_equal execution_plan.execution_history.events,
-                         deserialized_execution_plan.execution_history.events,
-                         "invalid plan is supposed to still store execution history"
+              deserialized_execution_plan.execution_history.events,
+              "invalid plan is supposed to still store execution history"
           end
 
         end

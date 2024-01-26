@@ -33,10 +33,10 @@ module Dynflow
 
     Response = Algebrick.type do
       variants Accepted = atom,
-               Failed   = type { fields! error: String },
-               Done     = atom,
-               Pong     = atom,
-               ExecutionStatus = type { fields! execution_status: Hash }
+        Failed   = type { fields! error: String },
+        Done     = atom,
+        Pong     = atom,
+        ExecutionStatus = type { fields! execution_status: Hash }
     end
 
     Envelope = Algebrick.type do
@@ -49,9 +49,9 @@ module Dynflow
     module Envelope
       def build_response_envelope(response_message, sender)
         Envelope[self.request_id,
-                 sender.id,
-                 self.sender_id,
-                 response_message]
+          sender.id,
+          self.sender_id,
+          response_message]
       end
     end
 

@@ -16,23 +16,23 @@ module Dynflow
 
     def run(event = nil)
       match event,
-            (on nil do
-               if output[:total_count]
-                 resume
-               else
-                 initiate
-               end
-             end),
-            (on SubPlanFinished do
-               mark_as_done(event.execution_plan_id, event.success)
-               try_to_finish or suspend
-             end),
-            (on Action::Cancellable::Cancel do
-               cancel!
-             end),
-            (on Action::Cancellable::Abort do
-               abort!
-             end)
+        (on nil do
+           if output[:total_count]
+             resume
+           else
+             initiate
+           end
+         end),
+        (on SubPlanFinished do
+           mark_as_done(event.execution_plan_id, event.success)
+           try_to_finish or suspend
+         end),
+        (on Action::Cancellable::Cancel do
+           cancel!
+         end),
+        (on Action::Cancellable::Abort do
+           abort!
+         end)
     end
 
     def initiate
@@ -109,8 +109,8 @@ module Dynflow
         # Assume concurrency level 1 unless stated otherwise
         level = input[:concurrency_control].fetch(:level, {}).fetch(:free, 1)
         semaphore = ::Dynflow::Semaphores::Stateful.new(nil, level,
-                                                        :interval => time.to_f / (count * level),
-                                                        :time_span => time)
+          :interval => time.to_f / (count * level),
+          :time_span => time)
         input[:concurrency_control][:time] = semaphore.to_hash
       end
     end

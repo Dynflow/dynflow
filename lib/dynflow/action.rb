@@ -68,9 +68,9 @@ module Dynflow
     Skip    = Algebrick.atom
     Phase   = Algebrick.type do
       Executable = type do
-        variants Plan     = atom,
-                 Run      = atom,
-                 Finalize = atom
+        variants Plan = atom,
+          Run      = atom,
+          Finalize = atom
       end
       variants Executable, Present = atom
     end
@@ -78,9 +78,9 @@ module Dynflow
     module Executable
       def execute_method_name
         match self,
-              (on Plan, :execute_plan),
-              (on Run, :execute_run),
-              (on Finalize, :execute_finalize)
+          (on Plan, :execute_plan),
+          (on Run, :execute_run),
+          (on Finalize, :execute_finalize)
       end
     end
 
@@ -105,9 +105,9 @@ module Dynflow
     end
 
     attr_reader :world, :phase, :execution_plan_id, :id, :input,
-                :plan_step_id, :run_step_id, :finalize_step_id,
-                :caller_execution_plan_id, :caller_action_id,
-                :pending_output_chunks
+      :plan_step_id, :run_step_id, :finalize_step_id,
+      :caller_execution_plan_id, :caller_action_id,
+      :pending_output_chunks
 
     middleware.use Action::Progress::Calculate
 
@@ -268,18 +268,18 @@ module Dynflow
 
     def to_hash
       recursive_to_hash(
-          { class:                     self.class.name,
-            execution_plan_id:         execution_plan_id,
-            id:                        id,
-            plan_step_id:              plan_step_id,
-            run_step_id:               run_step_id,
-            finalize_step_id:          finalize_step_id,
-            caller_execution_plan_id:  caller_execution_plan_id,
-            caller_action_id:          caller_action_id,
-            input:                     input },
-          if phase? Run, Finalize, Present
-            { output: output }
-          end)
+        { class:                     self.class.name,
+          execution_plan_id:         execution_plan_id,
+          id:                        id,
+          plan_step_id:              plan_step_id,
+          run_step_id:               run_step_id,
+          finalize_step_id:          finalize_step_id,
+          caller_execution_plan_id:  caller_execution_plan_id,
+          caller_action_id:          caller_action_id,
+          input:                     input },
+        if phase? Run, Finalize, Present
+          { output: output }
+        end)
     end
 
     def state
@@ -364,9 +364,9 @@ module Dynflow
     def state=(state)
       phase! Executable
       @world.logger.debug format('%13s %s:%2d %9s >> %9s in phase %8s %s',
-                                 'Step', execution_plan_id, @step.id,
-                                 self.state, state,
-                                 phase.to_s_humanized, self.class)
+        'Step', execution_plan_id, @step.id,
+        self.state, state,
+        phase.to_s_humanized, self.class)
       @step.state = state
     end
 
@@ -554,7 +554,7 @@ module Dynflow
     def execute_run(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
-                                 'Step', execution_plan_id, @step.id, event) if event
+        'Step', execution_plan_id, @step.id, event) if event
 
       case
       when state == :running
