@@ -503,6 +503,7 @@ module Dynflow
       when :skipping
         self.state = :skipped
       when :suspended, :error
+        # Do nothing
       else
         raise "wrong state #{self.state}"
       end

@@ -56,12 +56,6 @@ Lint/DuplicateMethods:
     - 'lib/dynflow/rails/configuration.rb'
     - 'lib/dynflow/rails/daemon.rb'
 
-# Offense count: 1
-# Configuration parameters: AllowComments.
-Lint/EmptyWhen:
-  Exclude:
-    - 'lib/dynflow/action.rb'
-
 # Offense count: 6
 Lint/IneffectiveAccessModifier:
   Exclude:
