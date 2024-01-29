@@ -13,7 +13,7 @@ module Dynflow
       def initialize(world,
                      executor_class:,
                      heartbeat_interval:,
-                     queues_options: { :default => { :pool_size => 5 }})
+                     queues_options: { :default => { :pool_size => 5 } })
         @world  = world
         @logger = world.logger
         @core = executor_class.spawn name:        'parallel-executor-core',

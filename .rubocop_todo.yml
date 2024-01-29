@@ -35,22 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 63
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces.
-# SupportedStyles: space, no_space, compact
-# SupportedStylesForEmptyBraces: space, no_space
-Layout/SpaceInsideHashLiteralBraces:
-  Exclude:
-    - 'lib/dynflow/config.rb'
-    - 'lib/dynflow/executors/parallel.rb'
-    - 'lib/dynflow/persistence_adapters/sequel.rb'
-    - 'lib/dynflow/persistence_adapters/sequel_migrations/021_create_output_chunks.rb'
-    - 'test/flows_test.rb'
-    - 'test/persistence_test.rb'
-    - 'test/testing_test.rb'
-    - 'test/world_test.rb'
-
 # Offense count: 8
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.

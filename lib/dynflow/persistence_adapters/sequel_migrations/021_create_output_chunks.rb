@@ -7,9 +7,9 @@ Sequel.migration do
       primary_key :id
 
       column_properties = if type.to_s.include?('postgres')
-                            {type: :uuid}
+                            { type: :uuid }
                           else
-                            {type: String, size: 36, fixed: true, null: false}
+                            { type: String, size: 36, fixed: true, null: false }
                           end
       foreign_key :execution_plan_uuid, :dynflow_execution_plans, **column_properties
       index :execution_plan_uuid

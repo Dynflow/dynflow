@@ -22,7 +22,7 @@ module Dynflow
         TestRegistry.register!(TestRegistry, 'TS')
         TestRegistry.register!(Integer, 'I')
         map = TestRegistry.instance_variable_get("@serialization_map")
-        _(map).must_equal({'TS' => TestRegistry, 'I' => Integer})
+        _(map).must_equal({ 'TS' => TestRegistry, 'I' => Integer })
       end
 
       it "prevents overwriting values" do

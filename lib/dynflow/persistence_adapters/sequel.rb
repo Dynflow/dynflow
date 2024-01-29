@@ -254,7 +254,7 @@ module Dynflow
 
       def update_coordinator_record(class_name, record_id, value)
         coordinator_feature!
-        save :coordinator_record, {class: class_name, :id => record_id}, value
+        save :coordinator_record, { class: class_name, :id => record_id }, value
       end
 
       def delete_coordinator_record(class_name, record_id)

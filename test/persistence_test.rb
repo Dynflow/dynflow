@@ -20,8 +20,8 @@ module Dynflow
          caller_execution_plan_id: nil,
          caller_action_id: nil,
          class: 'Dynflow::Action',
-         input: {key: 'value'},
-         output: {something: 'else'},
+         input: { key: 'value' },
+         output: { something: 'else' },
          plan_step_id: 1,
          run_step_id: 2,
          finalize_step_id: 3
@@ -169,29 +169,29 @@ module Dynflow
             prepare_and_save_plans
             if adapter.ordering_by.include?('state')
               loaded_plans = adapter.find_execution_plan_statuses(filters: { label: ['test1'] })
-              _(loaded_plans).must_equal({ 'plan1' => { state: 'paused', result: nil} })
+              _(loaded_plans).must_equal({ 'plan1' => { state: 'paused', result: nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['paused'] })
-              _(loaded_plans).must_equal({"plan1" => {:state => "paused", :result => nil},
-                                          "plan3" => {:state => "paused", :result => nil},
-                                          "plan4" => {:state => "paused", :result => nil}})
+              _(loaded_plans).must_equal({ "plan1" => { :state => "paused", :result => nil },
+                                          "plan3" => { :state => "paused", :result => nil },
+                                          "plan4" => { :state => "paused", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped'] })
-              _(loaded_plans).must_equal({"plan2" => {:state => "stopped", :result => nil}})
+              _(loaded_plans).must_equal({ "plan2" => { :state => "stopped", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: [] })
               _(loaded_plans).must_equal({})
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped', 'paused'] })
-              _(loaded_plans).must_equal({"plan1" => {:state => "paused", :result => nil},
-                                          "plan2" => {:state => "stopped", :result => nil},
-                                          "plan3" => {:state => "paused", :result => nil}, "plan4" => {:state => "paused", :result => nil}})
+              _(loaded_plans).must_equal({ "plan1" => { :state => "paused", :result => nil },
+                                          "plan2" => { :state => "stopped", :result => nil },
+                                          "plan3" => { :state => "paused", :result => nil }, "plan4" => { :state => "paused", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { 'state' => ['stopped', 'paused'] })
-              _(loaded_plans).must_equal({"plan1" => {:state => "paused", :result => nil},
-                                          "plan2" => {:state => "stopped", :result => nil},
-                                          "plan3" => {:state => "paused", :result => nil},
-                                          "plan4" => {:state => "paused", :result => nil}})
+              _(loaded_plans).must_equal({ "plan1" => { :state => "paused", :result => nil },
+                                          "plan2" => { :state => "stopped", :result => nil },
+                                          "plan3" => { :state => "paused", :result => nil },
+                                          "plan4" => { :state => "paused", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { label: ['test1'], :delayed => true })
               _(loaded_plans).must_equal({})
@@ -276,7 +276,7 @@ module Dynflow
           it 'creates backup dir and produce backup including steps and actions' do
             prepare_plans_with_steps
             Dir.mktmpdir do |backup_dir|
-              _(adapter.delete_execution_plans({'uuid' => 'plan1'}, 100, backup_dir)).must_equal 1
+              _(adapter.delete_execution_plans({ 'uuid' => 'plan1' }, 100, backup_dir)).must_equal 1
               plans = CSV.read(backup_dir + "/execution_plans.csv", :headers => true)
               assert_equal 1, plans.count
               assert_equal 'plan1', plans.first.to_hash['uuid']
@@ -376,7 +376,7 @@ module Dynflow
           it 'deletes output chunks' do
             prepare_plans_with_actions
 
-            adapter.save_output_chunks('plan1', 1, [{chunk: "Hello", timestamp: Time.now}, {chunk: "Bye", timestamp: Time.now}])
+            adapter.save_output_chunks('plan1', 1, [{ chunk: "Hello", timestamp: Time.now }, { chunk: "Bye", timestamp: Time.now }])
             chunks = adapter.load_output_chunks('plan1', 1)
             _(chunks.length).must_equal 2
             deleted = adapter.delete_output_chunks('plan1', 1)
@@ -451,7 +451,7 @@ module Dynflow
           envelopes         = [client_envelope, executor_envelope]
 
           envelopes.each { |e| adapter.push_envelope(e) }
-          adapter.insert_coordinator_record({"class" => "Dynflow::Coordinator::ExecutorWorld",
+          adapter.insert_coordinator_record({ "class" => "Dynflow::Coordinator::ExecutorWorld",
                                              "id" => executor_world_id, "meta" => {}, "active" => true })
 
           assert_equal 1, adapter.prune_undeliverable_envelopes
@@ -526,7 +526,7 @@ module Dynflow
 
           value = 'a' * 1000
 
-          adata = action_data.merge({:output => { :key => value }})
+          adata = action_data.merge({ :output => { :key => value } })
           plan_record = adapter.send(:prepare_record, :execution_plan, plan.merge(:uuid => plan[:id]))
           action_record = adapter.send(:prepare_record, :action, adata.dup)
 
