@@ -51,13 +51,13 @@ module Dynflow
           while (work = @work_items.shift(step.id))
             @world.logger.debug "step #{step.execution_plan_id}:#{step.id} dropping event #{work.request_id}/#{work.event}"
             finish_event_result(work) do |f|
-              f.reject UnprocessableEvent.new("Message dropped").tap { |e| e.set_backtrace(caller) }
+              f.reject(UnprocessableEvent.new("Message dropped").tap { |e| e.set_backtrace(caller) })
             end
           end
           while (event = @events.shift(step.id))
             @world.logger.debug "step #{step.execution_plan_id}:#{step.id} dropping event #{event.request_id}/#{event}"
             if event.result
-              event.result.reject UnprocessableEvent.new("Message dropped").tap { |e| e.set_backtrace(caller) }
+              event.result.reject(UnprocessableEvent.new("Message dropped").tap { |e| e.set_backtrace(caller) })
             end
           end
           unless @work_items.empty?(step.id) && @events.empty?(step.id)

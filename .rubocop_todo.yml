@@ -35,11 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 2
-Lint/AmbiguousBlockAssociation:
-  Exclude:
-    - 'lib/dynflow/director/running_steps_manager.rb'
-
 # Offense count: 9
 # Cop supports --auto-correct.
 Lint/AmbiguousOperator:
