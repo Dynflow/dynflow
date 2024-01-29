@@ -14,8 +14,8 @@ group :pry do
 end
 
 group :sidekiq do
-  gem 'sidekiq'
   gem 'gitlab-sidekiq-fetcher', :require => 'sidekiq-reliable-fetch'
+  gem 'sidekiq'
 end
 
 group :postgresql do
@@ -36,8 +36,8 @@ end
 
 group :rails do
   gem 'daemons'
-  gem 'rails', '>= 4.2.9', '< 7'
   gem 'logging'
+  gem 'rails', '>= 4.2.9', '< 7'
 end
 
 group :telemetry do
