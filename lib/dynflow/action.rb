@@ -237,9 +237,9 @@ module Dynflow
     def planned_actions(filter = Action)
       phase! Present
       plan_step
-          .planned_steps(execution_plan)
-          .map { |s| s.action(execution_plan) }
-          .select { |a| a.is_a?(filter) }
+        .planned_steps(execution_plan)
+        .map { |s| s.action(execution_plan) }
+        .select { |a| a.is_a?(filter) }
     end
 
     # @param [Class] filter_class return only actions which are kind of `filter_class`
@@ -249,7 +249,7 @@ module Dynflow
       phase! Present
       mine = planned_actions
       (mine + mine.reduce([]) { |arr, action| arr + action.all_planned_actions })
-          .select { |a| a.is_a?(filter_class) }
+        .select { |a| a.is_a?(filter_class) }
     end
 
     def run_step
@@ -279,7 +279,8 @@ module Dynflow
           input:                     input },
         if phase? Run, Finalize, Present
           { output: output }
-        end)
+        end
+      )
     end
 
     def state

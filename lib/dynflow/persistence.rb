@@ -18,8 +18,8 @@ module Dynflow
 
     def load_action(step)
       attributes = adapter
-          .load_action(step.execution_plan_id, step.action_id)
-          .update(step: step, phase: step.phase)
+                   .load_action(step.execution_plan_id, step.action_id)
+                   .update(step: step, phase: step.phase)
       return Action.from_hash(attributes, step.world)
     end
 

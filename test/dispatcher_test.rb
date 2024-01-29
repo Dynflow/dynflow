@@ -28,7 +28,7 @@ module Dynflow
               result = client_world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3)
               step = wait_for do
                 client_world.persistence.load_execution_plan(result.id)
-                    .steps_in_state(:suspended).first
+                            .steps_in_state(:suspended).first
               end
               client_world.event(step.execution_plan_id, step.id, 'finish')
               plan = result.finished.value

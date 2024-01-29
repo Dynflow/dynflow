@@ -44,7 +44,7 @@ module Dynflow
 
           it 'handles issues with loading the data' do
             world.persistence.adapter.send(:table, :step)
-              .where(execution_plan_uuid: execution_plan.id).delete
+                 .where(execution_plan_uuid: execution_plan.id).delete
             refute deserialized_execution_plan.valid?
             assert_equal Dynflow::Errors::DataConsistencyError, deserialized_execution_plan.exception.class
             [:label, :state, :started_at, :ended_at].each do |attr|
@@ -360,7 +360,7 @@ module Dynflow
           plan = world.plan(SingletonAction)
           _(plan.state).must_equal :planned
           lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                          .unique_filter plan.entry_action.class.name
+                        .unique_filter plan.entry_action.class.name
           _(world.coordinator.find_locks(lock_filter).count).must_equal 1
           plan = world.execute(plan.id).wait!.value
           _(plan.state).must_equal :stopped
@@ -372,7 +372,7 @@ module Dynflow
           plan = world.plan(SingletonAction, :fail => true)
           _(plan.state).must_equal :planned
           lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                          .unique_filter plan.entry_action.class.name
+                        .unique_filter plan.entry_action.class.name
           _(world.coordinator.find_locks(lock_filter).count).must_equal 1
           plan = world.execute(plan.id).wait!.value
           _(plan.state).must_equal :paused

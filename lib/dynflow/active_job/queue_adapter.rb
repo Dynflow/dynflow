@@ -14,7 +14,7 @@ module Dynflow
         def enqueue_at(job, timestamp)
           job.provider_job_id = job.job_id
           ::Rails.application.dynflow.world
-            .delay_with_options(id: job.provider_job_id,
+                 .delay_with_options(id: job.provider_job_id,
                                 action_class: JobWrapper,
                                 delay_options: { :start_at => Time.at(timestamp) },
                                 args: [job.serialize])

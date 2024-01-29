@@ -781,7 +781,7 @@ module Dynflow
             plan = world.plan(SingletonAction)
             _(plan.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                            .unique_filter plan.entry_action.class.name
+                          .unique_filter plan.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 1
             plan = world.execute(plan.id).wait!.value
             _(plan.state).must_equal :stopped
@@ -793,7 +793,7 @@ module Dynflow
             plan = world.plan(SingletonActionWithFinalize)
             _(plan.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan.entry_action.class.name
+                          .unique_filter plan.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 1
             plan = world.execute(plan.id).wait!.value
             _(plan.state).must_equal :stopped
@@ -805,7 +805,7 @@ module Dynflow
             plan = world.plan(SuspendedSingletonAction)
             _(plan.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan.entry_action.class.name
+                          .unique_filter plan.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 1
             future = world.execute(plan.id)
             wait_for do
@@ -851,7 +851,7 @@ module Dynflow
 
             # The lock was released when plan3 stopped
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan3.entry_action.class.name
+                          .unique_filter plan3.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter)).must_be :empty?
           end
 
@@ -860,7 +860,7 @@ module Dynflow
             plan1 = world.plan(BadAction, true)
             _(plan1.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan1.entry_action.class.name
+                          .unique_filter plan1.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 0
             plan2 = world.plan(BadAction, false)
             _(plan2.state).must_equal :planned

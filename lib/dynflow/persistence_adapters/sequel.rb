@@ -80,7 +80,7 @@ module Dynflow
 
       def find_execution_plan_statuses(options)
         plans = filter(:execution_plan, table(:execution_plan), options[:filters])
-                  .select(:uuid, :state, :result)
+                .select(:uuid, :state, :result)
 
         plans.each_with_object({}) do |current, acc|
           uuid = current.delete(:uuid)
@@ -492,12 +492,12 @@ module Dynflow
 
           if filters.key?('caller_execution_plan_id')
             data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid)
-                .select_all(TABLES[:execution_plan]).distinct
+                               .select_all(TABLES[:execution_plan]).distinct
           end
           if filters.key?('delayed')
             filters.delete('delayed')
             data_set = data_set.join_table(:inner, TABLES[:delayed], :execution_plan_uuid => :uuid)
-              .select_all(TABLES[:execution_plan]).distinct
+                               .select_all(TABLES[:execution_plan]).distinct
           end
         end
 

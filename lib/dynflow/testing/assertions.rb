@@ -26,7 +26,7 @@ module Dynflow
         Match! action.phase, Action::Plan
         Match! action.state, :success
         found = action.execution_plan.planned_plan_steps
-            .select { |a| a.is_a?(planned_action_class) }
+                      .select { |a| a.is_a?(planned_action_class) }
 
         assert(!found.empty?, "Action #{planned_action_class} was not planned")
         found
@@ -36,7 +36,7 @@ module Dynflow
         Match! action.phase, Action::Plan
         Match! action.state, :success
         found = action.execution_plan.planned_plan_steps
-            .select { |a| a.is_a?(planned_action_class) }
+                      .select { |a| a.is_a?(planned_action_class) }
 
         assert(found.empty?, "Action #{planned_action_class} was planned")
         found

@@ -17,7 +17,8 @@ module Dynflow
             plan_step_id:      step.id,
             run_step_id:       nil,
             finalize_step_id:  nil },
-          execution_plan.world).tap do |action|
+          execution_plan.world
+        ).tap do |action|
           action.set_plan_context(execution_plan, trigger, false)
         end
       end
@@ -33,7 +34,8 @@ module Dynflow
             run_step_id:       nil,
             finalize_step_id:  nil,
             input:             nil },
-          execution_plan.world)
+          execution_plan.world
+        )
       end
 
       # @return [Action::PlanPhase]
@@ -67,7 +69,8 @@ module Dynflow
                            finalize_step_id:  nil,
                            phase:             Action::Run,
                            input:             plan_action.input },
-                         plan_action.world)
+                         plan_action.world
+                       )
 
                      else
                        plan_action
@@ -94,7 +97,8 @@ module Dynflow
             finalize_step_id:  step.id,
             phase:             Action::Finalize,
             input:             run_action.input },
-          run_action.world)
+          run_action.world
+        )
 
         stubbing.call finalize_action if stubbing
         finalize_action.execute

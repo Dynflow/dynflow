@@ -36,7 +36,7 @@ class DaemonTest < ActiveSupport::TestCase
     @current_folder = File.expand_path('../support/rails/', __FILE__)
     ::ActiveRecord::Base.configurations = { 'development' => {} }
     ::Dynflow::Rails::Configuration.any_instance.stubs(:initialize_persistence)
-      .returns(WorldFactory.persistence_adapter)
+                                   .returns(WorldFactory.persistence_adapter)
   end
 
   teardown do
