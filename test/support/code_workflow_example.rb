@@ -4,7 +4,6 @@ require 'logger'
 
 module Support
   module CodeWorkflowExample
-
     class IncomingIssues < Dynflow::Action
       def plan(issues)
         issues.each do |issue|
@@ -286,6 +285,5 @@ module Support
         external_task && external_task[:progress].to_f / 100
       end
     end
-
   end
 end

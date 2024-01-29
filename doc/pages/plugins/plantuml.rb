@@ -14,7 +14,6 @@ require 'open3'
 require 'fileutils'
 
 module Jekyll
-
   class PlantUMLBlock < Liquid::Block
     attr_reader :config
 

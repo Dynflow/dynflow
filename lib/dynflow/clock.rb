@@ -125,5 +125,4 @@ module Dynflow
       end
     end
   end
-
 end

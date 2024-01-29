@@ -24,7 +24,6 @@ example_description = <<DESC
 DESC
 
 module OrchestrateEvented
-
   class CreateInfrastructure < Dynflow::Action
     def plan(get_stuck = false)
       sequence do
@@ -152,7 +151,6 @@ module OrchestrateEvented
       end
     end
   end
-
 end
 
 if $0 == __FILE__

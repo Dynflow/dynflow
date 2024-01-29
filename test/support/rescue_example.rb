@@ -4,7 +4,6 @@ require 'logger'
 
 module Support
   module RescueExample
-
     class ComplexActionWithSkip < Dynflow::Action
       def plan(error_state)
         sequence do
@@ -88,6 +87,5 @@ module Support
         end
       end
     end
-
   end
 end

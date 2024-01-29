@@ -93,6 +93,5 @@ module Dynflow
         assert_semaphore_state semaphore, 0, 0
       end
     end
-
   end
 end

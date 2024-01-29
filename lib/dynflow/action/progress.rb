@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Dynflow
-
   # Methods for specifying the progress of the action
   # the +*_progress+ methods should return number in 0..1.
   # The weight is there to increase/decrease the portion of this task
@@ -11,7 +10,6 @@ module Dynflow
   # The +*_progress+ is run only when the action is in running/suspend state. Otherwise
   # the progress is 1 for success/skipped actions and 0 for errorneous ones.
   module Action::Progress
-
     class Calculate < Middleware
       def run(*args)
         with_progress_calculation(*args) do

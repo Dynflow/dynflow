@@ -78,7 +78,6 @@ class CoordiationAdapterWithLog < Dynflow::CoordinatorAdapters::Sequel
 end
 
 module WorldFactory
-
   def self.created_worlds
     @created_worlds ||= []
   end
@@ -330,7 +329,6 @@ class ConcurrentRunTester
 end
 
 module PlanAssertions
-
   def inspect_flow(execution_plan, flow)
     out = "".dup
     inspect_subflow(out, execution_plan, flow, "".dup)

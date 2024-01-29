@@ -4,7 +4,6 @@ require_relative 'test_helper'
 
 module Dynflow
   module MiddlewareTest
-
     describe 'Middleware' do
       let(:world) { WorldFactory.create_world }
       let(:log) { Support::MiddlewareExample::LogMiddleware.log }

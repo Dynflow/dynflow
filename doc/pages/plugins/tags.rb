@@ -4,7 +4,6 @@ require 'nuggets/range/quantile'
 require 'erb'
 
 module Jekyll
-
   class Tagger < Generator
     safe true
 
@@ -95,7 +94,6 @@ module Jekyll
   end
 
   module Filters
-
     def tag_cloud(site)
       active_tag_data.map { |tag, set|
         tag_link(tag, tag_url(tag), :class => "set-#{set} label label-default")
@@ -131,5 +129,4 @@ module Jekyll
       site.config["tag_data"].reject { |tag, set| site.config["ignored_tags"].include? tag }
     end
   end
-
 end

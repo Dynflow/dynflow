@@ -8,7 +8,6 @@ require 'csv'
 # rubocop:disable Metrics/ClassLength
 module Dynflow
   module PersistenceAdapters
-
     Sequel.extension :migration
     Sequel.database_timezone = :utc
 

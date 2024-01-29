@@ -2,7 +2,6 @@
 
 module Dynflow
   module Flows
-
     class Abstract < Serializable
       include Algebrick::TypeCheck
 

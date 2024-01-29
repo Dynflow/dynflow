@@ -4,7 +4,6 @@ require 'dynflow/action/timeouts'
 
 module Dynflow
   module Action::Polling
-
     def self.included(base)
       base.send :include, Action::Timeouts
     end
@@ -117,6 +116,5 @@ module Dynflow
         raise error
       end
     end
-
   end
 end

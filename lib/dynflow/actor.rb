@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Dynflow
-
   FULL_BACKTRACE = %w[1 y yes].include?((ENV['DYNFLOW_FULL_BACKTRACE'] || '').downcase)
   BACKTRACE_LIMIT = begin
                       limit = ENV['DYNFLOW_BACKTRACE_LIMIT'].to_i

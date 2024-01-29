@@ -2,7 +2,6 @@
 
 module Dynflow
   module Utils
-
     require 'dynflow/utils/indifferent_hash'
     require 'dynflow/utils/priority_queue'
 

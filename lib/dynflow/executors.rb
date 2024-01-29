@@ -2,7 +2,6 @@
 
 module Dynflow
   module Executors
-
     require 'dynflow/executors/parallel'
 
     class << self

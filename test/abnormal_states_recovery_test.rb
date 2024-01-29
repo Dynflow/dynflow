@@ -6,7 +6,6 @@ require 'ostruct'
 
 module Dynflow
   module ConsistencyCheckTest
-
     describe "consistency check" do
       include TestHelpers
 

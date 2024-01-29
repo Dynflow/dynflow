@@ -3,7 +3,6 @@
 require_relative 'test_helper'
 
 module Dynflow
-
   CWE = Support::CodeWorkflowExample
 
   describe Testing do

@@ -75,7 +75,6 @@ module Dynflow
         Match! action.state, :success
         _(action.execution_plan.planned_finalize_steps).wont_include action
       end
-
     end
   end
 end
