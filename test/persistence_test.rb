@@ -172,26 +172,26 @@ module Dynflow
               _(loaded_plans).must_equal({ 'plan1' => { state: 'paused', result: nil} })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['paused'] })
-              _(loaded_plans).must_equal({"plan1"=>{:state=>"paused", :result=>nil},
-                                          "plan3"=>{:state=>"paused", :result=>nil},
-                                          "plan4"=>{:state=>"paused", :result=>nil}})
+              _(loaded_plans).must_equal({"plan1" => {:state => "paused", :result => nil},
+                                          "plan3" => {:state => "paused", :result => nil},
+                                          "plan4" => {:state => "paused", :result => nil}})
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped'] })
-              _(loaded_plans).must_equal({"plan2"=>{:state=>"stopped", :result=>nil}})
+              _(loaded_plans).must_equal({"plan2" => {:state => "stopped", :result => nil}})
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: [] })
               _(loaded_plans).must_equal({})
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped', 'paused'] })
-              _(loaded_plans).must_equal({"plan1"=>{:state=>"paused", :result=>nil},
-                                          "plan2"=>{:state=>"stopped", :result=>nil},
-                                          "plan3"=>{:state=>"paused", :result=>nil}, "plan4"=>{:state=>"paused", :result=>nil}})
+              _(loaded_plans).must_equal({"plan1" => {:state => "paused", :result => nil},
+                                          "plan2" => {:state => "stopped", :result => nil},
+                                          "plan3" => {:state => "paused", :result => nil}, "plan4" => {:state => "paused", :result => nil}})
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { 'state' => ['stopped', 'paused'] })
-              _(loaded_plans).must_equal({"plan1"=>{:state=>"paused", :result=>nil},
-                                          "plan2"=>{:state=>"stopped", :result=>nil},
-                                          "plan3"=>{:state=>"paused", :result=>nil},
-                                          "plan4"=>{:state=>"paused", :result=>nil}})
+              _(loaded_plans).must_equal({"plan1" => {:state => "paused", :result => nil},
+                                          "plan2" => {:state => "stopped", :result => nil},
+                                          "plan3" => {:state => "paused", :result => nil},
+                                          "plan4" => {:state => "paused", :result => nil}})
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { label: ['test1'], :delayed => true })
               _(loaded_plans).must_equal({})
@@ -283,7 +283,7 @@ module Dynflow
               actions = CSV.read(backup_dir + "/actions.csv", :headers => true)
               assert_equal 1, actions.count
               assert_equal 'plan1', actions.first.to_hash['execution_plan_uuid']
-              steps = CSV.read(backup_dir +"/steps.csv", :headers => true)
+              steps = CSV.read(backup_dir + "/steps.csv", :headers => true)
               assert_equal 1, steps.count
               assert_equal 'plan1', steps.first.to_hash['execution_plan_uuid']
             end
@@ -451,7 +451,7 @@ module Dynflow
           envelopes         = [client_envelope, executor_envelope]
 
           envelopes.each { |e| adapter.push_envelope(e) }
-          adapter.insert_coordinator_record({"class"=>"Dynflow::Coordinator::ExecutorWorld",
+          adapter.insert_coordinator_record({"class" => "Dynflow::Coordinator::ExecutorWorld",
                                              "id" => executor_world_id, "meta" => {}, "active" => true })
 
           assert_equal 1, adapter.prune_undeliverable_envelopes

@@ -71,7 +71,7 @@ module Dynflow
 
     # Returns the time to wait between two polling intervals.
     def poll_interval
-      interval_level = poll_attempts[:total]/attempts_before_next_interval
+      interval_level = poll_attempts[:total] / attempts_before_next_interval
       poll_intervals[interval_level] || poll_intervals.last
     end
 

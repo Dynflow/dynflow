@@ -38,7 +38,7 @@ module Dynflow
         @progress_done     = Type! progress_done, Numeric, NilClass
         @progress_weight   = Type! progress_weight, Numeric, NilClass
 
-        @queue             = Type! queue, Symbol, NilClass
+        @queue = Type! queue, Symbol, NilClass
 
         self.state = state.to_sym
 
@@ -163,7 +163,7 @@ module Dynflow
       private
 
       def with_meta_calculation(action, &block)
-        start       = Time.now.utc
+        start = Time.now.utc
         @started_at ||= start
         block.call
       ensure

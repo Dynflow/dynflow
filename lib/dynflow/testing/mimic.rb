@@ -18,7 +18,7 @@ module Dynflow
       end
 
       def mimic!(*types)
-        define =-> _ do
+        define = -> _ do
           define_method :mimic_types do
             types
           end

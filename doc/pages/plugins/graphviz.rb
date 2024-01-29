@@ -14,7 +14,7 @@ module Jekyll
     DOT_EXTS.unshift ''
     DOT_PATH = ENV['PATH'].split(File::PATH_SEPARATOR)
                           .map { |a| File.join a, DOT_EXEC }
-                          .map { |a| DOT_EXTS.map { |ex| a+ex } }.flatten
+                          .map { |a| DOT_EXTS.map { |ex| a + ex } }.flatten
                           .find { |c| File.executable_real? c }
     raise "not found a executable file: #{DOT_EXEC}" if DOT_PATH.nil?
     DOT_CMD = "#{DOT_PATH} #{DOT_OPTS}"

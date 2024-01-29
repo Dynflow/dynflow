@@ -83,9 +83,9 @@ module Dynflow
                    real_time         = 0.0,
                    execution_history = ExecutionHistory.new)
       id ||= SecureRandom.uuid
-      @id                = Type! id, String
-      @world             = Type! world, World
-      @label             = Type! label, String, NilClass
+      @id = Type! id, String
+      @world = Type! world, World
+      @label = Type! label, String, NilClass
       self.state         = state
       @run_flow          = Type! run_flow, Flows::Abstract
       @finalize_flow     = Type! finalize_flow, Flows::Abstract

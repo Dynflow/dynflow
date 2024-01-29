@@ -180,7 +180,7 @@ module Dynflow
           checked      = field_filter && field_filter.include?(value)
           %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{ "checked" if checked }/>#{value}}
         end.join(' ')
-        out        %= checkboxes
+        out %= checkboxes
         return out
       end
     end

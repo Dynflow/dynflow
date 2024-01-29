@@ -20,7 +20,7 @@ module Dynflow
     end
 
     def next
-      @cursor = 0 if @cursor > @data.size-1
+      @cursor = 0 if @cursor > @data.size - 1
       @data[@cursor]
     ensure
       @cursor += 1

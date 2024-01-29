@@ -498,7 +498,7 @@ module Dynflow
       end
 
       specify "it saves the information about number for sub plans in the output" do
-        _(execution_plan.entry_action.output).must_equal('total_count'   => 2,
+        _(execution_plan.entry_action.output).must_equal('total_count' => 2,
                                                       'failed_count'  => 0,
                                                       'success_count' => 2,
                                                       'pending_count' => 0)
@@ -506,7 +506,7 @@ module Dynflow
 
       specify "when a sub plan fails, the caller action fails as well" do
         FailureSimulator.fail_in_child_run = true
-        _(execution_plan.entry_action.output).must_equal('total_count'   => 2,
+        _(execution_plan.entry_action.output).must_equal('total_count' => 2,
                                                       'failed_count'  => 2,
                                                       'success_count' => 0,
                                                       'pending_count' => 0)

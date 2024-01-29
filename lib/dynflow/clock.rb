@@ -116,7 +116,7 @@ module Dynflow
 
     def ping(who, time, with_what = nil, where = :<<, optional: false)
       Type! time, Time, Numeric
-      time  = current_time + time if time.is_a? Numeric
+      time = current_time + time if time.is_a? Numeric
       if who.is_a?(Action::Suspended)
         who.plan_event(with_what, time, optional: optional)
       else

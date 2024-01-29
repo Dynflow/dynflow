@@ -5,9 +5,9 @@ $:.unshift(File.expand_path('../../lib', __FILE__))
 require 'dynflow'
 
 class ExampleHelper
-  CONSOLE_URL='http://localhost:4567'
-  DYNFLOW_URL="#{CONSOLE_URL}/dynflow"
-  SIDEKIQ_URL="#{CONSOLE_URL}/sidekiq"
+  CONSOLE_URL = 'http://localhost:4567'
+  DYNFLOW_URL = "#{CONSOLE_URL}/dynflow"
+  SIDEKIQ_URL = "#{CONSOLE_URL}/sidekiq"
 
   class << self
     def world

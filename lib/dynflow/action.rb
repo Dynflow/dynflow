@@ -124,12 +124,12 @@ module Dynflow
       @run_step_id       = Type! attributes.fetch(:run_step_id), Integer, NilClass
       @finalize_step_id  = Type! attributes.fetch(:finalize_step_id), Integer, NilClass
 
-      @execution_plan    = Type!(attributes.fetch(:execution_plan), ExecutionPlan) if phase? Present
+      @execution_plan = Type!(attributes.fetch(:execution_plan), ExecutionPlan) if phase? Present
 
       @caller_execution_plan_id  = Type!(attributes.fetch(:caller_execution_plan_id, nil), String, NilClass)
       @caller_action_id          = Type!(attributes.fetch(:caller_action_id, nil), Integer, NilClass)
 
-      getter =-> key, required do
+      getter = -> key, required do
         required ? attributes.fetch(key) : attributes.fetch(key, {})
       end
 
@@ -308,7 +308,7 @@ module Dynflow
     # @return [Array<Integer>] - ids of steps referenced from action
     def required_step_ids(input = self.input)
       results   = []
-      recursion =-> value do
+      recursion = -> value do
         case value
         when Hash
           value.values.each { |v| recursion.(v) }

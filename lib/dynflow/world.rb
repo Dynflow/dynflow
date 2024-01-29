@@ -87,7 +87,7 @@ module Dynflow
     end
 
     def update_register
-      @meta                     ||= @config.meta
+      @meta ||= @config.meta
       @meta['queues']           = @config.queues if @executor
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner

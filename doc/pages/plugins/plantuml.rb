@@ -31,7 +31,7 @@ module Jekyll
       if !File.exist?(filepath)
         plantuml_jar = File.expand_path(plantuml_jar_path)
         cmd = "java -Djava.awt.headless=true -jar " + plantuml_jar + dot_cmd + " -pipe > " + filepath
-        result, status = Open3.capture2e(cmd, :stdin_data=>code)
+        result, status = Open3.capture2e(cmd, :stdin_data => code)
         Jekyll.logger.debug(filepath + " -->\t" + status.inspect() + "\t" + result)
       end
 
