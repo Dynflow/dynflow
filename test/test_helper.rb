@@ -127,7 +127,7 @@ module WorldFactory
   def self.clean_coordinator_records
     persistence_adapter = WorldFactory.persistence_adapter
     persistence_adapter.find_coordinator_records({}).each do |w|
-      warn "Unexpected coordinator record: #{ w }"
+      warn "Unexpected coordinator record: #{w}"
       persistence_adapter.delete_coordinator_record(w[:class], w[:id])
     end
   end

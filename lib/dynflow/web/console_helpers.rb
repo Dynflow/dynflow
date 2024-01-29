@@ -178,7 +178,7 @@ module Dynflow
         checkboxes = values.map do |value|
           field_filter = filtering_options[:filters][field]
           checked      = field_filter && field_filter.include?(value)
-          %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{ "checked" if checked }/>#{value}}
+          %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{"checked" if checked}/>#{value}}
         end.join(' ')
         out %= checkboxes
         return out

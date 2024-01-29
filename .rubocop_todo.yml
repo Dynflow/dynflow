@@ -35,19 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 16
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: space, no_space
-Layout/SpaceInsideStringInterpolation:
-  Exclude:
-    - 'lib/dynflow/config.rb'
-    - 'lib/dynflow/connectors/database.rb'
-    - 'lib/dynflow/connectors/direct.rb'
-    - 'lib/dynflow/execution_history.rb'
-    - 'lib/dynflow/web/console_helpers.rb'
-    - 'test/test_helper.rb'
-
 # Offense count: 8
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.

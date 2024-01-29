@@ -29,7 +29,7 @@ module Dynflow
           if world = find_receiver(envelope)
             @connector.receive(world, envelope)
           else
-            log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
+            log(Logger::ERROR, "Receiver for envelope #{envelope} not found")
           end
         end
 

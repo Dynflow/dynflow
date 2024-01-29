@@ -22,7 +22,7 @@ module Dynflow
         def start
           @started.set true
           @thread = Thread.new do
-            @db.listen("world:#{ @world_id }", :loop => true) do
+            @db.listen("world:#{@world_id}", :loop => true) do
               if started?
                 @core << :check_inbox
               else

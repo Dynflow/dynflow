@@ -36,7 +36,7 @@ module Dynflow
     end
 
     def inspect
-      "ExecutionHistory: #{ @events.inspect }"
+      "ExecutionHistory: #{@events.inspect}"
     end
 
     def self.new_from_hash(value)
