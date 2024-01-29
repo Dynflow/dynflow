@@ -301,7 +301,7 @@ module Dynflow
             _(client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size).must_equal 2
 
             results = client_world.worlds_validity_check(true, :id => invalid_world.id)
-            _(results).must_equal(invalid_world.id =>  :invalidated)
+            _(results).must_equal(invalid_world.id => :invalidated)
             _(client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size).must_equal 1
           end
         end
