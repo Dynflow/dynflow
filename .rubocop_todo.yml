@@ -30,25 +30,11 @@ Layout/DotPosition:
     - 'test/rescue_test.rb'
     - 'test/web_console_test.rb'
 
-# Offense count: 137
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, empty_lines_except_namespace, empty_lines_special, no_empty_lines, beginning_only, ending_only
-Layout/EmptyLinesAroundClassBody:
-  Enabled: false
-
 # Offense count: 1
 # Cop supports --auto-correct.
 Layout/EmptyLinesAroundExceptionHandlingKeywords:
   Exclude:
     - 'test/test_helper.rb'
-
-# Offense count: 2
-# Cop supports --auto-correct.
-Layout/EmptyLinesAroundMethodBody:
-  Exclude:
-    - 'doc/pages/plugins/toc.rb'
-    - 'test/dispatcher_test.rb'
 
 # Offense count: 50
 # Cop supports --auto-correct.

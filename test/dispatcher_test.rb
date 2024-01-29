@@ -72,7 +72,6 @@ module Dynflow
             assert_plan_reexecuted(plan)
           end
         end
-
       end
 
       def self.supports_ping_pong
