@@ -78,12 +78,6 @@ Lint/RandOne:
 
 # Offense count: 1
 # Cop supports --auto-correct.
-Lint/RedundantCopDisableDirective:
-  Exclude:
-    - 'lib/dynflow/config.rb'
-
-# Offense count: 1
-# Cop supports --auto-correct.
 Lint/RedundantRequireStatement:
   Exclude:
     - 'lib/dynflow.rb'

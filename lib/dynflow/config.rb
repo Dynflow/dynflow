@@ -205,7 +205,7 @@ module Dynflow
                                                "it's #{ar_pool_size} but there is #{config_for_world.pool_size} " +
                                                'threads in Dynflow pool.'
           end
-        rescue ActiveRecord::ConnectionNotEstablished # rubocop:disable Lint/HandleExceptions
+        rescue ActiveRecord::ConnectionNotEstablished
           # If in tests or in an environment where ActiveRecord doesn't have a
           # real DB connection, we want to skip AR configuration altogether
         end
