@@ -18,7 +18,7 @@ module RedisMocks
   def reacquire_orchestrator_lock; end
 end
 
-::Dynflow::Executors::Sidekiq::Core.send(:prepend, RedisMocks)
+::Dynflow::Executors::Sidekiq::Core.prepend RedisMocks
 
 module Dynflow
   module ExecutorTest

@@ -79,10 +79,7 @@ module Dynflow
 
     class Railtie < ::Rails::Railtie
       config.before_initialize do
-        ::ActiveJob::QueueAdapters.send(
-          :include,
-          Dynflow::ActiveJob::QueueAdapters
-        )
+        ::ActiveJob::QueueAdapters.include Dynflow::ActiveJob::QueueAdapters
       end
     end
   end

@@ -91,15 +91,6 @@ Lint/ScriptPermission:
     - 'examples/memory_limit_watcher.rb'
     - 'examples/sub_plan_concurrency_control.rb'
 
-# Offense count: 4
-# Cop supports --auto-correct.
-Lint/SendWithMixinArgument:
-  Exclude:
-    - 'lib/dynflow.rb'
-    - 'lib/dynflow/debug/telemetry/persistence.rb'
-    - 'test/activejob_adapter_test.rb'
-    - 'test/executor_test.rb'
-
 # Offense count: 3
 Lint/ShadowingOuterLocalVariable:
   Exclude:

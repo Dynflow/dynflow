@@ -22,7 +22,7 @@ module Dynflow
     end
 
     before(:all) do
-      ::ActiveJob::QueueAdapters.send(:include, ::Dynflow::ActiveJob::QueueAdapters)
+      ::ActiveJob::QueueAdapters.include ::Dynflow::ActiveJob::QueueAdapters
       ::ActiveJob::Base.queue_adapter = :dynflow
       dynflow_mock = Minitest::Mock.new
       dynflow_mock.expect(:world, world)
