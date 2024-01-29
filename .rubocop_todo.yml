@@ -35,20 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 7
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces, SpaceBeforeBlockParameters.
-# SupportedStyles: space, no_space
-# SupportedStylesForEmptyBraces: space, no_space
-Layout/SpaceInsideBlockBraces:
-  Exclude:
-    - 'lib/dynflow/actor.rb'
-    - 'lib/dynflow/dispatcher/executor_dispatcher.rb'
-    - 'lib/dynflow/execution_plan.rb'
-    - 'lib/dynflow/middleware/resolver.rb'
-    - 'lib/dynflow/telemetry_adapters/statsd.rb'
-    - 'lib/dynflow/web.rb'
-
 # Offense count: 63
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, EnforcedStyleForEmptyBraces.

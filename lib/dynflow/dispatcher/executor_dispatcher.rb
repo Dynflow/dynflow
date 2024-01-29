@@ -10,7 +10,7 @@ module Dynflow
 
       def handle_request(envelope)
         match(envelope.message,
-          on(Planning) { perform_planning(envelope, envelope.message)},
+          on(Planning) { perform_planning(envelope, envelope.message) },
           on(Execution) { perform_execution(envelope, envelope.message) },
           on(Event)     { perform_event(envelope, envelope.message) },
           on(Status)    { get_execution_status(envelope, envelope.message) })

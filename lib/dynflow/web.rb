@@ -8,7 +8,7 @@ require 'yaml'
 module Dynflow
   module Web
     def self.setup(&block)
-      console = Sinatra.new(Web::Console) { instance_exec(&block)}
+      console = Sinatra.new(Web::Console) { instance_exec(&block) }
       Rack::Builder.app do
         run Rack::URLMap.new('/' => console)
       end

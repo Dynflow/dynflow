@@ -238,7 +238,7 @@ module Dynflow
     end
 
     def steps_in_state(*states)
-      self.steps.values.find_all {|step| states.include?(step.state) }
+      self.steps.values.find_all { |step| states.include?(step.state) }
     end
 
     def generate_action_id
