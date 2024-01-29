@@ -25,8 +25,8 @@ module Dynflow
       def assert_action_planned(action, planned_action_class)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        found = action.execution_plan.planned_plan_steps.
-            select { |a| a.is_a?(planned_action_class) }
+        found = action.execution_plan.planned_plan_steps
+            .select { |a| a.is_a?(planned_action_class) }
 
         assert(!found.empty?, "Action #{planned_action_class} was not planned")
         found
@@ -35,8 +35,8 @@ module Dynflow
       def refute_action_planned(action, planned_action_class)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        found = action.execution_plan.planned_plan_steps.
-            select { |a| a.is_a?(planned_action_class) }
+        found = action.execution_plan.planned_plan_steps
+            .select { |a| a.is_a?(planned_action_class) }
 
         assert(found.empty?, "Action #{planned_action_class} was planned")
         found

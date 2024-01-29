@@ -120,8 +120,8 @@ module Dynflow
           it 'skips the action and continues' do
             _(rescued_plan.state).must_equal :stopped
             _(rescued_plan.result).must_equal :warning
-            _(rescued_plan.entry_action.output[:message]).
-              must_equal "skipped because some error as you wish"
+            _(rescued_plan.entry_action.output[:message])
+              .must_equal "skipped because some error as you wish"
           end
         end
 

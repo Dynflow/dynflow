@@ -491,13 +491,13 @@ module Dynflow
           end
 
           if filters.key?('caller_execution_plan_id')
-            data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
-                select_all(TABLES[:execution_plan]).distinct
+            data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid)
+                .select_all(TABLES[:execution_plan]).distinct
           end
           if filters.key?('delayed')
             filters.delete('delayed')
-            data_set = data_set.join_table(:inner, TABLES[:delayed], :execution_plan_uuid => :uuid).
-              select_all(TABLES[:execution_plan]).distinct
+            data_set = data_set.join_table(:inner, TABLES[:delayed], :execution_plan_uuid => :uuid)
+              .select_all(TABLES[:execution_plan]).distinct
           end
         end
 

@@ -33,8 +33,8 @@ module Dynflow
       return @world if @world
 
       if config.lazy_initialization && defined?(::PhusionPassenger)
-        config.dynflow_logger.
-          warn('Dynflow: lazy loading with PhusionPassenger might lead to unexpected results')
+        config.dynflow_logger
+          .warn('Dynflow: lazy loading with PhusionPassenger might lead to unexpected results')
       end
       init_world.tap do |world|
         @world = world

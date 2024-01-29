@@ -13,9 +13,9 @@ module Dynflow
     let(:world) { WorldFactory.create_world }
 
     let :execution_plan_id do
-      world.trigger(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123').
-          tap { |o| o.finished.wait }.
-          id
+      world.trigger(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+          .tap { |o| o.finished.wait }
+          .id
     end
 
     let :app do

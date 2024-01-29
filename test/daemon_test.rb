@@ -35,8 +35,8 @@ class DaemonTest < ActiveSupport::TestCase
     @daemon.stubs(:sleep).returns(true) # don't pause the execution
     @current_folder = File.expand_path('../support/rails/', __FILE__)
     ::ActiveRecord::Base.configurations = { 'development' => {} }
-    ::Dynflow::Rails::Configuration.any_instance.stubs(:initialize_persistence).
-      returns(WorldFactory.persistence_adapter)
+    ::Dynflow::Rails::Configuration.any_instance.stubs(:initialize_persistence)
+      .returns(WorldFactory.persistence_adapter)
   end
 
   teardown do

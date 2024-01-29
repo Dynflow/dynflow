@@ -14,22 +14,6 @@ Layout/BlockAlignment:
   Exclude:
     - 'test/test_helper.rb'
 
-# Offense count: 16
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: leading, trailing
-Layout/DotPosition:
-  Exclude:
-    - 'lib/dynflow/action.rb'
-    - 'lib/dynflow/persistence.rb'
-    - 'lib/dynflow/persistence_adapters/sequel.rb'
-    - 'lib/dynflow/rails.rb'
-    - 'lib/dynflow/testing/assertions.rb'
-    - 'test/daemon_test.rb'
-    - 'test/dispatcher_test.rb'
-    - 'test/rescue_test.rb'
-    - 'test/web_console_test.rb'
-
 # Offense count: 7
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, IndentationWidth.
