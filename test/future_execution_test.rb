@@ -98,7 +98,7 @@ module Dynflow
           delayed_plan.timeout
           _(execution_plan.state).must_equal :stopped
           _(execution_plan.result).must_equal :error
-          _(execution_plan.errors.first.message).must_match /could not be started before set time/
+          _(execution_plan.errors.first.message).must_match(/could not be started before set time/)
           _(history_names.call(execution_plan)).must_equal %W(delay timeout)
         end
       end

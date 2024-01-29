@@ -61,7 +61,7 @@ module Jekyll
       code = add_desc_attrs code
       code = insert_desc_elements code
       code = wrap_with_div code
-      code = code.gsub /<polygon fill="white" stroke="none"/, '<polygon fill="transparent" stroke="none"'
+      code = code.gsub(/<polygon fill="white" stroke="none"/, '<polygon fill="transparent" stroke="none"')
       code
     end
 

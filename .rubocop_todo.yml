@@ -35,14 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 3
-# Cop supports --auto-correct.
-Lint/AmbiguousRegexpLiteral:
-  Exclude:
-    - 'doc/pages/plugins/graphviz.rb'
-    - 'test/dispatcher_test.rb'
-    - 'test/future_execution_test.rb'
-
 # Offense count: 8
 # Configuration parameters: AllowSafeAssignment.
 Lint/AssignmentInCondition:
