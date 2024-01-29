@@ -48,12 +48,6 @@ Lint/AssignmentInCondition:
     - 'lib/dynflow/web/console_helpers.rb'
     - 'test/test_helper.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Lint/DisjunctiveAssignmentInConstructor:
-  Exclude:
-    - 'lib/dynflow/coordinator.rb'
-
 # Offense count: 4
 Lint/DuplicateMethods:
   Exclude:
