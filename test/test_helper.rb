@@ -14,7 +14,6 @@ $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
 require 'dynflow'
 require 'dynflow/testing'
 begin require 'pry'; rescue LoadError; nil end
-
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'

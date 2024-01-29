@@ -30,12 +30,6 @@ Layout/DotPosition:
     - 'test/rescue_test.rb'
     - 'test/web_console_test.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Layout/EmptyLinesAroundExceptionHandlingKeywords:
-  Exclude:
-    - 'test/test_helper.rb'
-
 # Offense count: 7
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, IndentationWidth.
