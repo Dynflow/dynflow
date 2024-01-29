@@ -2,7 +2,6 @@
 
 require 'apipie-params'
 require 'algebrick'
-require 'thread'
 require 'set'
 require 'base64'
 require 'concurrent'

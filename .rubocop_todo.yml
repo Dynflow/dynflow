@@ -76,12 +76,6 @@ Lint/RandOne:
   Exclude:
     - 'examples/orchestrate_evented.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Lint/RedundantRequireStatement:
-  Exclude:
-    - 'lib/dynflow.rb'
-
 # Offense count: 3
 Lint/RescueException:
   Exclude:
