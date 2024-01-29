@@ -35,19 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 9
-# Cop supports --auto-correct.
-Lint/AmbiguousOperator:
-  Exclude:
-    - 'lib/dynflow/debug/telemetry/persistence.rb'
-    - 'lib/dynflow/telemetry.rb'
-    - 'lib/dynflow/testing/factories.rb'
-    - 'lib/dynflow/testing/mimic.rb'
-    - 'test/action_test.rb'
-    - 'test/clock_test.rb'
-    - 'test/concurrency_control_test.rb'
-    - 'test/support/middleware_example.rb'
-
 # Offense count: 3
 # Cop supports --auto-correct.
 Lint/AmbiguousRegexpLiteral:

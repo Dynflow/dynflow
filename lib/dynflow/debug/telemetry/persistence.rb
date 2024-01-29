@@ -33,7 +33,7 @@ module Dynflow
 
         methods.each do |name|
           define_method(name) do |*args|
-            Dynflow::Telemetry.measure(:dynflow_persistence, :method => name, :world => @world.id) { super *args }
+            Dynflow::Telemetry.measure(:dynflow_persistence, :method => name, :world => @world.id) { super(*args) }
           end
         end
       end

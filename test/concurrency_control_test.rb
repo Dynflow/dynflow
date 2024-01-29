@@ -101,7 +101,7 @@ module Dynflow
 
           def initialize(*args)
             @running = [0]
-            super *args
+            super(*args)
           end
 
           def release(*args)

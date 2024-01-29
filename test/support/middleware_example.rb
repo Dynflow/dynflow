@@ -17,7 +17,7 @@ module Support
 
       def delay(*args)
         log 'before_delay'
-        pass *args
+        pass(*args)
         log 'after_delay'
       end
 

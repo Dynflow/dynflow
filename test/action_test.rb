@@ -406,7 +406,7 @@ module Dynflow
 
         def resume(*args)
           output[:custom_resume] = true
-          super *args
+          super(*args)
         end
       end
 

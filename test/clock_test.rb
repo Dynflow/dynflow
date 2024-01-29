@@ -48,6 +48,6 @@ describe clock_class do
         assert_equal (0...times).to_a, Array.new(times) { q.pop }.sort
       end
     end
-    threads.each &:join
+    threads.each(&:join)
   end
 end
