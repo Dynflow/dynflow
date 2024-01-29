@@ -20,22 +20,22 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.3.0'
 
-  s.add_dependency "multi_json"
-  s.add_dependency "msgpack", '~> 1.3', '>= 1.3.3'
-  s.add_dependency "apipie-params"
   s.add_dependency "algebrick", '~> 0.7.0'
+  s.add_dependency "apipie-params"
   s.add_dependency "concurrent-ruby", '~> 1.1.3'
   s.add_dependency "concurrent-ruby-edge", '~> 0.6.0'
+  s.add_dependency "msgpack", '~> 1.3', '>= 1.3.3'
+  s.add_dependency "multi_json"
   s.add_dependency "sequel", '>= 4.0.0'
 
-  s.add_development_dependency "rake"
-  s.add_development_dependency "rack-test"
+  s.add_development_dependency 'activejob'
+  s.add_development_dependency "activerecord"
   s.add_development_dependency "minitest", "< 5.19"
   s.add_development_dependency "minitest-reporters"
   s.add_development_dependency "minitest-stub-const"
-  s.add_development_dependency "activerecord"
-  s.add_development_dependency 'activejob'
-  s.add_development_dependency "sqlite3"
-  s.add_development_dependency "sinatra"
   s.add_development_dependency 'mocha'
+  s.add_development_dependency "rack-test"
+  s.add_development_dependency "rake"
+  s.add_development_dependency "sinatra"
+  s.add_development_dependency "sqlite3"
 end
