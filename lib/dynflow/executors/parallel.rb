@@ -24,7 +24,7 @@ module Dynflow
         accepted = @core.ask([:handle_execution, execution_plan_id, finished])
         accepted.value! if wait_for_acceptance
         finished
-      rescue Concurrent::Actor::ActorTerminated => error
+      rescue Concurrent::Actor::ActorTerminated
         dynflow_error = Dynflow::Error.new('executor terminated')
         finished.reject dynflow_error unless finished.resolved?
         raise dynflow_error

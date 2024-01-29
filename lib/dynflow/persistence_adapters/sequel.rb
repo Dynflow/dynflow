@@ -99,7 +99,7 @@ module Dynflow
             backup_to_csv(:step, steps, backup_dir, 'steps.csv') if backup_dir
             steps.delete
 
-            output_chunks = table(:output_chunk).where(execution_plan_uuid: uuids).delete
+            table(:output_chunk).where(execution_plan_uuid: uuids).delete
 
             actions = table(:action).where(execution_plan_uuid: uuids)
             backup_to_csv(:action, actions, backup_dir, 'actions.csv') if backup_dir

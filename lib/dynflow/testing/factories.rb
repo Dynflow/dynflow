@@ -39,7 +39,7 @@ module Dynflow
       def plan_action(plan_action, *args, &block)
         Match! plan_action.phase, Action::Plan
 
-        plan_action.execute *args, &block
+        plan_action.execute(*args, &block)
         raise plan_action.error if plan_action.error
         plan_action
       end

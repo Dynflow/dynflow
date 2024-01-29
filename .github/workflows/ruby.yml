@@ -23,7 +23,7 @@ jobs:
           ruby-version: 2.7
       - name: Setup
         run: |
-          gem install bundler
+          gem install bundler -v 2.4.22
           bundle install --jobs=3 --retry=3
       - name: Run rubocop
         run: bundle exec rubocop
