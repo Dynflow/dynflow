@@ -13,7 +13,7 @@ module Dynflow
 
     module Timer
       def self.[](*fields)
-        super(*fields).tap { |v| Match! v.who, -> who { who.respond_to? v.where } }
+        super(*fields).tap { |v| Match! v.who, ->who { who.respond_to? v.where } }
       end
 
       include Comparable
