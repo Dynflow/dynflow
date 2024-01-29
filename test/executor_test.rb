@@ -494,7 +494,7 @@ module Dynflow
             13: Triage(success) {\"author\"=>\"John Doe\", \"text\"=>\"ok\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
             16: UpdateIssue(success) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\", \"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"} --> {}
             18: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
-          EXECUTED_RUN_FLOW
+            EXECUTED_RUN_FLOW
           end
 
         end
@@ -533,7 +533,7 @@ module Dynflow
               14: Triage(success) {\"author\"=>\"John Doe\", \"text\"=>\"ok\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
               19: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
               20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling in finalize\"}]} --> {}
-          EXECUTED_RUN_FLOW
+            EXECUTED_RUN_FLOW
           end
 
         end
@@ -572,7 +572,7 @@ module Dynflow
             13: Triage(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"} --> {}
             16: UpdateIssue(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\", \"assignee\"=>Step(13).output[:classification][:assignee], \"severity\"=>Step(13).output[:classification][:severity]} --> {}
             18: NotifyAssignee(skipped) {\"triage\"=>Step(13).output} --> {}
-          EXECUTED_RUN_FLOW
+            EXECUTED_RUN_FLOW
 
             assert_finalize_flow <<-FINALIZE_FLOW, resumed_execution_plan
         Dynflow::Flows::Sequence
@@ -581,7 +581,7 @@ module Dynflow
           14: Triage(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"} --> {}
           19: NotifyAssignee(skipped) {\"triage\"=>Step(13).output} --> {}
           20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"}]} --> {}
-          FINALIZE_FLOW
+            FINALIZE_FLOW
 
           end
         end

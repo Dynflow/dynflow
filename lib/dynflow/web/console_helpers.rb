@@ -37,7 +37,7 @@ module Dynflow
           pretty_value = prettify_value(value)
           <<-HTML
               <pre class="prettyprint lang-yaml">#{h(pretty_value)}</pre>
-            HTML
+          HTML
         else
           ""
         end
@@ -91,7 +91,7 @@ module Dynflow
                 <b>#{h(label)}</b>
             #{value_html}
               </p>
-            HTML
+          HTML
         else
           ""
         end

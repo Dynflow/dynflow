@@ -14,13 +14,6 @@ Layout/BlockAlignment:
   Exclude:
     - 'test/test_helper.rb'
 
-# Offense count: 6
-# Cop supports --auto-correct.
-Layout/ClosingHeredocIndentation:
-  Exclude:
-    - 'lib/dynflow/web/console_helpers.rb'
-    - 'test/executor_test.rb'
-
 # Offense count: 16
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.
