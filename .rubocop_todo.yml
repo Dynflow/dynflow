@@ -35,12 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 1
-# Cop supports --auto-correct.
-Layout/LeadingEmptyLines:
-  Exclude:
-    - 'lib/dynflow/web/console.rb'
-
 # Offense count: 6
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.
