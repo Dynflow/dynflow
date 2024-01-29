@@ -10,7 +10,6 @@ module Dynflow
     include Testing
 
     describe 'testing' do
-
       specify '#plan_action' do
         input  = { 'input' => 'input' }
         action = create_and_plan_action Support::DummyExample::WeightedPolling, input
@@ -101,7 +100,6 @@ module Dynflow
     end
 
     describe 'testing examples' do
-
       describe CWE::Commit do
         it 'plans' do
           action = create_and_plan_action CWE::Commit, sha = 'commit-sha'

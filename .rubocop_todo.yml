@@ -30,13 +30,6 @@ Layout/DotPosition:
     - 'test/rescue_test.rb'
     - 'test/web_console_test.rb'
 
-# Offense count: 77
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: empty_lines, no_empty_lines
-Layout/EmptyLinesAroundBlockBody:
-  Enabled: false
-
 # Offense count: 137
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.

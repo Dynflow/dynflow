@@ -74,9 +74,7 @@ module Dynflow
         end
 
         describe "execution plan state" do
-
           describe "after successful planning" do
-
             let :execution_plan do
               world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
             end
@@ -103,7 +101,6 @@ module Dynflow
           end
 
           describe "after error in planning" do
-
             class FailingAction < Dynflow::Action
               def plan
                 raise "I failed"
@@ -117,7 +114,6 @@ module Dynflow
             it "is stopped" do
               _(execution_plan.state).must_equal :stopped
             end
-
           end
 
           describe "when being executed" do
@@ -169,7 +165,6 @@ module Dynflow
         end
 
         describe "execution of run flow" do
-
           before do
             TestExecutionLog.setup
           end
@@ -359,11 +354,9 @@ module Dynflow
                 assert_equal :success, ep.run_steps.first.state
               end
             end
-
           end
 
           describe "action with empty flows" do
-
             let :execution_plan do
               world.plan(Support::CodeWorkflowExample::Dummy, { :text => "dummy" }).tap do |plan|
                 assert_equal plan.run_flow.size, 0
@@ -382,11 +375,9 @@ module Dynflow
               world.execute(execution_plan.id)
               assert_raises(Dynflow::Error) { world.execute(execution_plan.id).value! }
             end
-
           end
 
           describe 'action with empty run flow but some finalize flow' do
-
             let :execution_plan do
               world.plan(Support::CodeWorkflowExample::DummyWithFinalize, { :text => "dummy" }).tap do |plan|
                 assert_equal plan.run_flow.size, 0
@@ -398,7 +389,6 @@ module Dynflow
               _(result.result).must_equal :success
               _(result.state).must_equal :stopped
             end
-
           end
 
           describe 'running' do
@@ -420,7 +410,6 @@ module Dynflow
               EXECUTED_RUN_FLOW
             end
           end
-
         end
 
         describe "execution of finalize flow" do
@@ -457,7 +446,6 @@ module Dynflow
               _(TestExecutionLog.finalize.size).must_equal 0
             end
           end
-
         end
 
         describe "re-execution of run flow after fix in run phase" do
@@ -498,11 +486,9 @@ module Dynflow
             18: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
             EXECUTED_RUN_FLOW
           end
-
         end
 
         describe "re-execution of run flow after fix in finalize phase" do
-
           after do
             TestExecutionLog.teardown
           end
@@ -537,11 +523,9 @@ module Dynflow
               20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling in finalize\"}]} --> {}
             EXECUTED_RUN_FLOW
           end
-
         end
 
         describe "re-execution of run flow after skipping" do
-
           after do
             TestExecutionLog.teardown
           end
@@ -584,7 +568,6 @@ module Dynflow
           19: NotifyAssignee(skipped) {\"triage\"=>Step(13).output} --> {}
           20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"}]} --> {}
             FINALIZE_FLOW
-
           end
         end
 
@@ -620,7 +603,6 @@ module Dynflow
           end
 
           describe 'what_is_next with errors' do
-
             it "doesn't return next steps if requirements failed" do
               assert_next_steps([4, 13])
               assert_next_steps([], 4, false)
@@ -634,7 +616,6 @@ module Dynflow
               assert manager.done?
             end
           end
-
         end
 
         describe 'Pool::JobStorage' do
@@ -676,7 +657,6 @@ module Dynflow
             assert_nil storage.pop
           end
         end
-
       end
 
       describe 'termination' do

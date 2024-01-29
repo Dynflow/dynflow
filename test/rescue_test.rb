@@ -5,7 +5,6 @@ require_relative 'test_helper'
 module Dynflow
   module RescueTest
     describe 'on error' do
-
       Example = Support::RescueExample
 
       let(:world) { WorldFactory.create_world }
@@ -22,7 +21,6 @@ module Dynflow
 
       describe 'no auto rescue' do
         describe 'of simple skippable action in run phase' do
-
           let :execution_plan do
             execute(Example::ActionWithSkip, 1, :error_on_run)
           end
@@ -37,7 +35,6 @@ module Dynflow
         end
 
         describe 'of simple skippable action in finalize phase' do
-
           let :execution_plan do
             execute(Example::ActionWithSkip, 1, :error_on_finalize)
           end
@@ -52,7 +49,6 @@ module Dynflow
         end
 
         describe 'of complex action with skips in run phase' do
-
           let :execution_plan do
             execute(Example::ComplexActionWithSkip, :error_on_run)
           end
@@ -67,7 +63,6 @@ module Dynflow
         end
 
         describe 'of complex action with skips in finalize phase' do
-
           let :execution_plan do
             execute(Example::ComplexActionWithSkip, :error_on_finalize)
           end
@@ -82,7 +77,6 @@ module Dynflow
         end
 
         describe 'of complex action without skips' do
-
           let :execution_plan do
             execute(Example::ComplexActionWithoutSkip, :error_on_run)
           end
@@ -97,7 +91,6 @@ module Dynflow
         end
 
         describe 'of complex action with fail' do
-
           let :execution_plan do
             execute(Example::ComplexActionWithFail, :error_on_run)
           end
@@ -113,7 +106,6 @@ module Dynflow
       end
 
       describe 'auto rescue' do
-
         let(:world) do
           WorldFactory.create_world do |config|
             config.auto_rescue = true
@@ -216,7 +208,6 @@ module Dynflow
             _(execution_plan.execution_history.map { |h| [h.name, h.world_id] }).must_equal(expected_history)
           end
         end
-
       end
     end
   end

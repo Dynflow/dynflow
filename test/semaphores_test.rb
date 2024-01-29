@@ -5,7 +5,6 @@ require_relative 'test_helper'
 module Dynflow
   module SemaphoresTest
     describe ::Dynflow::Semaphores::Stateful do
-
       let(:semaphore_class) { ::Dynflow::Semaphores::Stateful }
       let(:tickets_count) { 5 }
 
@@ -42,7 +41,6 @@ module Dynflow
         waiting = semaphore.get_waiting
         _(waiting).must_equal 3
       end
-
     end
 
     describe ::Dynflow::Semaphores::Dummy do

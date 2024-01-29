@@ -79,7 +79,6 @@ module Dynflow
             WorldFactory.create_world.tap do |world|
               world.middleware.use(Support::MiddlewareExample::AnotherLogRunMiddleware,
                 after: Support::MiddlewareExample::LogRunMiddleware)
-
             end
           end
 
@@ -184,7 +183,6 @@ module Dynflow
           _(presenter_without_middleware.input['text']).must_equal('Lord Voldemort is comming')
         end
       end
-
     end
   end
 end

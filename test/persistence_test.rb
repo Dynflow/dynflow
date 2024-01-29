@@ -7,7 +7,6 @@ require 'ostruct'
 module Dynflow
   module PersistenceTest
     describe 'persistence adapters' do
-
       let :execution_plans_data do
         [{ id: 'plan1', :label => 'test1', root_plan_step_id: 1, class: 'Dynflow::ExecutionPlan', state: 'paused' },
          { id: 'plan2', :label => 'test2', root_plan_step_id: 1, class: 'Dynflow::ExecutionPlan', state: 'stopped' },

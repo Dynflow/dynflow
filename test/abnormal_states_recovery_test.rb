@@ -8,7 +8,6 @@ module Dynflow
   module ConsistencyCheckTest
 
     describe "consistency check" do
-
       include TestHelpers
 
       def with_invalidation_while_executing(finish)
@@ -44,7 +43,6 @@ module Dynflow
       let(:client_world_2) { create_world(false) }
 
       describe "for plans assigned to invalid world" do
-
         before do
           # mention the executors to make sure they are initialized
           [executor_world, executor_world_2]
@@ -188,7 +186,6 @@ module Dynflow
       end
 
       describe 'auto execute' do
-
         before do
           client_world.persistence.delete_execution_plans({})
         end

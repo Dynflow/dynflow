@@ -6,7 +6,6 @@ require 'logger'
 clock_class = Dynflow::Clock
 
 describe clock_class do
-
   let(:clock) { clock_class.spawn 'clock' }
 
   it 'refuses who without #<< method' do
@@ -51,5 +50,4 @@ describe clock_class do
     end
     threads.each &:join
   end
-
 end

@@ -5,11 +5,9 @@ require 'mocha/minitest'
 
 module Dynflow
   describe 'action' do
-
     let(:world) { WorldFactory.create_world }
 
     describe Action::Missing do
-
       let :action_data do
         { class:             'RenamedAction',
           id:                1,
@@ -33,7 +31,6 @@ module Dynflow
     end
 
     describe 'children' do
-
       smart_action_class   = Class.new(Dynflow::Action)
       smarter_action_class = Class.new(smart_action_class)
 
@@ -51,7 +48,6 @@ module Dynflow
     end
 
     describe Action::Present do
-
       let :execution_plan do
         result = world.trigger(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         _(result).must_be :planned?
@@ -75,7 +71,6 @@ module Dynflow
     end
 
     describe 'serialization' do
-
       include Testing
 
       it 'fails when input is not serializable' do
@@ -383,7 +378,6 @@ module Dynflow
     end
 
     describe Action::WithSubPlans do
-
       class FailureSimulator
         class << self
           attr_accessor :fail_in_child_plan, :fail_in_child_run

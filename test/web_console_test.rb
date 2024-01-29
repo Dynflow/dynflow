@@ -9,7 +9,6 @@ require 'rack/test'
 
 module Dynflow
   describe 'web console' do
-
     include Rack::Test::Methods
     let(:world) { WorldFactory.create_world }
 

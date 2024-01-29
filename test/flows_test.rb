@@ -5,7 +5,6 @@ require 'mocha/minitest'
 
 module Dynflow
   describe 'flow' do
-
     class TestRegistry < Flows::Registry
       class << self
         def reset!

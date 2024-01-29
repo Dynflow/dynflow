@@ -5,7 +5,6 @@ require_relative 'test_helper'
 module Dynflow
   module DispatcherTest
     describe "dispatcher" do
-
       include TestHelpers
 
       let(:persistence_adapter) { WorldFactory.persistence_adapter }

@@ -10,7 +10,6 @@ module Dynflow
       include Dynflow::Testing::Factories
 
       describe 'action scheduling' do
-
         before do
           @start_at = Time.now.utc + 180
           world.persistence.delete_delayed_plans({})
@@ -102,7 +101,6 @@ module Dynflow
           _(execution_plan.errors.first.message).must_match /could not be started before set time/
           _(history_names.call(execution_plan)).must_equal %W(delay timeout)
         end
-
       end
 
       describe 'polling delayed executor' do

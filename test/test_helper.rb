@@ -302,7 +302,6 @@ events_test = -> do
       wait_method.bind(self).call(timeout || default_timeout)
     end
   end
-
 end
 
 events_test.call

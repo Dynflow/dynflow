@@ -5,7 +5,6 @@ require_relative 'test_helper'
 module Dynflow
   module ExecutionPlanTest
     describe ExecutionPlan do
-
       include PlanAssertions
 
       let(:world) { WorldFactory.create_world }
@@ -16,7 +15,6 @@ module Dynflow
       end
 
       describe 'serialization' do
-
         let :execution_plan do
           world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
@@ -26,7 +24,6 @@ module Dynflow
         end
 
         describe 'serialized execution plan' do
-
           before { execution_plan.save }
           after { world.persistence.delete_execution_plans(:uuid => execution_plan.id) }
 
@@ -64,9 +61,7 @@ module Dynflow
               deserialized_execution_plan.execution_history.events,
               "invalid plan is supposed to still store execution history"
           end
-
         end
-
       end
 
       describe '#label' do
@@ -84,24 +79,20 @@ module Dynflow
         end
       end
       describe '#result' do
-
         let :execution_plan do
           world.plan(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
         end
 
         describe 'for error in planning phase' do
-
           before { execution_plan.steps[2].set_state :error, true }
 
           it 'should be :error' do
             _(execution_plan.result).must_equal :error
             _(execution_plan.error?).must_equal true
           end
-
         end
 
         describe 'for error in running phase' do
-
           before do
             step_id = execution_plan.run_flow.all_step_ids[2]
             execution_plan.steps[step_id].set_state :error, true
@@ -110,11 +101,9 @@ module Dynflow
           it 'should be :error' do
             _(execution_plan.result).must_equal :error
           end
-
         end
 
         describe 'for pending step in running phase' do
-
           before do
             step_id = execution_plan.run_flow.all_step_ids[2]
             execution_plan.steps[step_id].set_state :pending, true
@@ -123,11 +112,9 @@ module Dynflow
           it 'should be :pending' do
             _(execution_plan.result).must_equal :pending
           end
-
         end
 
         describe 'for all steps successful or skipped' do
-
           before do
             execution_plan.run_flow.all_step_ids.each_with_index do |step_id, index|
               step = execution_plan.steps[step_id]
@@ -138,9 +125,7 @@ module Dynflow
           it 'should be :warning' do
             _(execution_plan.result).must_equal :warning
           end
-
         end
-
       end
 
       describe 'sub plans' do
@@ -172,11 +157,9 @@ module Dynflow
                   NotifyAssignee
           PLAN_STEPS
         end
-
       end
 
       describe 'persisted action' do
-
         let :execution_plan do
           world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         end
@@ -207,7 +190,6 @@ module Dynflow
       end
 
       describe 'planning algorithm' do
-
         describe 'single dependencies' do
           let :execution_plan do
             world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
@@ -226,7 +208,6 @@ module Dynflow
                   18: NotifyAssignee(pending) {"triage"=>Step(13).output}
             RUN_FLOW
           end
-
         end
 
         describe 'error in planning phase' do
@@ -287,7 +268,6 @@ module Dynflow
         end
 
         describe 'finalize flow' do
-
           let :execution_plan do
             world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
           end
@@ -302,7 +282,6 @@ module Dynflow
                 20: IncomingIssues(pending) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"Internal server error\"}]}
             RUN_FLOW
           end
-
         end
       end
 
@@ -356,7 +335,6 @@ module Dynflow
       end
 
       describe ExecutionPlan::Steps::Error do
-
         it "doesn't fail when deserializing with missing class" do
           error = ExecutionPlan::Steps::Error.new_from_hash(exception_class: "RenamedError",
                                                             message: "This errror is not longer here",
@@ -365,7 +343,6 @@ module Dynflow
           _(error.exception_class.to_s).must_equal "Dynflow::Errors::UnknownError[RenamedError]"
           _(error.exception.inspect).must_equal "Dynflow::Errors::UnknownError[RenamedError]: This errror is not longer here"
         end
-
       end
 
       describe 'with singleton actions' do
