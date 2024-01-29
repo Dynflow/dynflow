@@ -35,21 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 8
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: final_newline, final_blank_line
-Layout/TrailingEmptyLines:
-  Exclude:
-    - 'lib/dynflow/action/format.rb'
-    - 'lib/dynflow/action/progress.rb'
-    - 'lib/dynflow/action/rescue.rb'
-    - 'lib/dynflow/persistence_adapters/sequel_migrations/004_coordinator_records.rb'
-    - 'lib/dynflow/persistence_adapters/sequel_migrations/009_fix_mysql_data_length.rb'
-    - 'lib/dynflow/round_robin.rb'
-    - 'test/abnormal_states_recovery_test.rb'
-    - 'test/activejob_adapter_test.rb'
-
 # Offense count: 2
 Lint/AmbiguousBlockAssociation:
   Exclude:

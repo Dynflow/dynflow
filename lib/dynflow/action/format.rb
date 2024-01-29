@@ -42,4 +42,3 @@ module Dynflow
     end
   end
 end
-

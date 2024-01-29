@@ -36,4 +36,3 @@ module Dynflow
     attr_writer :data
   end
 end
-

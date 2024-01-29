@@ -59,4 +59,3 @@ module Dynflow
     attr_accessor :calculated_progress
   end
 end
-
