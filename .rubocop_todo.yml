@@ -30,14 +30,6 @@ Layout/DotPosition:
     - 'test/rescue_test.rb'
     - 'test/web_console_test.rb'
 
-# Offense count: 1
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: around, only_before
-Layout/EmptyLinesAroundAccessModifier:
-  Exclude:
-    - 'lib/dynflow/utils/indifferent_hash.rb'
-
 # Offense count: 77
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.
