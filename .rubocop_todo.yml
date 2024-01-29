@@ -71,12 +71,6 @@ Lint/MissingCopEnableDirective:
   Exclude:
     - 'test/persistence_test.rb'
 
-# Offense count: 4
-# Cop supports --auto-correct.
-Lint/ParenthesesAsGroupedExpression:
-  Exclude:
-    - 'test/concurrency_control_test.rb'
-
 # Offense count: 1
 Lint/RandOne:
   Exclude:

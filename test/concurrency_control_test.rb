@@ -82,8 +82,8 @@ module Dynflow
       end
 
       def check_step(plan, total, finished)
-        _(world.throttle_limiter.observe(plan.id).length).must_equal (total - finished)
-        _(plan.sub_plans.select { |sub| planned? sub }.count).must_equal (total - finished)
+        _(world.throttle_limiter.observe(plan.id).length).must_equal(total - finished)
+        _(plan.sub_plans.select { |sub| planned? sub }.count).must_equal(total - finished)
         _(plan.sub_plans.select { |sub| successful? sub }.count).must_equal finished
       end
 
@@ -232,12 +232,12 @@ module Dynflow
           planned, running = plan.sub_plans.partition { |sub| planned? sub }
           _(planned.count).must_equal total - level
           _(running.count).must_equal level
-          _(world.throttle_limiter.observe(plan.id).length).must_equal (total - 1)
+          _(world.throttle_limiter.observe(plan.id).length).must_equal(total - 1)
           4.times { klok.progress }
           wait_for { future.resolved? }
           finished, stopped = plan.sub_plans.partition { |sub| successful? sub }
           _(finished.count).must_equal level
-          _(stopped.count).must_equal (total - level)
+          _(stopped.count).must_equal(total - level)
         end
       end
     end
