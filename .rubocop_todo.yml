@@ -35,13 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 3
-# Cop supports --auto-correct.
-Layout/HeredocIndentation:
-  Exclude:
-    - 'examples/memory_limit_watcher.rb'
-    - 'examples/remote_executor.rb'
-
 # Offense count: 1
 # Cop supports --auto-correct.
 Layout/LeadingEmptyLines:
