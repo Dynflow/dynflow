@@ -85,7 +85,7 @@ module Dynflow
       end
 
       def reverse_merge!(other_hash)
-        replace(reverse_merge( other_hash ))
+        replace(reverse_merge(other_hash))
       end
 
       def replace(other_hash)

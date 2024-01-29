@@ -270,10 +270,10 @@ module Dynflow
           end
 
           it 'by default, the auto_validity_check is enabled only for executor words' do
-            client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world )
+            client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world)
             _(client_world_config.auto_validity_check).must_equal false
 
-            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = Executors::Parallel::Core }, create_world )
+            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = Executors::Parallel::Core }, create_world)
             _(executor_world_config.auto_validity_check).must_equal true
           end
 

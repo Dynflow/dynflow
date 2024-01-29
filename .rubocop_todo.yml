@@ -35,18 +35,6 @@ Layout/FirstHashElementIndentation:
 Layout/HashAlignment:
   Enabled: false
 
-# Offense count: 8
-# Cop supports --auto-correct.
-# Configuration parameters: EnforcedStyle.
-# SupportedStyles: space, no_space
-Layout/SpaceInsideParens:
-  Exclude:
-    - 'lib/dynflow/persistence_adapters/sequel.rb'
-    - 'lib/dynflow/serializer.rb'
-    - 'lib/dynflow/utils/indifferent_hash.rb'
-    - 'test/abnormal_states_recovery_test.rb'
-    - 'test/executor_test.rb'
-
 # Offense count: 16
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle.

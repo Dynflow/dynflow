@@ -665,7 +665,7 @@ module Dynflow
         it 'waits for currently running actions' do
           $slow_actions_done = 0
           running = world.trigger(Support::DummyExample::Slow, 1)
-          suspended = world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3 )
+          suspended = world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3)
           sleep 0.2
           world.terminate.wait
           _($slow_actions_done).must_equal 1

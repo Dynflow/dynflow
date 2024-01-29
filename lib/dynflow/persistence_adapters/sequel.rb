@@ -365,7 +365,7 @@ module Dynflow
 
       def load_record(what, condition)
         table = table(what)
-        if (record = with_retry { table.first(Utils.symbolize_keys(condition)) } )
+        if (record = with_retry { table.first(Utils.symbolize_keys(condition)) })
           load_data(record, what)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
