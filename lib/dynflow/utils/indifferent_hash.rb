@@ -97,9 +97,13 @@ module Dynflow
       end
 
       def stringify_keys!; self end
+
       def deep_stringify_keys!; self end
+
       def stringify_keys; dup end
+
       def deep_stringify_keys; dup end
+
       def to_options!; self end
 
       def select(*args, &block)

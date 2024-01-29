@@ -25,6 +25,7 @@ module Support
       def delay(delay_options, *args)
         MySerializer.new(args)
       end
+
       def run; end
     end
 

@@ -12,7 +12,9 @@ require 'dynflow/executors/sidekiq/core'
 
 module RedisMocks
   def release_orchestrator_lock; end
+
   def wait_for_orchestrator_lock; end
+
   def reacquire_orchestrator_lock; end
 end
 
