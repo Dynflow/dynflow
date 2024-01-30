@@ -11,14 +11,14 @@ module Dynflow
   # the progress is 1 for success/skipped actions and 0 for errorneous ones.
   module Action::Progress
     class Calculate < Middleware
-      def run(*args)
-        with_progress_calculation(*args, **{}) do
+      def run(*args, **kwargs)
+        with_progress_calculation(*args, **kwargs) do
           [action.run_progress, action.run_progress_weight]
         end
       end
 
-      def finalize(*args)
-        with_progress_calculation(*args, **{}) do
+      def finalize(*args, **kwargs)
+        with_progress_calculation(*args, **kwargs) do
           [action.finalize_progress, action.finalize_progress_weight]
         end
       end
