@@ -25,7 +25,7 @@ module Dynflow
         unless execution_plan.error?
           step_id = execution_plan.finalize_flow.all_step_ids.first
           action_class = execution_plan.steps[step_id].action_class
-          world.middleware.execute(:finalize_phase, action_class, execution_plan) do
+          world.middleware.execute(:finalize_phase, action_class, execution_plan, **{}) do
             dispatch(execution_plan.finalize_flow)
           end
         end

@@ -20,8 +20,6 @@ require 'support/rescue_example'
 require 'support/dummy_example'
 require 'support/test_execution_log'
 
-Concurrent.disable_at_exit_handlers!
-
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
   def self.setup
@@ -94,6 +92,7 @@ module WorldFactory
     config.auto_terminate       = false
     config.backup_deleted_plans = false
     config.backup_dir           = nil
+    config.silent_dead_letter_matchers = [::Dynflow::DeadLetterSilencer::Matcher.new(::Dynflow::DeadLetterSilencer::Matcher::Any)]
     config.queues.add(:slow, :pool_size => 1)
     yield config if block_given?
     return config

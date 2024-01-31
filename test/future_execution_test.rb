@@ -133,26 +133,29 @@ module Dynflow
 
       describe 'serializers' do
         let(:args) { %w(arg1 arg2) }
-        let(:serialized_serializer) { Dynflow::Serializers::Noop.new(nil, args) }
-        let(:deserialized_serializer) { Dynflow::Serializers::Noop.new(args, nil) }
+        let(:kwargs) { { foo: 'bar' } }
+        let(:serialized_serializer) { Dynflow::Serializers::Noop.new(nil, args, nil, [['foo', 'bar']]) }
+        let(:deserialized_serializer) { Dynflow::Serializers::Noop.new(args, nil, kwargs, nil) }
         let(:save_and_load) do
           ->(thing) { MultiJson.load(MultiJson.dump(thing)) }
         end
 
         let(:simulated_use) do
-          lambda do |serializer_class, input|
-            serializer = serializer_class.new(input)
+          lambda do |serializer_class, input, kwargs|
+            serializer = serializer_class.new(input, nil, kwargs)
             serializer.perform_serialization!
             serialized_args = save_and_load.call(serializer.serialized_args)
-            serializer = serializer_class.new(nil, serialized_args)
+            serialized_kwargs = save_and_load.call(serializer.serialized_kwargs)
+            serializer = serializer_class.new(nil, serialized_args, nil, serialized_kwargs)
             serializer.perform_deserialization!
-            serializer.args
+            [serializer.args, serializer.kwargs]
           end
         end
 
         it 'noop serializer [de]serializes correctly for simple types' do
           input = [1, 2.0, 'three', ['four-1', 'four-2'], { 'five' => 5 }]
-          _(simulated_use.call(Dynflow::Serializers::Noop, input)).must_equal input
+          kwargs = { foo: 'bar' }
+          _(simulated_use.call(Dynflow::Serializers::Noop, input, kwargs)).must_equal [input, kwargs]
         end
 
         it 'args! raises if not deserialized' do
@@ -178,7 +181,7 @@ module Dynflow
 
       describe 'delayed plan' do
         let(:args) { %w(arg1 arg2) }
-        let(:serializer) { Dynflow::Serializers::Noop.new(nil, args) }
+        let(:serializer) { Dynflow::Serializers::Noop.new(nil, args, nil, []) }
         let(:delayed_plan) do
           Dynflow::DelayedPlan.new(Dynflow::World.allocate, 'an uuid', nil, nil, serializer, false)
         end

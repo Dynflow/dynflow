@@ -4,9 +4,9 @@ module Dynflow
   module Middleware::Common
     class Singleton < Middleware
       # Each action tries to acquire its own lock before the action's #plan starts
-      def plan(*args)
+      def plan(*args, **kwargs)
         action.singleton_lock!
-        pass(*args)
+        pass(*args, **kwargs)
       end
 
       # At the start of #run we try to acquire action's lock unless it already holds it

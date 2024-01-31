@@ -3,7 +3,7 @@
 module Dynflow
   module Testing
     class DummyPlannedAction
-      attr_accessor :output, :plan_input
+      attr_accessor :output, :plan_input, :plan_input_kwargs
       include Mimic
 
       def initialize(klass)
@@ -13,8 +13,9 @@ module Dynflow
         )
       end
 
-      def execute(execution_plan, event, from_subscription, *args)
+      def execute(execution_plan, event, from_subscription, *args, **kwargs)
         @plan_input = args
+        @plan_input_kwargs = kwargs
         self
       end
 

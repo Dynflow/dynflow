@@ -15,15 +15,15 @@ module Support
         LogMiddleware.log << "#{self.class.name[/\w+$/]}::#{message}"
       end
 
-      def delay(*args)
+      def delay(*args, **kwargs)
         log 'before_delay'
-        pass(*args)
+        pass(*args, **kwargs)
         log 'after_delay'
       end
 
       def plan(args)
         log 'before_plan'
-        pass(args)
+        pass(args, **{})
         log 'after_plan'
       end
 
@@ -116,7 +116,7 @@ module Support
 
       def plan(input)
         log 'plan'
-        plan_self(input)
+        plan_self(input, **{})
       end
 
       def run
@@ -143,7 +143,7 @@ module Support
 
     class AnotherObservingMiddleware < ObservingMiddleware
       def delay(*args)
-        pass(*args).tap do
+        pass(*args, **{}).tap do
           log("delay#set-input:#{action.world.id}")
           action.input[:message] = action.world.id
         end

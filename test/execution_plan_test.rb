@@ -255,7 +255,7 @@ module Dynflow
 
         describe 'subscribed action' do
           let :execution_plan do
-            world.plan(Support::CodeWorkflowExample::DummyTrigger, {})
+            world.plan(Support::CodeWorkflowExample::DummyTrigger)
           end
 
           it 'constructs the plan of actions to be executed in run phase' do
@@ -289,7 +289,7 @@ module Dynflow
         include TestHelpers
 
         let :execution_plan do
-          world.plan(Support::CodeWorkflowExample::CancelableSuspended, { text: 'cancel-external' })
+          world.plan(Support::CodeWorkflowExample::CancelableSuspended, { text: 'cancel-external' }, **{})
         end
 
         it 'cancels' do

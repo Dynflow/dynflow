@@ -42,7 +42,7 @@ module Dynflow
                     output_chunk:        %w(execution_plan_uuid action_id kind timestamp) }
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
-                               delayed: %w(serialized_args),
+                               delayed: %w(serialized_args serialized_kwargs),
                                execution_plan: %w(run_flow finalize_flow execution_history step_ids),
                                step:    %w(error children),
                                output_chunk: %w(chunk) }

@@ -89,10 +89,10 @@ module Support
     end
 
     class WeightedPolling < Dynflow::Action
-      def plan(input)
+      def plan(input = {})
         sequence do
-          plan_self(input)
-          plan_action(Polling, input)
+          plan_self(input, **{})
+          plan_action(Polling, input, **{})
         end
       end
 

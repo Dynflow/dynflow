@@ -29,7 +29,7 @@ module Dynflow
         action.execution_plan.stub_planned_action(Support::DummyExample::Polling) do |sub_action|
           sub_action.define_singleton_method(:test) { "test" }
         end
-        plan_action(action, {})
+        plan_action(action)
         stubbed_action = action.execution_plan.planned_plan_steps.first
         _(stubbed_action.test).must_equal "test"
       end
@@ -137,7 +137,7 @@ module Dynflow
       describe CWE::Merge do
         let(:plan_input) { { commit: 'sha', ci_result: true, review_results: [true, true] } }
         let(:input) { plan_input }
-        let(:planned_action) { create_and_plan_action CWE::Merge, plan_input }
+        let(:planned_action) { create_and_plan_action CWE::Merge, plan_input, **{} }
         let(:runned_action) { run_action planned_action }
 
         it 'plans' do
@@ -232,7 +232,7 @@ module Dynflow
       end
 
       let :polling_execution_plan do
-        world.plan(Support::DummyExample::Polling, { :external_task_id => '123' })
+        world.plan(Support::DummyExample::Polling, { :external_task_id => '123' }, **{})
       end
 
       it "is able to execute plans inside the thread" do

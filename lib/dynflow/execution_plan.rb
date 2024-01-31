@@ -157,7 +157,7 @@ module Dynflow
       action_ids = records.compact.map { |record| record[:id] }
       return if action_ids.empty?
       persistence.load_actions(self, action_ids).each do |action|
-        world.middleware.execute(:hook, action, self) do
+        world.middleware.execute(:hook, action, self, **{}) do
           action.class.execution_plan_hooks.run(self, action, state)
         end
       end
@@ -251,11 +251,11 @@ module Dynflow
       @last_step_id += 1
     end
 
-    def delay(caller_action, action_class, delay_options, *args)
+    def delay(caller_action, action_class, delay_options, *args, **kwargs)
       save
       @root_plan_step = add_scheduling_step(action_class, caller_action)
       run_hooks(:pending)
-      serializer = root_plan_step.delay(delay_options, args)
+      serializer = root_plan_step.delay(delay_options, args, kwargs)
       delayed_plan = DelayedPlan.new(@world,
         id,
         delay_options[:start_at],
@@ -282,11 +282,14 @@ module Dynflow
       step
     end
 
-    def plan(*args)
+    def plan(*args, **kwargs)
       update_state(:planning)
-      world.middleware.execute(:plan_phase, root_plan_step.action_class, self) do
+
+      # TODO: Remove the trailing **{} when we drop support for ruby < 3
+      # https://bugs.ruby-lang.org/issues/14909
+      world.middleware.execute(:plan_phase, root_plan_step.action_class, self, **{}) do
         with_planning_scope do
-          root_action = root_plan_step.execute(self, nil, false, *args)
+          root_action = root_plan_step.execute(self, nil, false, *args, **kwargs)
           @label = root_action.label
 
           if @dependency_graph.unresolved?
@@ -568,7 +571,7 @@ module Dynflow
 
     def toggle_telemetry_state(original, new)
       return if original == new
-      @label = root_plan_step.action_class if @label.nil?
+      @label = root_plan_step.action_class.name if @label.nil?
       Dynflow::Telemetry.with_instance do |t|
         t.set_gauge(:dynflow_active_execution_plans, '-1',
           telemetry_common_options.merge(:state => original)) unless original.nil?

@@ -16,8 +16,8 @@ module Dynflow
     end
 
     # call `pass` to get deeper with the call
-    def pass(*args)
-      @stack.pass(*args)
+    def pass(*args, **kwargs)
+      @stack.pass(*args, **kwargs)
     end
 
     # to get the action object
@@ -25,36 +25,36 @@ module Dynflow
       @stack.action or raise "the action is not available"
     end
 
-    def delay(*args)
-      pass(*args)
+    def delay(*args, **kwargs)
+      pass(*args, **kwargs)
     end
 
-    def run(*args)
-      pass(*args)
+    def run(*args, **kwargs)
+      pass(*args, **kwargs)
     end
 
-    def plan(*args)
-      pass(*args)
+    def plan(*args, **kwargs)
+      pass(*args, **kwargs)
     end
 
-    def finalize(*args)
-      pass(*args)
+    def finalize(*args, **kwargs)
+      pass(*args, **kwargs)
     end
 
-    def plan_phase(*args)
-      pass(*args)
+    def plan_phase(*args, **kwargs)
+      pass(*args, **kwargs)
     end
 
-    def finalize_phase(*args)
-      pass(*args)
+    def finalize_phase(*args, **kwargs)
+      pass(*args, **kwargs)
     end
 
     def present
       pass
     end
 
-    def hook(*args)
-      pass(*args)
+    def hook(*args, **kwargs)
+      pass(*args, **kwargs)
     end
   end
 end

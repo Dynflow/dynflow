@@ -39,16 +39,16 @@ module Dynflow
       end
 
       # @return [Action::PlanPhase]
-      def plan_action(plan_action, *args, &block)
+      def plan_action(plan_action, *args, **kwargs, &block)
         Match! plan_action.phase, Action::Plan
 
-        plan_action.execute(*args, &block)
+        plan_action.execute(*args, **kwargs, &block)
         raise plan_action.error if plan_action.error
         plan_action
       end
 
-      def create_and_plan_action(action_class, *args, &block)
-        plan_action create_action(action_class), *args, &block
+      def create_and_plan_action(action_class, *args, **kwargs, &block)
+        plan_action create_action(action_class), *args, **kwargs, &block
       end
 
       def plan_events(world, delayed_events)

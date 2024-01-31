@@ -14,7 +14,7 @@ module Dynflow
       @register.use(*args)
     end
 
-    def execute(method, action_or_class, *args, &block)
+    def execute(method, action_or_class, *args, **kwargs, &block)
       Match! method, :delay, :plan, :run, :finalize, :plan_phase, :finalize_phase, :present, :hook
       if Child? action_or_class, Dynflow::Action
         action = nil
@@ -28,7 +28,7 @@ module Dynflow
 
       classes = middleware_classes(action_class)
       stack   = Middleware::Stack.build(classes, method, action, &block)
-      stack.call(*args)
+      stack.call(*args, **kwargs)
     end
 
     def clear_cache!

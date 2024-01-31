@@ -20,12 +20,12 @@ module Dynflow
       @next_stack       = Type! next_stack, Middleware::Stack, Proc
     end
 
-    def call(*args)
-      @middleware.send @method, *args
+    def call(*args, **kwargs)
+      @middleware.send @method, *args, **kwargs
     end
 
-    def pass(*args)
-      @next_stack.call(*args)
+    def pass(*args, **kwargs)
+      @next_stack.call(*args, **kwargs)
     end
   end
 end

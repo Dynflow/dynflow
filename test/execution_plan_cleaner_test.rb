@@ -23,7 +23,7 @@ module Dynflow
       let(:world) do
         WorldFactory.create_world do |config|
           config.execution_plan_cleaner = proc do |world|
-            ::Dynflow::Actors::ExecutionPlanCleaner.new(world, :max_age => age)
+            ::Dynflow::Actors::ExecutionPlanCleaner.new(world, :max_age => age, **{})
           end
         end
       end
