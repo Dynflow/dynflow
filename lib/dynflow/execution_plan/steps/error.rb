@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module ExecutionPlan::Steps
     class Error < Serializable
@@ -11,12 +12,12 @@ module Dynflow
         case args.size
         when 1
           match obj = args.first,
-                (on String do
-                  super(StandardError, obj, caller, nil)
-                end),
-                (on Exception do
-                  super(obj.class, obj.message, obj.backtrace, obj)
-                end)
+            (on String do
+              super(StandardError, obj, caller, nil)
+            end),
+            (on Exception do
+              super(obj.class, obj.message, obj.backtrace, obj)
+            end)
         when 3, 4
           super(*args.values_at(0..3))
         else
@@ -49,9 +50,9 @@ module Dynflow
 
       def to_s
         format '%s (%s)\n%s',
-               (@exception || self).message,
-               (@exception ? @exception.class : exception_class),
-               (@exception || self).backtrace
+          (@exception || self).message,
+          (@exception ? @exception.class : exception_class),
+          (@exception || self).backtrace
       end
 
       def exception

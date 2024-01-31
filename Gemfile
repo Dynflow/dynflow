@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 source 'https://rubygems.org'
 
 gemspec
@@ -13,8 +14,8 @@ group :pry do
 end
 
 group :sidekiq do
-  gem 'sidekiq'
   gem 'gitlab-sidekiq-fetcher', :require => 'sidekiq-reliable-fetch'
+  gem 'sidekiq'
 end
 
 group :postgresql do
@@ -26,7 +27,7 @@ group :mysql do
 end
 
 group :lint do
-  gem 'rubocop', '0.39.0'
+  gem 'theforeman-rubocop', '~> 0.0.4'
 end
 
 group :memory_watcher do
@@ -35,8 +36,8 @@ end
 
 group :rails do
   gem 'daemons'
-  gem 'rails', '>= 4.2.9', '< 7'
   gem 'logging'
+  gem 'rails', '>= 4.2.9', '< 7'
 end
 
 group :telemetry do

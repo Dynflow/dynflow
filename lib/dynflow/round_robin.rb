@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   # A simple round-robin scheduling implementation used at various
   # places in Dynflow
@@ -19,7 +20,7 @@ module Dynflow
     end
 
     def next
-      @cursor = 0 if @cursor > @data.size-1
+      @cursor = 0 if @cursor > @data.size - 1
       @data[@cursor]
     ensure
       @cursor += 1
@@ -35,4 +36,3 @@ module Dynflow
     attr_writer :data
   end
 end
-

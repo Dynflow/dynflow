@@ -24,9 +24,7 @@ example_description = <<DESC
 DESC
 
 module OrchestrateEvented
-
   class CreateInfrastructure < Dynflow::Action
-
     def plan(get_stuck = false)
       sequence do
         concurrence do
@@ -34,59 +32,54 @@ module OrchestrateEvented
           plan_action(CreateMachine, 'host2', 'storage')
         end
         plan_action(CreateMachine,
-                    'host3',
-                    'web_server',
-                    :db_machine => 'host1',
-                    :storage_machine => 'host2')
+          'host3',
+          'web_server',
+          :db_machine => 'host1',
+          :storage_machine => 'host2')
       end
     end
   end
 
   class CreateMachine < Dynflow::Action
-
     def plan(name, profile, config_options = {})
       prepare_disk = plan_action(PrepareDisk, 'name' => name)
       create_vm    = plan_action(CreateVM,
-                                 :name => name,
-                                 :disk => prepare_disk.output['path'])
+        :name => name,
+        :disk => prepare_disk.output['path'])
       plan_action(AddIPtoHosts, :name => name, :ip => create_vm.output[:ip])
       plan_action(ConfigureMachine,
-                  :ip => create_vm.output[:ip],
-                  :profile => profile,
-                  :config_options => config_options)
+        :ip => create_vm.output[:ip],
+        :profile => profile,
+        :config_options => config_options)
       plan_self(:name => name)
     end
 
     def finalize
     end
-
   end
 
   class Base < Dynflow::Action
-
     Finished = Algebrick.atom
 
     def run(event = nil)
       match(event,
-            (on Finished do
-               on_finish
-             end),
-            (on Dynflow::Action::Skip do
-               # do nothing
-             end),
-            (on nil do
-               suspend { |suspended_action| world.clock.ping suspended_action, rand(1), Finished }
-             end))
+        (on Finished do
+           on_finish
+         end),
+        (on Dynflow::Action::Skip do
+           # do nothing
+         end),
+        (on nil do
+           suspend { |suspended_action| world.clock.ping suspended_action, rand(1), Finished }
+         end))
     end
 
     def on_finish
       raise NotImplementedError
     end
-
   end
 
   class PrepareDisk < Base
-
     input_format do
       param :name
     end
@@ -98,11 +91,9 @@ module OrchestrateEvented
     def on_finish
       output[:path] = "/var/images/#{input[:name]}.img"
     end
-
   end
 
   class CreateVM < Base
-
     input_format do
       param :name
       param :disk
@@ -115,22 +106,18 @@ module OrchestrateEvented
     def on_finish
       output[:ip] = "192.168.100.#{rand(256)}"
     end
-
   end
 
   class AddIPtoHosts < Base
-
     input_format do
       param :ip
     end
 
     def on_finish
     end
-
   end
 
   class ConfigureMachine < Base
-
     # thanks to this Dynflow knows this action can be politely
     # asked to get canceled
     include ::Dynflow::Action::Cancellable
@@ -163,9 +150,7 @@ module OrchestrateEvented
         suspend
       end
     end
-
   end
-
 end
 
 if $0 == __FILE__

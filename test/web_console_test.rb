@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 
 ENV['RACK_ENV'] = 'test'
@@ -8,14 +9,13 @@ require 'rack/test'
 
 module Dynflow
   describe 'web console' do
-
     include Rack::Test::Methods
     let(:world) { WorldFactory.create_world }
 
     let :execution_plan_id do
-      world.trigger(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123').
-          tap { |o| o.finished.wait }.
-          id
+      world.trigger(Support::CodeWorkflowExample::FastCommit, 'sha' => 'abc123')
+           .tap { |o| o.finished.wait }
+           .id
     end
 
     let :app do

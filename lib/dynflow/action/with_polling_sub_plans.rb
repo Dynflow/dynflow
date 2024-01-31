@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Action::WithPollingSubPlans
-
     REFRESH_INTERVAL = 10
     Poll = Algebrick.atom
 

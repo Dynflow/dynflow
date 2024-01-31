@@ -1,10 +1,10 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'mocha/minitest'
 
 module Dynflow
   describe 'flow' do
-
     class TestRegistry < Flows::Registry
       class << self
         def reset!
@@ -22,7 +22,7 @@ module Dynflow
         TestRegistry.register!(TestRegistry, 'TS')
         TestRegistry.register!(Integer, 'I')
         map = TestRegistry.instance_variable_get("@serialization_map")
-        _(map).must_equal({'TS' => TestRegistry, 'I' => Integer})
+        _(map).must_equal({ 'TS' => TestRegistry, 'I' => Integer })
       end
 
       it "prevents overwriting values" do

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'sequel'
 require 'msgpack'
 require 'fileutils'
@@ -7,7 +8,6 @@ require 'csv'
 # rubocop:disable Metrics/ClassLength
 module Dynflow
   module PersistenceAdapters
-
     Sequel.extension :migration
     Sequel.database_timezone = :utc
 
@@ -67,10 +67,10 @@ module Dynflow
         table_name = :execution_plan
         options[:order_by] ||= :started_at
         data_set = filter(table_name,
-                          order(table_name,
-                                paginate(table(table_name), options),
-                                options),
-                          options[:filters])
+          order(table_name,
+            paginate(table(table_name), options),
+            options),
+          options[:filters])
         data_set.all.map { |record| execution_plan_column_map(load_data(record, table_name)) }
       end
 
@@ -80,7 +80,7 @@ module Dynflow
 
       def find_execution_plan_statuses(options)
         plans = filter(:execution_plan, table(:execution_plan), options[:filters])
-                  .select(:uuid, :state, :result)
+                .select(:uuid, :state, :result)
 
         plans.each_with_object({}) do |current, acc|
           uuid = current.delete(:uuid)
@@ -169,7 +169,7 @@ module Dynflow
 
       def save_step(execution_plan_id, step_id, value, update_conditions = {})
         save :step, { execution_plan_uuid: execution_plan_id, id: step_id }, value,
-             with_data: false, update_conditions: update_conditions
+          with_data: false, update_conditions: update_conditions
       end
 
       def load_action(execution_plan_id, action_id)
@@ -254,7 +254,7 @@ module Dynflow
 
       def update_coordinator_record(class_name, record_id, value)
         coordinator_feature!
-        save :coordinator_record, {class: class_name, :id => record_id}, value
+        save :coordinator_record, { class: class_name, :id => record_id }, value
       end
 
       def delete_coordinator_record(class_name, record_id)
@@ -365,7 +365,7 @@ module Dynflow
 
       def load_record(what, condition)
         table = table(what)
-        if (record = with_retry { table.first(Utils.symbolize_keys(condition)) } )
+        if (record = with_retry { table.first(Utils.symbolize_keys(condition)) })
           load_data(record, what)
         else
           raise KeyError, "searching: #{what} by: #{condition.inspect}"
@@ -491,13 +491,13 @@ module Dynflow
           end
 
           if filters.key?('caller_execution_plan_id')
-            data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid).
-                select_all(TABLES[:execution_plan]).distinct
+            data_set = data_set.join_table(:inner, TABLES[:action], :execution_plan_uuid => :uuid)
+                               .select_all(TABLES[:execution_plan]).distinct
           end
           if filters.key?('delayed')
             filters.delete('delayed')
-            data_set = data_set.join_table(:inner, TABLES[:delayed], :execution_plan_uuid => :uuid).
-              select_all(TABLES[:execution_plan]).distinct
+            data_set = data_set.join_table(:inner, TABLES[:delayed], :execution_plan_uuid => :uuid)
+                               .select_all(TABLES[:execution_plan]).distinct
           end
         end
 

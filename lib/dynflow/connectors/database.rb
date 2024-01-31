@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Connectors
     class Database < Abstract
-
       class PostgresListerner
         def initialize(core, world_id, db)
           @core     = core
@@ -22,7 +22,7 @@ module Dynflow
         def start
           @started.set true
           @thread = Thread.new do
-            @db.listen("world:#{ @world_id }", :loop => true) do
+            @db.listen("world:#{@world_id}", :loop => true) do
               if started?
                 @core << :check_inbox
               else

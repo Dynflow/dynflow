@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'socket'
 
 module Dynflow
@@ -6,11 +7,11 @@ module Dynflow
     include Algebrick::TypeCheck
 
     def self.config_attr(name, *types, &default)
-      self.send(:define_method, "validate_#{ name }!") do |value|
+      self.send(:define_method, "validate_#{name}!") do |value|
         Type! value, *types unless types.empty?
       end
       self.send(:define_method, name) do
-        var_name = "@#{ name }"
+        var_name = "@#{name}"
         if instance_variable_defined?(var_name)
           return instance_variable_get(var_name)
         else
@@ -41,7 +42,7 @@ module Dynflow
         return @cache[name] if @cache.key?(name)
         value = @config.send(name)
         value = value.call(@world, self) if value.is_a? Proc
-        validation_method = "validate_#{ name }!"
+        validation_method = "validate_#{name}!"
         @config.send(validation_method, value) if @config.respond_to?(validation_method)
         @cache[name] = value
       end
@@ -51,7 +52,7 @@ module Dynflow
       attr_reader :queues
 
       def initialize
-        @queues = {:default => {}}
+        @queues = { :default => {} }
       end
 
       # Add a new queue to the configuration
@@ -204,7 +205,7 @@ module Dynflow
                                                "it's #{ar_pool_size} but there is #{config_for_world.pool_size} " +
                                                'threads in Dynflow pool.'
           end
-        rescue ActiveRecord::ConnectionNotEstablished # rubocop:disable Lint/HandleExceptions
+        rescue ActiveRecord::ConnectionNotEstablished
           # If in tests or in an environment where ActiveRecord doesn't have a
           # real DB connection, we want to skip AR configuration altogether
         end

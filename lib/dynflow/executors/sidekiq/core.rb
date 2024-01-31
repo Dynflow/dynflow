@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'dynflow/executors/sidekiq/serialization'
 require 'dynflow/executors/sidekiq/internal_job_base'
 require 'dynflow/executors/sidekiq/orchestrator_jobs'

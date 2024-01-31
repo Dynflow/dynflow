@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'ostruct'
 
@@ -12,7 +13,7 @@ module Dynflow
 
       it 'is started for each world' do
         _(world.dead_letter_handler.actor_class)
-             .must_equal ::Dynflow::DeadLetterSilencer
+          .must_equal ::Dynflow::DeadLetterSilencer
       end
 
       describe ::Dynflow::DeadLetterSilencer::Matcher do

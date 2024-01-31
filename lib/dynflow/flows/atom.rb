@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Flows
     class Atom < Abstract
-
       attr_reader :step_id
 
       def encode
@@ -31,7 +31,6 @@ module Dynflow
         check_class_matching hash
         new(hash[:step_id])
       end
-
     end
   end
 end

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Testing
     class ManagedClock
-
       attr_reader :pending_pings
 
       include Algebrick::Types

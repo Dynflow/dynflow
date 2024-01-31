@@ -1,11 +1,10 @@
 # frozen_string_literal: true
+
 require 'nuggets/range/quantile'
 require 'erb'
 
 module Jekyll
-
   class Tagger < Generator
-
     safe true
 
     attr_accessor :site
@@ -44,7 +43,7 @@ module Jekyll
           page_name = "#{pretty? ? 'index' : name}#{site.layouts[data['layout']].ext}"
 
           site.pages << TagPage.new(
-              site, site.source, tag_dir, page_name, data
+            site, site.source, tag_dir, page_name, data
           )
         end
       }
@@ -79,11 +78,9 @@ module Jekyll
     def pretty?
       @pretty ||= (site.permalink_style == :pretty || site.config['tag_permalink_style'] == 'pretty')
     end
-
   end
 
   class TagPage < Page
-
     def initialize(site, base, dir, name, data = {})
       self.content = data.delete('content') || ''
       self.data    = data
@@ -94,11 +91,9 @@ module Jekyll
     def read_yaml(*)
       # Do nothing
     end
-
   end
 
   module Filters
-
     def tag_cloud(site)
       active_tag_data.map { |tag, set|
         tag_link(tag, tag_url(tag), :class => "set-#{set} label label-default")
@@ -134,5 +129,4 @@ module Jekyll
       site.config["tag_data"].reject { |tag, set| site.config["ignored_tags"].include? tag }
     end
   end
-
 end

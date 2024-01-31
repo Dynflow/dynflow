@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 require 'apipie-params'
 require 'algebrick'
-require 'thread'
 require 'set'
 require 'base64'
 require 'concurrent'
@@ -79,10 +79,7 @@ module Dynflow
 
     class Railtie < ::Rails::Railtie
       config.before_initialize do
-        ::ActiveJob::QueueAdapters.send(
-          :include,
-          Dynflow::ActiveJob::QueueAdapters
-        )
+        ::ActiveJob::QueueAdapters.include Dynflow::ActiveJob::QueueAdapters
       end
     end
   end

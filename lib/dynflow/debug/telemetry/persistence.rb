@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Debug
     module Telemetry
@@ -32,7 +33,7 @@ module Dynflow
 
         methods.each do |name|
           define_method(name) do |*args|
-            Dynflow::Telemetry.measure(:dynflow_persistence, :method => name, :world => @world.id) { super *args }
+            Dynflow::Telemetry.measure(:dynflow_persistence, :method => name, :world => @world.id) { super(*args) }
           end
         end
       end
@@ -40,4 +41,4 @@ module Dynflow
   end
 end
 
-::Dynflow::Persistence.send(:prepend, ::Dynflow::Debug::Persistence)
+::Dynflow::Persistence.prepend ::Dynflow::Debug::Persistence

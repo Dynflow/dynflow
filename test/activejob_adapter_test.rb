@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'active_job'
 require 'dynflow/active_job/queue_adapter'
@@ -21,7 +22,7 @@ module Dynflow
     end
 
     before(:all) do
-      ::ActiveJob::QueueAdapters.send(:include, ::Dynflow::ActiveJob::QueueAdapters)
+      ::ActiveJob::QueueAdapters.include ::Dynflow::ActiveJob::QueueAdapters
       ::ActiveJob::Base.queue_adapter = :dynflow
       dynflow_mock = Minitest::Mock.new
       dynflow_mock.expect(:world, world)
@@ -71,4 +72,3 @@ module Dynflow
     end
   end
 end
-

@@ -1,10 +1,10 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 
 module Dynflow
   module DispatcherTest
     describe "dispatcher" do
-
       include TestHelpers
 
       let(:persistence_adapter) { WorldFactory.persistence_adapter }
@@ -27,8 +27,8 @@ module Dynflow
             it 'succeeds when expected' do
               result = client_world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3)
               step = wait_for do
-                client_world.persistence.load_execution_plan(result.id).
-                    steps_in_state(:suspended).first
+                client_world.persistence.load_execution_plan(result.id)
+                            .steps_in_state(:suspended).first
               end
               client_world.event(step.execution_plan_id, step.id, 'finish')
               plan = result.finished.value
@@ -53,7 +53,7 @@ module Dynflow
             it 'does not error on dispatching an optional event' do
               request = client_world.event('123', 1, nil, optional: true)
               request.wait(20)
-              assert_match /Could not find an executor for optional .*, discarding/, request.reason.message
+              assert_match(/Could not find an executor for optional .*, discarding/, request.reason.message)
             end
           end
         end
@@ -72,7 +72,6 @@ module Dynflow
             assert_plan_reexecuted(plan)
           end
         end
-
       end
 
       def self.supports_ping_pong

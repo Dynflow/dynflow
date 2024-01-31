@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module DelayedExecutors
     class AbstractCore < Actor
-
       include Algebrick::TypeCheck
       attr_reader :world, :logger
 

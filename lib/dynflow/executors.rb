@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Executors
-
     require 'dynflow/executors/parallel'
 
     class << self

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Semaphores
     class Stateful < Abstract
-
       attr_reader :free, :tickets, :waiting, :meta
 
       def initialize(tickets, free = tickets, meta = {})

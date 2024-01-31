@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 
 module Dynflow
@@ -109,7 +110,6 @@ module Dynflow
         _(action.send(:can_spawn_next_batch?)).must_equal false
         _(action.current_batch).must_be :empty?
       end
-
     end
   end
 end

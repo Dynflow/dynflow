@@ -1,9 +1,9 @@
 # frozen_string_literal: true
+
 require 'dynflow/coordinator_adapters'
 
 module Dynflow
   class Coordinator
-
     include Algebrick::TypeCheck
 
     class DuplicateRecordError < Dynflow::Error
@@ -41,7 +41,7 @@ module Dynflow
       end
 
       def initialize(*args)
-        @data ||= {}
+        @data = {}
         @data = Utils.indifferent_hash(@data.merge(class: self.class.name))
       end
 

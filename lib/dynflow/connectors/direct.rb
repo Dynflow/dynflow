@@ -1,10 +1,9 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Connectors
     class Direct < Abstract
-
       class Core < Actor
-
         def initialize(connector)
           @connector = connector
           @worlds = {}
@@ -30,7 +29,7 @@ module Dynflow
           if world = find_receiver(envelope)
             @connector.receive(world, envelope)
           else
-            log(Logger::ERROR, "Receiver for envelope #{ envelope } not found")
+            log(Logger::ERROR, "Receiver for envelope #{envelope} not found")
           end
         end
 

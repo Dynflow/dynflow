@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module ExecutionPlan::Steps
     class Abstract < Serializable
@@ -6,7 +7,7 @@ module Dynflow
       include Stateful
 
       attr_reader :execution_plan_id, :id, :state, :action_class, :action_id, :world, :started_at,
-                  :ended_at, :execution_time, :real_time, :queue, :delayed_events
+        :ended_at, :execution_time, :real_time, :queue, :delayed_events
       attr_accessor :error
 
       # rubocop:disable Metrics/ParameterLists
@@ -37,7 +38,7 @@ module Dynflow
         @progress_done     = Type! progress_done, Numeric, NilClass
         @progress_weight   = Type! progress_weight, Numeric, NilClass
 
-        @queue             = Type! queue, Symbol, NilClass
+        @queue = Type! queue, Symbol, NilClass
 
         self.state = state.to_sym
 
@@ -144,25 +145,25 @@ module Dynflow
       def self.new_from_hash(hash, execution_plan_id, world)
         check_class_matching hash
         new(execution_plan_id,
-            hash[:id],
-            hash[:state],
-            Action.constantize(hash[:action_class]),
-            hash[:action_id],
-            hash_to_error(hash[:error]),
-            world,
-            string_to_time(hash[:started_at]),
-            string_to_time(hash[:ended_at]),
-            hash[:execution_time].to_f,
-            hash[:real_time].to_f,
-            hash[:progress_done].to_f,
-            hash[:progress_weight].to_f,
-            (hash[:queue] && hash[:queue].to_sym))
+          hash[:id],
+          hash[:state],
+          Action.constantize(hash[:action_class]),
+          hash[:action_id],
+          hash_to_error(hash[:error]),
+          world,
+          string_to_time(hash[:started_at]),
+          string_to_time(hash[:ended_at]),
+          hash[:execution_time].to_f,
+          hash[:real_time].to_f,
+          hash[:progress_done].to_f,
+          hash[:progress_weight].to_f,
+          (hash[:queue] && hash[:queue].to_sym))
       end
 
       private
 
       def with_meta_calculation(action, &block)
-        start       = Time.now.utc
+        start = Time.now.utc
         @started_at ||= start
         block.call
       ensure
@@ -186,12 +187,12 @@ module Dynflow
         Dynflow::Telemetry.with_instance do |t|
           if [:success, :skipped].include?(state)
             t.observe_histogram(:dynflow_step_real_time,
-                                real_time * 1000,
-                                :action => action_class.to_s, :phase => phase.to_s_humanized)
+              real_time * 1000,
+              :action => action_class.to_s, :phase => phase.to_s_humanized)
           end
           t.observe_histogram(:dynflow_step_execution_time,
-                              current_execution_time * 1000,
-                              :action => action_class.to_s, :phase => phase.to_s_humanized)
+            current_execution_time * 1000,
+            :action => action_class.to_s, :phase => phase.to_s_humanized)
         end
       end
     end

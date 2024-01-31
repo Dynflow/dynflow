@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Serializers
     # @abstract
@@ -6,7 +7,6 @@ module Dynflow
     # Used by {DelayedPlan} to store arguments which should be passed into
     # the {Dynflow::Action}'s #plan method when the plan is executed.
     class Abstract
-
       attr_reader :args, :serialized_args
 
       # @param args [Array] arguments to be serialized
@@ -65,7 +65,6 @@ module Dynflow
       def deserialize(arg)
         raise NotImplementedError
       end
-
     end
   end
 end

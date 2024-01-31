@@ -1,10 +1,10 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 
 module Dynflow
   module SemaphoresTest
     describe ::Dynflow::Semaphores::Stateful do
-
       let(:semaphore_class) { ::Dynflow::Semaphores::Stateful }
       let(:tickets_count) { 5 }
 
@@ -41,7 +41,6 @@ module Dynflow
         waiting = semaphore.get_waiting
         _(waiting).must_equal 3
       end
-
     end
 
     describe ::Dynflow::Semaphores::Dummy do
@@ -71,10 +70,10 @@ module Dynflow
         }
       end
 
-      def assert_semaphore_state(semaphore, state_A, state_B)
-        _(semaphore.children[:child_A].free).must_equal state_A
-        _(semaphore.children[:child_B].free).must_equal state_B
-        _(semaphore.free).must_equal [state_A, state_B].min
+      def assert_semaphore_state(semaphore, state_a, state_b)
+        _(semaphore.children[:child_A].free).must_equal state_a
+        _(semaphore.children[:child_B].free).must_equal state_b
+        _(semaphore.free).must_equal [state_a, state_b].min
       end
 
       it 'can be used as counter' do
@@ -94,6 +93,5 @@ module Dynflow
         assert_semaphore_state semaphore, 0, 0
       end
     end
-
   end
 end

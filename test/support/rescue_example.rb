@@ -1,11 +1,10 @@
 # frozen_string_literal: true
+
 require 'logger'
 
 module Support
   module RescueExample
-
     class ComplexActionWithSkip < Dynflow::Action
-
       def plan(error_state)
         sequence do
           concurrence do
@@ -20,20 +19,16 @@ module Support
       def rescue_strategy_for_self
         Dynflow::Action::Rescue::Skip
       end
-
     end
 
     class ComplexActionWithoutSkip < ComplexActionWithSkip
-
       def rescue_strategy_for_planned_action(action)
         # enforce pause even when error on skipable action
         Dynflow::Action::Rescue::Pause
       end
-
     end
 
     class AbstractAction < Dynflow::Action
-
       def plan(identifier, desired_state)
         plan_self(identifier: identifier, desired_state: desired_state)
       end
@@ -57,11 +52,9 @@ module Support
           raise 'some error as you wish'
         end
       end
-
     end
 
     class ActionWithSkip < AbstractAction
-
       def run(event = nil)
         if event === Dynflow::Action::Skip
           output[:message] = "skipped because #{self.error.message}"
@@ -74,19 +67,15 @@ module Support
       def rescue_strategy_for_self
         Dynflow::Action::Rescue::Skip
       end
-
     end
 
     class ActionWithFail < AbstractAction
-
       def rescue_strategy_for_self
         Dynflow::Action::Rescue::Fail
       end
-
     end
 
     class ComplexActionWithFail < ActionWithFail
-
       def plan(error_state)
         sequence do
           concurrence do
@@ -97,8 +86,6 @@ module Support
           plan_action(ActionWithSkip, 6, :success)
         end
       end
-
     end
-
   end
 end

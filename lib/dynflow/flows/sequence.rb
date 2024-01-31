@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Flows
     class Sequence < AbstractComposed
-
       protected
 
       def add_to_sequence(satisfying_flows, dependent_flow)

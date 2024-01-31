@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Web
     module ConsoleHelpers
@@ -36,7 +37,7 @@ module Dynflow
           pretty_value = prettify_value(value)
           <<-HTML
               <pre class="prettyprint lang-yaml">#{h(pretty_value)}</pre>
-            HTML
+          HTML
         else
           ""
         end
@@ -90,7 +91,7 @@ module Dynflow
                 <b>#{h(label)}</b>
             #{value_html}
               </p>
-            HTML
+          HTML
         else
           ""
         end
@@ -177,9 +178,9 @@ module Dynflow
         checkboxes = values.map do |value|
           field_filter = filtering_options[:filters][field]
           checked      = field_filter && field_filter.include?(value)
-          %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{ "checked" if checked }/>#{value}}
+          %{<input type="checkbox" name="filters[#{field}][]" value="#{value}" #{"checked" if checked}/>#{value}}
         end.join(' ')
-        out        %= checkboxes
+        out %= checkboxes
         return out
       end
     end

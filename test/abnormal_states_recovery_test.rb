@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'ostruct'
 
 module Dynflow
   module ConsistencyCheckTest
-
     describe "consistency check" do
-
       include TestHelpers
 
       def with_invalidation_while_executing(finish)
@@ -43,7 +42,6 @@ module Dynflow
       let(:client_world_2) { create_world(false) }
 
       describe "for plans assigned to invalid world" do
-
         before do
           # mention the executors to make sure they are initialized
           [executor_world, executor_world_2]
@@ -187,7 +185,6 @@ module Dynflow
       end
 
       describe 'auto execute' do
-
         before do
           client_world.persistence.delete_execution_plans({})
         end
@@ -273,10 +270,10 @@ module Dynflow
           end
 
           it 'by default, the auto_validity_check is enabled only for executor words' do
-            client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world )
+            client_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = false }, create_world)
             _(client_world_config.auto_validity_check).must_equal false
 
-            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = Executors::Parallel::Core }, create_world )
+            executor_world_config = Config::ForWorld.new(Config.new.tap { |c| c.executor = Executors::Parallel::Core }, create_world)
             _(executor_world_config.auto_validity_check).must_equal true
           end
 
@@ -304,7 +301,7 @@ module Dynflow
             _(client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size).must_equal 2
 
             results = client_world.worlds_validity_check(true, :id => invalid_world.id)
-            _(results).must_equal(invalid_world.id =>  :invalidated)
+            _(results).must_equal(invalid_world.id => :invalidated)
             _(client_world.coordinator.find_worlds(false, id: [invalid_world.id, invalid_world_2.id]).size).must_equal 1
           end
         end
@@ -382,4 +379,3 @@ module Dynflow
     end
   end
 end
-

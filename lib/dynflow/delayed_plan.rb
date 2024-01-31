@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   class DelayedPlan < Serializable
-
     include Algebrick::TypeCheck
 
     attr_reader :execution_plan_uuid, :start_before
@@ -72,11 +72,11 @@ module Dynflow
     def self.new_from_hash(world, hash, *args)
       serializer = Utils.constantize(hash[:args_serializer]).new(nil, hash[:serialized_args])
       self.new(world,
-               hash[:execution_plan_uuid],
-               string_to_time(hash[:start_at]),
-               string_to_time(hash[:start_before]),
-               serializer,
-               hash[:frozen] || false)
+        hash[:execution_plan_uuid],
+        string_to_time(hash[:start_at]),
+        string_to_time(hash[:start_before]),
+        serializer,
+        hash[:frozen] || false)
     rescue NameError => e
       error(e.message)
     end

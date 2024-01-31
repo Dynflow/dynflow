@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   class Director
     class QueueHash
@@ -7,7 +8,7 @@ module Dynflow
       def initialize(key_type = Object, value_type = Object)
         @key_type = key_type
         @value_type = value_type
-        @stash     = Hash.new { |hash, key| hash[key] = [] }
+        @stash = Hash.new { |hash, key| hash[key] = [] }
       end
 
       def push(key, value)

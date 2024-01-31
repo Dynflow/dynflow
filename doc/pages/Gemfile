@@ -1,10 +1,11 @@
 # frozen_string_literal: true
+
 source 'https://rubygems.org'
 
-gem 'rake'
 gem 'jekyll'
 gem 'pry'
+gem 'pygments.rb'
+gem 'rake'
+gem 'redcarpet'
 gem 'ruby-nuggets' # require by tags plugin
 gem 'therubyracer'
-gem 'redcarpet'
-gem 'pygments.rb'

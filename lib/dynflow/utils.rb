@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Utils
-
     require 'dynflow/utils/indifferent_hash'
     require 'dynflow/utils/priority_queue'
 

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'algebrick/serializer'
 
 module Dynflow
@@ -7,7 +8,6 @@ module Dynflow
   end
 
   class Serializer < Algebrick::Serializer
-
     ARBITRARY_TYPE_KEY = :class
     MARSHAL_KEY        = :marshaled
 
@@ -38,7 +38,7 @@ module Dynflow
         end
 
         if (type_name = other[ARBITRARY_TYPE_KEY] || other[ARBITRARY_TYPE_KEY.to_s])
-          if type_name == 'Time' && ( time_str = other['value'] )
+          if type_name == 'Time' && (time_str = other['value'])
             return Serializable.send(:string_to_time, time_str)
           end
           type = Utils.constantize(type_name) rescue nil

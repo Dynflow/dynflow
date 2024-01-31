@@ -1,9 +1,8 @@
-
 # frozen_string_literal: true
+
 module Dynflow
   module Web
     class Console < Sinatra::Base
-
       set :public_folder, Web.web_dir('assets')
       set :views, Web.web_dir('views')
       set :per_page, 10
@@ -107,7 +106,6 @@ module Dynflow
           redirect(url "/#{plan.id}?notice=#{url_encode('The step does not support cancelling')}")
         end
       end
-
     end
   end
 end

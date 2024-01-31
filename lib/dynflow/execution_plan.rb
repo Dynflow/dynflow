@@ -1,18 +1,18 @@
 # frozen_string_literal: true
+
 require 'securerandom'
 
 module Dynflow
   # rubocop:disable Metrics/ClassLength
   # TODO extract planning logic to an extra class ExecutionPlanner
   class ExecutionPlan < Serializable
-
     # a fallback object representing a plan with some corrupted data,
     # preventing to load the whole plan properly, this can be used for presenting
     # at least some data and not running into internal server errors
     class InvalidPlan
       attr_reader :exception, :id, :label, :state,
-                  :started_at, :ended_at,
-                  :execution_time, :real_time, :execution_history
+        :started_at, :ended_at,
+        :execution_time, :real_time, :execution_history
 
       def initialize(exception, id, label, state,
                      started_at = nil, ended_at = nil,
@@ -45,8 +45,8 @@ module Dynflow
     require 'dynflow/execution_plan/dependency_graph'
 
     attr_reader :id, :world, :label,
-                :root_plan_step, :steps, :run_flow, :finalize_flow,
-                :started_at, :ended_at, :execution_time, :real_time, :execution_history
+      :root_plan_step, :steps, :run_flow, :finalize_flow,
+      :started_at, :ended_at, :execution_time, :real_time, :execution_history
 
     def self.states
       @states ||= [:pending, :scheduled, :planning, :planned, :running, :paused, :stopped]
@@ -83,9 +83,9 @@ module Dynflow
                    real_time         = 0.0,
                    execution_history = ExecutionHistory.new)
       id ||= SecureRandom.uuid
-      @id                = Type! id, String
-      @world             = Type! world, World
-      @label             = Type! label, String, NilClass
+      @id = Type! id, String
+      @world = Type! world, World
+      @label = Type! label, String, NilClass
       self.state         = state
       @run_flow          = Type! run_flow, Flows::Abstract
       @finalize_flow     = Type! finalize_flow, Flows::Abstract
@@ -130,7 +130,7 @@ module Dynflow
         key = failure? ? :failure : :success
         Dynflow::Telemetry.with_instance do |t|
           t.increment_counter(:dynflow_finished_execution_plans, 1,
-                              telemetry_common_options.merge(:result => key.to_s))
+            telemetry_common_options.merge(:result => key.to_s))
         end
         hooks_to_run << key
         unlock_all_singleton_locks!
@@ -140,11 +140,11 @@ module Dynflow
         # ignore
       end
       logger.debug format('%13s %s    %9s >> %9s',
-                          'ExecutionPlan', id, original, state)
+        'ExecutionPlan', id, original, state)
       add_history_notice(history_notice)
       self.save
       toggle_telemetry_state original == :pending ? nil : original.to_s,
-                             self.state == :stopped ? nil : self.state.to_s
+        self.state == :stopped ? nil : self.state.to_s
       hooks_to_run.each { |kind| run_hooks kind }
     end
 
@@ -238,7 +238,7 @@ module Dynflow
     end
 
     def steps_in_state(*states)
-      self.steps.values.find_all {|step| states.include?(step.state) }
+      self.steps.values.find_all { |step| states.include?(step.state) }
     end
 
     def generate_action_id
@@ -257,11 +257,11 @@ module Dynflow
       run_hooks(:pending)
       serializer = root_plan_step.delay(delay_options, args)
       delayed_plan = DelayedPlan.new(@world,
-                                     id,
-                                     delay_options[:start_at],
-                                     delay_options.fetch(:start_before, nil),
-                                     serializer,
-                                     delay_options[:frozen] || false)
+        id,
+        delay_options[:start_at],
+        delay_options.fetch(:start_before, nil),
+        serializer,
+        delay_options[:frozen] || false)
       persistence.save_delayed_plan(delayed_plan)
     ensure
       update_state(error? ? :stopped : :scheduled)
@@ -455,36 +455,36 @@ module Dynflow
       execution_plan_id = hash[:id]
       steps             = steps_from_hash(hash[:step_ids], execution_plan_id, world)
       self.new(world,
-               execution_plan_id,
-               hash[:label],
-               hash[:state],
-               steps[hash[:root_plan_step_id]],
-               load_flow(hash[:run_flow]),
-               load_flow(hash[:finalize_flow]),
-               steps,
-               string_to_time(hash[:started_at]),
-               string_to_time(hash[:ended_at]),
-               hash[:execution_time].to_f,
-               hash[:real_time].to_f,
-               ExecutionHistory.new_from_hash(hash[:execution_history]))
+        execution_plan_id,
+        hash[:label],
+        hash[:state],
+        steps[hash[:root_plan_step_id]],
+        load_flow(hash[:run_flow]),
+        load_flow(hash[:finalize_flow]),
+        steps,
+        string_to_time(hash[:started_at]),
+        string_to_time(hash[:ended_at]),
+        hash[:execution_time].to_f,
+        hash[:real_time].to_f,
+        ExecutionHistory.new_from_hash(hash[:execution_history]))
     rescue => plan_exception
       begin
         world.logger.error("Could not load execution plan #{execution_plan_id}")
         world.logger.error(plan_exception)
         InvalidPlan.new(plan_exception, execution_plan_id,
-                        hash[:label],
-                        hash[:state],
-                        string_to_time(hash[:started_at]),
-                        string_to_time(hash[:ended_at]),
-                        hash[:execution_time].to_f,
-                        hash[:real_time].to_f,
-                        ExecutionHistory.new_from_hash(hash[:execution_history]))
+          hash[:label],
+          hash[:state],
+          string_to_time(hash[:started_at]),
+          string_to_time(hash[:ended_at]),
+          hash[:execution_time].to_f,
+          hash[:real_time].to_f,
+          ExecutionHistory.new_from_hash(hash[:execution_history]))
       rescue => invalid_plan_exception
         world.logger.error("Could not even load a fallback execution plan for #{execution_plan_id}")
         world.logger.error(invalid_plan_exception)
         InvalidPlan.new(invalid_plan_exception, execution_plan_id,
-                        hash[:label],
-                        hash[:state])
+          hash[:label],
+          hash[:state])
       end
     end
 
@@ -530,12 +530,12 @@ module Dynflow
 
     def add_step(step_class, action_class, action_id, state = :pending)
       step_class.new(self.id,
-                     self.generate_step_id,
-                     state,
-                     action_class,
-                     action_id,
-                     nil,
-                     world).tap do |new_step|
+        self.generate_step_id,
+        state,
+        action_class,
+        action_id,
+        nil,
+        world).tap do |new_step|
         @steps[new_step.id] = new_step
       end
     end
@@ -571,9 +571,9 @@ module Dynflow
       @label = root_plan_step.action_class if @label.nil?
       Dynflow::Telemetry.with_instance do |t|
         t.set_gauge(:dynflow_active_execution_plans, '-1',
-                    telemetry_common_options.merge(:state => original)) unless original.nil?
+          telemetry_common_options.merge(:state => original)) unless original.nil?
         t.set_gauge(:dynflow_active_execution_plans, '+1',
-                    telemetry_common_options.merge(:state => new)) unless new.nil?
+          telemetry_common_options.merge(:state => new)) unless new.nil?
       end
     end
 

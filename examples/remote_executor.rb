@@ -45,7 +45,6 @@ end
 
 class RemoteExecutorExample
   class << self
-
     def run_observer
       world = ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
@@ -136,7 +135,6 @@ class RemoteExecutorExample
         sleep 0.5
       end
     end
-
   end
 end
 
@@ -145,17 +143,17 @@ command = ARGV.first || 'server'
 if $0 == __FILE__
   case command
   when 'observer'
-    puts <<MSG
-The observer starting…. You can see what's going on there
-MSG
+    puts <<~MSG
+      The observer starting…. You can see what's going on there
+    MSG
     RemoteExecutorExample.run_observer
   when 'server'
-    puts <<MSG
-The server is starting…. You can send the work to it by running:
-
-   #{$0} client
-
-MSG
+    puts <<~MSG
+      The server is starting…. You can send the work to it by running:
+      
+         #{$0} client
+      
+    MSG
     RemoteExecutorExample.run_server
   when 'client'
     RemoteExecutorExample.run_client

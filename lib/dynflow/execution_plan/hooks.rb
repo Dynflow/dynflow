@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   class ExecutionPlan
     module Hooks
-
       HOOK_KINDS = (ExecutionPlan.states + [:success, :failure]).freeze
 
       # A register holding information about hook classes and events

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'dynflow/telemetry_adapters/abstract'
 require 'dynflow/telemetry_adapters/dummy'
 require 'dynflow/telemetry_adapters/statsd'
@@ -33,32 +34,32 @@ module Dynflow
         with_instance do |t|
           # Worker related
           t.add_gauge   :dynflow_active_workers, 'The number of currently busy workers',
-                        [:queue, :world]
+            [:queue, :world]
           t.add_counter :dynflow_worker_events, 'The number of processed events',
-                        [:queue, :world, :worker]
+            [:queue, :world, :worker]
 
           # Execution plan related
           t.add_gauge   :dynflow_active_execution_plans, 'The number of active execution plans',
-                        [:action, :world, :state]
+            [:action, :world, :state]
           t.add_gauge   :dynflow_queue_size, 'Number of items in queue',
-                        [:queue, :world]
+            [:queue, :world]
           t.add_counter :dynflow_finished_execution_plans, 'The number of execution plans',
-                        [:action, :world, :result]
+            [:action, :world, :result]
 
           # Step related
           # TODO: Configure buckets in a sane manner
           t.add_histogram :dynflow_step_real_time, 'The time between the start end end of the step',
-                          [:action, :phase]
+            [:action, :phase]
           t.add_histogram :dynflow_step_execution_time, 'The time spent executing a step',
-                          [:action, :phase]
+            [:action, :phase]
 
           # Connector related
           t.add_counter :dynflow_connector_envelopes, 'The number of envelopes handled by a connector',
-                        [:world, :direction]
+            [:world, :direction]
 
           # Persistence related
           t.add_histogram :dynflow_persistence, 'The time spent communicating with the database',
-                          [:world, :method]
+            [:world, :method]
         end
       end
     end

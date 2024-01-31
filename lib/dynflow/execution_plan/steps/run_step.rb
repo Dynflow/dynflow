@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module ExecutionPlan::Steps
     class RunStep < AbstractFlowStep
-
       def self.state_transitions
         @state_transitions ||= {
             pending:   [:running, :skipped, :error], # :skipped when it cannot be run because it depends on skipping step

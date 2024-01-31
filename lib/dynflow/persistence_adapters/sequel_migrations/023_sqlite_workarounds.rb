@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 tables = [:dynflow_actions, :dynflow_delayed_plans, :dynflow_steps, :dynflow_output_chunks]
 Sequel.migration do
   up do

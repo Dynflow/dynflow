@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module TelemetryAdapters
     class StatsD < Abstract
@@ -42,7 +43,7 @@ module Dynflow
       def name_tag_mapping(name, tags)
         instances = @instances[name]
         return name if instances.nil? || instances.empty?
-        (name.to_s + '.' + instances.map {|x| tags[x]}.compact.join('.')).tr('-:/ ', '____')
+        (name.to_s + '.' + instances.map { |x| tags[x] }.compact.join('.')).tr('-:/ ', '____')
       end
     end
   end

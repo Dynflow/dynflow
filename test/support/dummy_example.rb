@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'logger'
 
 module Support
@@ -24,6 +25,7 @@ module Support
       def delay(delay_options, *args)
         MySerializer.new(args)
       end
+
       def run; end
     end
 
@@ -43,7 +45,7 @@ module Support
         sleep input[:interval]
         action_logger.debug 'done with sleeping'
         $slow_actions_done ||= 0
-        $slow_actions_done +=1
+        $slow_actions_done += 1
       end
 
       def queue
@@ -87,7 +89,6 @@ module Support
     end
 
     class WeightedPolling < Dynflow::Action
-
       def plan(input)
         sequence do
           plan_self(input)
@@ -148,23 +149,23 @@ module Support
     class ComposedAction < Dynflow::Action
       def run(event = nil)
         match event,
-              (on nil do
-                 sub_plan = world.trigger(Dummy)
-                 output[:sub_plan_id] = sub_plan.id
-                 suspend do |suspended_action|
-                   if input[:timeout]
-                     world.clock.ping suspended_action, input[:timeout], "timeout"
-                   end
+          (on nil do
+             sub_plan = world.trigger(Dummy)
+             output[:sub_plan_id] = sub_plan.id
+             suspend do |suspended_action|
+               if input[:timeout]
+                 world.clock.ping suspended_action, input[:timeout], "timeout"
+               end
 
-                   sub_plan.finished.on_fulfillment! { suspended_action << 'finish' }
-                 end
-               end),
-              (on 'finish' do
-                 output[:event] = 'finish'
-               end),
-              (on 'timeout' do
-                 output[:event] = 'timeout'
-               end)
+               sub_plan.finished.on_fulfillment! { suspended_action << 'finish' }
+             end
+           end),
+          (on 'finish' do
+             output[:event] = 'finish'
+           end),
+          (on 'timeout' do
+             output[:event] = 'timeout'
+           end)
       end
     end
   end

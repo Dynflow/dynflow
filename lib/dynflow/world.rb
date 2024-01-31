@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # frozen_string_literal: true
+
 require 'dynflow/world/invalidation'
 
 module Dynflow
@@ -9,10 +10,10 @@ module Dynflow
     include Invalidation
 
     attr_reader :id, :config, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-                :transaction_adapter, :logger_adapter, :coordinator,
-                :persistence, :action_classes, :subscription_index,
-                :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
-                :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
+      :transaction_adapter, :logger_adapter, :coordinator,
+      :persistence, :action_classes, :subscription_index,
+      :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
+      :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
 
     def initialize(config)
       @config = Config::ForWorld.new(config, self)
@@ -27,14 +28,14 @@ module Dynflow
       @config.validate
       @transaction_adapter    = @config.transaction_adapter
       @persistence            = Persistence.new(self, @config.persistence_adapter,
-                                                :backup_deleted_plans => @config.backup_deleted_plans,
-                                                :backup_dir => @config.backup_dir)
+        :backup_deleted_plans => @config.backup_deleted_plans,
+        :backup_dir => @config.backup_dir)
       @coordinator            = Coordinator.new(@config.coordinator_adapter)
       if @config.executor
         @executor = Executors::Parallel.new(self,
-                                            executor_class: @config.executor,
-                                            heartbeat_interval: @config.executor_heartbeat_interval,
-                                            queues_options: @config.queues)
+          executor_class: @config.executor,
+          heartbeat_interval: @config.executor_heartbeat_interval,
+          queues_options: @config.queues)
       end
       @action_classes         = @config.action_classes
       @auto_rescue            = @config.auto_rescue
@@ -86,7 +87,7 @@ module Dynflow
     end
 
     def update_register
-      @meta                     ||= @config.meta
+      @meta ||= @config.meta
       @meta['queues']           = @config.queues if @executor
       @meta['delayed_executor'] = true if @delayed_executor
       @meta['execution_plan_cleaner'] = true if @execution_plan_cleaner
@@ -278,7 +279,7 @@ module Dynflow
     def auto_execute
       coordinator.acquire(Coordinator::AutoExecuteLock.new(self)) do
         planned_execution_plans =
-            self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
+          self.persistence.find_execution_plans filters: { 'state' => %w(planned paused), 'result' => (ExecutionPlan.results - [:error]).map(&:to_s) }
         planned_execution_plans.map do |ep|
           if coordinator.find_locks(Dynflow::Coordinator::ExecutionLock.unique_filter(ep.id)).empty?
             execute(ep.id)
@@ -361,12 +362,12 @@ module Dynflow
 
     def calculate_subscription_index
       @subscription_index =
-          action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
-            next unless klass.subscribe
-            Array(klass.subscribe).each do |subscribed_class|
-              index[Utils.constantize(subscribed_class.to_s)] << klass
-            end
-          end.tap { |o| o.freeze }
+        action_classes.each_with_object(Hash.new { |h, k| h[k] = [] }) do |klass, index|
+          next unless klass.subscribe
+          Array(klass.subscribe).each do |subscribed_class|
+            index[Utils.constantize(subscribed_class.to_s)] << klass
+          end
+        end.tap { |o| o.freeze }
     end
 
     def run_before_termination_hooks
@@ -388,6 +389,5 @@ module Dynflow
       initialized.wait
       return actor
     end
-
   end
 end

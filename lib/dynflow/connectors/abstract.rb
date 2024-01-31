@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Connectors
     class Abstract
@@ -35,16 +36,16 @@ module Dynflow
         Type! envelope, Dispatcher::Envelope
         Telemetry.with_instance { |t| t.increment_counter(:dynflow_connector_envelopes, 1, :world => world.id, :direction => 'incoming') }
         match(envelope.message,
-              (on Dispatcher::Ping do
-                 response_envelope = envelope.build_response_envelope(Dispatcher::Pong, world)
-                 send(response_envelope)
-               end),
-              (on Dispatcher::Request do
-                 world.executor_dispatcher.tell([:handle_request, envelope])
-               end),
-              (on Dispatcher::Response do
-                 world.client_dispatcher.tell([:dispatch_response, envelope])
-               end))
+          (on Dispatcher::Ping do
+             response_envelope = envelope.build_response_envelope(Dispatcher::Pong, world)
+             send(response_envelope)
+           end),
+          (on Dispatcher::Request do
+             world.executor_dispatcher.tell([:handle_request, envelope])
+           end),
+          (on Dispatcher::Response do
+             world.client_dispatcher.tell([:dispatch_response, envelope])
+           end))
       end
     end
   end

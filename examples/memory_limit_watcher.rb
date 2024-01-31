@@ -3,14 +3,14 @@
 
 require_relative 'example_helper'
 
-example_description = <<DESC
-  Memory limit watcher Example
-  ===========================
-
-In this example we are setting a watcher that will terminate our world object
-when process memory consumption exceeds a limit that will be set.
-
-
+example_description = <<~DESC
+    Memory limit watcher Example
+    ===========================
+  
+  In this example we are setting a watcher that will terminate our world object
+  when process memory consumption exceeds a limit that will be set.
+  
+  
 DESC
 
 module MemorylimiterExample

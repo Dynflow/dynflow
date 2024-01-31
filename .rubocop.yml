@@ -1,29 +1,35 @@
 inherit_from: .rubocop_todo.yml
+inherit_gem:
+  theforeman-rubocop:
+    - lenient.yml
 
 AllCops:
-  TargetRubyVersion: 2.3
+  TargetRubyVersion: 2.7
 
 # Cop supports --auto-correct.
 # Configuration parameters: AllowForAlignment, ForceEqualSignAlignment.
-Style/ExtraSpacing:
+Layout/ExtraSpacing:
   Enabled: true
 
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles.
 # SupportedStyles: with_first_parameter, with_fixed_indentation
-Style/AlignParameters:
+Layout/ParameterAlignment:
   Enabled: true
 
 # Cop supports --auto-correct.
 # Configuration parameters: EnforcedStyle, SupportedStyles, IndentationWidth.
 # SupportedStyles: aligned, indented
-Style/MultilineOperationIndentation:
+Layout/MultilineOperationIndentation:
   Enabled: true
 
 # Cop supports --auto-correct.
-Style/EmptyLines:
+Layout/EmptyLines:
   Enabled: true
 
 Metrics/ModuleLength:
   Exclude:
   - test/**/*
+
+Style/LambdaCall:
+  Enabled: false

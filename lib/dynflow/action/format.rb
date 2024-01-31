@@ -1,11 +1,10 @@
 # frozen_string_literal: true
-module Dynflow
 
+module Dynflow
   # Input/output format validation logic calling
   # input_format/output_format with block acts as a setter for
   # specifying the format. Without a block it acts as a getter
   module Action::Format
-
     # we don't evaluate tbe block immediatelly, but postpone it till all the
     # action classes are loaded, because we can use them to reference output format
     def input_format(&block)
@@ -41,7 +40,5 @@ module Dynflow
         end
       end
     end
-
   end
 end
-

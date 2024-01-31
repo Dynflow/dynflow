@@ -1,9 +1,9 @@
 # frozen_string_literal: true
+
 require 'tsort'
 
 module Dynflow
   class Middleware::Resolver
-
     include TSort
     include Algebrick::TypeCheck
 
@@ -49,7 +49,7 @@ module Dynflow
         middleware_deps.reject! { |dep| !deps.has_key?(dep) }
       end
 
-      return deps.delete_if {|klass, _| klass.nil? }
+      return deps.delete_if { |klass, _| klass.nil? }
     end
 
     def tsort_each_node(&block)
@@ -59,6 +59,5 @@ module Dynflow
     def tsort_each_child(node, &block)
       @deps.fetch(node).each(&block)
     end
-
   end
 end

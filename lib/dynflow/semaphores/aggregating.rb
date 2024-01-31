@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Semaphores
     class Aggregating < Abstract
-
       attr_reader :children, :waiting
 
       def initialize(children)
@@ -58,7 +58,6 @@ module Dynflow
           @children[key].release n
         end
       end
-
     end
   end
 end

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'fileutils'
 require 'get_process_mem'
 require 'dynflow/watchers/memory_consumption_watcher'
@@ -175,7 +176,6 @@ module Dynflow
         else raise "Unknown unit: #{unit.inspect}!"
         end
       end
-
     end
   end
 end

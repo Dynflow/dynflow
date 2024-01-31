@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'mocha/minitest'
 
@@ -11,11 +12,13 @@ require 'dynflow/executors/sidekiq/core'
 
 module RedisMocks
   def release_orchestrator_lock; end
+
   def wait_for_orchestrator_lock; end
+
   def reacquire_orchestrator_lock; end
 end
 
-::Dynflow::Executors::Sidekiq::Core.send(:prepend, RedisMocks)
+::Dynflow::Executors::Sidekiq::Core.prepend RedisMocks
 
 module Dynflow
   module ExecutorTest
@@ -71,9 +74,7 @@ module Dynflow
         end
 
         describe "execution plan state" do
-
           describe "after successful planning" do
-
             let :execution_plan do
               world.plan(Support::CodeWorkflowExample::IncomingIssues, issues_data)
             end
@@ -100,7 +101,6 @@ module Dynflow
           end
 
           describe "after error in planning" do
-
             class FailingAction < Dynflow::Action
               def plan
                 raise "I failed"
@@ -114,7 +114,6 @@ module Dynflow
             it "is stopped" do
               _(execution_plan.state).must_equal :stopped
             end
-
           end
 
           describe "when being executed" do
@@ -166,7 +165,6 @@ module Dynflow
         end
 
         describe "execution of run flow" do
-
           before do
             TestExecutionLog.setup
           end
@@ -230,8 +228,8 @@ module Dynflow
             describe 'handling errors in setup' do
               let :execution_plan do
                 world.plan(Support::DummyExample::Polling,
-                           external_task_id: '123',
-                           text:             'troll setup')
+                  external_task_id: '123',
+                  text:             'troll setup')
               end
 
               it 'fails' do
@@ -310,8 +308,8 @@ module Dynflow
               describe 'plan with one action' do
                 let :execution_plan do
                   world.plan(Support::DummyExample::Polling,
-                             { external_task_id: '123',
-                               text:             'pause in progress 20%' })
+                    { external_task_id: '123',
+                      text:             'pause in progress 20%' })
                 end
 
                 it 'determines the progress of the execution plan in percents' do
@@ -325,8 +323,8 @@ module Dynflow
               describe 'plan with more action' do
                 let :execution_plan do
                   world.plan(Support::DummyExample::WeightedPolling,
-                             { external_task_id: '123',
-                               text:             'pause in progress 20%' })
+                    { external_task_id: '123',
+                      text:             'pause in progress 20%' })
                 end
 
                 it 'takes the steps weight in account' do
@@ -341,8 +339,8 @@ module Dynflow
             describe 'works when resumed after error' do
               let :execution_plan do
                 world.plan(Support::DummyExample::Polling,
-                           { external_task_id: '123',
-                             text:             'troll progress' })
+                  { external_task_id: '123',
+                    text:             'troll progress' })
               end
 
               specify do
@@ -356,11 +354,9 @@ module Dynflow
                 assert_equal :success, ep.run_steps.first.state
               end
             end
-
           end
 
           describe "action with empty flows" do
-
             let :execution_plan do
               world.plan(Support::CodeWorkflowExample::Dummy, { :text => "dummy" }).tap do |plan|
                 assert_equal plan.run_flow.size, 0
@@ -379,11 +375,9 @@ module Dynflow
               world.execute(execution_plan.id)
               assert_raises(Dynflow::Error) { world.execute(execution_plan.id).value! }
             end
-
           end
 
           describe 'action with empty run flow but some finalize flow' do
-
             let :execution_plan do
               world.plan(Support::CodeWorkflowExample::DummyWithFinalize, { :text => "dummy" }).tap do |plan|
                 assert_equal plan.run_flow.size, 0
@@ -395,7 +389,6 @@ module Dynflow
               _(result.result).must_equal :success
               _(result.state).must_equal :stopped
             end
-
           end
 
           describe 'running' do
@@ -417,7 +410,6 @@ module Dynflow
               EXECUTED_RUN_FLOW
             end
           end
-
         end
 
         describe "execution of finalize flow" do
@@ -438,10 +430,10 @@ module Dynflow
 
             it "runs all the steps in the finalize flow" do
               assert_finalized(Support::CodeWorkflowExample::IncomingIssues,
-                               { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" },
-                                              { "author" => "John Doe", "text" => "Internal server error" }] })
+                { "issues" => [{ "author" => "Peter Smith", "text" => "Failing test" },
+                               { "author" => "John Doe", "text" => "Internal server error" }] })
               assert_finalized(Support::CodeWorkflowExample::Triage,
-                               { "author" => "Peter Smith", "text" => "Failing test" })
+                { "author" => "Peter Smith", "text" => "Failing test" })
             end
           end
 
@@ -454,7 +446,6 @@ module Dynflow
               _(TestExecutionLog.finalize.size).must_equal 0
             end
           end
-
         end
 
         describe "re-execution of run flow after fix in run phase" do
@@ -493,13 +484,11 @@ module Dynflow
             13: Triage(success) {\"author\"=>\"John Doe\", \"text\"=>\"ok\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
             16: UpdateIssue(success) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\", \"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"} --> {}
             18: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
-          EXECUTED_RUN_FLOW
+            EXECUTED_RUN_FLOW
           end
-
         end
 
         describe "re-execution of run flow after fix in finalize phase" do
-
           after do
             TestExecutionLog.teardown
           end
@@ -532,13 +521,11 @@ module Dynflow
               14: Triage(success) {\"author\"=>\"John Doe\", \"text\"=>\"ok\"} --> {\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}
               19: NotifyAssignee(success) {\"triage\"=>{\"classification\"=>{\"assignee\"=>\"John Doe\", \"severity\"=>\"medium\"}}} --> {}
               20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling in finalize\"}]} --> {}
-          EXECUTED_RUN_FLOW
+            EXECUTED_RUN_FLOW
           end
-
         end
 
         describe "re-execution of run flow after skipping" do
-
           after do
             TestExecutionLog.teardown
           end
@@ -571,7 +558,7 @@ module Dynflow
             13: Triage(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"} --> {}
             16: UpdateIssue(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\", \"assignee\"=>Step(13).output[:classification][:assignee], \"severity\"=>Step(13).output[:classification][:severity]} --> {}
             18: NotifyAssignee(skipped) {\"triage\"=>Step(13).output} --> {}
-          EXECUTED_RUN_FLOW
+            EXECUTED_RUN_FLOW
 
             assert_finalize_flow <<-FINALIZE_FLOW, resumed_execution_plan
         Dynflow::Flows::Sequence
@@ -580,8 +567,7 @@ module Dynflow
           14: Triage(skipped) {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"} --> {}
           19: NotifyAssignee(skipped) {\"triage\"=>Step(13).output} --> {}
           20: IncomingIssues(success) {\"issues\"=>[{\"author\"=>\"Peter Smith\", \"text\"=>\"Failing test\"}, {\"author\"=>\"John Doe\", \"text\"=>\"trolling\"}]} --> {}
-          FINALIZE_FLOW
-
+            FINALIZE_FLOW
           end
         end
 
@@ -617,7 +603,6 @@ module Dynflow
           end
 
           describe 'what_is_next with errors' do
-
             it "doesn't return next steps if requirements failed" do
               assert_next_steps([4, 13])
               assert_next_steps([], 4, false)
@@ -631,7 +616,6 @@ module Dynflow
               assert manager.done?
             end
           end
-
         end
 
         describe 'Pool::JobStorage' do
@@ -673,7 +657,6 @@ module Dynflow
             assert_nil storage.pop
           end
         end
-
       end
 
       describe 'termination' do
@@ -682,7 +665,7 @@ module Dynflow
         it 'waits for currently running actions' do
           $slow_actions_done = 0
           running = world.trigger(Support::DummyExample::Slow, 1)
-          suspended = world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3 )
+          suspended = world.trigger(Support::DummyExample::DeprecatedEventedAction, :timeout => 3)
           sleep 0.2
           world.terminate.wait
           _($slow_actions_done).must_equal 1

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   class ThrottleLimiter
-
     attr_reader :core
 
     def initialize(world)

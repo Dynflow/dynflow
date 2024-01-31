@@ -1,9 +1,9 @@
 # frozen_string_literal: true
+
 require 'dynflow/action/timeouts'
 
 module Dynflow
   module Action::Polling
-
     def self.included(base)
       base.send :include, Action::Timeouts
     end
@@ -71,7 +71,7 @@ module Dynflow
 
     # Returns the time to wait between two polling intervals.
     def poll_interval
-      interval_level = poll_attempts[:total]/attempts_before_next_interval
+      interval_level = poll_attempts[:total] / attempts_before_next_interval
       poll_intervals[interval_level] || poll_intervals.last
     end
 
@@ -116,6 +116,5 @@ module Dynflow
         raise error
       end
     end
-
   end
 end

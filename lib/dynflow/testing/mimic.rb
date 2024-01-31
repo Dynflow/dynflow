@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Testing
-
     # when extended into Class or an_object it makes all instances of the class or the object
     # mimic the supplied types. It does so by hooking into kind_of? method.
     # @example
@@ -18,7 +18,7 @@ module Dynflow
       end
 
       def mimic!(*types)
-        define =-> _ do
+        define = ->_ do
           define_method :mimic_types do
             types
           end

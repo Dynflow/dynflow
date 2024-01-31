@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   class ExecutionHistory
     include Algebrick::TypeCheck
@@ -35,7 +36,7 @@ module Dynflow
     end
 
     def inspect
-      "ExecutionHistory: #{ @events.inspect }"
+      "ExecutionHistory: #{@events.inspect}"
     end
 
     def self.new_from_hash(value)

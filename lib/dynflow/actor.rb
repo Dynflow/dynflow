@@ -1,6 +1,6 @@
 # frozen_string_literal: true
-module Dynflow
 
+module Dynflow
   FULL_BACKTRACE = %w[1 y yes].include?((ENV['DYNFLOW_FULL_BACKTRACE'] || '').downcase)
   BACKTRACE_LIMIT = begin
                       limit = ENV['DYNFLOW_BACKTRACE_LIMIT'].to_i
@@ -94,7 +94,7 @@ module Dynflow
         # takes an array of backtrace lines and replaces each chunk
         def filter_backtrace(backtrace)
           trace = backtrace.map { |line| filter_line(line) }
-                           .chunk_while { |l1, l2| l1 == l2}
+                           .chunk_while { |l1, l2| l1 == l2 }
                            .map(&:first)
           if BACKTRACE_LIMIT
             count = trace.count

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'bundler/setup'
 require 'minitest/reporters'
 require 'minitest/autorun'
@@ -13,7 +14,6 @@ $LOAD_PATH << load_path unless $LOAD_PATH.include? load_path
 require 'dynflow'
 require 'dynflow/testing'
 begin require 'pry'; rescue LoadError; nil end
-
 require 'support/code_workflow_example'
 require 'support/middleware_example'
 require 'support/rescue_example'
@@ -24,7 +24,6 @@ Concurrent.disable_at_exit_handlers!
 
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
-
   def self.setup
     @pause = Concurrent::Promises.resolvable_future
     @ready = Concurrent::Promises.resolvable_future
@@ -78,7 +77,6 @@ class CoordiationAdapterWithLog < Dynflow::CoordinatorAdapters::Sequel
 end
 
 module WorldFactory
-
   def self.created_worlds
     @created_worlds ||= []
   end
@@ -129,7 +127,7 @@ module WorldFactory
   def self.clean_coordinator_records
     persistence_adapter = WorldFactory.persistence_adapter
     persistence_adapter.find_coordinator_records({}).each do |w|
-      warn "Unexpected coordinator record: #{ w }"
+      warn "Unexpected coordinator record: #{w}"
       persistence_adapter.delete_coordinator_record(w[:class], w[:id])
     end
   end
@@ -230,7 +228,7 @@ module TestHelpers
                   'terminate execution',
                   'start execution',
                   'finish execution'],
-                 plan.execution_history.map(&:name)
+      plan.execution_history.map(&:name)
     refute_equal plan.execution_history.first.world_id, plan.execution_history.to_a.last.world_id
   end
 end
@@ -302,7 +300,6 @@ events_test = -> do
       wait_method.bind(self).call(timeout || default_timeout)
     end
   end
-
 end
 
 events_test.call
@@ -331,7 +328,6 @@ class ConcurrentRunTester
 end
 
 module PlanAssertions
-
   def inspect_flow(execution_plan, flow)
     out = "".dup
     inspect_subflow(out, execution_plan, flow, "".dup)

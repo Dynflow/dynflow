@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 Sequel.migration do
   change do
     create_table(:dynflow_coordinator_records) do
@@ -12,4 +13,3 @@ Sequel.migration do
     end
   end
 end
-

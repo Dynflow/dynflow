@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require_relative 'div_tag'
 
 module Jekyll

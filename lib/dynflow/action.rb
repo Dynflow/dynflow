@@ -1,8 +1,8 @@
 # frozen_string_literal: true
+
 module Dynflow
   # rubocop:disable Metrics/ClassLength
   class Action < Serializable
-
     OutputReference = ExecutionPlan::OutputReference
 
     include Algebrick::TypeCheck
@@ -68,9 +68,9 @@ module Dynflow
     Skip    = Algebrick.atom
     Phase   = Algebrick.type do
       Executable = type do
-        variants Plan     = atom,
-                 Run      = atom,
-                 Finalize = atom
+        variants Plan = atom,
+          Run      = atom,
+          Finalize = atom
       end
       variants Executable, Present = atom
     end
@@ -78,9 +78,9 @@ module Dynflow
     module Executable
       def execute_method_name
         match self,
-              (on Plan, :execute_plan),
-              (on Run, :execute_run),
-              (on Finalize, :execute_finalize)
+          (on Plan, :execute_plan),
+          (on Run, :execute_run),
+          (on Finalize, :execute_finalize)
       end
     end
 
@@ -105,9 +105,9 @@ module Dynflow
     end
 
     attr_reader :world, :phase, :execution_plan_id, :id, :input,
-                :plan_step_id, :run_step_id, :finalize_step_id,
-                :caller_execution_plan_id, :caller_action_id,
-                :pending_output_chunks
+      :plan_step_id, :run_step_id, :finalize_step_id,
+      :caller_execution_plan_id, :caller_action_id,
+      :pending_output_chunks
 
     middleware.use Action::Progress::Calculate
 
@@ -124,12 +124,12 @@ module Dynflow
       @run_step_id       = Type! attributes.fetch(:run_step_id), Integer, NilClass
       @finalize_step_id  = Type! attributes.fetch(:finalize_step_id), Integer, NilClass
 
-      @execution_plan    = Type!(attributes.fetch(:execution_plan), ExecutionPlan) if phase? Present
+      @execution_plan = Type!(attributes.fetch(:execution_plan), ExecutionPlan) if phase? Present
 
       @caller_execution_plan_id  = Type!(attributes.fetch(:caller_execution_plan_id, nil), String, NilClass)
       @caller_action_id          = Type!(attributes.fetch(:caller_action_id, nil), Integer, NilClass)
 
-      getter =-> key, required do
+      getter = ->key, required do
         required ? attributes.fetch(key) : attributes.fetch(key, {})
       end
 
@@ -236,10 +236,10 @@ module Dynflow
     # returned actions are in Present phase
     def planned_actions(filter = Action)
       phase! Present
-      plan_step.
-          planned_steps(execution_plan).
-          map { |s| s.action(execution_plan) }.
-          select { |a| a.is_a?(filter) }
+      plan_step
+        .planned_steps(execution_plan)
+        .map { |s| s.action(execution_plan) }
+        .select { |a| a.is_a?(filter) }
     end
 
     # @param [Class] filter_class return only actions which are kind of `filter_class`
@@ -248,8 +248,8 @@ module Dynflow
     def all_planned_actions(filter_class = Action)
       phase! Present
       mine = planned_actions
-      (mine + mine.reduce([]) { |arr, action| arr + action.all_planned_actions }).
-          select { |a| a.is_a?(filter_class) }
+      (mine + mine.reduce([]) { |arr, action| arr + action.all_planned_actions })
+        .select { |a| a.is_a?(filter_class) }
     end
 
     def run_step
@@ -268,18 +268,19 @@ module Dynflow
 
     def to_hash
       recursive_to_hash(
-          { class:                     self.class.name,
-            execution_plan_id:         execution_plan_id,
-            id:                        id,
-            plan_step_id:              plan_step_id,
-            run_step_id:               run_step_id,
-            finalize_step_id:          finalize_step_id,
-            caller_execution_plan_id:  caller_execution_plan_id,
-            caller_action_id:          caller_action_id,
-            input:                     input },
-          if phase? Run, Finalize, Present
-            { output: output }
-          end)
+        { class:                     self.class.name,
+          execution_plan_id:         execution_plan_id,
+          id:                        id,
+          plan_step_id:              plan_step_id,
+          run_step_id:               run_step_id,
+          finalize_step_id:          finalize_step_id,
+          caller_execution_plan_id:  caller_execution_plan_id,
+          caller_action_id:          caller_action_id,
+          input:                     input },
+        if phase? Run, Finalize, Present
+          { output: output }
+        end
+      )
     end
 
     def state
@@ -307,7 +308,7 @@ module Dynflow
     # @return [Array<Integer>] - ids of steps referenced from action
     def required_step_ids(input = self.input)
       results   = []
-      recursion =-> value do
+      recursion = ->value do
         case value
         when Hash
           value.values.each { |v| recursion.(v) }
@@ -364,9 +365,9 @@ module Dynflow
     def state=(state)
       phase! Executable
       @world.logger.debug format('%13s %s:%2d %9s >> %9s in phase %8s %s',
-                                 'Step', execution_plan_id, @step.id,
-                                 self.state, state,
-                                 phase.to_s_humanized, self.class)
+        'Step', execution_plan_id, @step.id,
+        self.state, state,
+        phase.to_s_humanized, self.class)
       @step.state = state
     end
 
@@ -502,6 +503,7 @@ module Dynflow
       when :skipping
         self.state = :skipped
       when :suspended, :error
+        # Do nothing
       else
         raise "wrong state #{self.state}"
       end
@@ -551,11 +553,10 @@ module Dynflow
     end
 
     # TODO: This is getting out of hand, refactoring needed
-    # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     def execute_run(event)
       phase! Run
       @world.logger.debug format('%13s %s:%2d got event %s',
-                                 'Step', execution_plan_id, @step.id, event) if event
+        'Step', execution_plan_id, @step.id, event) if event
 
       case
       when state == :running
@@ -599,7 +600,6 @@ module Dynflow
         raise "wrong state #{state} when event:#{event}"
       end
     end
-    # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
     def execute_finalize
       phase! Finalize

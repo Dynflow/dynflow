@@ -1,12 +1,11 @@
 # frozen_string_literal: true
+
 module Dynflow
   module DelayedExecutors
     class Polling < Abstract
-
       def core_class
         Dynflow::DelayedExecutors::PollingCore
       end
-
     end
 
     class PollingCore < AbstractCore

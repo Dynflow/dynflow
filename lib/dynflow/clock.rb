@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   class Clock < Actor
-
     include Algebrick::Types
 
     Timer = Algebrick.type do
@@ -13,7 +13,7 @@ module Dynflow
 
     module Timer
       def self.[](*fields)
-        super(*fields).tap { |v| Match! v.who, -> who { who.respond_to? v.where } }
+        super(*fields).tap { |v| Match! v.who, ->who { who.respond_to? v.where } }
       end
 
       include Comparable
@@ -116,7 +116,7 @@ module Dynflow
 
     def ping(who, time, with_what = nil, where = :<<, optional: false)
       Type! time, Time, Numeric
-      time  = current_time + time if time.is_a? Numeric
+      time = current_time + time if time.is_a? Numeric
       if who.is_a?(Action::Suspended)
         who.plan_event(with_what, time, optional: optional)
       else
@@ -125,5 +125,4 @@ module Dynflow
       end
     end
   end
-
 end

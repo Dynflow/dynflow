@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   class Director
     class ExecutionPlanManager
@@ -118,7 +119,6 @@ module Dynflow
       def finish
         return no_work
       end
-
     end
   end
 end

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Action::Rescue
-
     Strategy = Algebrick.type do
       variants Skip = atom, Pause = atom, Fail = atom
     end
@@ -65,4 +65,3 @@ module Dynflow
     end
   end
 end
-

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Flows
-
     class Abstract < Serializable
       include Algebrick::TypeCheck
 

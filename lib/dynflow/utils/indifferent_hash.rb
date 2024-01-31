@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Utils
     # Heavily inpired by ActiveSupport::HashWithIndifferentAccess,
@@ -84,7 +85,7 @@ module Dynflow
       end
 
       def reverse_merge!(other_hash)
-        replace(reverse_merge( other_hash ))
+        replace(reverse_merge(other_hash))
       end
 
       def replace(other_hash)
@@ -96,9 +97,13 @@ module Dynflow
       end
 
       def stringify_keys!; self end
+
       def deep_stringify_keys!; self end
+
       def stringify_keys; dup end
+
       def deep_stringify_keys; dup end
+
       def to_options!; self end
 
       def select(*args, &block)
@@ -119,6 +124,7 @@ module Dynflow
       end
 
       protected
+
       def convert_key(key)
         key.kind_of?(Symbol) ? key.to_s : key
       end

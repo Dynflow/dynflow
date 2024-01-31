@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 helper = Module.new do
   def to_uuid(table_name, column_name)
     set_column_type(table_name, column_name, :uuid, :using => "#{column_name}::uuid")
@@ -30,11 +31,11 @@ helper = Module.new do
     alter_table :dynflow_steps do
       add_foreign_key [:execution_plan_uuid], :dynflow_execution_plans
       add_foreign_key [:execution_plan_uuid, :action_id], :dynflow_actions,
-                      :name => :dynflow_steps_execution_plan_uuid_fkey1
+        :name => :dynflow_steps_execution_plan_uuid_fkey1
     end
     alter_table :dynflow_delayed_plans do
       add_foreign_key [:execution_plan_uuid], :dynflow_execution_plans,
-                      :name => :dynflow_scheduled_plans_execution_plan_uuid_fkey
+        :name => :dynflow_scheduled_plans_execution_plan_uuid_fkey
     end
   end
 end

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'English'
 
 module Dynflow
@@ -28,11 +29,11 @@ module Dynflow
 
       def formatter(severity, datetime, prog_name, msg)
         format "[%s #%d] %5s -- %s%s\n",
-               datetime.strftime('%Y-%m-%d %H:%M:%S.%L'),
-               $PID,
-               severity,
-               (prog_name ? prog_name + ': ' : ''),
-               msg.to_s
+          datetime.strftime('%Y-%m-%d %H:%M:%S.%L'),
+          $PID,
+          severity,
+          (prog_name ? prog_name + ': ' : ''),
+          msg.to_s
       end
 
       class ProgNameWrapper

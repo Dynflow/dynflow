@@ -24,9 +24,7 @@ DESC
 require_relative 'example_helper'
 
 module Orchestrate
-
   class CreateInfrastructure < Dynflow::Action
-
     def plan
       sequence do
         concurrence do
@@ -34,26 +32,25 @@ module Orchestrate
           plan_action(CreateMachine, 'host2', 'storage')
         end
         plan_action(CreateMachine,
-                    'host3',
-                    'web_server',
-                    :db_machine => 'host1',
-                    :storage_machine => 'host2')
+          'host3',
+          'web_server',
+          :db_machine => 'host1',
+          :storage_machine => 'host2')
       end
     end
   end
 
   class CreateMachine < Dynflow::Action
-
     def plan(name, profile, config_options = {})
       prepare_disk = plan_action(PrepareDisk, 'name' => name)
       create_vm    = plan_action(CreateVM,
-                                 :name => name,
-                                 :disk => prepare_disk.output['path'])
+        :name => name,
+        :disk => prepare_disk.output['path'])
       plan_action(AddIPtoHosts, :name => name, :ip => create_vm.output[:ip])
       plan_action(ConfigureMachine,
-                  :ip => create_vm.output[:ip],
-                  :profile => profile,
-                  :config_options => config_options)
+        :ip => create_vm.output[:ip],
+        :profile => profile,
+        :config_options => config_options)
       plan_self(:name => name)
     end
 
@@ -61,7 +58,6 @@ module Orchestrate
       # this is called after run methods of the actions in the
       # execution plan were finished
     end
-
   end
 
   class Base < Dynflow::Action
@@ -71,7 +67,6 @@ module Orchestrate
   end
 
   class PrepareDisk < Base
-
     def queue
       :slow
     end
@@ -88,11 +83,9 @@ module Orchestrate
       sleep!
       output[:path] = "/var/images/#{input[:name]}.img"
     end
-
   end
 
   class CreateVM < Base
-
     input_format do
       param :name
       param :disk
@@ -106,11 +99,9 @@ module Orchestrate
       sleep!
       output[:ip] = "192.168.100.#{rand(256)}"
     end
-
   end
 
   class AddIPtoHosts < Base
-
     input_format do
       param :ip
     end
@@ -118,11 +109,9 @@ module Orchestrate
     def run
       sleep!
     end
-
   end
 
   class ConfigureMachine < Base
-
     input_format do
       param :ip
       param :profile
@@ -144,7 +133,6 @@ module Orchestrate
 
       sleep!
     end
-
   end
 end
 

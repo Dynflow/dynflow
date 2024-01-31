@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   module Testing
     module Assertions
@@ -15,8 +16,8 @@ module Dynflow
         end
 
         assert(!found.empty?,
-               "Action #{planned_action_class} with plan_input #{plan_input} was not planned, " +
-                   "there were only #{found_classes.map(&:plan_input)}")
+          "Action #{planned_action_class} with plan_input #{plan_input} was not planned, " +
+              "there were only #{found_classes.map(&:plan_input)}")
         found
       end
 
@@ -24,8 +25,8 @@ module Dynflow
       def assert_action_planned(action, planned_action_class)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        found = action.execution_plan.planned_plan_steps.
-            select { |a| a.is_a?(planned_action_class) }
+        found = action.execution_plan.planned_plan_steps
+                      .select { |a| a.is_a?(planned_action_class) }
 
         assert(!found.empty?, "Action #{planned_action_class} was not planned")
         found
@@ -34,8 +35,8 @@ module Dynflow
       def refute_action_planned(action, planned_action_class)
         Match! action.phase, Action::Plan
         Match! action.state, :success
-        found = action.execution_plan.planned_plan_steps.
-            select { |a| a.is_a?(planned_action_class) }
+        found = action.execution_plan.planned_plan_steps
+                      .select { |a| a.is_a?(planned_action_class) }
 
         assert(found.empty?, "Action #{planned_action_class} was planned")
         found
@@ -74,7 +75,6 @@ module Dynflow
         Match! action.state, :success
         _(action.execution_plan.planned_finalize_steps).wont_include action
       end
-
     end
   end
 end

@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 module Dynflow
   class ExecutionPlan::OutputReference < Serializable
     include Algebrick::TypeCheck
@@ -77,10 +78,9 @@ module Dynflow
     def self.new_from_hash(hash)
       check_class_matching hash
       new(hash.fetch(:execution_plan_id),
-          hash.fetch(:step_id),
-          hash.fetch(:action_id),
-          hash.fetch(:subkeys))
+        hash.fetch(:step_id),
+        hash.fetch(:action_id),
+        hash.fetch(:subkeys))
     end
-
   end
 end

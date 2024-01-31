@@ -1,14 +1,13 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'mocha/minitest'
 
 module Dynflow
   describe 'action' do
-
     let(:world) { WorldFactory.create_world }
 
     describe Action::Missing do
-
       let :action_data do
         { class:             'RenamedAction',
           id:                1,
@@ -32,7 +31,6 @@ module Dynflow
     end
 
     describe 'children' do
-
       smart_action_class   = Class.new(Dynflow::Action)
       smarter_action_class = Class.new(smart_action_class)
 
@@ -50,7 +48,6 @@ module Dynflow
     end
 
     describe Action::Present do
-
       let :execution_plan do
         result = world.trigger(Support::CodeWorkflowExample::IncomingIssues, issues_data)
         _(result).must_be :planned?
@@ -74,7 +71,6 @@ module Dynflow
     end
 
     describe 'serialization' do
-
       include Testing
 
       it 'fails when input is not serializable' do
@@ -196,10 +192,9 @@ module Dynflow
       end
 
       class TestPollingAction < Dynflow::Action
-
         class Config
           attr_accessor :external_service, :poll_max_retries,
-                        :poll_intervals, :attempts_before_next_interval
+            :poll_intervals, :attempts_before_next_interval
 
           def initialize
             @external_service              = ExternalService.new
@@ -383,7 +378,6 @@ module Dynflow
     end
 
     describe Action::WithSubPlans do
-
       class FailureSimulator
         class << self
           attr_accessor :fail_in_child_plan, :fail_in_child_run
@@ -399,7 +393,6 @@ module Dynflow
       end
 
       class ParentAction < Dynflow::Action
-
         include Dynflow::Action::WithSubPlans
 
         def plan(*_)
@@ -413,7 +406,7 @@ module Dynflow
 
         def resume(*args)
           output[:custom_resume] = true
-          super *args
+          super(*args)
         end
       end
 
@@ -481,7 +474,6 @@ module Dynflow
         def batch(from, size)
           total_count.times.drop(from).take(size)
         end
-
       end
 
       let(:execution_plan) { world.trigger(ParentAction, count: 2).finished.value }
@@ -506,7 +498,7 @@ module Dynflow
       end
 
       specify "it saves the information about number for sub plans in the output" do
-        _(execution_plan.entry_action.output).must_equal('total_count'   => 2,
+        _(execution_plan.entry_action.output).must_equal('total_count' => 2,
                                                       'failed_count'  => 0,
                                                       'success_count' => 2,
                                                       'pending_count' => 0)
@@ -514,7 +506,7 @@ module Dynflow
 
       specify "when a sub plan fails, the caller action fails as well" do
         FailureSimulator.fail_in_child_run = true
-        _(execution_plan.entry_action.output).must_equal('total_count'   => 2,
+        _(execution_plan.entry_action.output).must_equal('total_count' => 2,
                                                       'failed_count'  => 2,
                                                       'success_count' => 0,
                                                       'pending_count' => 0)
@@ -789,7 +781,7 @@ module Dynflow
             plan = world.plan(SingletonAction)
             _(plan.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                            .unique_filter plan.entry_action.class.name
+                          .unique_filter plan.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 1
             plan = world.execute(plan.id).wait!.value
             _(plan.state).must_equal :stopped
@@ -801,7 +793,7 @@ module Dynflow
             plan = world.plan(SingletonActionWithFinalize)
             _(plan.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan.entry_action.class.name
+                          .unique_filter plan.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 1
             plan = world.execute(plan.id).wait!.value
             _(plan.state).must_equal :stopped
@@ -813,7 +805,7 @@ module Dynflow
             plan = world.plan(SuspendedSingletonAction)
             _(plan.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan.entry_action.class.name
+                          .unique_filter plan.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 1
             future = world.execute(plan.id)
             wait_for do
@@ -859,7 +851,7 @@ module Dynflow
 
             # The lock was released when plan3 stopped
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan3.entry_action.class.name
+                          .unique_filter plan3.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter)).must_be :empty?
           end
 
@@ -868,7 +860,7 @@ module Dynflow
             plan1 = world.plan(BadAction, true)
             _(plan1.state).must_equal :planned
             lock_filter = ::Dynflow::Coordinator::SingletonActionLock
-                              .unique_filter plan1.entry_action.class.name
+                          .unique_filter plan1.entry_action.class.name
             _(world.coordinator.find_locks(lock_filter).count).must_equal 0
             plan2 = world.plan(BadAction, false)
             _(plan2.state).must_equal :planned

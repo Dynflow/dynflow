@@ -1,11 +1,11 @@
 # frozen_string_literal: true
+
 require_relative 'test_helper'
 require 'logger'
 
 clock_class = Dynflow::Clock
 
 describe clock_class do
-
   let(:clock) { clock_class.spawn 'clock' }
 
   it 'refuses who without #<< method' do
@@ -48,7 +48,6 @@ describe clock_class do
         assert_equal (0...times).to_a, Array.new(times) { q.pop }.sort
       end
     end
-    threads.each &:join
+    threads.each(&:join)
   end
-
 end
