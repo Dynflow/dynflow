@@ -117,7 +117,14 @@ module Dynflow
       # @return [Integer] number of invalidated worlds
       def perform_validity_checks
         world_invalidation_result = worlds_validity_check
-        locks_validity_check
+        locks_validity_check.each do |lock|
+          case lock
+          when ::Dynflow::Coordinator::PlanningLock
+            invalidate_planning_lock(lock)
+          when ::Dynflow::Coordinator::ExecutionLock
+            invalidate_execution_lock(lock)
+          end
+        end
         pruned = connector.prune_undeliverable_envelopes(self)
         logger.error("Pruned #{pruned} undeliverable envelopes") unless pruned.zero?
         world_invalidation_result.values.select { |result| result == :invalidated }.size
