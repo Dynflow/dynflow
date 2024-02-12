@@ -22,7 +22,6 @@ module Dynflow
         poll_external_task_with_rescue
       when Action::Timeouts::Timeout
         process_timeout
-        suspend
       else
         raise "unrecognized event #{event}"
       end
