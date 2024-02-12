@@ -145,6 +145,10 @@ module Dynflow
         raise "Can't acquire the lock after deserialization" if @from_hash
         Type! owner_id, String
       end
+
+      def unlock_on_shutdown?
+        true
+      end
     end
 
     class LockByWorld < Lock
@@ -289,6 +293,10 @@ module Dynflow
       def request_id
         @data[:request_id]
       end
+
+      def unlock_on_shutdown?
+        false
+      end
     end
 
     class PlanningLock < LockByWorld
@@ -305,6 +313,10 @@ module Dynflow
       def execution_plan_id
         @data[:execution_plan_id]
       end
+
+      def unlock_on_shutdown?
+        false
+      end
     end
 
     attr_reader :adapter
@@ -320,8 +332,12 @@ module Dynflow
       if block
         begin
           block.call
+        # We are looking for ::Sidekiq::Shutdown, but that may not be defined. We rely on it being a subclass of Interrupt
+        # We don't really want to rescue it, but we need to bind it somehow so that we can check it in ensure
+        rescue Interrupt => e
+          raise e
         ensure
-          release(lock)
+          release(lock) if !(defined?(::Sidekiq) && e.is_a?(::Sidekiq::Shutdown)) || lock.unlock_on_shutdown?
         end
       end
     rescue DuplicateRecordError => e
@@ -333,8 +349,8 @@ module Dynflow
       adapter.delete_record(lock)
     end
 
-    def release_by_owner(owner_id)
-      find_locks(owner_id: owner_id).map { |lock| release(lock) }
+    def release_by_owner(owner_id, on_termination = false)
+      find_locks(owner_id: owner_id).map { |lock| release(lock) if !on_termination || lock.unlock_on_shutdown? }
     end
 
     def find_locks(filter_options)
@@ -379,9 +395,9 @@ module Dynflow
       create_record(world)
     end
 
-    def delete_world(world)
+    def delete_world(world, on_termination = false)
       Type! world, Coordinator::ClientWorld, Coordinator::ExecutorWorld
-      release_by_owner("world:#{world.id}")
+      release_by_owner("world:#{world.id}", on_termination)
       delete_record(world)
     end
 
