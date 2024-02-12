@@ -344,7 +344,7 @@ module Dynflow
               clock.ask(:terminate!).wait(termination_timeout)
             end
 
-            coordinator.delete_world(registered_world)
+            coordinator.delete_world(registered_world, true)
             @terminated.resolve
             true
           rescue => e
