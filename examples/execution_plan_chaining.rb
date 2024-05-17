@@ -13,7 +13,7 @@ class DelayedAction < Dynflow::Action
   end
 end
 
-if $0 == __FILE__
+if $PROGRAM_NAME == __FILE__
   ExampleHelper.world.action_logger.level = 1
   ExampleHelper.world.logger.level = 0
 
