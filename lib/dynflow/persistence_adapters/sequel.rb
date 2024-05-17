@@ -39,7 +39,8 @@ module Dynflow
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer frozen),
-                    output_chunk:        %w(execution_plan_uuid action_id kind timestamp) }
+                    output_chunk:        %w(execution_plan_uuid action_id kind timestamp),
+                    execution_plan_dependency: %w(execution_plan_uuid blocked_by_uuid) }
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
                                delayed: %w(serialized_args),
@@ -153,12 +154,31 @@ module Dynflow
         records.map { |plan| execution_plan_column_map(load_data plan, table_name) }
       end
 
-      def find_past_delayed_plans(time)
+      def find_execution_plan_dependencies(execution_plan_id)
+        table(:execution_plan_dependency)
+          .where(execution_plan_uuid: execution_plan_id)
+          .select_map(:blocked_by_uuid)
+      end
+
+      def find_blocked_execution_plans(execution_plan_id)
+        table(:execution_plan_dependency)
+          .where(blocked_by_uuid: execution_plan_id)
+          .select_map(:execution_plan_uuid)
+      end
+
+      def find_ready_delayed_plans(time)
         table_name = :delayed
+        # Subquery to find delayed plans that have at least one non-stopped dependency
+        plans_with_unfinished_deps = table(:execution_plan_dependency)
+                                     .join(TABLES[:execution_plan], uuid: :blocked_by_uuid)
+                                     .where(::Sequel.~(state: 'stopped'))
+                                     .select(:execution_plan_uuid)
+
         records = with_retry do
           table(table_name)
-            .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
+            .where(::Sequel.lit('start_at IS NULL OR (start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?))', time, time))
             .where(:frozen => false)
+            .exclude(execution_plan_uuid: plans_with_unfinished_deps)
             .order_by(:start_at)
             .all
         end
@@ -173,6 +193,10 @@ module Dynflow
 
       def save_delayed_plan(execution_plan_id, value)
         save :delayed, { execution_plan_uuid: execution_plan_id }, value, with_data: false
+      end
+
+      def chain_execution_plan(first, second)
+        save :execution_plan_dependency, {}, { execution_plan_uuid: second, blocked_by_uuid: first }, with_data: false
       end
 
       def load_step(execution_plan_id, step_id)
@@ -319,7 +343,8 @@ module Dynflow
                  envelope:            :dynflow_envelopes,
                  coordinator_record:  :dynflow_coordinator_records,
                  delayed:             :dynflow_delayed_plans,
-                 output_chunk:        :dynflow_output_chunks }
+                 output_chunk:        :dynflow_output_chunks,
+                 execution_plan_dependency: :dynflow_execution_plan_dependencies }
 
       def table(which)
         db[TABLES.fetch(which)]

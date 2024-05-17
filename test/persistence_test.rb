@@ -342,7 +342,7 @@ module Dynflow
           end
         end
 
-        describe '#find_past_delayed_plans' do
+        describe '#find_ready_delayed_plans' do
           it 'finds plans with start_before in past' do
             start_time = Time.now.utc
             prepare_and_save_plans
@@ -352,7 +352,7 @@ module Dynflow
             adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :frozen => false, :start_at => format_time(start_time + 60))
             adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :frozen => false, :start_at => format_time(start_time - 60),
                                       :start_before => format_time(start_time - 60))
-            plans = adapter.find_past_delayed_plans(start_time)
+            plans = adapter.find_ready_delayed_plans(start_time)
             _(plans.length).must_equal 3
             _(plans.map { |plan| plan[:execution_plan_uuid] }).must_equal %w(plan2 plan4 plan1)
           end
@@ -366,9 +366,76 @@ module Dynflow
             adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :frozen => true, :start_at => format_time(start_time + 60),
                                       :start_before => format_time(start_time - 60))
 
-            plans = adapter.find_past_delayed_plans(start_time)
+            plans = adapter.find_ready_delayed_plans(start_time)
             _(plans.length).must_equal 1
             _(plans.first[:execution_plan_uuid]).must_equal 'plan1'
+          end
+
+          it 'finds plans with null start_at' do
+            start_time = Time.now.utc
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false)
+
+            plans = adapter.find_ready_delayed_plans(start_time)
+            _(plans.length).must_equal 1
+            _(plans.first[:execution_plan_uuid]).must_equal 'plan1'
+          end
+
+          it 'properly stored execution plan dependencies' do
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false)
+            adapter.chain_execution_plan('plan2', 'plan1')
+            adapter.chain_execution_plan('plan3', 'plan1')
+            dependencies = adapter.find_execution_plan_dependencies('plan1')
+            _(dependencies.to_set).must_equal ['plan2', 'plan3'].to_set
+          end
+
+          it 'does not find blocked plans' do
+            start_time = Time.now.utc
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false)
+            adapter.chain_execution_plan('plan2', 'plan1')
+            adapter.chain_execution_plan('plan3', 'plan1')
+
+            plans = adapter.find_ready_delayed_plans(start_time)
+            _(plans.length).must_equal 0
+          end
+
+          it 'finds plans which are no longer blocked' do
+            start_time = Time.now.utc
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false)
+            adapter.chain_execution_plan('plan2', 'plan1')
+
+            plans = adapter.find_ready_delayed_plans(start_time)
+            _(plans.length).must_equal 1
+            _(plans.first[:execution_plan_uuid]).must_equal 'plan1'
+          end
+
+          it 'does not find plans which are no longer blocked but are frozen' do
+            start_time = Time.now.utc
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => true)
+            adapter.chain_execution_plan('plan2', 'plan1')
+
+            plans = adapter.find_ready_delayed_plans(start_time)
+            _(plans.length).must_equal 0
+          end
+
+          it 'does not find plans which are no longer blocked but their start_at is in the future' do
+            start_time = Time.now.utc
+            prepare_and_save_plans
+
+            adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false, :start_at => start_time + 60)
+            adapter.chain_execution_plan('plan2', 'plan1') # plan2 is already stopped
+
+            plans = adapter.find_ready_delayed_plans(start_time)
+            _(plans.length).must_equal 0
           end
         end
 

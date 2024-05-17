@@ -19,7 +19,7 @@ module Dynflow
           :load_execution_plan,
           :save_execution_plan,
           :find_old_execution_plans,
-          :find_past_delayed_plans,
+          :find_ready_delayed_plans,
           :delete_delayed_plans,
           :save_delayed_plan,
           :set_delayed_plan_frozen,

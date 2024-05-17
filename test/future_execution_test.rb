@@ -76,7 +76,7 @@ module Dynflow
         it 'finds delayed plans' do
           @start_at = Time.now.utc - 100
           delayed_plan
-          past_delayed_plans = world.persistence.find_past_delayed_plans(@start_at + 10)
+          past_delayed_plans = world.persistence.find_ready_delayed_plans(@start_at + 10)
           _(past_delayed_plans.length).must_equal 1
           _(past_delayed_plans.first.execution_plan_uuid).must_equal execution_plan.id
         end
@@ -113,8 +113,8 @@ module Dynflow
 
         it 'checks for delayed plans in regular intervals' do
           start_time = klok.current_time
-          persistence.expect(:find_past_delayed_plans, [], [start_time])
-          persistence.expect(:find_past_delayed_plans, [], [start_time + options[:poll_interval]])
+          persistence.expect(:find_ready_delayed_plans, [], [start_time])
+          persistence.expect(:find_ready_delayed_plans, [], [start_time + options[:poll_interval]])
           dummy_world.stub :persistence, persistence do
             _(klok.pending_pings.length).must_equal 0
             delayed_executor.start.wait
@@ -188,6 +188,152 @@ module Dynflow
           _(serializer.args).must_be :nil?
           _(delayed_plan.args).must_equal args
           _(serializer.args).must_equal args
+        end
+      end
+
+      describe 'execution plan chaining' do
+        let(:world) do
+          WorldFactory.create_world { |config| config.auto_rescue = true }
+        end
+
+        before do
+          @preexisting = world.persistence.find_ready_delayed_plans(Time.now).map(&:execution_plan_uuid)
+        end
+
+        it 'chains two execution plans' do
+          plan1 = world.plan(Support::DummyExample::Dummy)
+          plan2 = world.chain(plan1.id, Support::DummyExample::Dummy)
+
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan1.id, promise)
+          end.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.count).must_equal 1
+          _(ready.first.execution_plan_uuid).must_equal plan2.execution_plan_id
+        end
+
+        it 'chains onto multiple execution plans and waits for all to finish' do
+          plan1 = world.plan(Support::DummyExample::Dummy)
+          plan2 = world.plan(Support::DummyExample::Dummy)
+          plan3 = world.chain([plan2.id, plan1.id], Support::DummyExample::Dummy)
+
+          # Execute and complete plan1
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan1.id, promise)
+          end.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+
+          # plan3 should still not be ready because plan2 hasn't finished yet
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.count).must_equal 0
+
+          # Execute and complete plan2
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan2.id, promise)
+          end.wait
+
+          plan2 = world.persistence.load_execution_plan(plan2.id)
+          _(plan2.state).must_equal :stopped
+
+          # Now plan3 should be ready since both plan1 and plan2 are complete
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.count).must_equal 1
+          _(ready.first.execution_plan_uuid).must_equal plan3.execution_plan_id
+        end
+
+        it 'cancels the chained plan if the prerequisite fails' do
+          plan1 = world.plan(Support::DummyExample::FailingDummy)
+          plan2 = world.chain(plan1.id, Support::DummyExample::Dummy)
+
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan1.id, promise)
+          end.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+          _(plan1.result).must_equal :error
+
+          # plan2 will appear in ready delayed plans
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.map(&:execution_plan_uuid)).must_equal [plan2.execution_plan_id]
+
+          # Process the delayed plan through the director
+          work_item = Dynflow::Director::PlanningWorkItem.new(plan2.execution_plan_id, :default, world.id)
+          work_item.world = world
+          work_item.execute
+
+          # Now plan2 should be stopped with error due to failed dependency
+          plan2 = world.persistence.load_execution_plan(plan2.execution_plan_id)
+          _(plan2.state).must_equal :stopped
+          _(plan2.result).must_equal :error
+          _(plan2.errors.first.message).must_match(/prerequisite execution plans failed/)
+          _(plan2.errors.first.message).must_match(/#{plan1.id}/)
+        end
+
+        it 'cancels the chained plan if at least one prerequisite fails' do
+          plan1 = world.plan(Support::DummyExample::Dummy)
+          plan2 = world.plan(Support::DummyExample::FailingDummy)
+          plan3 = world.chain([plan1.id, plan2.id], Support::DummyExample::Dummy)
+
+          # Execute and complete plan1 successfully
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan1.id, promise)
+          end.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+          _(plan1.result).must_equal :success
+
+          # plan3 should still not be ready because plan2 hasn't finished yet
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready).must_equal []
+
+          # Execute and complete plan2 with failure
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan2.id, promise)
+          end.wait
+
+          plan2 = world.persistence.load_execution_plan(plan2.id)
+          _(plan2.state).must_equal :stopped
+          _(plan2.result).must_equal :error
+
+          # plan3 will now appear in ready delayed plans even though one prerequisite failed
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.map(&:execution_plan_uuid)).must_equal [plan3.execution_plan_id]
+
+          # Process the delayed plan through the director
+          work_item = Dynflow::Director::PlanningWorkItem.new(plan3.execution_plan_id, :default, world.id)
+          work_item.world = world
+          work_item.execute
+
+          # Now plan3 should be stopped with error due to failed dependency
+          plan3 = world.persistence.load_execution_plan(plan3.execution_plan_id)
+          _(plan3.state).must_equal :stopped
+          _(plan3.result).must_equal :error
+          _(plan3.errors.first.message).must_match(/prerequisite execution plans failed/)
+          _(plan3.errors.first.message).must_match(/#{plan2.id}/)
+        end
+
+        it 'chains runs the chained plan if the prerequisite was halted' do
+          plan1 = world.plan(Support::DummyExample::Dummy)
+          plan2 = world.chain(plan1.id, Support::DummyExample::Dummy)
+
+          world.halt(plan1.id)
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan1.id, promise)
+          end.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+          _(plan1.result).must_equal :pending
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.count).must_equal 1
+          _(ready.first.execution_plan_uuid).must_equal plan2.execution_plan_id
         end
       end
     end
