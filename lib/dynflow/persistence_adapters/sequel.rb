@@ -39,7 +39,8 @@ module Dynflow
                     envelope:            %w(receiver_id),
                     coordinator_record:  %w(id owner_id class),
                     delayed:             %w(execution_plan_uuid start_at start_before args_serializer frozen),
-                    output_chunk:        %w(execution_plan_uuid action_id kind timestamp) }
+                    output_chunk:        %w(execution_plan_uuid action_id kind timestamp),
+                    execution_plan_dependency: %w(execution_plan_uuid blocked_by_uuid) }
 
       SERIALIZABLE_COLUMNS = { action:  %w(input output),
                                delayed: %w(serialized_args),
@@ -153,13 +154,17 @@ module Dynflow
         records.map { |plan| execution_plan_column_map(load_data plan, table_name) }
       end
 
-      def find_past_delayed_plans(time)
+      def find_ready_delayed_plans(time)
         table_name = :delayed
         records = with_retry do
           table(table_name)
-            .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
+            .left_join(TABLES[:execution_plan_dependency], execution_plan_uuid: :execution_plan_uuid)
+            .left_join(TABLES[:execution_plan], uuid: :blocked_by_uuid)
+            .where(::Sequel.lit('start_at IS NULL OR (start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?))', time, time))
+            .where(::Sequel[{ state: nil }] | ::Sequel[{ state: 'stopped' }])
             .where(:frozen => false)
             .order_by(:start_at)
+            .select_all(TABLES[table_name])
             .all
         end
         records.map { |plan| load_data(plan, table_name) }
@@ -173,6 +178,10 @@ module Dynflow
 
       def save_delayed_plan(execution_plan_id, value)
         save :delayed, { execution_plan_uuid: execution_plan_id }, value, with_data: false
+      end
+
+      def chain_execution_plan(first, second)
+        save :execution_plan_dependency, { execution_plan_uuid: second }, { execution_plan_uuid: second, blocked_by_uuid: first }, with_data: false
       end
 
       def load_step(execution_plan_id, step_id)
@@ -319,7 +328,8 @@ module Dynflow
                  envelope:            :dynflow_envelopes,
                  coordinator_record:  :dynflow_coordinator_records,
                  delayed:             :dynflow_delayed_plans,
-                 output_chunk:        :dynflow_output_chunks }
+                 output_chunk:        :dynflow_output_chunks,
+                 execution_plan_dependency: :dynflow_execution_plan_dependencies }
 
       def table(which)
         db[TABLES.fetch(which)]
