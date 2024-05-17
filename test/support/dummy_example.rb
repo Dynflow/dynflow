@@ -31,6 +31,10 @@ module Support
 
     class FailingDummy < Dynflow::Action
       def run; raise 'error'; end
+
+      def rescue_strategy
+        Dynflow::Action::Rescue::Fail
+      end
     end
 
     class Slow < Dynflow::Action

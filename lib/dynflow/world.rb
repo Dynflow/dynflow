@@ -202,6 +202,16 @@ module Dynflow
       Scheduled[execution_plan.id]
     end
 
+    def chain(plan_uuids, action_class, *args)
+      plan_uuids = [plan_uuids] unless plan_uuids.is_a? Array
+      result = delay_with_options(action_class: action_class, args: args, delay_options: { frozen: true })
+      plan_uuids.each do |plan_uuid|
+        persistence.chain_execution_plan(plan_uuid, result.execution_plan_id)
+      end
+      persistence.set_delayed_plan_frozen(result.execution_plan_id, false)
+      result
+    end
+
     def plan_elsewhere(action_class, *args)
       execution_plan = ExecutionPlan.new(self, nil)
       execution_plan.delay(nil, action_class, {}, *args)

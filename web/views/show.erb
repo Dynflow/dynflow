@@ -43,6 +43,30 @@
   <%= h(@plan.ended_at) %>
 </p>
 
+<% dependencies = @plan.world.persistence.find_execution_plan_dependencies(@plan.id) %>
+<% if dependencies.any? %>
+  <p>
+    <b>Depends on execution plans:</b>
+    <ul>
+    <% dependencies.each do |dep_id| %>
+      <li><a href="<%= url("/#{dep_id}") %>"><%= h(dep_id) %></a></li>
+    <% end %>
+    </ul>
+  </p>
+<% end %>
+
+<% blocked_plans = @plan.world.persistence.find_blocked_execution_plans(@plan.id) %>
+<% if blocked_plans.any? %>
+  <p>
+    <b>Blocks execution plans:</b>
+    <ul>
+    <% blocked_plans.each do |dep_id| %>
+      <li><a href="<%= url("/#{dep_id}") %>"><%= h(dep_id) %></a></li>
+    <% end %>
+    </ul>
+  </p>
+<% end %>
+
 <ul class="phases nav nav-tabs" id="myTab">
   <li><a href="#plan">Plan</a></li>
   <li class="active"><a href="#run">Run</a></li>
