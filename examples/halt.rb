@@ -56,7 +56,7 @@ class Wrapper < Dynflow::Action
   end
 end
 
-if $0 == __FILE__
+if $PROGRAM_NAME == __FILE__
   puts example_description
 
   ExampleHelper.world.action_logger.level = Logger::DEBUG

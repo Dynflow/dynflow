@@ -335,7 +335,7 @@ module Dynflow
       if @world.coordinator.find_records(filters).any?
         halt_execution(execution_plan_id)
         raise Dynflow::Error,
-              "cannot execute execution_plan_id:#{execution_plan_id} it's execution is inhibited"
+          "cannot execute execution_plan_id:#{execution_plan_id} it's execution is inhibited"
       end
 
       @execution_plan_managers[execution_plan_id] =
