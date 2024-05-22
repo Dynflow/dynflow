@@ -768,7 +768,7 @@ module Dynflow
         end
 
         it 'halts a scheduled execution plan' do
-          plan = world.delay(Support::DummyExample::Dummy, {start_at: Time.now + 120})
+          plan = world.delay(Support::DummyExample::Dummy, { start_at: Time.now + 120 })
           wait_for do
             plan = world.persistence.load_execution_plan(plan.id)
             plan.state == :scheduled

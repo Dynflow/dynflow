@@ -4,6 +4,7 @@
 require 'dynflow/world/invalidation'
 
 module Dynflow
+  # rubocop:disable Metrics/ClassLength
   class World
     include Algebrick::TypeCheck
     include Algebrick::Matching
@@ -395,4 +396,5 @@ module Dynflow
       return actor
     end
   end
+  # rubocop:enable Metrics/ClassLength
 end
