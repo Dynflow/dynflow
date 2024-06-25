@@ -51,6 +51,26 @@ module Dynflow
           _(terminated_event.resolved?).must_equal true
         end
       end
+
+      describe '#chain' do
+        it 'chains two execution plans' do
+          plan1 = world.plan(Support::DummyExample::Dummy)
+          plan2 = world.chain(plan1.id, Support::DummyExample::Dummy)
+
+          ready = world.persistence.find_ready_delayed_plans(Time.now)
+          _(ready.count).must_equal 0
+
+          done = Concurrent::Promises.resolvable_future
+          world.execute(plan1.id, done)
+          done.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+          ready = world.persistence.find_ready_delayed_plans(Time.now)
+          _(ready.count).must_equal 1
+          _(ready.first.execution_plan_uuid).must_equal plan2.execution_plan_id
+        end
+      end
     end
   end
 end

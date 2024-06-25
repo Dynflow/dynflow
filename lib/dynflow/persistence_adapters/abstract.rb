@@ -68,7 +68,7 @@ module Dynflow
         raise NotImplementedError
       end
 
-      def find_past_delayed_plans(options = {})
+      def find_ready_delayed_plans(options = {})
         raise NotImplementedError
       end
 
