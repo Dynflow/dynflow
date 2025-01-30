@@ -46,6 +46,10 @@ module Dynflow
         filter(:execution_plan, options[:filters]).count
       end
 
+      def find_execution_plan_counts_after(timestamp, options = {})
+        raise NotImplementedError
+      end
+
       def find_execution_plan_statuses(options)
         raise NotImplementedError
       end

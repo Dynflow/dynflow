@@ -102,7 +102,7 @@ module Dynflow::Action::V2
 
     def increase_counts(planned, failed)
       output[:planned_count] += planned + failed
-      output[:failed_count]  = output.fetch(:failed_count, 0) + failed
+      output[:failed_count] = output.fetch(:failed_count, 0) + failed
       output[:pending_count] = output.fetch(:pending_count, 0) + planned
       output[:success_count] ||= 0
     end
@@ -129,12 +129,20 @@ module Dynflow::Action::V2
     end
 
     def recalculate_counts
-      total   = total_count
-      failed  = sub_plans_count('state' => %w(paused stopped), 'result' => %w(error warning))
+      total = total_count
+      if output[:cancelled_timestamp]
+        cancelled_scheduled_plans = sub_plans_count_after(output[:cancelled_timestamp], { 'state' => %w(paused stopped), 'result' => %w(error warning) })
+        cancelled_unscheduled_plans = total_count - output[:planned_count]
+        cancelled = cancelled_unscheduled_plans + cancelled_scheduled_plans
+      else
+        cancelled = cancelled_scheduled_plans = 0
+      end
+      failed = sub_plans_count('state' => %w(paused stopped), 'result' => %w(error warning)) - cancelled_scheduled_plans
       success = sub_plans_count('state' => 'stopped', 'result' => 'success')
-      output.update(:pending_count => total - failed - success,
-                    :failed_count  => failed - output.fetch(:resumed_count, 0),
-                    :success_count => success)
+      output.update(:pending_count => total - failed - success - cancelled_scheduled_plans,
+        :failed_count => failed - output.fetch(:resumed_count, 0),
+        :success_count => success,
+        :cancelled_count => cancelled)
     end
 
     def counts_set?
@@ -142,7 +150,7 @@ module Dynflow::Action::V2
     end
 
     def check_for_errors!
-      raise SubtaskFailedException.new("A sub task failed") if output[:failed_count] > 0
+      raise SubtaskFailedException.new("A sub task failed") if output[:failed_count] + output[:cancelled_count] > 0
     end
 
     # Helper for creating sub plans
@@ -173,6 +181,7 @@ module Dynflow::Action::V2
     def cancel!(force = false)
       # Count the not-yet-planned tasks as cancelled
       output[:cancelled_count] = total_count - output[:planned_count]
+      output[:cancelled_timestamp] ||= Time.now.utc.iso8601 # time in UTC for comparison with UTC times in the database
       on_planning_finished if output[:cancelled_count].positive?
       # Pass the cancel event to running sub plans if they can be cancelled
       sub_plans(:state => 'running').each { |sub_plan| sub_plan.cancel(force) if sub_plan.cancellable? }
@@ -198,7 +207,9 @@ module Dynflow::Action::V2
     end
 
     def remaining_count
-      total_count - output[:cancelled_count] - output[:planned_count]
+      return 0 if output[:cancelled_timestamp]
+
+      total_count - output[:planned_count]
     end
 
     private
@@ -215,6 +226,10 @@ module Dynflow::Action::V2
 
     def sub_plans_count(filter = {})
       world.persistence.find_execution_plan_counts(filters: sub_plan_filter.merge(filter))
+    end
+
+    def sub_plans_count_after(timestamp, filter = {})
+      world.persistence.find_execution_plan_counts_after(timestamp, { filters: sub_plan_filter.merge(filter) })
     end
   end
 end
