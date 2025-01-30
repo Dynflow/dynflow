@@ -73,6 +73,10 @@ module Dynflow
       adapter.find_execution_plan_counts(options)
     end
 
+    def find_execution_plan_counts_after(timestamp, options)
+      adapter.find_execution_plan_counts_after(timestamp, options)
+    end
+
     def delete_execution_plans(filters, batch_size = 1000, enforce_backup_dir = nil)
       backup_dir = enforce_backup_dir || current_backup_dir
       adapter.delete_execution_plans(filters, batch_size, backup_dir)

@@ -78,6 +78,10 @@ module Dynflow
         filter(:execution_plan, table(:execution_plan), options[:filters]).count
       end
 
+      def find_execution_plan_counts_after(timestamp, options = {})
+        filter(:execution_plan, table(:execution_plan), options[:filters]).filter(::Sequel.lit('ended_at >= ?', timestamp)).count
+      end
+
       def find_execution_plan_statuses(options)
         plans = filter(:execution_plan, table(:execution_plan), options[:filters])
                 .select(:uuid, :state, :result)
