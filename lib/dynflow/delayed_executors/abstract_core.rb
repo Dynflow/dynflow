@@ -32,7 +32,7 @@ module Dynflow
 
       def delayed_execution_plans(time)
         with_error_handling([]) do
-          world.persistence.find_past_delayed_plans(time)
+          world.persistence.find_ready_delayed_plans(time)
         end
       end
 
