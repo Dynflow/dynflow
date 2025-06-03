@@ -331,7 +331,7 @@ module PlanAssertions
   def inspect_flow(execution_plan, flow)
     out = "".dup
     inspect_subflow(out, execution_plan, flow, "".dup)
-    out
+    out.gsub(/ => /, '=>')
   end
 
   def inspect_plan_steps(execution_plan)

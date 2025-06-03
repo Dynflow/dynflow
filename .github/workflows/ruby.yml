@@ -38,6 +38,7 @@ jobs:
           - 2.7.0
           - 3.0.0
           - 3.2.0
+          - 3.4
         concurrent_ruby_ext:
           - 'true'
           - 'false'
@@ -58,11 +59,15 @@ jobs:
           - db: mysql
             ruby_version: 3.2.0
           - db: mysql
+            ruby_version: 3.4
+          - db: mysql
             concurrent_ruby_ext: 'true'
           - db: sqlite3
             ruby_version: 3.0.0
           - db: sqlite3
             ruby_version: 3.2.0
+          - db: sqlite3
+            ruby_version: 3.4
           - db: sqlite3
             concurrent_ruby_ext: 'true'
           - db: postgresql
@@ -70,6 +75,9 @@ jobs:
             concurrent_ruby_ext: 'true'
           - db: postgresql
             ruby_version: 3.2.0
+            concurrent_ruby_ext: 'true'
+          - db: postgresql
+            ruby_version: 3.4
             concurrent_ruby_ext: 'true'
 
     services:
