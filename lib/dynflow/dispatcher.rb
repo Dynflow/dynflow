@@ -30,7 +30,7 @@ module Dynflow
       end
 
       Halt = type do
-        fields! execution_plan_id: String, optional: Algebrick::Types::Boolean
+        fields! execution_plan_id: String
       end
 
       variants Event, Execution, Ping, Status, Planning, Halt
