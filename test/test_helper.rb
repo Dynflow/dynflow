@@ -20,6 +20,10 @@ require 'support/rescue_example'
 require 'support/dummy_example'
 require 'support/test_execution_log'
 
+Concurrent.global_logger = lambda do |level, progname, message = nil, &block|
+  ::Dynflow::Testing.logger_adapter.logger.add level, message, progname, &block
+end
+
 # To be able to stop a process in some step and perform assertions while paused
 class TestPause
   def self.setup
@@ -107,7 +111,7 @@ module WorldFactory
   # This world survives though the whole run of the test suite: careful with it, it can
   # introduce unnecessary test dependencies
   def self.logger_adapter
-    @adapter ||= Dynflow::LoggerAdapters::Simple.new $stderr, ::Logger::FATAL
+    ::Dynflow::Testing.logger_adapter
   end
 
   def self.persistence_adapter
@@ -125,7 +129,7 @@ module WorldFactory
   def self.clean_coordinator_records
     persistence_adapter = WorldFactory.persistence_adapter
     persistence_adapter.find_coordinator_records({}).each do |w|
-      warn "Unexpected coordinator record: #{w}"
+      ::Dynflow::Testing.logger_adapter.logger.warn "Unexpected coordinator record: #{w}"
       persistence_adapter.delete_coordinator_record(w[:class], w[:id])
     end
   end
@@ -232,12 +236,18 @@ module TestHelpers
 end
 
 class MiniTest::Test
+  def logger
+    ::Dynflow::Testing.logger_adapter.logger
+  end
+
   def setup
+    logger.info(">>>>> #{location}")
     WorldFactory.clean_coordinator_records
   end
 
   def teardown
     WorldFactory.terminate_worlds
+    logger.info("<<<<< #{location}")
   end
 end
 

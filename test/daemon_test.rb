@@ -8,6 +8,21 @@ require 'dynflow/testing'
 require 'ostruct'
 require_relative '../lib/dynflow/rails'
 
+class StdIOWrapper
+  def initialize(logger, error = false)
+    @logger = logger
+    @error = error
+  end
+
+  def puts(msg = nil)
+    if @error
+      @logger.error(msg)
+    else
+      @logger.info(msg)
+    end
+  end
+end
+
 class DaemonTest < ActiveSupport::TestCase
   setup do
     @dynflow_memory_watcher = mock('memory_watcher')
@@ -16,6 +31,9 @@ class DaemonTest < ActiveSupport::TestCase
       @dynflow_memory_watcher,
       @daemons
     )
+    logger = WorldFactory.logger_adapter.logger
+    @daemon.stubs(:stdout).returns(StdIOWrapper.new(logger, false))
+    @daemon.stubs(:stderr).returns(StdIOWrapper.new(logger, true))
     @world_class = mock('dummy world factory')
     @dummy_world = ::Dynflow::Testing::DummyWorld.new
     @dummy_world.stubs(:id => '123')
@@ -30,7 +48,7 @@ class DaemonTest < ActiveSupport::TestCase
     )
     ::Rails.stubs(:application).returns(::OpenStruct.new(:dynflow => @dynflow))
     ::Rails.stubs(:root).returns('support/rails')
-    ::Rails.stubs(:logger).returns(Logging.logger(STDOUT))
+    ::Rails.stubs(:logger).returns(logger)
     @dynflow.require!
     @dynflow.config.stubs(:increase_db_pool_size? => false)
     @daemon.stubs(:sleep).returns(true) # don't pause the execution
