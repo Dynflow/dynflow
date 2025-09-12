@@ -135,7 +135,7 @@ module Dynflow
         plan = create_and_plan_action(PlanEventedAction, { time: 0.5 })
         action = run_action plan
 
-        _(action.output[:status]).must_equal nil
+        assert_nil action.output[:status]
         _(action.world.clock.pending_pings.first).wont_be_nil
         _(action.state).must_equal :suspended
 
@@ -150,7 +150,7 @@ module Dynflow
         plan = create_and_plan_action(PlanEventedAction, { time: nil })
         action = run_action plan
 
-        _(action.output[:status]).must_equal nil
+        assert_nil action.output[:status]
         _(action.world.clock.pending_pings.first).must_be_nil
         _(action.world.executor.events_to_process.first).wont_be_nil
         _(action.state).must_equal :suspended
@@ -905,7 +905,7 @@ module Dynflow
 
       it 'collects and drops output chunks' do
         action = create_and_plan_action(OutputChunkAction)
-        _(action.pending_output_chunks).must_equal nil
+        assert_nil action.pending_output_chunks
 
         action = run_action(action)
         _(action.pending_output_chunks.count).must_equal 1
