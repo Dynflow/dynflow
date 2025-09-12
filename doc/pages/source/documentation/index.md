@@ -203,12 +203,12 @@ class AnAction < Dynflow::Action
 end
 ```
 
-This might me quite handy especially in combination with
+This might be quite handy especially in combination with
 [subscriptions](#subscriptions) functionality.
 
-The format follows [apipie-params](https://github.com/iNecas/apipie-params) for more details.
-Validations of input/output could be performed against this description but it's not turned on
-by default. (It needs to be revisited and updated to be fully functional.)
+These format definitions are purely for documentation purposes - the blocks are never
+evaluated and serve only as a reference for developers implementing actions.
+Input/output validation is not performed.
 
 {% endinfo_block %}
 
