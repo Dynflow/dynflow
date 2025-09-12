@@ -23,23 +23,32 @@ module Dynflow
         @daemons_class || ::Daemons
       end
 
+      def stdout
+        STDOUT
+      end
+
+      def stderr
+        STDERR
+      end
+
       # Load the Rails environment and initialize the executor in this thread.
       def run(rails_root = Dir.pwd, options = {})
-        STDOUT.puts('Starting Rails environment')
+        stdout.puts('Starting Rails environment')
         rails_env_file = File.expand_path('./config/environment.rb', rails_root)
         unless File.exist?(rails_env_file)
           raise "#{rails_root} doesn't seem to be a Rails root directory"
         end
 
-        STDERR.puts("Starting dynflow with the following options: #{options}")
+        stderr.puts("Starting dynflow with the following options: #{options}")
 
         ::Rails.application.dynflow.executor!
 
         if options[:memory_limit] && options[:memory_limit].to_i > 0
           ::Rails.application.dynflow.config.on_init do |world|
+            stdout_cap = stdout
             memory_watcher = initialize_memory_watcher(world, options[:memory_limit], options)
             world.terminated.on_resolution do
-              STDOUT.puts("World has been terminated")
+              stdout_cap.puts("World has been terminated")
               memory_watcher = nil # the object can be disposed
             end
           end
@@ -48,10 +57,10 @@ module Dynflow
         require rails_env_file
         ::Rails.application.dynflow.initialize!
         world_id = ::Rails.application.dynflow.world.id
-        STDOUT.puts("Everything ready for world: #{world_id}")
+        stdout.puts("Everything ready for world: #{world_id}")
         sleep
       ensure
-        STDOUT.puts('Exiting')
+        stdout.puts('Exiting')
       end
 
       # run the executor as a daemon
@@ -68,7 +77,7 @@ module Dynflow
           raise "Command exptected to be 'start', 'stop', 'restart', 'run', was #{command.inspect}"
         end
 
-        STDOUT.puts("Dynflow Executor: #{command} in progress")
+        stdout.puts("Dynflow Executor: #{command} in progress")
 
         options[:executors_count].times do
           daemons_class.run_proc(
@@ -79,7 +88,7 @@ module Dynflow
               ::Logging.reopen
               run(options[:rails_root], options)
             rescue => e
-              STDERR.puts e.message
+              stderr.puts e.message
               ::Rails.logger.fatal('Failed running Dynflow daemon')
               ::Rails.logger.fatal(e)
               exit 1
