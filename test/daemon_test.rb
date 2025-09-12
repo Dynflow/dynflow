@@ -5,6 +5,7 @@ require 'active_support'
 require 'mocha/minitest'
 require 'logging'
 require 'dynflow/testing'
+require 'ostruct'
 require_relative '../lib/dynflow/rails'
 
 class DaemonTest < ActiveSupport::TestCase
@@ -27,7 +28,7 @@ class DaemonTest < ActiveSupport::TestCase
       @world_class,
       ::Dynflow::Rails::Configuration.new
     )
-    ::Rails.stubs(:application).returns(OpenStruct.new(:dynflow => @dynflow))
+    ::Rails.stubs(:application).returns(::OpenStruct.new(:dynflow => @dynflow))
     ::Rails.stubs(:root).returns('support/rails')
     ::Rails.stubs(:logger).returns(Logging.logger(STDOUT))
     @dynflow.require!
