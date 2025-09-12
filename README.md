@@ -126,10 +126,10 @@ The Anatomy of Action Class
 # every action needs to inherit from Dynflow::Action
 class Action < Dynflow::Action
 
-  # OPTIONAL: the input format for the execution phase of this action
-  # (https://github.com/iNecas/apipie-params for more details.
-  # Validations can be performed against this description (turned off
-  # for now)
+  # OPTIONAL: the input format for the execution phase of this action.
+  # This is purely documentation - the block is never evaluated and
+  # serves only as a reference for developers implementing actions.
+  # Input validation is not performed.
   input_format do
     param :id, Integer
     param :name, String

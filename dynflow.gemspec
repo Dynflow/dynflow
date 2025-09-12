@@ -21,7 +21,6 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 2.7.0'
 
   s.add_dependency "algebrick", '~> 0.7.0'
-  s.add_dependency "apipie-params"
   s.add_dependency "concurrent-ruby", '~> 1.1.3'
   s.add_dependency "concurrent-ruby-edge", '~> 0.6.0'
   s.add_dependency "csv", "~> 3.1"
