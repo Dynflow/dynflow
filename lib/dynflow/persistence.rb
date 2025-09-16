@@ -101,8 +101,8 @@ module Dynflow
       end
     end
 
-    def find_past_delayed_plans(time)
-      adapter.find_past_delayed_plans(time).map do |plan|
+    def find_ready_delayed_plans(time)
+      adapter.find_ready_delayed_plans(time).map do |plan|
         DelayedPlan.new_from_hash(@world, plan)
       end
     end
@@ -162,6 +162,10 @@ module Dynflow
 
     def prune_undeliverable_envelopes
       adapter.prune_undeliverable_envelopes
+    end
+
+    def chain_execution_plan(first, second)
+      adapter.chain_execution_plan(first, second)
     end
   end
 end
