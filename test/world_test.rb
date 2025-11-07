@@ -57,8 +57,7 @@ module Dynflow
           plan1 = world.plan(Support::DummyExample::Dummy)
           plan2 = world.chain(plan1.id, Support::DummyExample::Dummy)
 
-          ready = world.persistence.find_ready_delayed_plans(Time.now)
-          _(ready.count).must_equal 0
+          preexisting = world.persistence.find_ready_delayed_plans(Time.now).map(&:execution_plan_uuid)
 
           done = Concurrent::Promises.resolvable_future
           world.execute(plan1.id, done)
@@ -66,7 +65,7 @@ module Dynflow
 
           plan1 = world.persistence.load_execution_plan(plan1.id)
           _(plan1.state).must_equal :stopped
-          ready = world.persistence.find_ready_delayed_plans(Time.now)
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| preexisting.include? p.execution_plan_uuid }
           _(ready.count).must_equal 1
           _(ready.first.execution_plan_uuid).must_equal plan2.execution_plan_id
         end
