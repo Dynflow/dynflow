@@ -68,6 +68,14 @@ module Dynflow
         raise NotImplementedError
       end
 
+      def find_execution_plan_dependencies(execution_plan_id)
+        raise NotImplementedError
+      end
+
+      def find_blocked_execution_plans(execution_plan_id)
+        raise NotImplementedError
+      end
+
       def find_ready_delayed_plans(options = {})
         raise NotImplementedError
       end

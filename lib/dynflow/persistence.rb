@@ -97,6 +97,14 @@ module Dynflow
       end
     end
 
+    def find_execution_plan_dependencies(execution_plan_id)
+      adapter.find_execution_plan_dependencies(execution_plan_id)
+    end
+
+    def find_blocked_execution_plans(execution_plan_id)
+      adapter.find_blocked_execution_plans(execution_plan_id)
+    end
+
     def find_ready_delayed_plans(time)
       adapter.find_ready_delayed_plans(time).map do |plan|
         DelayedPlan.new_from_hash(@world, plan)

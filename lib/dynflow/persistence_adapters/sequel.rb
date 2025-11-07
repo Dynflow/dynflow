@@ -140,13 +140,25 @@ module Dynflow
           .all.map { |plan| execution_plan_column_map(load_data plan, table_name) }
       end
 
+      def find_execution_plan_dependencies(execution_plan_id)
+        table(:execution_plan_dependency)
+          .where(execution_plan_uuid: execution_plan_id)
+          .select_map(:blocked_by_uuid)
+      end
+
+      def find_blocked_execution_plans(execution_plan_id)
+        table(:execution_plan_dependency)
+          .where(blocked_by_uuid: execution_plan_id)
+          .select_map(:execution_plan_uuid)
+      end
+
       def find_ready_delayed_plans(time)
         table_name = :delayed
         # Subquery to find delayed plans that have at least one non-stopped dependency
         plans_with_unfinished_deps = table(:execution_plan_dependency)
-          .join(TABLES[:execution_plan], uuid: :blocked_by_uuid)
-          .where(::Sequel.~(state: 'stopped'))
-          .select(:execution_plan_uuid)
+                                     .join(TABLES[:execution_plan], uuid: :blocked_by_uuid)
+                                     .where(::Sequel.~(state: 'stopped'))
+                                     .select(:execution_plan_uuid)
 
         table(table_name)
           .where(::Sequel.lit('start_at IS NULL OR (start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?))', time, time))
