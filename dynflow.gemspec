@@ -21,8 +21,8 @@ Gem::Specification.new do |s|
   s.required_ruby_version = '>= 3.0.0'
 
   s.add_dependency "algebrick", '~> 0.7.0'
-  s.add_dependency "concurrent-ruby", '~> 1.1.3'
-  s.add_dependency "concurrent-ruby-edge", '~> 0.6.0'
+  s.add_dependency "concurrent-ruby", '>= 1.1.3', '< 2'
+  s.add_dependency "concurrent-ruby-edge", '>= 0.6.0', '< 0.8'
   s.add_dependency "csv", "~> 3.1"
   s.add_dependency "msgpack", '~> 1.3', '>= 1.3.3'
   s.add_dependency "multi_json"
