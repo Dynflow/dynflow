@@ -116,7 +116,16 @@ module WorldFactory
 
   def self.persistence_adapter
     @persistence_adapter ||= begin
-                               db_config = ENV['DB_CONN_STRING'] || 'sqlite:/'
+                               db_config = ENV.fetch('DB_CONN_STRING') do
+                                 case ENV['DB']
+                                 when 'mysql'
+                                   "mysql2://root@127.0.0.1/#{ENV.fetch('MYSQL_DATABASE', 'travis_ci_test')}"
+                                 when 'postgresql'
+                                   "postgres://postgres@localhost/#{ENV.fetch('POSTGRES_DB', 'travis_ci_test')}"
+                                 else
+                                   'sqlite:/'
+                                 end
+                               end
                                puts "Using database configuration: #{db_config}"
                                Dynflow::PersistenceAdapters::Sequel.new(db_config)
                              end

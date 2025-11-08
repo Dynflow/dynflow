@@ -43,13 +43,6 @@ jobs:
           - postgresql
           - mysql
           - sqlite3
-        include:
-          - db: postgresql
-            conn_string: postgres://postgres@localhost/travis_ci_test
-          - db: mysql
-            conn_string: mysql2://root@127.0.0.1/travis_ci_test
-          - db: sqlite3
-            conn_string: sqlite:/
         exclude:
           - db: mysql
             ruby_version: 3.0.0
@@ -96,7 +89,6 @@ jobs:
 
     env:
       DB: ${{ matrix.db }}
-      DB_CONN_STRING: ${{ matrix.conn_string }}
       CONCURRENT_RUBY_EXT: "${{ matrix.concurrent_ruby_ext }}"
 
     steps:
