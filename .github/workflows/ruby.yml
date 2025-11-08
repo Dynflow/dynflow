@@ -15,6 +15,8 @@ env:
 jobs:
   rubocop:
     runs-on: ubuntu-latest
+    outputs:
+      ruby_version: ${{ steps.ruby_version.outputs.versions }}
     steps:
       - uses: actions/checkout@v5
       - name: Setup Ruby
@@ -24,6 +26,8 @@ jobs:
           bundler-cache: true
       - name: Run rubocop
         run: bundle exec rubocop
+      - id: ruby_version
+        uses: voxpupuli/ruby-version@v1
 
   test:
     runs-on: ubuntu-latest
@@ -31,11 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby_version:
-          - 2.7.0
-          - 3.0.0
-          - 3.2.0
-          - 3.4
+        ruby_version: ${{ fromJSON(needs.rubocop.outputs.ruby_version) }}
         concurrent_ruby_ext:
           - 'true'
           - 'false'
@@ -45,29 +45,29 @@ jobs:
           - sqlite3
         exclude:
           - db: mysql
-            ruby_version: 3.0.0
+            ruby_version: '3.0'
           - db: mysql
-            ruby_version: 3.2.0
+            ruby_version: '3.2'
           - db: mysql
-            ruby_version: 3.4
+            ruby_version: '3.4'
           - db: mysql
             concurrent_ruby_ext: 'true'
           - db: sqlite3
-            ruby_version: 3.0.0
+            ruby_version: '3.0'
           - db: sqlite3
-            ruby_version: 3.2.0
+            ruby_version: '3.2'
           - db: sqlite3
-            ruby_version: 3.4
+            ruby_version: '3.4'
           - db: sqlite3
             concurrent_ruby_ext: 'true'
           - db: postgresql
-            ruby_version: 3.0.0
+            ruby_version: '3.0'
             concurrent_ruby_ext: 'true'
           - db: postgresql
-            ruby_version: 3.2.0
+            ruby_version: '3.2'
             concurrent_ruby_ext: 'true'
           - db: postgresql
-            ruby_version: 3.4
+            ruby_version: '3.4'
             concurrent_ruby_ext: 'true'
 
     services:
