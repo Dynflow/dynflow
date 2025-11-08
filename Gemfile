@@ -4,11 +4,11 @@ source 'https://rubygems.org'
 
 gemspec
 
-group :concurrent_ruby_ext do
+group :concurrent_ruby_ext, optional: ENV.key?('CI') && ENV['CONCURRENT_RUBY_EXT'] != 'true' do
   gem 'concurrent-ruby-ext', '~> 1.1.3'
 end
 
-group :pry do
+group :pry, optional: ENV.key?('CI') do
   gem 'pry'
   gem 'pry-byebug'
 end
@@ -18,11 +18,11 @@ group :sidekiq do
   gem 'sidekiq'
 end
 
-group :postgresql do
+group :postgresql, optional: ENV.key?('CI') && ENV['DB'] != 'postgresql' do
   gem "pg"
 end
 
-group :mysql do
+group :mysql, optional: ENV.key?('CI') && ENV['DB'] != 'mysql' do
   gem "mysql2"
 end
 
