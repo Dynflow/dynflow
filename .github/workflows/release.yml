@@ -19,7 +19,7 @@ jobs:
           tagRegex: "v(.*)"  # Optional. Returns specified group text as tag name. Full tag string is returned if regex is not defined.
           tagRegexGroup: 1 # Optional. Default is 1.
       - name: Checkout the repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
       - name: Generate build files
         run: |
           mkdir -p dist
