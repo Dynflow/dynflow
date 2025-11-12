@@ -33,3 +33,6 @@ Metrics/ModuleLength:
 
 Style/LambdaCall:
   Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false

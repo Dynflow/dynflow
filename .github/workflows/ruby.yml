@@ -19,15 +19,18 @@ jobs:
       ruby_version: ${{ steps.ruby_version.outputs.versions }}
     steps:
       - uses: actions/checkout@v5
+      - id: ruby_version
+        uses: voxpupuli/ruby-version@v1
+      - id: min_ruby
+        run: echo "version=$(echo '${{ steps.ruby_version.outputs.versions }}' | jq -r '.[-1]')" >> $GITHUB_OUTPUT
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 2.7
+          # Use the minimum supported Ruby version for rubocop (last in descending list)
+          ruby-version: ${{ steps.min_ruby.outputs.version }}
           bundler-cache: true
       - name: Run rubocop
         run: bundle exec rubocop
-      - id: ruby_version
-        uses: voxpupuli/ruby-version@v1
 
   test:
     runs-on: ubuntu-latest
