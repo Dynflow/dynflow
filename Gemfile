@@ -33,7 +33,7 @@ end
 group :rails do
   gem 'daemons'
   gem 'logging'
-  gem 'rails', '>= 4.2.9', '< 7'
+  gem 'rails', '>= 7', '< 8'
 end
 
 group :telemetry do
