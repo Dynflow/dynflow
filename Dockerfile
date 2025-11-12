@@ -6,4 +6,4 @@ ADD Gemfile /data/
 ADD dynflow.gemspec /data/
 ADD lib/dynflow/version.rb /data/lib/dynflow/version.rb
 WORKDIR /data
-RUN bundle install --without mysql
+RUN bundle install

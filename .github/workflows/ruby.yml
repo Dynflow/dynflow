@@ -41,17 +41,8 @@ jobs:
           - 'false'
         db:
           - postgresql
-          - mysql
           - sqlite3
         exclude:
-          - db: mysql
-            ruby_version: '3.0'
-          - db: mysql
-            ruby_version: '3.2'
-          - db: mysql
-            ruby_version: '3.4'
-          - db: mysql
-            concurrent_ruby_ext: 'true'
           - db: sqlite3
             ruby_version: '3.0'
           - db: sqlite3
@@ -77,12 +68,6 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
         env:
           POSTGRES_DB: ci_test
-      mariadb:
-        image: mariadb:10
-        ports: ['3306:3306']
-        env:
-          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-          MYSQL_DATABASE: ci_test
       redis:
         image: redis:latest
         ports: ['6379:6379']
