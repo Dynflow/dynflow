@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
 
-  s.required_ruby_version = '>= 2.7.0'
+  s.required_ruby_version = '>= 3.0.0'
 
   s.add_dependency "algebrick", '~> 0.7.0'
   s.add_dependency "concurrent-ruby", '~> 1.1.3'
