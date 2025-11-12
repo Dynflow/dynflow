@@ -22,10 +22,6 @@ group :postgresql, optional: ENV.key?('CI') && ENV['DB'] != 'postgresql' do
   gem "pg"
 end
 
-group :mysql, optional: ENV.key?('CI') && ENV['DB'] != 'mysql' do
-  gem "mysql2"
-end
-
 group :lint do
   gem 'theforeman-rubocop', '~> 0.0.4'
 end

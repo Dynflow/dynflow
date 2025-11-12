@@ -118,8 +118,6 @@ module WorldFactory
     @persistence_adapter ||= begin
                                db_config = ENV.fetch('DB_CONN_STRING') do
                                  case ENV['DB']
-                                 when 'mysql'
-                                   "mysql2://root@127.0.0.1/#{ENV.fetch('MYSQL_DATABASE', 'ci_test')}"
                                  when 'postgresql'
                                    "postgres://postgres@localhost/#{ENV.fetch('POSTGRES_DB', 'ci_test')}"
                                  else
