@@ -119,9 +119,9 @@ module WorldFactory
                                db_config = ENV.fetch('DB_CONN_STRING') do
                                  case ENV['DB']
                                  when 'mysql'
-                                   "mysql2://root@127.0.0.1/#{ENV.fetch('MYSQL_DATABASE', 'travis_ci_test')}"
+                                   "mysql2://root@127.0.0.1/#{ENV.fetch('MYSQL_DATABASE', 'ci_test')}"
                                  when 'postgresql'
-                                   "postgres://postgres@localhost/#{ENV.fetch('POSTGRES_DB', 'travis_ci_test')}"
+                                   "postgres://postgres@localhost/#{ENV.fetch('POSTGRES_DB', 'ci_test')}"
                                  else
                                    'sqlite:/'
                                  end

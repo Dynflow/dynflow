@@ -76,13 +76,13 @@ jobs:
         ports: ['5432:5432']
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
         env:
-          POSTGRES_DB: travis_ci_test
+          POSTGRES_DB: ci_test
       mariadb:
         image: mariadb:10
         ports: ['3306:3306']
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
-          MYSQL_DATABASE: travis_ci_test
+          MYSQL_DATABASE: ci_test
       redis:
         image: redis:latest
         ports: ['6379:6379']
