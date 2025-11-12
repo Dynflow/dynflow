@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
 require_relative 'test_helper'
-require 'active_support/time'
+require 'active_support/all'
 
 module Dynflow
   module ExtensionsTest
     describe 'msgpack extensions' do
       before do
-        Thread.current[:time_zone] = ActiveSupport::TimeZone['Europe/Prague']
+        Time.zone = ActiveSupport::TimeZone['Europe/Prague']
       end
-      after { Thread.current[:time_zone] = nil }
+      after { Time.zone = nil }
 
       it 'allows {de,}serializing Time' do
         time = Time.now
