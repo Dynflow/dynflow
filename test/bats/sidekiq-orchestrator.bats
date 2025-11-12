@@ -116,3 +116,63 @@ teardown() {
   timeout 30 bundle exec ruby examples/remote_executor.rb client 1
   wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
 }
+
+@test "active orchestrator can survive a brief redis connection drop" {
+  cd "$(get_project_root)"
+
+  run_background 'o1' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
+  wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+
+  run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+  wait_for 5 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o1)"
+
+  stop_redis
+  wait_for 30 1 grep 'Error connecting to Redis' "$(bg_output_file o1)"
+  start_redis
+
+  timeout 10 bundle exec ruby examples/remote_executor.rb client 1
+  wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
+}
+
+@test "active orchestrator can survive a longer redis connection drop" {
+  cd "$(get_project_root)"
+
+  run_background 'o1' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
+  wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+
+  run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+  wait_for 5 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o1)"
+
+  stop_redis 1
+  wait_for 30 1 grep 'Error connecting to Redis' "$(bg_output_file o1)"
+  start_redis
+
+  wait_for 30 1 grep 'The orchestrator lock was lost, reacquired' "$(bg_output_file o1)"
+
+  timeout 10 bundle exec ruby examples/remote_executor.rb client 1
+  wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
+}
+
+@test "orchestrators can fail over if active one goes away during downtime" {
+  cd "$(get_project_root)"
+
+  run_background 'o1' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
+  wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+
+  run_background 'o2' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
+  wait_for 30 1 grep 'dynflow: Orchestrator lock already taken, entering passive mode.' "$(bg_output_file o2)"
+
+  run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+  wait_for 5 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o1)"
+
+  stop_redis 1
+  wait_for 30 1 grep 'Error connecting to Redis' "$(bg_output_file o1)"
+  kill -15 "$(cat "$TEST_PIDDIR/o1.pid")"
+  start_redis
+
+  wait_for 120 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o2)"
+  wait_for 120 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o2)"
+
+  timeout 10 bundle exec ruby examples/remote_executor.rb client 1
+  wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o2)"
+}
