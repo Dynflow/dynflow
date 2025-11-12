@@ -16,6 +16,10 @@ module Dynflow
       ::MessagePack::DefaultFactory.register_type(0x00, Time, packer: MessagePack::Time::Packer, unpacker: MessagePack::Time::Unpacker)
 
       begin
+        # time_with_zone added a deprecation warning in 7.1.0 which we need to account for
+        # it was removed again in 7.2.0
+        require 'active_support/deprecation'
+        require 'active_support/deprecator'
         require 'active_support/time_with_zone'
         unpacker = ->(payload) do
           tv = MessagePack::Timestamp.from_msgpack_ext(payload)
