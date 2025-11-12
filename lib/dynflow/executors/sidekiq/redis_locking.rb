@@ -41,9 +41,7 @@ module Dynflow
         def wait_for_orchestrator_lock
           mode = nil
           loop do
-            active = ::Sidekiq.redis do |conn|
-              conn.set(REDIS_LOCK_KEY, @world.id, :ex => REDIS_LOCK_TTL, :nx => true)
-            end
+            active = try_acquire_orchestrator_lock
             break if active
             if mode.nil?
               mode = :passive
@@ -52,6 +50,15 @@ module Dynflow
             sleep REDIS_LOCK_POLL_INTERVAL
           end
           @logger.info('Acquired orchestrator lock, entering active mode.')
+        end
+
+        def try_acquire_orchestrator_lock
+          ::Sidekiq.redis do |conn|
+            conn.set(REDIS_LOCK_KEY, @world.id, :ex => REDIS_LOCK_TTL, :nx => true)
+          end
+        rescue ::Redis::BaseError => e
+          @logger.error("Could not acquire orchestrator lock: #{e}")
+          nil
         end
 
         def reacquire_orchestrator_lock
