@@ -13,7 +13,7 @@ Sidekiq.configure_server do |config|
   config[:semi_reliable_fetch] = true
   Sidekiq::ReliableFetch.setup_reliable_fetch!(config)
 end
-::Sidekiq.strict_args!(false)
+::Sidekiq.strict_args!(false) if ::Sidekiq.respond_to?(:strict_args!)
 
 module Dynflow
   module Executors
