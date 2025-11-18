@@ -71,20 +71,23 @@ module Dynflow
             paginate(table(table_name), options),
             options),
           options[:filters])
-        data_set.all.map { |record| execution_plan_column_map(load_data(record, table_name)) }
+        records = with_retry { data_set.all }
+        records.map { |record| execution_plan_column_map(load_data(record, table_name)) }
       end
 
       def find_execution_plan_counts(options = {})
-        filter(:execution_plan, table(:execution_plan), options[:filters]).count
+        with_retry { filter(:execution_plan, table(:execution_plan), options[:filters]).count }
       end
 
       def find_execution_plan_counts_after(timestamp, options = {})
-        filter(:execution_plan, table(:execution_plan), options[:filters]).filter(::Sequel.lit('ended_at >= ?', timestamp)).count
+        with_retry { filter(:execution_plan, table(:execution_plan), options[:filters]).filter(::Sequel.lit('ended_at >= ?', timestamp)).count }
       end
 
       def find_execution_plan_statuses(options)
-        plans = filter(:execution_plan, table(:execution_plan), options[:filters])
-                .select(:uuid, :state, :result)
+        plans = with_retry do
+          filter(:execution_plan, table(:execution_plan), options[:filters])
+            .select(:uuid, :state, :result)
+        end
 
         plans.each_with_object({}) do |current, acc|
           uuid = current.delete(:uuid)
@@ -94,27 +97,29 @@ module Dynflow
 
       def delete_execution_plans(filters, batch_size = 1000, backup_dir = nil)
         count = 0
-        filter(:execution_plan, table(:execution_plan), filters).each_slice(batch_size) do |plans|
-          uuids = plans.map { |p| p.fetch(:uuid) }
-          @db.transaction do
-            table(:delayed).where(execution_plan_uuid: uuids).delete
+        with_retry do
+          filter(:execution_plan, table(:execution_plan), filters).each_slice(batch_size) do |plans|
+            uuids = plans.map { |p| p.fetch(:uuid) }
+            @db.transaction do
+              table(:delayed).where(execution_plan_uuid: uuids).delete
 
-            steps = table(:step).where(execution_plan_uuid: uuids)
-            backup_to_csv(:step, steps, backup_dir, 'steps.csv') if backup_dir
-            steps.delete
+              steps = table(:step).where(execution_plan_uuid: uuids)
+              backup_to_csv(:step, steps, backup_dir, 'steps.csv') if backup_dir
+              steps.delete
 
-            table(:output_chunk).where(execution_plan_uuid: uuids).delete
+              output_chunks = table(:output_chunk).where(execution_plan_uuid: uuids).delete
 
-            actions = table(:action).where(execution_plan_uuid: uuids)
-            backup_to_csv(:action, actions, backup_dir, 'actions.csv') if backup_dir
-            actions.delete
+              actions = table(:action).where(execution_plan_uuid: uuids)
+              backup_to_csv(:action, actions, backup_dir, 'actions.csv') if backup_dir
+              actions.delete
 
-            execution_plans = table(:execution_plan).where(uuid: uuids)
-            backup_to_csv(:execution_plan, execution_plans, backup_dir, 'execution_plans.csv') if backup_dir
-            count += execution_plans.delete
+              execution_plans = table(:execution_plan).where(uuid: uuids)
+              backup_to_csv(:execution_plan, execution_plans, backup_dir, 'execution_plans.csv') if backup_dir
+              count += execution_plans.delete
+            end
           end
+          return count
         end
-        return count
       end
 
       def load_execution_plan(execution_plan_id)
@@ -127,10 +132,12 @@ module Dynflow
 
       def delete_delayed_plans(filters, batch_size = 1000)
         count = 0
-        filter(:delayed, table(:delayed), filters).each_slice(batch_size) do |plans|
-          uuids = plans.map { |p| p.fetch(:execution_plan_uuid) }
-          @db.transaction do
-            count += table(:delayed).where(execution_plan_uuid: uuids).delete
+        with_retry do
+          filter(:delayed, table(:delayed), filters).each_slice(batch_size) do |plans|
+            uuids = plans.map { |p| p.fetch(:execution_plan_uuid) }
+            @db.transaction do
+              count += table(:delayed).where(execution_plan_uuid: uuids).delete
+            end
           end
         end
         count
@@ -138,19 +145,24 @@ module Dynflow
 
       def find_old_execution_plans(age)
         table_name = :execution_plan
-        table(table_name)
-          .where(::Sequel.lit('ended_at <= ? AND state = ?', age, 'stopped'))
-          .all.map { |plan| execution_plan_column_map(load_data plan, table_name) }
+        records = with_retry do
+          table(table_name)
+            .where(::Sequel.lit('ended_at <= ? AND state = ?', age, 'stopped'))
+            .all
+        end
+        records.map { |plan| execution_plan_column_map(load_data plan, table_name) }
       end
 
       def find_past_delayed_plans(time)
         table_name = :delayed
-        table(table_name)
-          .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
-          .where(:frozen => false)
-          .order_by(:start_at)
-          .all
-          .map { |plan| load_data(plan, table_name) }
+        records = with_retry do
+          table(table_name)
+            .where(::Sequel.lit('start_at <= ? OR (start_before IS NOT NULL AND start_before <= ?)', time, time))
+            .where(:frozen => false)
+            .order_by(:start_at)
+            .all
+        end
+        records.map { |plan| load_data(plan, table_name) }
       end
 
       def load_delayed_plan(execution_plan_id)
@@ -205,7 +217,9 @@ module Dynflow
       end
 
       def delete_output_chunks(execution_plan_id, action_id)
-        filter(:output_chunk, table(:output_chunk), { execution_plan_uuid: execution_plan_id, action_id: action_id }).delete
+        with_retry do
+          filter(:output_chunk, table(:output_chunk), { execution_plan_uuid: execution_plan_id, action_id: action_id }).delete
+        end
       end
 
       def connector_feature!
@@ -221,28 +235,30 @@ module Dynflow
 
       def pull_envelopes(receiver_id)
         connector_feature!
-        db.transaction do
-          data_set = table(:envelope).where(receiver_id: receiver_id).all
-          envelopes = data_set.map { |record| load_data(record) }
+        with_retry do
+          db.transaction do
+            data_set = table(:envelope).where(receiver_id: receiver_id).all
+            envelopes = data_set.map { |record| load_data(record) }
 
-          table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
-          return envelopes
+            table(:envelope).where(id: data_set.map { |d| d[:id] }).delete
+            return envelopes
+          end
         end
       end
 
       def push_envelope(envelope)
         connector_feature!
-        table(:envelope).insert(prepare_record(:envelope, envelope))
+        with_retry { table(:envelope).insert(prepare_record(:envelope, envelope)) }
       end
 
       def prune_envelopes(receiver_ids)
         connector_feature!
-        table(:envelope).where(receiver_id: receiver_ids).delete
+        with_retry { table(:envelope).where(receiver_id: receiver_ids).delete }
       end
 
       def prune_undeliverable_envelopes
         connector_feature!
-        table(:envelope).where(receiver_id: table(:coordinator_record).select(:id)).invert.delete
+        with_retry { table(:envelope).where(receiver_id: table(:coordinator_record).select(:id)).invert.delete }
       end
 
       def coordinator_feature!
@@ -263,7 +279,7 @@ module Dynflow
 
       def delete_coordinator_record(class_name, record_id)
         coordinator_feature!
-        table(:coordinator_record).where(class: class_name, id: record_id).delete
+        with_retry { table(:coordinator_record).where(class: class_name, id: record_id).delete }
       end
 
       def find_coordinator_records(options)
@@ -275,7 +291,9 @@ module Dynflow
         if exclude_owner_id
           data_set = data_set.exclude(:owner_id => exclude_owner_id)
         end
-        data_set.all.map { |record| load_data(record) }
+        with_retry do
+          data_set.all.map { |record| load_data(record) }
+        end
       end
 
       def to_hash
@@ -444,7 +462,7 @@ module Dynflow
       end
 
       def delete(what, condition)
-        table(what).where(Utils.symbolize_keys(condition)).delete
+        with_retry { table(what).where(Utils.symbolize_keys(condition)).delete }
       end
 
       def extract_metadata(what, value)
