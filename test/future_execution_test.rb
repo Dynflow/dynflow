@@ -76,7 +76,7 @@ module Dynflow
         it 'finds delayed plans' do
           @start_at = Time.now.utc - 100
           delayed_plan
-          past_delayed_plans = world.persistence.find_past_delayed_plans(@start_at + 10)
+          past_delayed_plans = world.persistence.find_ready_delayed_plans(@start_at + 10)
           _(past_delayed_plans.length).must_equal 1
           _(past_delayed_plans.first.execution_plan_uuid).must_equal execution_plan.id
         end
@@ -113,8 +113,8 @@ module Dynflow
 
         it 'checks for delayed plans in regular intervals' do
           start_time = klok.current_time
-          persistence.expect(:find_past_delayed_plans, [], [start_time])
-          persistence.expect(:find_past_delayed_plans, [], [start_time + options[:poll_interval]])
+          persistence.expect(:find_ready_delayed_plans, [], [start_time])
+          persistence.expect(:find_ready_delayed_plans, [], [start_time + options[:poll_interval]])
           dummy_world.stub :persistence, persistence do
             _(klok.pending_pings.length).must_equal 0
             delayed_executor.start.wait
