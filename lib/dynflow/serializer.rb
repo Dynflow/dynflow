@@ -24,6 +24,8 @@ module Dynflow
       case object
       when ::Array
         object.collect { |v| dump(v) }
+      when ::Symbol
+        generate_other(object)
       else
         super
       end
@@ -38,7 +40,9 @@ module Dynflow
         end
 
         if (type_name = other[ARBITRARY_TYPE_KEY] || other[ARBITRARY_TYPE_KEY.to_s])
-          if type_name == 'Time' && (time_str = other['value'])
+          if type_name == 'Symbol' && (val_str = other['value'])
+            return val_str.to_sym
+          elsif type_name == 'Time' && (time_str = other['value'])
             return Serializable.send(:string_to_time, time_str)
           end
           type = Utils.constantize(type_name) rescue nil
@@ -53,6 +57,8 @@ module Dynflow
 
     def generate_other(object, options = {})
       hash = case
+             when object.is_a?(Symbol)
+               { ARBITRARY_TYPE_KEY => 'Symbol', 'value' => object.to_s }
              when object.respond_to?(:to_h)
                object.to_h
              when object.respond_to?(:to_hash)
