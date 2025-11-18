@@ -6,13 +6,12 @@ module Dynflow
       # Module to prepend the Sidekiq job to handle the serialization
       module Serialization
         def self.serialize(value)
-          JSON.dump(Dynflow.serializer.dump(value))
+          JSON.parse(JSON.dump(Dynflow.serializer.dump(value)))
         end
 
         def self.deserialize(value)
-          object = JSON.load(value)
-          object = Utils::IndifferentHash.new(object) if object.is_a? Hash
-          Dynflow.serializer.load(object)
+          value = Utils::IndifferentHash.new(value) if value.is_a? Hash
+          Dynflow.serializer.load(value)
         end
 
         module WorkerExtension
