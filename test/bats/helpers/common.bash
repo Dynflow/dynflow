@@ -26,20 +26,25 @@ setup_test_env() {
   export DB_CONN_STRING="$DATABASE_URL"
 
   # Test directories
-  export TEST_TMPDIR="$(mktemp -d)"
-  export TEST_PIDDIR="${TEST_TMPDIR}/pids"
-  mkdir -p "$TEST_PIDDIR"
+  export TEST_PIDDIR="${BATS_TEST_TMPDIR}/pids"
 }
 
 run_background() {
   local label="$1"
   shift
 
+  local log_file="$(bg_output_file "$label")"
   mkdir -p "$TEST_PIDDIR"
   (
       "$@" 2>&1 &
       echo $! >"${TEST_PIDDIR}/${label}.pid"
-  ) | tee "${TEST_TMPDIR}/${label}.log" &
+  ) | tee "$log_file" &
+}
+
+bg_output_file() {
+    local label="$1"
+
+    echo "${BATS_TEST_TMPDIR}/${label}.log"
 }
 
 # A function that polls a given command until it succeeds or until it runs out
