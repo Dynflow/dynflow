@@ -117,17 +117,14 @@ class RemoteExecutorExample
       Proc.new { |world| Dynflow::Connectors::Database.new(world) }
     end
 
-    def run_client
+    def run_client(count)
       world = ExampleHelper.create_world do |config|
         config.persistence_adapter = persistence_adapter
         config.executor            = false
         config.connector           = connector
       end
 
-      world.trigger(OrchestrateEvented::CreateInfrastructure)
-      world.trigger(OrchestrateEvented::CreateInfrastructure, true)
-
-      loop do
+      (count || 1000).times do
         start_time = Time.now
         world.trigger(SampleAction).finished.wait
         finished_in = Time.now - start_time
@@ -150,13 +147,13 @@ if $0 == __FILE__
   when 'server'
     puts <<~MSG
       The server is starting…. You can send the work to it by running:
-      
+
          #{$0} client
-      
+
     MSG
     RemoteExecutorExample.run_server
   when 'client'
-    RemoteExecutorExample.run_client
+    RemoteExecutorExample.run_client(ARGV[1]&.to_i)
   else
     puts "Unknown command #{comment}"
     exit 1
