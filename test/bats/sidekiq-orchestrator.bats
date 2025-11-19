@@ -29,6 +29,19 @@ teardown() {
     cleanup_containers 1
 }
 
+@test "sanity" {
+    cd "$(get_project_root)"
+
+    run_background 'o1' bundle exec sidekiq -c 1 -r ./examples/remote_executor.rb -q dynflow_orchestrator
+    wait_for 5 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+
+    run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+    wait_for 5 1 grep -P 'class=Dynflow::Executors::Sidekiq::WorkerJobs::DrainMarker.*INFO: done' "$(bg_output_file w1)"
+
+    timeout 10 bundle exec ruby examples/remote_executor.rb client 1
+    wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
+}
+
 @test "only one orchestrator can be active at a time" {
     cd "$(get_project_root)"
 
