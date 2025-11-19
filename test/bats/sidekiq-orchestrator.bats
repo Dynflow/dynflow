@@ -22,9 +22,10 @@ setup() {
 # Teardown runs after each test
 teardown() {
     (
-        cd "$TEST_PIDDIR"
-        for pidfile in $(ls -1 .); do
-            kill -15 $(cat "$pidfile")
+        cd "$TEST_PIDDIR" || return 1
+        shopt -s nullglob
+        for pidfile in * ; do
+            kill -15 "$(cat "$pidfile")"
         done
     )
 }
