@@ -38,7 +38,7 @@ run_background() {
   (
       "$@" 2>&1 &
       echo $! >"${TEST_PIDDIR}/${label}.pid"
-  ) | tee "$log_file" &
+  ) | tee "$log_file" | sed "s/^/${label}: /" &
 }
 
 bg_output_file() {
