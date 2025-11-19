@@ -11,12 +11,10 @@ setup() {
   setup_test_env
 
   # Ensure containers are running
-  if ! is_postgres_running; then
-    start_postgres
-  fi
-  if ! is_redis_running; then
-    start_redis
-  fi
+  is_postgres_running && stop_postgres
+  start_postgres
+  is_redis_running && stop_redis
+  start_redis
 }
 
 # Teardown runs after each test
@@ -28,6 +26,7 @@ teardown() {
             kill -15 "$(cat "$pidfile")"
         done
     )
+    cleanup_containers 1
 }
 
 @test "only one orchestrator can be active at a time" {

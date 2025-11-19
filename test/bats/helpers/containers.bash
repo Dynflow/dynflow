@@ -49,14 +49,24 @@ start_postgres() {
   return 1
 }
 
+stop_container() {
+  local container="$1"
+  local with_volumes="$2"
+
+  echo "Stopping container: ${container}" >&2
+  if podman ps -a --format "{{.Names}}" | grep -q "^${container}$"; then
+    podman stop -t 2 "${container}" > /dev/null 2>&1 || true
+    if [ "$with_volumes" = "1" ]; then
+        podman rm -v -f "${container}" > /dev/null 2>&1 || true
+    else
+        podman rm -f "${container}" > /dev/null 2>&1 || true
+    fi
+  fi
+}
+
 # Stop PostgreSQL container
 stop_postgres() {
-  echo "Stopping PostgreSQL container: ${POSTGRES_CONTAINER_NAME}" >&2
-
-  if podman ps -a --format "{{.Names}}" | grep -q "^${POSTGRES_CONTAINER_NAME}$"; then
-    podman stop -t 2 "${POSTGRES_CONTAINER_NAME}" > /dev/null 2>&1 || true
-    podman rm -f "${POSTGRES_CONTAINER_NAME}" > /dev/null 2>&1 || true
-  fi
+  stop_container "$POSTGRES_CONTAINER_NAME" "$1"
 }
 
 # Start Redis container
@@ -88,12 +98,7 @@ start_redis() {
 
 # Stop Redis container
 stop_redis() {
-  echo "Stopping Redis container: ${REDIS_CONTAINER_NAME}" >&2
-
-  if podman ps -a --format "{{.Names}}" | grep -q "^${REDIS_CONTAINER_NAME}$"; then
-    podman stop -t 2 "${REDIS_CONTAINER_NAME}" > /dev/null 2>&1 || true
-    podman rm -f "${REDIS_CONTAINER_NAME}" > /dev/null 2>&1 || true
-  fi
+  stop_container "$REDIS_CONTAINER_NAME" "$1"
 }
 
 # Check if PostgreSQL container is running
@@ -131,8 +136,8 @@ exec_redis() {
 
 # Clean up all test containers
 cleanup_containers() {
-  stop_postgres
-  stop_redis
+  stop_postgres 1
+  stop_redis 1
 }
 
 # Start all test containers
