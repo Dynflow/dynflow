@@ -45,9 +45,19 @@ teardown() {
     run_background 'o1' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
     wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
 
+    run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+
     export REDIS_URL=${REDIS_URL%/0}/1
     run_background 'o2' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
-    wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+    wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o2)"
+
+    run_background 'w2' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+
+    # The client performs a round robin between the available executors
+    # This should lead to each orchestrator handling one execution plan
+    timeout 60 bundle exec ruby examples/remote_executor.rb client 2
+    wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
+    wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o2)"
 }
 
 @test "orchestrators do fail over" {
