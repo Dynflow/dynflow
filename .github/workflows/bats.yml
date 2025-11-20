@@ -1,0 +1,50 @@
+name: Bats Integration Tests
+
+on: [pull_request]
+
+jobs:
+  bats:
+    runs-on: ubuntu-latest
+
+    env:
+      DB: postgresql
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Install bats
+      run: |
+        git clone --depth 1 --branch v1.11.0 https://github.com/bats-core/bats-core.git /tmp/bats-core
+        sudo /tmp/bats-core/install.sh /usr/local
+        bats --version
+
+    - name: Install podman
+      run: |
+        sudo apt-get update
+        sudo apt-get -y install podman
+        podman --version
+
+    - id: ruby_version
+      uses: voxpupuli/ruby-version@v1
+    - id: min_ruby
+      run: echo "version=$(echo '${{ steps.ruby_version.outputs.versions }}' | jq -r '.[-1]')" >> $GITHUB_OUTPUT
+    - name: Setup Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        # Use the minimum supported Ruby version for rubocop (last in descending list)
+        ruby-version: ${{ steps.min_ruby.outputs.version }}
+        bundler-cache: true
+
+    - name: Pull container images
+      run: |
+        podman pull docker.io/library/postgres:15
+        podman pull docker.io/library/redis:7-alpine
+
+    - name: Run bats tests
+      run: bats -x --verbose-run --print-output-on-failure test/bats/
+
+    - name: Cleanup containers (if tests fail)
+      if: always()
+      run: |
+        podman stop dynflow-test-postgres dynflow-test-redis 2>/dev/null || true
+        podman rm -f dynflow-test-postgres dynflow-test-redis 2>/dev/null || true
