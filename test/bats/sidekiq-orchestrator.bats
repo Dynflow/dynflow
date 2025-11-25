@@ -85,3 +85,34 @@ teardown() {
   kill -15 "$(cat "$TEST_PIDDIR/o1.pid")"
   wait_for 120 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o2)"
 }
+
+@test "active orchestrator exits when pg goes away for good" {
+  cd "$(get_project_root)"
+
+  run_background 'o1' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
+  wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+
+  run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+  wait_for 5 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o1)"
+
+  podman stop "$POSTGRES_CONTAINER_NAME"
+  wait_for 60 1 grep 'dynflow: World terminated, exiting.' "$(bg_output_file o1)"
+}
+
+@test "active orchestrator can withstand temporary pg connection drop" {
+  cd "$(get_project_root)"
+
+  run_background 'o1' bundle exec sidekiq -r ./examples/remote_executor.rb -q dynflow_orchestrator -c 1
+  wait_for 30 1 grep 'dynflow: Acquired orchestrator lock, entering active mode.' "$(bg_output_file o1)"
+
+  run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+  wait_for 5 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o1)"
+
+  podman stop "$POSTGRES_CONTAINER_NAME"
+  wait_for 30 1 grep 'dynflow: Persistence retry no. 1' "$(bg_output_file o1)"
+  podman start "$POSTGRES_CONTAINER_NAME"
+  wait_for 30 1 grep 'dynflow: Executor heartbeat' "$(bg_output_file o1)"
+
+  timeout 30 bundle exec ruby examples/remote_executor.rb client 1
+  wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
+}
