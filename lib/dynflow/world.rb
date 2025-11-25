@@ -325,17 +325,7 @@ module Dynflow
             logger.info "start terminating throttle_limiter..."
             throttle_limiter.terminate.wait(termination_timeout)
 
-            if executor
-              connector.stop_receiving_new_work(self, termination_timeout)
-
-              logger.info "start terminating executor..."
-              executor.terminate.wait(termination_timeout)
-
-              logger.info "start terminating executor dispatcher..."
-              executor_dispatcher_terminated = Concurrent::Promises.resolvable_future
-              executor_dispatcher.ask([:start_termination, executor_dispatcher_terminated])
-              executor_dispatcher_terminated.wait(termination_timeout)
-            end
+            terminate_executor
 
             logger.info "start terminating client dispatcher..."
             client_dispatcher_terminated = Concurrent::Promises.resolvable_future
@@ -350,7 +340,11 @@ module Dynflow
               clock.ask(:terminate!).wait(termination_timeout)
             end
 
-            coordinator.delete_world(registered_world, true)
+            begin
+              coordinator.delete_world(registered_world, true)
+            rescue Dynflow::Errors::FatalPersistenceError => e
+              nil
+            end
             @terminated.resolve
             true
           rescue => e
@@ -361,7 +355,10 @@ module Dynflow
           termination_future.wait(termination_timeout)
         end.on_resolution do
           @terminated.resolve
-          Thread.new { Kernel.exit } if @exit_on_terminate.true?
+          Thread.new do
+            logger.info 'World terminated, exiting.'
+            Kernel.exit if @exit_on_terminate.true?
+          end
         end
       end
     end
@@ -394,6 +391,20 @@ module Dynflow
       actor = klass.spawn(name: name, args: args, initialized: initialized)
       initialized.wait
       return actor
+    end
+
+    def terminate_executor
+      return unless executor
+
+      connector.stop_receiving_new_work(self, termination_timeout)
+
+      logger.info "start terminating executor..."
+      executor.terminate.wait(termination_timeout)
+
+      logger.info "start terminating executor dispatcher..."
+      executor_dispatcher_terminated = Concurrent::Promises.resolvable_future
+      executor_dispatcher.ask([:start_termination, executor_dispatcher_terminated])
+      executor_dispatcher_terminated.wait(termination_timeout)
     end
   end
   # rubocop:enable Metrics/ClassLength
