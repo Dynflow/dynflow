@@ -23,7 +23,7 @@ teardown() {
     cd "$TEST_PIDDIR" || return 1
     shopt -s nullglob
     for pidfile in * ; do
-        kill -15 "$(cat "$pidfile")"
+        kill -9 "$(cat "$pidfile")"
     done
   )
   cleanup_containers 1
