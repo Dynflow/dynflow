@@ -114,7 +114,15 @@ module Dynflow
         plan = world.persistence.load_delayed_plan(execution_plan_id)
         return if plan.nil? || plan.execution_plan.state != :scheduled
 
-        if !plan.start_before.nil? && plan.start_before < Time.now.utc()
+        if plan.start_before.nil?
+          blocker_ids = world.persistence.find_execution_plan_dependencies(execution_plan_id)
+          statuses = world.persistence.find_execution_plan_statuses({ filters: { uuid: blocker_ids } })
+          failed = statuses.select { |_uuid, status| status[:state] == 'stopped' && status[:result] == 'error' }
+          if failed.any?
+            plan.failed_dependencies(failed.keys)
+            return
+          end
+        elsif plan.start_before < Time.now.utc()
           plan.timeout
           return
         end
