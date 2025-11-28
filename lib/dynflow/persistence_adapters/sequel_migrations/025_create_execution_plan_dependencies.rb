@@ -12,6 +12,7 @@ Sequel.migration do
       foreign_key :execution_plan_uuid, :dynflow_execution_plans, on_delete: :cascade, **column_properties
       foreign_key :blocked_by_uuid, :dynflow_execution_plans, on_delete: :cascade, **column_properties
       index :blocked_by_uuid
+      index :execution_plan_uuid
     end
   end
 
