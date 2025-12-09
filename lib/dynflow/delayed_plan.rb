@@ -31,6 +31,12 @@ module Dynflow
       error("Execution plan could not be started before set time (#{@start_before})", 'timeout')
     end
 
+    def failed_dependencies(uuids)
+      bullets = uuids.map { |u| "- #{u}" }.join("\n")
+      msg = "Execution plan could not be started because some of its prerequisite execution plans failed:\n#{bullets}"
+      error(msg, 'failed-dependency')
+    end
+
     def error(message, history_entry = nil)
       execution_plan.root_plan_step.state = :error
       execution_plan.root_plan_step.error = ::Dynflow::ExecutionPlan::Steps::Error.new(message)
