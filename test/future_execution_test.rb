@@ -318,6 +318,23 @@ module Dynflow
           _(plan3.errors.first.message).must_match(/prerequisite execution plans failed/)
           _(plan3.errors.first.message).must_match(/#{plan2.id}/)
         end
+
+        it 'chains runs the chained plan if the prerequisite was halted' do
+          plan1 = world.plan(Support::DummyExample::Dummy)
+          plan2 = world.chain(plan1.id, Support::DummyExample::Dummy)
+
+          world.halt(plan1.id)
+          Concurrent::Promises.resolvable_future.tap do |promise|
+            world.execute(plan1.id, promise)
+          end.wait
+
+          plan1 = world.persistence.load_execution_plan(plan1.id)
+          _(plan1.state).must_equal :stopped
+          _(plan1.result).must_equal :pending
+          ready = world.persistence.find_ready_delayed_plans(Time.now).reject { |p| @preexisting.include? p.execution_plan_uuid }
+          _(ready.count).must_equal 1
+          _(ready.first.execution_plan_uuid).must_equal plan2.execution_plan_id
+        end
       end
     end
   end
