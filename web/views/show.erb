@@ -43,18 +43,16 @@
   <%= h(@plan.ended_at) %>
 </p>
 
-<% if @plan.state == :scheduled && @plan.delay_record %>
-  <% dependencies = @plan.world.persistence.find_execution_plan_dependencies(@plan.id) %>
-  <% if dependencies.any? %>
-    <p>
-      <b>Waiting for execution plans:</b>
-      <ul>
-      <% dependencies.each do |dep_id| %>
-        <li><a href="<%= url("/#{dep_id}") %>"><%= h(dep_id) %></a></li>
-      <% end %>
-      </ul>
-    </p>
-  <% end %>
+<% dependencies = @plan.world.persistence.find_execution_plan_dependencies(@plan.id) %>
+<% if dependencies.any? %>
+  <p>
+    <b>Depends on execution plans:</b>
+    <ul>
+    <% dependencies.each do |dep_id| %>
+      <li><a href="<%= url("/#{dep_id}") %>"><%= h(dep_id) %></a></li>
+    <% end %>
+    </ul>
+  </p>
 <% end %>
 
 <% blocked_plans = @plan.world.persistence.find_blocked_execution_plans(@plan.id) %>
