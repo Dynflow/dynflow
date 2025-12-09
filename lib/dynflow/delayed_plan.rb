@@ -33,7 +33,7 @@ module Dynflow
 
     def failed_dependencies(uuids)
       bullets = uuids.map { |u| "- #{u}" }.join("\n")
-      msg = "Execution plan could not be started because some of its preqrequisite execution plans failed:\n#{bullets}"
+      msg = "Execution plan could not be started because some of its prerequisite execution plans failed:\n#{bullets}"
       error(msg, 'failed-dependency')
     end
 

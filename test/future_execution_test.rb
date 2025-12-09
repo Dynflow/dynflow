@@ -271,7 +271,7 @@ module Dynflow
           plan2 = world.persistence.load_execution_plan(plan2.execution_plan_id)
           _(plan2.state).must_equal :stopped
           _(plan2.result).must_equal :error
-          _(plan2.errors.first.message).must_match(/preqrequisite execution plans failed/)
+          _(plan2.errors.first.message).must_match(/prerequisite execution plans failed/)
           _(plan2.errors.first.message).must_match(/#{plan1.id}/)
         end
 
@@ -315,7 +315,7 @@ module Dynflow
           plan3 = world.persistence.load_execution_plan(plan3.execution_plan_id)
           _(plan3.state).must_equal :stopped
           _(plan3.result).must_equal :error
-          _(plan3.errors.first.message).must_match(/preqrequisite execution plans failed/)
+          _(plan3.errors.first.message).must_match(/prerequisite execution plans failed/)
           _(plan3.errors.first.message).must_match(/#{plan2.id}/)
         end
       end
