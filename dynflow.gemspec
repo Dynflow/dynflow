@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.description = "Ruby workflow/orchestration engine"
   s.license     = "MIT"
 
-  s.files         = `git ls-files`.split("\n")
+  s.files         = `git ls-files`.split("\n").reject { |file| file == '.packit.yaml' }
   s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_paths = ["lib"]
 

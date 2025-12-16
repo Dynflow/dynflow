@@ -1,0 +1,43 @@
+# See the documentation for more information:
+# https://packit.dev/docs/configuration/
+
+specfile_path: rubygem-dynflow.spec
+
+# add or remove files that should be synced
+files_to_sync:
+    - rubygem-dynflow.spec
+    - .packit.yaml
+
+# name in upstream package repository or registry (e.g. in PyPI)
+upstream_package_name: dynflow
+# downstream (Fedora) RPM package name
+downstream_package_name: rubygem-dynflow
+
+upstream_tag_template: v{version}
+
+actions:
+  post-upstream-clone:
+    - "wget https://raw.githubusercontent.com/theforeman/foreman-packaging/rpm/develop/packages/foreman/rubygem-dynflow/rubygem-dynflow.spec -O rubygem-dynflow.spec"
+  get-current-version:
+    - ruby -rrubygems -e 'puts Gem::Specification::load(Dir.glob("*.gemspec").first).version'
+  create-archive:
+    - gem build dynflow.gemspec
+    - bash -c "ls -1t ./dynflow-*.gem | head -n 1"
+
+jobs:
+  - &copr
+    job: copr_build
+    trigger: pull_request
+    targets:
+      rhel-9: {}
+    module_hotfixes: true
+
+  - <<: *copr
+    trigger: commit
+    branch: master
+    owner: '@theforeman'
+    project: develop
+
+srpm_build_deps:
+  - wget
+  - rubygems
