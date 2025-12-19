@@ -1,0 +1,20 @@
+name: Release to rubygems
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:
+      - '**'
+
+jobs:
+  release:
+    name: Release gem
+    runs-on: ubuntu-latest
+    environment: release
+    if: github.repository_owner == 'Dynflow'
+
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: voxpupuli/ruby-release@v0
