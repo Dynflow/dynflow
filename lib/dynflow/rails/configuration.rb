@@ -126,7 +126,6 @@ module Dynflow
         end
         if increase_db_pool_size?
           db_pool_size = calculate_db_pool_size(world)
-          ::ActiveRecord::Base.connection_pool.disconnect!
 
           base_config = ::ActiveRecord::Base.configurations.configs_for(env_name: ::Rails.env)[0]
           config = if base_config.respond_to?(:configuration_hash)
@@ -134,7 +133,11 @@ module Dynflow
                    else
                      base_config.config.dup
                    end
-          config['pool'] = db_pool_size if config['pool'].to_i < db_pool_size
+
+          return unless config['pool'].to_i < db_pool_size
+
+          config['pool'] = db_pool_size
+          ::ActiveRecord::Base.connection_pool.disconnect!
           ::ActiveRecord::Base.establish_connection(config)
         end
       end
