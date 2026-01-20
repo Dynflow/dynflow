@@ -124,22 +124,25 @@ module Dynflow
           warn 'Deprecated: using `increase_db_pool_size` outside of Dynflow code is not needed anymore'
           return
         end
-        if increase_db_pool_size?
-          db_pool_size = calculate_db_pool_size(world)
 
-          base_config = ::ActiveRecord::Base.configurations.configs_for(env_name: ::Rails.env)[0]
-          config = if base_config.respond_to?(:configuration_hash)
-                     ::Dynflow::Utils::IndifferentHash.new(base_config.configuration_hash.dup)
-                   else
-                     base_config.config.dup
-                   end
+        return unless increase_db_pool_size?
 
-          return unless config['pool'].to_i < db_pool_size
+        db_pool_size = calculate_db_pool_size(world)
 
-          config['pool'] = db_pool_size
-          ::ActiveRecord::Base.connection_pool.disconnect!
-          ::ActiveRecord::Base.establish_connection(config)
-        end
+        base_config = ::ActiveRecord::Base.configurations.configs_for(env_name: ::Rails.env)[0]
+        config = if base_config.respond_to?(:configuration_hash)
+                   ::Dynflow::Utils::IndifferentHash.new(base_config.configuration_hash.dup)
+                 else
+                   base_config.config.dup
+                 end
+
+        return unless config['pool'].to_i < db_pool_size
+
+        dynflow_logger.warn "Increasing database pool connections from #{config['pool']} to #{db_pool_size}"
+
+        config['pool'] = db_pool_size
+        ::ActiveRecord::Base.connection_pool.disconnect!
+        ::ActiveRecord::Base.establish_connection(config)
       end
 
       # generates the options hash consumable by the Dynflow's world
