@@ -138,7 +138,7 @@ module Dynflow
 
         return unless config['pool'].to_i < db_pool_size
 
-        dynflow_logger.warn "Increasing database pool connections from #{config['pool']} to #{db_pool_size}"
+        dynflow_logger.info "Increasing database pool connections from #{config['pool']} to #{db_pool_size}"
 
         config['pool'] = db_pool_size
         ::ActiveRecord::Base.connection_pool.disconnect!
