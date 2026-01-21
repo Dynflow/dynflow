@@ -5,7 +5,7 @@ source 'https://rubygems.org'
 gemspec
 
 group :concurrent_ruby_ext, optional: ENV.key?('CI') && ENV['CONCURRENT_RUBY_EXT'] != 'true' do
-  gem 'concurrent-ruby-ext', '~> 1.1.3'
+  gem 'concurrent-ruby-ext', '>= 1.1.3', '< 2'
 end
 
 group :pry, optional: ENV.key?('CI') do
