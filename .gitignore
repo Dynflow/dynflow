@@ -6,6 +6,7 @@ Gemfile.lock
 .bundle
 .idea
 .ruby-version
-examples/remote_executor_db.sqlite
+vendor/
+examples/*.sqlite
 /Gemfile.local.rb
 /test.log

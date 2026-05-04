@@ -11,11 +11,12 @@ module Dynflow
     include Invalidation
 
     attr_reader :id, :config, :client_dispatcher, :executor_dispatcher, :executor, :connector,
-      :transaction_adapter, :logger_adapter, :coordinator,
+      :transaction_adapter, :logger_adapter, :coordinator, :managed_actors,
       :persistence, :action_classes, :subscription_index,
       :middleware, :auto_rescue, :clock, :meta, :delayed_executor, :auto_validity_check, :validity_check_timeout, :throttle_limiter,
       :termination_timeout, :terminated, :dead_letter_handler, :execution_plan_cleaner
 
+    # rubocop:disable Metrics/MethodLength
     def initialize(config)
       @config = Config::ForWorld.new(config, self)
 
@@ -51,11 +52,13 @@ module Dynflow
       @throttle_limiter       = @config.throttle_limiter
       @terminated             = Concurrent::Promises.resolvable_event
       @termination_timeout    = @config.termination_timeout
+      @managed_actors         = {}
       calculate_subscription_index
 
       if executor
         @executor_dispatcher = spawn_and_wait(Dispatcher::ExecutorDispatcher, "executor-dispatcher", self, @config.executor_semaphore)
         executor.initialized.wait
+        spawn_managed_actors(@config.managed_actors)
       end
       update_register
       perform_validity_checks if auto_validity_check
@@ -71,6 +74,7 @@ module Dynflow
       end
       post_initialization
     end
+    # rubocop:enable Metrics/MethodLength
 
     # performs steps once the executor is ready and invalidation of previous worls is finished.
     # Needs to be indempotent, as it can be called several times (expecially when auto_validity_check
@@ -106,6 +110,19 @@ module Dynflow
         Coordinator::ExecutorWorld.new(self)
       else
         Coordinator::ClientWorld.new(self)
+      end
+    end
+
+    def spawn_managed_actors(actors)
+      actors.each do |name, options|
+        begin
+          coordinator.acquire(Coordinator::SingletonActorLock.new(self, name)) if options[:singleton]
+          actor = spawn_and_wait(Dynflow::ManagedActor, "managed-actor-#{name}", options[:class])
+          actor.ask(:start).wait
+          @managed_actors[name] = actor
+        rescue Coordinator::LockError
+          logger.info "Actor #{name} already registered, skipping"
+        end
       end
     end
 
@@ -243,6 +260,10 @@ module Dynflow
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event, nil, optional], done, false)
     end
 
+    def message_actor(actor_name, message, args, done = Concurrent::Promises.resolvable_future)
+      publish_request(Dispatcher::ActorMessage[actor_name, message, args], done, false)
+    end
+
     def plan_event(execution_plan_id, step_id, event, time, accepted = Concurrent::Promises.resolvable_future, optional: false)
       publish_request(Dispatcher::Event[execution_plan_id, step_id, event, time, optional], accepted, false)
     end
@@ -327,6 +348,8 @@ module Dynflow
           begin
             run_before_termination_hooks
 
+            terminate_actors
+
             if delayed_executor
               logger.info "start terminating delayed_executor..."
               delayed_executor.terminate.wait(termination_timeout)
@@ -401,6 +424,15 @@ module Dynflow
       actor = klass.spawn(name: name, args: args, initialized: initialized)
       initialized.wait
       return actor
+    end
+
+    def terminate_actors
+      logger.info "terminating actors..."
+      managed_actors.each do |name, actor|
+        future = Concurrent::Promises.resolvable_future
+        actor.ask([:terminate, future])
+        future.wait(termination_timeout)
+      end
     end
 
     def terminate_executor

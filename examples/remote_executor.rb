@@ -155,7 +155,7 @@ if $0 == __FILE__
   when 'client'
     RemoteExecutorExample.run_client(ARGV[1]&.to_i)
   else
-    puts "Unknown command #{comment}"
+    puts "Unknown command #{command}"
     exit 1
   end
 elsif defined?(Sidekiq)

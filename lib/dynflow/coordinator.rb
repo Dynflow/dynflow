@@ -188,6 +188,17 @@ module Dynflow
       end
     end
 
+    class SingletonActorLock < LockByWorld
+      def initialize(world, actor_name)
+        super(world)
+        @data[:id] = self.class.lock_id(actor_name)
+      end
+
+      def self.lock_id(actor_name)
+        "actor:#{actor_name}"
+      end
+    end
+
     class DelayedExecutorLock < LockByWorld
       def initialize(world)
         super
