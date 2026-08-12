@@ -89,6 +89,9 @@ module Dynflow
           {}
         end
 
+        def prune_orphaned_queues
+        end
+
         def heartbeat
           @logger.debug('Executor heartbeat')
           record = @world.coordinator.find_records(:id => @world.id,

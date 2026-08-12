@@ -142,6 +142,7 @@ module Dynflow
         end
         pruned = connector.prune_undeliverable_envelopes(self)
         logger.error("Pruned #{pruned} undeliverable envelopes") unless pruned.zero?
+        executor.prune_orphaned_queues if executor
         world_invalidation_result.values.select { |result| result == :invalidated }.size
       end
 

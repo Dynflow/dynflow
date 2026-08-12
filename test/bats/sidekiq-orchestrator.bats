@@ -176,3 +176,27 @@ teardown() {
   timeout 10 bundle exec ruby examples/remote_executor.rb client 1
   wait_for 1 1 grep -P 'dynflow: ExecutionPlan.*running >>.*stopped' "$(bg_output_file o2)"
 }
+
+@test "multi-orchestrator — jobs spread across two orchestrators using per-orchestrator queues" {
+  cd "$(get_project_root)"
+
+  # Start orchestrator 1 with subqueue dynflow_orchestrator:orch-a
+  uuid1=$(uuidgen)
+  run_background 'o1' bundle exec sidekiq -c 1 -r ./examples/remote_executor.rb -q dynflow_orchestrator:${uuid1}
+  wait_for 30 1 grep -q "World ${uuid1} started..." "$(bg_output_file o1)"
+
+  # Start orchestrator 2 with subqueue dynflow_orchestrator:orch-b
+  uuid2=$(uuidgen)
+  run_background 'o2' bundle exec sidekiq -c 1 -r ./examples/remote_executor.rb -q dynflow_orchestrator:${uuid2}
+  wait_for 30 1 grep -q "World ${uuid2} started..." "$(bg_output_file o2)"
+
+  # Start one worker
+  run_background 'w1' bundle exec sidekiq -r ./examples/remote_executor.rb -q default
+
+  # Trigger 10 jobs — with 2 orchestrators round-robin, each should get ~5
+  timeout 60 bundle exec ruby examples/remote_executor.rb client 10
+
+  # Assert both orchestrators handled at least one job
+  wait_for 5 1 grep -qP 'ExecutionPlan.*running >>.*stopped' "$(bg_output_file o1)"
+  wait_for 5 1 grep -qP 'ExecutionPlan.*running >>.*stopped' "$(bg_output_file o2)"
+}

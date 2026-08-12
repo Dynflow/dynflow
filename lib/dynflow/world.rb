@@ -23,7 +23,7 @@ module Dynflow
       Dynflow::Telemetry.set_adapter @config.telemetry_adapter
       Dynflow::Telemetry.register_metrics!
 
-      @id                     = SecureRandom.uuid
+      @id                     = @config.id
       @logger_adapter         = @config.logger_adapter
       @clock                  = spawn_and_wait(Clock, 'clock', logger)
       @config.validate

@@ -7,8 +7,6 @@ module Dynflow
         # handles resposnes about finished work form the workers
         # or some event to handle on orchestrator side
         class WorkerDone < InternalJobBase
-          sidekiq_options queue: :dynflow_orchestrator
-
           # @param request_envelope [Dispatcher::Request] - request to handle on orchestrator side
           #   usually to start new execution or to pass some event
           def perform(work_item, delayed_events = nil)
@@ -23,8 +21,6 @@ module Dynflow
 
         # handles setting up an event on orchestrator
         class PlanEvent < InternalJobBase
-          sidekiq_options queue: :dynflow_orchestrator
-
           # @param event_envelope [Dispatcher::Event] - request to handle on orchestrator side
           #   usually to start new execution or to pass some event
           def perform(execution_plan_id, step_id, event, time)
@@ -33,8 +29,6 @@ module Dynflow
         end
 
         class HandlePersistenceError < InternalJobBase
-          sidekiq_options queue: :dynflow_orchestrator
-
           # @param request_envelope [Dispatcher::Request] - request to handle on orchestrator side
           #   usually to start new execution or to pass some event
           def perform(error, work_item)

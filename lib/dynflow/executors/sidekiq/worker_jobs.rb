@@ -5,7 +5,7 @@ module Dynflow
     module Sidekiq
       module WorkerJobs
         class PerformWork < InternalJobBase
-          def perform(work_item)
+          def perform(work_item, respond_to = 'dynflow_orchestrator')
             with_telemetry(work_item) do
               Executors.run_user_code do
                 work_item.world = Dynflow.process_world
@@ -13,10 +13,10 @@ module Dynflow
               end
             end
           rescue Errors::PersistenceError => e
-            OrchestratorJobs::HandlePersistenceError.perform_async(e, work_item)
+            OrchestratorJobs::HandlePersistenceError.set(queue: respond_to).perform_async(e, work_item)
           ensure
             step = work_item.step if work_item.is_a?(Director::StepWorkItem)
-            OrchestratorJobs::WorkerDone.perform_async(work_item, step && step.delayed_events)
+            OrchestratorJobs::WorkerDone.set(queue: respond_to).perform_async(work_item, step && step.delayed_events)
           end
 
           private

@@ -61,6 +61,10 @@ module Dynflow
         @core.tell([:halt, execution_plan_id])
       end
 
+      def prune_orphaned_queues
+        @core.tell(:prune_orphaned_queues)
+      end
+
       def initialized
         @core_initialized
       end
