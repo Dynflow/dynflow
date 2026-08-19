@@ -2,16 +2,22 @@
 
 Sequel.migration do
   up do
-    alter_table(:dynflow_actions) do
-      drop_index [:execution_plan_uuid, :id]
+    if indexes(:dynflow_actions).key?(:dynflow_actions_execution_plan_uuid_id_index)
+      alter_table(:dynflow_actions) do
+        drop_index [:execution_plan_uuid, :id]
+      end
     end
 
-    alter_table(:dynflow_execution_plans) do
-      drop_index :uuid
+    if indexes(:dynflow_execution_plans).key?(:dynflow_execution_plans_uuid_index)
+      alter_table(:dynflow_execution_plans) do
+        drop_index :uuid
+      end
     end
 
-    alter_table(:dynflow_steps) do
-      drop_index [:execution_plan_uuid, :id]
+    if indexes(:dynflow_steps).key?(:dynflow_steps_execution_plan_uuid_id_index)
+      alter_table(:dynflow_steps) do
+        drop_index [:execution_plan_uuid, :id]
+      end
     end
   end
 
