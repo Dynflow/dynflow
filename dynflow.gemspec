@@ -23,8 +23,8 @@ Gem::Specification.new do |s|
   s.add_dependency "algebrick", '~> 0.7.0'
   s.add_dependency "concurrent-ruby", '>= 1.1.3', '< 2.0'
   s.add_dependency "concurrent-ruby-edge", '~> 0.7.0'
-  s.add_dependency 'logger'
   s.add_dependency "csv", "~> 3.1"
+  s.add_dependency 'logger'
   s.add_dependency "msgpack", '~> 1.3', '>= 1.3.3'
   s.add_dependency "multi_json"
   s.add_dependency "sequel", '>= 4.0.0'
