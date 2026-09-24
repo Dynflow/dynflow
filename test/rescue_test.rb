@@ -34,6 +34,25 @@ module Dynflow
           end
         end
 
+        describe 'when skipping a run step fails' do
+          let :execution_plan do
+            execute(Example::ActionWithSkip, 1, :error_on_skip)
+          end
+
+          it 'allows retrying the skip' do
+            2.times do
+              plan = world.persistence.load_execution_plan(execution_plan.id)
+              plan.skip(plan.failed_steps.first)
+              world.execute(plan.id).value
+            end
+
+            plan = world.persistence.load_execution_plan(execution_plan.id)
+            _(plan.state).must_equal :paused
+            _(plan.run_steps.first.state).must_equal :error
+            _(plan.finalize_steps.first.state).must_equal :skipped
+          end
+        end
+
         describe 'of simple skippable action in finalize phase' do
           let :execution_plan do
             execute(Example::ActionWithSkip, 1, :error_on_finalize)

@@ -24,6 +24,8 @@ module Dynflow
       end
 
       def mark_to_skip
+        return if state == :skipped
+
         self.state = :skipped
         self.save
       end
