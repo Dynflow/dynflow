@@ -355,21 +355,20 @@ module Dynflow
             rescue Dynflow::Errors::FatalPersistenceError => e
               nil
             end
-            @terminated.resolve
             true
           rescue => e
             logger.fatal(e)
           end
         end
-        @terminating = Concurrent::Promises.future do
+        @terminating = Concurrent::Promises.resolvable_future
+        Thread.new do
           termination_future.wait(termination_timeout)
-        end.on_resolution do
           @terminated.resolve
-          Thread.new do
-            logger.info 'World terminated, exiting.'
-            Kernel.exit if @exit_on_terminate.true?
-          end
+          logger.info 'World terminated, exiting.'
+          @terminating.fulfill(true)
+          Kernel.exit if @exit_on_terminate.true?
         end
+        @terminating
       end
     end
 
