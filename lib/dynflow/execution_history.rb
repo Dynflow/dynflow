@@ -6,8 +6,8 @@ module Dynflow
     include Enumerable
 
     Event = Algebrick.type do
-      fields! time:     Integer,
-              name:     String,
+      fields! time: Integer,
+              name: String,
               world_id: type { variants String, NilClass }
     end
 

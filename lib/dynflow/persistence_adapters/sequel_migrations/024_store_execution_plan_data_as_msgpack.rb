@@ -4,9 +4,9 @@ require_relative 'msgpack_migration_helper'
 
 Sequel.migration do
   helper = MsgpackMigrationHelper.new({
-    :dynflow_execution_plans => [:data],
-    :dynflow_steps => [:data]
-  })
+                                        :dynflow_execution_plans => [:data],
+                                        :dynflow_steps => [:data]
+                                      })
 
   up do
     helper.up(self)
