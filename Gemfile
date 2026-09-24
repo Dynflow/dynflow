@@ -4,6 +4,9 @@ source 'https://rubygems.org'
 
 gemspec
 
+# multi_json 1.21.2 fixes json 3 compatibility, but requires Ruby 3.2+
+gem 'json', '< 3.0' if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('3.2')
+
 group :concurrent_ruby_ext, optional: ENV.key?('CI') && ENV['CONCURRENT_RUBY_EXT'] != 'true' do
   gem 'concurrent-ruby-ext', '~> 1.1.3'
 end
