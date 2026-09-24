@@ -52,17 +52,9 @@ module Dynflow
 
       def invalidate_planning_lock(planning_lock)
         with_valid_execution_plan_for_lock(planning_lock) do |plan|
-          plan.steps.values.each { |step| invalidate_step step }
-
-          state = if plan.plan_steps.any? && plan.plan_steps.all? { |step| step.state == :success }
-                    :planned
-                  else
-                    :stopped
-                  end
-          plan.update_state(state) if plan.state != state
-
+          state = invalidate_planning_plan(plan)
           coordinator.release(planning_lock)
-          execute(plan.id) if plan.state == :planned
+          execute(plan.id) if state == :planned
         end
       end
 
@@ -140,6 +132,7 @@ module Dynflow
             invalidate_execution_lock(lock)
           end
         end
+        execution_plans_validity_check
         pruned = connector.prune_undeliverable_envelopes(self)
         logger.error("Pruned #{pruned} undeliverable envelopes") unless pruned.zero?
         world_invalidation_result.values.select { |result| result == :invalidated }.size
@@ -198,7 +191,53 @@ module Dynflow
         return orphaned_locks
       end
 
+      # Invalidates execution plans left in planning without a planning lock.
+      # Acquiring a new planning lock prevents recovery from racing with another
+      # validity check or a planning process which has just acquired the lock.
+      #
+      # @return [Array<String>] ids of invalidated execution plans
+      def execution_plans_validity_check
+        planning_lock_ids = coordinator.find_locks(class: Coordinator::PlanningLock.name).map(&:execution_plan_id)
+        planning_plans = persistence.find_execution_plans(filters: { state: 'planning' })
+        invalidated_plan_ids = planning_plans.filter_map do |plan|
+          next if planning_lock_ids.include?(plan.id)
+
+          plan.id if invalidate_planning_plan_without_lock(plan.id)
+        end
+
+        unless invalidated_plan_ids.empty?
+          logger.error "execution plans in planning without a planning lock found and invalidated: #{invalidated_plan_ids.inspect}"
+        end
+
+        invalidated_plan_ids
+      end
+
       private
+
+      def invalidate_planning_plan_without_lock(execution_plan_id)
+        state = nil
+        planning_lock = Coordinator::PlanningLock.new(self, execution_plan_id)
+        coordinator.acquire(planning_lock) do
+          plan = persistence.load_execution_plan(execution_plan_id)
+          state = invalidate_planning_plan(plan) if plan.state == :planning
+        end
+        execute(execution_plan_id) if state == :planned
+        !state.nil?
+      rescue Coordinator::LockError, KeyError
+        false
+      end
+
+      def invalidate_planning_plan(plan)
+        plan.steps.values.each { |step| invalidate_step step }
+
+        state = if plan.plan_steps.any? && plan.plan_steps.all? { |step| step.state == :success }
+                  :planned
+                else
+                  :stopped
+                end
+        plan.update_state(state) if plan.state != state
+        state
+      end
 
       def invalidate_step(step)
         if step.state == :running

@@ -137,6 +137,33 @@ module Dynflow
           end
 
           describe 'planning locks' do
+            it 'executes fully planned execution plans left in planning without a lock' do
+              plan = client_world.plan(Support::DummyExample::Dummy)
+              plan.set_state(:planning, true)
+              plan.save
+
+              client_world_2.perform_validity_checks
+
+              wait_for do
+                plan = client_world_2.persistence.load_execution_plan(plan.id)
+                plan.state == :stopped
+              end
+            end
+
+            it 'stops incompletely planned execution plans without a lock' do
+              plan = client_world.plan(Support::DummyExample::Dummy)
+              plan.set_state(:planning, true)
+              plan.save
+              step = plan.plan_steps.first
+              step.set_state(:pending, true)
+              step.save
+
+              client_world_2.perform_validity_checks
+
+              plan = client_world_2.persistence.load_execution_plan(plan.id)
+              _(plan.state).must_equal :stopped
+            end
+
             it 'releases orphaned planning locks and executes associated execution plans' do
               plan = client_world.plan(Support::DummyExample::Dummy)
               plan.set_state(:planning, true)
