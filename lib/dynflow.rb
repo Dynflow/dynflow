@@ -5,6 +5,7 @@ require 'set'
 require 'base64'
 require 'concurrent'
 require 'concurrent-edge'
+require 'logger'
 
 logger                          = Logger.new($stderr)
 logger.level                    = Logger::INFO

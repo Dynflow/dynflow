@@ -96,7 +96,10 @@ teardown() {
   wait_for 5 1 grep 'dynflow: Finished performing validity checks' "$(bg_output_file o1)"
 
   podman stop "$POSTGRES_CONTAINER_NAME"
-  wait_for 60 1 grep 'dynflow: World terminated, exiting.' "$(bg_output_file o1)"
+  # With concurrent-ruby 1.3 the persistence error surfaces after
+  # MAX_RETRIES polling rounds, which pushes the termination log past a
+  # 60s window (observed ~58s); allow a generous margin.
+  wait_for 180 1 grep 'dynflow: World terminated, exiting.' "$(bg_output_file o1)"
 }
 
 @test "active orchestrator can withstand temporary pg connection drop" {
