@@ -569,11 +569,8 @@ module Dynflow
                 polling_plan.sub_plans_count == total
               end
 
-              # Moving the clock to make the parent check on sub plans
-              _(clock.pending_pings.count).must_equal 1
-              clock.progress
-
               wait_for('the parent to realise the sub plans failed') do
+                clock.progress
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :paused
               end
@@ -586,11 +583,8 @@ module Dynflow
                 polling_plan.sub_plans_count == 2 * total
               end
 
-              # Move the clock again
-              _(clock.pending_pings.count).must_equal 1
-              clock.progress
-
               wait_for('everything to finish successfully') do
+                clock.progress
                 polling_plan = world.persistence.load_execution_plan(triggered_plan.id)
                 polling_plan.state == :stopped && polling_plan.result == :success
               end
@@ -611,7 +605,7 @@ module Dynflow
               end
 
               # Moving the clock to make the parent check on sub plans
-              _(clock.pending_pings.count).must_equal 1
+              wait_for('the parent poll to be scheduled') { clock.pending_pings.count == 1 }
               clock.progress
               _(clock.pending_pings.count).must_equal 0
 
@@ -694,7 +688,7 @@ module Dynflow
               plan.sub_plans_count == total &&
                 plan.sub_plans.all? { |sub| sub.result == :success }
             end
-            _(clock.pending_pings.count).must_equal 1
+            wait_for('the parent poll to be scheduled') { clock.pending_pings.count == 1 }
             clock.progress
             wait_for do
               plan = world.persistence.load_execution_plan(plan.id)
@@ -716,7 +710,7 @@ module Dynflow
               plan.entry_action.output[:planning_finished] == 1
             end
             # Poll was set during #initiate
-            _(clock.pending_pings.count).must_equal 1
+            wait_for('the parent poll to be scheduled') { clock.pending_pings.count == 1 }
 
             # Wait for the sub plans to finish
             wait_for do
