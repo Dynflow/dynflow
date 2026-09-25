@@ -2,6 +2,7 @@
 
 require_relative 'test_helper'
 require 'fileutils'
+require 'mocha/minitest'
 
 module Dynflow
   module WorldTest
@@ -49,6 +50,29 @@ module Dynflow
           # the test from running.
           terminated_event.wait(10)
           _(terminated_event.resolved?).must_equal true
+        end
+
+        it 'finishes when the global IO executor is saturated' do
+          io_executor = Concurrent::FixedThreadPool.new(1)
+          io_started = Concurrent::Event.new
+          io_release = Concurrent::Event.new
+          saturated_world = WorldFactory.create_world { |config| config.termination_timeout = 0.1 }
+          blocker = Concurrent::Promises.future_on(io_executor) do
+            io_started.set
+            io_release.wait
+          end
+          assert io_started.wait(1)
+          Concurrent.stubs(:global_io_executor).returns(io_executor)
+
+          termination = saturated_world.terminate
+
+          assert termination.wait(1)
+          _(saturated_world.terminated.resolved?).must_equal true
+        ensure
+          io_release&.set
+          blocker&.wait(1)
+          io_executor&.shutdown
+          io_executor&.wait_for_termination(10)
         end
       end
     end
