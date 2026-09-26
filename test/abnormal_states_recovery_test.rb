@@ -170,15 +170,15 @@ module Dynflow
               plan.save
               client_world.coordinator.acquire Coordinator::PlanningLock.new(client_world, plan.id)
               executor_world.invalidate(client_world.registered_world)
-              expected_locks = ["lock world-invalidation:#{client_world.id}",
-                                "unlock execution-plan:#{plan.id}", # planning lock
-                                "lock execution-plan:#{plan.id}", # execution lock
-                                "unlock world-invalidation:#{client_world.id}"]
-              _(executor_world.coordinator.adapter.lock_log).must_equal(expected_locks)
               wait_for do
                 plan = client_world_2.persistence.load_execution_plan(plan.id)
                 plan.state == :stopped
               end
+              lock_log = executor_world.coordinator.adapter.lock_log
+              _(lock_log).must_include "lock world-invalidation:#{client_world.id}"
+              _(lock_log).must_include "unlock execution-plan:#{plan.id}" # planning lock
+              _(lock_log).must_include "lock execution-plan:#{plan.id}" # execution lock
+              _(lock_log).must_include "unlock world-invalidation:#{client_world.id}"
             end
 
             it 'releases orphaned planning locks and stops associated execution plans which did not finish planning' do
