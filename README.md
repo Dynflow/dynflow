@@ -40,6 +40,7 @@ implementations as well).
 * [Current status](#current-status)
 * [How it works](#how-it-works)
 * [Examples](#examples)
+* [Rails installation](doc/rails.md)
 * [The Anatomy of Action Class](#the-anatomy-of-action-class)
 * [Glossary](#glossary)
 * [Related projects](#related-projects)
