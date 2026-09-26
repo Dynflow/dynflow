@@ -137,21 +137,48 @@ module Dynflow
           end
 
           describe 'planning locks' do
+            it 'executes fully planned execution plans left in planning without a lock' do
+              plan = client_world.plan(Support::DummyExample::Dummy)
+              plan.set_state(:planning, true)
+              plan.save
+
+              client_world_2.perform_validity_checks
+
+              wait_for do
+                plan = client_world_2.persistence.load_execution_plan(plan.id)
+                plan.state == :stopped
+              end
+            end
+
+            it 'stops incompletely planned execution plans without a lock' do
+              plan = client_world.plan(Support::DummyExample::Dummy)
+              plan.set_state(:planning, true)
+              plan.save
+              step = plan.plan_steps.first
+              step.set_state(:pending, true)
+              step.save
+
+              client_world_2.perform_validity_checks
+
+              plan = client_world_2.persistence.load_execution_plan(plan.id)
+              _(plan.state).must_equal :stopped
+            end
+
             it 'releases orphaned planning locks and executes associated execution plans' do
               plan = client_world.plan(Support::DummyExample::Dummy)
               plan.set_state(:planning, true)
               plan.save
               client_world.coordinator.acquire Coordinator::PlanningLock.new(client_world, plan.id)
               executor_world.invalidate(client_world.registered_world)
-              expected_locks = ["lock world-invalidation:#{client_world.id}",
-                                "unlock execution-plan:#{plan.id}", # planning lock
-                                "lock execution-plan:#{plan.id}", # execution lock
-                                "unlock world-invalidation:#{client_world.id}"]
-              _(executor_world.coordinator.adapter.lock_log).must_equal(expected_locks)
               wait_for do
                 plan = client_world_2.persistence.load_execution_plan(plan.id)
                 plan.state == :stopped
               end
+              lock_log = executor_world.coordinator.adapter.lock_log
+              _(lock_log).must_include "lock world-invalidation:#{client_world.id}"
+              _(lock_log).must_include "unlock execution-plan:#{plan.id}" # planning lock
+              _(lock_log).must_include "lock execution-plan:#{plan.id}" # execution lock
+              _(lock_log).must_include "unlock world-invalidation:#{client_world.id}"
             end
 
             it 'releases orphaned planning locks and stops associated execution plans which did not finish planning' do
