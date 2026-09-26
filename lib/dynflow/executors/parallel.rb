@@ -16,8 +16,8 @@ module Dynflow
                      queues_options: { :default => { :pool_size => 5 } })
         @world  = world
         @logger = world.logger
-        @core = executor_class.spawn name:        'parallel-executor-core',
-                                     args:        [world, heartbeat_interval, queues_options],
+        @core = executor_class.spawn name: 'parallel-executor-core',
+                                     args: [world, heartbeat_interval, queues_options],
                                      initialized: @core_initialized = Concurrent::Promises.resolvable_future
       end
 

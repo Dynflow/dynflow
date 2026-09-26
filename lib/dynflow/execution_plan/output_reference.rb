@@ -53,11 +53,11 @@ module Dynflow
     end
 
     def to_hash
-      recursive_to_hash class:             self.class.to_s,
+      recursive_to_hash class: self.class.to_s,
                         execution_plan_id: execution_plan_id,
-                        step_id:           step_id,
-                        action_id:         action_id,
-                        subkeys:           subkeys
+                        step_id: step_id,
+                        action_id: action_id,
+                        subkeys: subkeys
     end
 
     def to_s

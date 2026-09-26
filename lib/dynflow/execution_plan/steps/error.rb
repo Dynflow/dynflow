@@ -42,10 +42,10 @@ module Dynflow
       end
 
       def to_hash
-        recursive_to_hash class:           self.class.name,
+        recursive_to_hash class: self.class.name,
                           exception_class: exception_class.to_s,
-                          message:         message,
-                          backtrace:       backtrace
+                          message: message,
+                          backtrace: backtrace
       end
 
       def to_s
