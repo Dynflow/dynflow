@@ -140,9 +140,9 @@ module Dynflow::Action::V2
       failed = sub_plans_count('state' => %w(paused stopped), 'result' => %w(error warning)) - cancelled_scheduled_plans
       success = sub_plans_count('state' => 'stopped', 'result' => 'success')
       output.update(:pending_count => total - failed - success - cancelled_scheduled_plans,
-        :failed_count => failed - output.fetch(:resumed_count, 0),
-        :success_count => success,
-        :cancelled_count => cancelled)
+                    :failed_count => failed - output.fetch(:resumed_count, 0),
+                    :success_count => success,
+                    :cancelled_count => cancelled)
     end
 
     def counts_set?

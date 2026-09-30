@@ -26,7 +26,7 @@ group :postgresql, optional: ENV.key?('CI') && ENV['DB'] != 'postgresql' do
 end
 
 group :lint do
-  gem 'theforeman-rubocop', '~> 0.0.4'
+  gem 'theforeman-rubocop', '~> 0.1.0'
 end
 
 group :memory_watcher do

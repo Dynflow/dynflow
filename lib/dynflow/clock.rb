@@ -5,9 +5,9 @@ module Dynflow
     include Algebrick::Types
 
     Timer = Algebrick.type do
-      fields! who:   Object, # to ping back
-              when:  Time, # to deliver
-              what:  Maybe[Object], # to send
+      fields! who: Object, # to ping back
+              when: Time, # to deliver
+              what: Maybe[Object], # to send
               where: Symbol # it should be delivered, which method
     end
 
