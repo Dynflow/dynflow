@@ -2,16 +2,17 @@
 
 Sequel.migration do
   up do
-    alter_table(:dynflow_actions) do
-      drop_index [:execution_plan_uuid, :id]
-    end
+    [
+      [:dynflow_actions, [:execution_plan_uuid, :id]],
+      [:dynflow_execution_plans, :uuid],
+      [:dynflow_steps, [:execution_plan_uuid, :id]],
+    ].each do |table, columns|
+      index_name = default_index_name(table, Array(columns)).to_sym
+      next unless indexes(table).key?(index_name)
 
-    alter_table(:dynflow_execution_plans) do
-      drop_index :uuid
-    end
-
-    alter_table(:dynflow_steps) do
-      drop_index [:execution_plan_uuid, :id]
+      alter_table(table) do
+        drop_index columns
+      end
     end
   end
 
