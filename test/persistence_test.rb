@@ -42,8 +42,8 @@ module Dynflow
 
       def prepare_plans
         execution_plans_data.map do |h|
-          h.merge result:    nil, started_at: Time.now.utc - 20, ended_at: Time.now.utc - 10,
-              real_time: 0.0, execution_time: 0.0
+          h.merge result: nil, started_at: Time.now.utc - 20, ended_at: Time.now.utc - 10,
+                  real_time: 0.0, execution_time: 0.0
         end
       end
 
@@ -173,8 +173,8 @@ module Dynflow
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['paused'] })
               _(loaded_plans).must_equal({ "plan1" => { :state => "paused", :result => nil },
-                                          "plan3" => { :state => "paused", :result => nil },
-                                          "plan4" => { :state => "paused", :result => nil } })
+                                           "plan3" => { :state => "paused", :result => nil },
+                                           "plan4" => { :state => "paused", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped'] })
               _(loaded_plans).must_equal({ "plan2" => { :state => "stopped", :result => nil } })
@@ -184,14 +184,14 @@ module Dynflow
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { state: ['stopped', 'paused'] })
               _(loaded_plans).must_equal({ "plan1" => { :state => "paused", :result => nil },
-                                          "plan2" => { :state => "stopped", :result => nil },
-                                          "plan3" => { :state => "paused", :result => nil }, "plan4" => { :state => "paused", :result => nil } })
+                                           "plan2" => { :state => "stopped", :result => nil },
+                                           "plan3" => { :state => "paused", :result => nil }, "plan4" => { :state => "paused", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { 'state' => ['stopped', 'paused'] })
               _(loaded_plans).must_equal({ "plan1" => { :state => "paused", :result => nil },
-                                          "plan2" => { :state => "stopped", :result => nil },
-                                          "plan3" => { :state => "paused", :result => nil },
-                                          "plan4" => { :state => "paused", :result => nil } })
+                                           "plan2" => { :state => "stopped", :result => nil },
+                                           "plan3" => { :state => "paused", :result => nil },
+                                           "plan4" => { :state => "paused", :result => nil } })
 
               loaded_plans = adapter.find_execution_plan_statuses(filters: { label: ['test1'], :delayed => true })
               _(loaded_plans).must_equal({})
@@ -347,11 +347,11 @@ module Dynflow
             start_time = Time.now.utc
             prepare_and_save_plans
             adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false, :start_at => format_time(start_time + 60),
-                                      :start_before => format_time(start_time - 60))
+                                               :start_before => format_time(start_time - 60))
             adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :frozen => false, :start_at => format_time(start_time - 60))
             adapter.save_delayed_plan('plan3', :execution_plan_uuid => 'plan3', :frozen => false, :start_at => format_time(start_time + 60))
             adapter.save_delayed_plan('plan4', :execution_plan_uuid => 'plan4', :frozen => false, :start_at => format_time(start_time - 60),
-                                      :start_before => format_time(start_time - 60))
+                                               :start_before => format_time(start_time - 60))
             plans = adapter.find_ready_delayed_plans(start_time)
             _(plans.length).must_equal 3
             _(plans.map { |plan| plan[:execution_plan_uuid] }).must_equal %w(plan2 plan4 plan1)
@@ -362,9 +362,9 @@ module Dynflow
             prepare_and_save_plans
 
             adapter.save_delayed_plan('plan1', :execution_plan_uuid => 'plan1', :frozen => false, :start_at => format_time(start_time + 60),
-                                      :start_before => format_time(start_time - 60))
+                                               :start_before => format_time(start_time - 60))
             adapter.save_delayed_plan('plan2', :execution_plan_uuid => 'plan2', :frozen => true, :start_at => format_time(start_time + 60),
-                                      :start_before => format_time(start_time - 60))
+                                               :start_before => format_time(start_time - 60))
 
             plans = adapter.find_ready_delayed_plans(start_time)
             _(plans.length).must_equal 1
@@ -519,7 +519,7 @@ module Dynflow
 
           envelopes.each { |e| adapter.push_envelope(e) }
           adapter.insert_coordinator_record({ "class" => "Dynflow::Coordinator::ExecutorWorld",
-                                             "id" => executor_world_id, "meta" => {}, "active" => true })
+                                              "id" => executor_world_id, "meta" => {}, "active" => true })
 
           assert_equal 1, adapter.prune_undeliverable_envelopes
           assert_equal 0, adapter.prune_undeliverable_envelopes

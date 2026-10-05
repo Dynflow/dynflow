@@ -7,7 +7,7 @@ module Dynflow
     end
 
     SuggestedStrategy = Algebrick.type do
-      fields! action:   Action,
+      fields! action: Action,
               strategy: Strategy
     end
 

@@ -8,8 +8,8 @@ module Dynflow
 
     def initialize
       @rules = Hash.new do |h, k|
-        h[k] = { before:  [],
-                 after:   [],
+        h[k] = { before: [],
+                 after: [],
                  replace: [] }
       end
     end
