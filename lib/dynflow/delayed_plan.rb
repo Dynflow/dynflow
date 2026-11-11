@@ -59,11 +59,11 @@ module Dynflow
 
     def to_hash
       recursive_to_hash :execution_plan_uuid => @execution_plan_uuid,
-                        :start_at            => @start_at,
-                        :start_before        => @start_before,
-                        :serialized_args     => @args_serializer.serialized_args,
-                        :args_serializer     => @args_serializer.class.name,
-                        :frozen              => @frozen
+                        :start_at => @start_at,
+                        :start_before => @start_before,
+                        :serialized_args => @args_serializer.serialized_args,
+                        :args_serializer => @args_serializer.class.name,
+                        :frozen => @frozen
     end
 
     # Retrieves arguments from the serializer

@@ -12,12 +12,12 @@ module Dynflow
     include Algebrick::TypeCheck
 
     Event = Algebrick.type do
-      fields! request_id:        String,
+      fields! request_id: String,
               execution_plan_id: String,
-              step_id:           Integer,
-              event:             Object,
-              result:            Concurrent::Promises::ResolvableFuture,
-              optional:          Algebrick::Types::Boolean
+              step_id: Integer,
+              event: Object,
+              result: Concurrent::Promises::ResolvableFuture,
+              optional: Algebrick::Types::Boolean
     end
 
     UnprocessableEvent = Class.new(Dynflow::Error)

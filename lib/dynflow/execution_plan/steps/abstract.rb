@@ -87,19 +87,19 @@ module Dynflow
 
       def to_hash
         recursive_to_hash execution_plan_uuid: execution_plan_id,
-                          id:                  id,
-                          state:               state,
-                          class:               self.class.to_s,
-                          action_class:        action_class.to_s,
-                          action_id:           action_id,
-                          error:               error,
-                          started_at:          started_at,
-                          ended_at:            ended_at,
-                          execution_time:      execution_time,
-                          real_time:           real_time,
-                          progress_done:       progress_done,
-                          progress_weight:     progress_weight,
-                          queue:               queue
+                          id: id,
+                          state: state,
+                          class: self.class.to_s,
+                          action_class: action_class.to_s,
+                          action_id: action_id,
+                          error: error,
+                          started_at: started_at,
+                          ended_at: ended_at,
+                          execution_time: execution_time,
+                          real_time: real_time,
+                          progress_done: progress_done,
+                          progress_weight: progress_weight,
+                          queue: queue
       end
 
       def progress_done

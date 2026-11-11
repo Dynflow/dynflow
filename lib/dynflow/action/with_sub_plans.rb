@@ -12,7 +12,7 @@ module Dynflow
 
     SubPlanFinished = Algebrick.type do
       fields! :execution_plan_id => String,
-              :success           => type { variants TrueClass, FalseClass }
+              :success => type { variants TrueClass, FalseClass }
     end
 
     def run(event = nil)

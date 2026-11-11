@@ -5,10 +5,10 @@ module Dynflow
     Request = Algebrick.type do
       Event = type do
         fields! execution_plan_id: String,
-                step_id:           Integer,
-                event:             Object,
-                time:              type { variants Time, NilClass },
-                optional:          Algebrick::Types::Boolean
+                step_id: Integer,
+                event: Object,
+                time: type { variants Time, NilClass },
+                optional: Algebrick::Types::Boolean
       end
 
       Execution = type do

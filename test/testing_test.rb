@@ -63,19 +63,19 @@ module Dynflow
 
         3.times { progress_action_time action }
         _(action.output).must_equal('task' => { 'progress' => 30, 'done' => false },
-                                 'poll_attempts' => { 'total' => 2, 'failed' => 0 })
+                                    'poll_attempts' => { 'total' => 2, 'failed' => 0 })
         _(action.run_progress).must_equal 0.3
 
         run_action action, Dynflow::Action::Polling::Poll
         run_action action, Dynflow::Action::Polling::Poll
         _(action.output).must_equal('task' => { 'progress' => 50, 'done' => false },
-                                 'poll_attempts' => { 'total' => 4, 'failed' => 0 })
+                                    'poll_attempts' => { 'total' => 4, 'failed' => 0 })
         _(action.run_progress).must_equal 0.5
 
         5.times { progress_action_time action }
 
         _(action.output).must_equal('task' => { 'progress' => 100, 'done' => true },
-                                 'poll_attempts' => { 'total' => 9, 'failed' => 0 })
+                                    'poll_attempts' => { 'total' => 9, 'failed' => 0 })
         _(action.run_progress).must_equal 1
       end
 

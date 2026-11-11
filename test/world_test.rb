@@ -15,8 +15,8 @@ module Dynflow
           registered_world = world.coordinator.find_worlds(false, id: world.id).first
           registered_world.meta.delete('last_seen')
           _(registered_world.meta).must_equal('hostname' => Socket.gethostname, 'pid' => Process.pid,
-                                           'queues' => { 'default' => { 'pool_size' => 5 },
-                                                         'slow' => { 'pool_size' => 1 } })
+                                              'queues' => { 'default' => { 'pool_size' => 5 },
+                                                            'slow' => { 'pool_size' => 1 } })
         end
 
         it 'is configurable' do
