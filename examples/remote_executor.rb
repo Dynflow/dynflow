@@ -62,8 +62,9 @@ class RemoteExecutorExample
       run(world)
     end
 
-    def initialize_sidekiq_orchestrator
+    def initialize_sidekiq_orchestrator(id)
       ExampleHelper.create_world do |config|
+        config.id = id if id
         config.persistence_adapter = persistence_adapter
         config.connector           = connector
         config.executor            = ::Dynflow::Executors::Sidekiq::Core
@@ -164,8 +165,9 @@ elsif defined?(Sidekiq)
   # assuming the remote executor was required as part of initialization
   # of the ActiveJob worker
   queues = Sidekiq.configure_server { |c| c.options[:queues] }
-  world = if queues.include?("dynflow_orchestrator")
-            RemoteExecutorExample.initialize_sidekiq_orchestrator
+  world = if queues.include?("dynflow_orchestrator") || (orchestrator_queue = queues.find { |q| q.start_with?('dynflow_orchestrator:') })
+            orchestrator_queue ||= 'dynflow_orchestrator'
+            RemoteExecutorExample.initialize_sidekiq_orchestrator(orchestrator_queue.split(':')[1])
           elsif (queues - ['dynflow_orchestrator']).any?
             RemoteExecutorExample.initialize_sidekiq_worker
           end

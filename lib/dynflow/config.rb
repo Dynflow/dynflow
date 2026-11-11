@@ -79,6 +79,10 @@ module Dynflow
       @queues ||= QueuesConfig.new
     end
 
+    config_attr :id, String do |world, config|
+      SecureRandom.uuid
+    end
+
     config_attr :logger_adapter, LoggerAdapters::Abstract do
       LoggerAdapters::Simple.new
     end
