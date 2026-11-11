@@ -38,6 +38,10 @@ module Dynflow
         @queues ||= @config.queues.finalized_config(self)
       end
 
+      def managed_actors
+        @config.managed_actors.actors
+      end
+
       def method_missing(name)
         return @cache[name] if @cache.key?(name)
         value = @config.send(name)
@@ -45,6 +49,19 @@ module Dynflow
         validation_method = "validate_#{name}!"
         @config.send(validation_method, value) if @config.respond_to?(validation_method)
         @cache[name] = value
+      end
+    end
+
+    class ManagedActorsConfig
+      attr_reader :actors
+
+      def initialize
+        @actors = {}
+      end
+
+      def add(name, options = {})
+        raise ArgumentError, "Actor #{name} is already defined" if @actors.key?(name)
+        @actors[name] = options
       end
     end
 
@@ -77,6 +94,10 @@ module Dynflow
 
     def queues
       @queues ||= QueuesConfig.new
+    end
+
+    def managed_actors
+      @managed_actors ||= ManagedActorsConfig.new
     end
 
     config_attr :logger_adapter, LoggerAdapters::Abstract do

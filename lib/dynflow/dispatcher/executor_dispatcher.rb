@@ -10,6 +10,7 @@ module Dynflow
 
       def handle_request(envelope)
         match(envelope.message,
+          on(ActorMessage) { handle_actor_message(envelope, envelope.message) },
           on(Planning) { perform_planning(envelope, envelope.message) },
           on(Execution) { perform_execution(envelope, envelope.message) },
           on(Event)     { perform_event(envelope, envelope.message) },
@@ -21,6 +22,21 @@ module Dynflow
 
       def perform_planning(envelope, planning)
         @world.executor.plan(planning.execution_plan_id)
+        respond(envelope, Accepted)
+      rescue Dynflow::Error => e
+        respond(envelope, Failed[e.message])
+      end
+
+      def handle_actor_message(envelope, actor_message)
+        actor = @world.managed_actors[actor_message.actor_name]
+
+        unless actor
+          respond(envelope, Failed["Actor #{actor_message.actor_name} not found"])
+          return
+        end
+
+        actor.tell([actor_message.message.to_sym, *actor_message.args])
+
         respond(envelope, Accepted)
       rescue Dynflow::Error => e
         respond(envelope, Failed[e.message])

@@ -141,6 +141,9 @@ module Dynflow
              ignore_unknown = event.optional
              find_executor(event.execution_plan_id)
            end),
+          (on ~ActorMessage do |event|
+             find_actor_executor(event.actor_name)
+           end),
           (on ~Halt do |event|
              executor = find_executor(event.execution_plan_id)
              executor == Dispatcher::UnknownWorld ? AnyExecutor : executor
@@ -207,6 +210,15 @@ module Dynflow
         Dispatcher::UnknownWorld
       end
 
+      def find_actor_executor(actor_name)
+        # TODO: viable to check world config for singleton property before checking for lock?
+        actor_lock = @world.coordinator.find_locks(class: Coordinator::SingletonActorLock.name,
+                                                   id: "actor:#{actor_name}").first
+        return actor_lock.world_id if actor_lock
+
+        AnyExecutor
+      end
+
       def track_request(finished, request, timeout)
         id_suffix = @last_id_suffix += 1
         id = "#{@world.id}-#{id_suffix}"
@@ -240,7 +252,7 @@ module Dynflow
             (on Execution.(execution_plan_id: ~any) do |uuid|
                @world.persistence.load_execution_plan(uuid)
              end),
-            (on Event | Ping | Halt do
+            (on ActorMessage | Event | Ping | Halt do
                true
              end)
           @tracked_requests.delete(id).success! resolve_to

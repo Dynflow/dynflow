@@ -33,6 +33,8 @@ module Dynflow
       # the orchestration tied to the models.
       attr_accessor :disable_active_record_actions
 
+      delegate :managed_actors, :queues, to: :world_config
+
       def initialize
         self.pool_size                = 5
         self.remote                   = ::Rails.env.production?
@@ -163,11 +165,6 @@ module Dynflow
             config.delayed_executor = nil
           end
         end
-      end
-
-      # expose the queues definition to Rails developers
-      def queues
-        world_config.queues
       end
 
       protected

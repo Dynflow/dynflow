@@ -32,7 +32,7 @@ module Dynflow
   Concurrent::Actor::Envelope.prepend(EnvelopeBacktraceExtension)
 
   # Common parent for all the Dynflow actors defining some defaults
-  # that we preffer here.
+  # that we prefer here.
   class Actor < Concurrent::Actor::Context
     module LogWithFullBacktrace
       def log(level, message = nil, &block)
@@ -147,6 +147,60 @@ module Dynflow
        PoliteTermination,
        Concurrent::Actor::Behaviour::ExecutesContext,
        Concurrent::Actor::Behaviour::ErrorsOnUnknownMessage]
+    end
+  end
+
+  class ManagedActor < Actor
+    def initialize(implementation)
+      @implementation = implementation.new
+      # TODO: validate timer_options, start_timer?
+      if @implementation.respond_to?(:timer_options)
+        @timer = Concurrent::TimerTask.new(@implementation.timer_options) do
+          reference.tell(:tick)
+        end
+      end
+    end
+
+    def start_timer
+      @timer.execute if @timer
+    end
+
+    def stop_timer
+      @timer.shutdown if @timer
+    end
+
+    def on_message(message)
+      method, *args = message
+
+      case method
+      when :start
+        @implementation.start if @implementation.respond_to?(:start)
+      when :terminate
+        stop_timer
+        @implementation.stop if @implementation.respond_to?(:stop)
+        args.first.fulfill true
+        return
+      else
+        @implementation.send(method, *args)
+      end
+
+      return unless @implementation.respond_to?(:start_timer?)
+
+      if @implementation.start_timer?
+        start_timer
+      else
+        stop_timer
+      end
+    end
+
+    def on_envelope(envelope)
+      # TODO: "run_user_code" ?
+      # TODO: ::Foreman.settings.load_values
+      # TODO: this should be in foreman-tasks?
+      return super unless defined? ::Rails
+      ::Rails.application.executor.wrap do
+        super
+      end
     end
   end
 end
