@@ -71,6 +71,7 @@ module Dynflow
   require 'dynflow/semaphores'
   require 'dynflow/throttle_limiter'
   require 'dynflow/telemetry'
+  require 'dynflow/debug/telemetry/persistence'
   require 'dynflow/config'
   require 'dynflow/extensions'
 
